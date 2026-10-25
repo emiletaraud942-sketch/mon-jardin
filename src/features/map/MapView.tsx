@@ -13,7 +13,7 @@ import type { Garden, LonLat, Plant, XY } from '../../types'
 import { GardenDataBanner } from '../settings/GardenDataBanner'
 import { plantName } from '../plants/PlantPanel'
 import { cssVar } from './colors'
-import { GardenSide, PlacingBanner } from './GardenSide'
+import { GardenSide, PlacingBanner, useSheetHead } from './GardenSide'
 import { SidePanel } from './SidePanel'
 import { movePlant, placePlant } from './placing'
 import { dragThresholdPx, nudgePosition } from './nudge'
@@ -89,6 +89,7 @@ export function MapView({ garden }: { garden: Garden }) {
   const markers = useRef(new Map<string, maplibregl.Marker>())
   const plants = useGardenPlants(garden.id)
   const { selectedPlantId, placingSpeciesId, movingPlantId } = useUi()
+  const head = useSheetHead(garden)
   const [base, setBase] = useState<'ortho' | 'plan'>('ortho')
   const [cadastre, setCadastre] = useState(true)
   const [adult, setAdult] = useState(false)
@@ -402,7 +403,7 @@ export function MapView({ garden }: { garden: Garden }) {
         )}
         <PlacingBanner />
       </div>
-      <SidePanel tall={!!selectedPlantId} collapse={!!(placingSpeciesId || movingPlantId)}>
+      <SidePanel {...head} tall={!!selectedPlantId} collapse={!!(placingSpeciesId || movingPlantId)}>
         <GardenSide garden={garden} hint="Touchez une plante pour ouvrir sa fiche. Pincez ou touchez deux fois pour zoomer. Les disques montrent la largeur de chaque plante." />
       </SidePanel>
     </div>

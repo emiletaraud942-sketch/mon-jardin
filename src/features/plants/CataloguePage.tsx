@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { SPECIES_BY_ID } from '../../data/species'
 import { CATEGORY_LABEL } from '../../data/labels'
 import { searchSpecies } from '../../components/SpeciesPicker'
+import { BottomSheet, type SheetSnap } from '../../components/BottomSheet'
 import { useIsMobile } from '../../components/useMedia'
 import { setUi, useUi } from '../../lib/ui'
 import type { Category, Garden } from '../../types'
@@ -13,7 +14,7 @@ export function CataloguePage({ garden }: { garden: Garden }) {
   const mobile = useIsMobile()
   const [q, setQ] = useState('')
   const [cat, setCat] = useState<Category | ''>('')
-  const [listOpen, setListOpen] = useState(!speciesId)
+  const [snap, setSnap] = useState<SheetSnap>(speciesId ? 'min' : 'mid')
   const sheetRef = useRef<HTMLDivElement>(null)
   const list = useMemo(() => searchSpecies(q, cat), [q, cat])
   const selected = speciesId ? SPECIES_BY_ID[speciesId] : undefined
@@ -35,7 +36,7 @@ export function CataloguePage({ garden }: { garden: Garden }) {
               aria-current={s.id === speciesId ? 'true' : undefined}
               onClick={() => {
                 setUi({ speciesId: s.id })
-                if (mobile) setListOpen(false)
+                if (mobile) setSnap('min')
               }}
             >
               <span className="dot" style={{ background: s.couleurAccent ?? s.couleur }} />
@@ -61,7 +62,7 @@ export function CataloguePage({ garden }: { garden: Garden }) {
           style={{ marginBottom: 10 }}
           onClick={() => {
             setUi({ speciesId: undefined })
-            setListOpen(true)
+            setSnap('mid')
           }}
         >
           ‹ Retour à la liste
@@ -84,7 +85,7 @@ export function CataloguePage({ garden }: { garden: Garden }) {
           value={q}
           onChange={(e) => {
             setQ(e.target.value)
-            if (mobile) setListOpen(true)
+            if (mobile) setSnap('mid')
           }}
         />
         <select className="input" style={{ flex: '1 1 160px' }} value={cat} onChange={(e) => setCat(e.target.value as Category | '')} aria-label="Catégorie">
@@ -97,14 +98,13 @@ export function CataloguePage({ garden }: { garden: Garden }) {
         </select>
       </div>
       {mobile ? (
-        <div className="stack" style={{ gap: 12 }}>
-          {selected && sheetCard}
-          <button className="btn" aria-expanded={listOpen} aria-controls="catalogue-liste" onClick={() => setListOpen((o) => !o)}>
-            {listOpen ? 'Masquer la liste' : 'Choisir une plante'} ({list.length})
-          </button>
-          {listOpen && <div id="catalogue-liste">{listCard}</div>}
-          {!selected && !listOpen && sheetCard}
-        </div>
+        <>
+          {sheetCard}
+          <div style={{ height: 96 }} aria-hidden />
+          <BottomSheet fixed label="Liste des plantes" title="Catalogue" summary={`${list.length} plante${list.length > 1 ? 's' : ''}`} snap={snap} onSnap={setSnap}>
+            <div id="catalogue-liste">{listCard}</div>
+          </BottomSheet>
+        </>
       ) : (
         <div className="grid catalogue-grid">
           {listCard}

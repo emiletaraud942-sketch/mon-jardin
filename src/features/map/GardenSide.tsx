@@ -11,6 +11,15 @@ import { PlantPanel, plantName } from '../plants/PlantPanel'
 
 const MAX_LISTED = 60
 
+/** Titre et résumé de l'en-tête de la feuille du bas : la plante choisie, sinon le jardin et le nombre de plantes. */
+export function useSheetHead(garden: Garden): { title: string; summary: string } {
+  const plants = useGardenPlants(garden.id)
+  const { selectedPlantId } = useUi()
+  const sel = plants.find((p) => p.id === selectedPlantId)
+  if (sel) return { title: plantName(sel), summary: STATUS_LABEL[sel.status] }
+  return { title: garden.name, summary: `${plants.length} plante${plants.length > 1 ? 's' : ''}` }
+}
+
 /** Panneau latéral partagé par la carte et la 3D. */
 export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
   const plants = useGardenPlants(garden.id)
@@ -22,7 +31,7 @@ export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
 
   return (
     <div className="stack" style={{ gap: 12 }}>
-      <div>
+      <div className="gs-head">
         <h2 style={{ marginBottom: 2 }}>{garden.name}</h2>
         <div className="muted small">
           {garden.areaM2 ? `${garden.areaM2} m² · ` : ''}

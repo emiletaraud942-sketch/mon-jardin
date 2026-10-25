@@ -1423,56 +1423,109 @@ label.field > span {
   padding: 18px;
   min-width: 0;
 }
-.sheet-handle {
+.sidepanel .sheet-handle {
   display: none;
 }
 @media (max-width: 760px) {
   .workspace {
     flex-direction: column;
   }
-  .sidepanel {
-    width: 100%;
-    border-left: 0;
-    border-top: var(--border-w) solid var(--border);
-    max-height: 38%;
-    border-radius: 18px 18px 0 0;
-    padding-top: 4px;
-    box-shadow: var(--shadow-float);
-    position: relative;
-    z-index: 6;
-  }
-  /* Volet du bas extensible : poignée + 3 hauteurs (38 %, 70 %, 100 %). */
-  .sidepanel[data-snap='70'] {
-    max-height: 70%;
-    height: 70%;
-  }
-  .sidepanel[data-snap='100'] {
-    max-height: 100%;
-    height: 100%;
-  }
-  .sheet-handle {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    min-height: var(--tap);
-    margin-bottom: 0;
-    border: 0;
-    background: transparent;
-    cursor: pointer;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    background: var(--surface);
-    border-radius: 18px 18px 0 0;
-  }
-  .sheet-handle span {
-    width: 48px;
-    height: 6px;
-    border-radius: 3px;
-    background: var(--track);
-    border: 1px solid var(--border-strong);
-  }
+}
+/* Feuille du bas (BottomSheet) : trois hauteurs, 90 px, 50 %, 85 %. */
+.bsheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 12;
+  height: 90px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-radius: 18px 18px 0 0;
+  box-shadow: var(--shadow-float);
+  transition: height 0.2s ease;
+  min-height: 0;
+}
+.bsheet[data-snap='mid'] {
+  height: 50%;
+}
+.bsheet[data-snap='max'] {
+  height: 85%;
+}
+.bsheet.fixed {
+  position: fixed;
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  z-index: 20;
+}
+.bsheet.fixed[data-snap='mid'] {
+  height: 50dvh;
+}
+.bsheet.fixed[data-snap='max'] {
+  height: min(85dvh, calc(100dvh - var(--nav-h) - 60px));
+}
+.sheet-head {
+  flex: none;
+  touch-action: none;
+  cursor: grab;
+}
+.sheet-handle {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.sheet-handle span {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border-strong);
+}
+.sheet-title {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 4px 0 14px;
+  min-height: 44px;
+}
+.sheet-title-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+.sheet-title-text > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sheet-btn {
+  flex: none;
+  min-width: 44px;
+  min-height: 44px;
+}
+.sheet-btn:disabled {
+  opacity: 0.35;
+  border: 0;
+  background: transparent;
+}
+.sheet-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 4px 14px 16px;
+}
+.bsheet .gs-head {
+  display: none;
 }
 /* Téléphone en paysage : écran large mais très bas. Navigation et panneau latéral réduits. */
 @media (min-width: 761px) and (max-height: 500px) {
@@ -2636,4 +2689,135 @@ details > summary {
     padding-top: 2px;
     padding-bottom: 2px;
   }
+}
+
+/* ---------- Cartes sans cadre dans une feuille du bas : un seul niveau de contour ---------- */
+.bsheet .card {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+/* ---------- Téléphone : échelle compacte (≥ 761 px : tailles inchangées) ---------- */
+@media (max-width: 760px) {
+  :root {
+    --btn-h: 44px;
+    --nav-h: 60px;
+    --radius-btn-lg: 14px;
+  }
+  /* 15 px de base : le corps de texte passe à ≈ 16 px, les titres et petits textes suivent (tout est en rem). */
+  html {
+    font-size: 93.75%;
+  }
+  html[data-text-size='grand'] {
+    font-size: 111.3%;
+  }
+  html[data-text-size='tres-grand'] {
+    font-size: 128.9%;
+  }
+  h1,
+  .page > h1 {
+    font-size: 1.5rem;
+  }
+  h2 {
+    font-size: 1.2rem;
+  }
+  h3 {
+    font-size: 1.05rem;
+  }
+  .small,
+  label.field {
+    font-size: 0.93rem;
+  }
+  .badge {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+  }
+  .brand {
+    font-size: 1.15rem;
+  }
+  .page {
+    padding: 14px 14px 28px;
+  }
+  .card {
+    padding: 14px;
+  }
+  .card + .card {
+    margin-top: 10px;
+  }
+  .grid {
+    gap: 10px;
+  }
+  .list > li {
+    padding: 9px 0;
+  }
+  .btn {
+    padding: 6px 14px;
+  }
+  .btn.big {
+    min-height: 48px;
+    font-size: 1.05rem;
+  }
+  .np-done,
+  .btn.primary.np-done {
+    min-height: 48px;
+    font-size: 1.05rem;
+  }
+  .input,
+  select.input,
+  textarea.input {
+    min-height: 44px;
+    padding: 6px 12px;
+    font-size: max(16px, 1rem);
+  }
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1rem);
+  }
+  .modeswitch button {
+    min-height: 42px;
+  }
+  .topbar {
+    padding: 6px 12px 2px;
+  }
+  .modebar {
+    padding: 2px 12px 6px;
+  }
+  .sidenav {
+    height: calc(var(--nav-h) + env(safe-area-inset-bottom));
+    padding: 4px 4px env(safe-area-inset-bottom);
+  }
+  .navbtn {
+    min-height: 48px;
+    font-size: 0.75rem;
+    gap: 1px;
+  }
+  .navbtn svg {
+    width: 48px;
+    height: 28px;
+    padding: 4px 14px;
+    border-radius: 14px;
+  }
+  .navbtn .badge {
+    font-size: 0.75rem;
+  }
+  .placing-banner,
+  .map-empty {
+    bottom: 102px;
+  }
+  .placing-banner .placing-text {
+    font-size: 1rem;
+  }
+  /* Commandes de la 3D : elles restent au-dessus de la feuille réduite. */
+  .workspace .g3d-overlay {
+    padding-bottom: 96px;
+  }
+  .workspace .maplibregl-ctrl-bottom-right,
+  .workspace .maplibregl-ctrl-bottom-left {
+    margin-bottom: 90px;
+  }
+}
+.bsheet[data-snap='min'] .sheet-body {
+  visibility: hidden;
 }

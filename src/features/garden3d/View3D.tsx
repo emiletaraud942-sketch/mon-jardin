@@ -5,7 +5,7 @@ import { showToast } from '../../lib/toast'
 import { setUi, useUi } from '../../lib/ui'
 import { obstaclesFor, sunHoursGrid } from '../../engine/sun'
 import type { Garden, XY } from '../../types'
-import { GardenSide, PlacingBanner } from '../map/GardenSide'
+import { GardenSide, PlacingBanner, useSheetHead } from '../map/GardenSide'
 import { placePlant } from '../map/placing'
 import { SidePanel } from '../map/SidePanel'
 import { Garden3D } from './Garden3D'
@@ -18,6 +18,7 @@ export default function View3D({ garden }: { garden: Garden }) {
   const [sunDate, setSunDate] = useState<Date>()
   const [heatmap, setHeatmap] = useState<{ halfSizeM: number; n: number; values: number[] }>()
   const [computing, setComputing] = useState(false)
+  const head = useSheetHead(garden)
   // Sol, orthophoto et carte d'ensoleillement couvrent la même emprise : parcelle + ~25 m de voisinage.
   const hasParcel = !!garden.parcel && garden.parcel.length > 2
   // Avec une parcelle, l'emprise ne dépend pas des plantes : on ne la recalcule pas à chaque déplacement.
@@ -68,7 +69,7 @@ export default function View3D({ garden }: { garden: Garden }) {
         />
         <PlacingBanner />
       </div>
-      <SidePanel tall={!!selectedPlantId}>
+      <SidePanel {...head} tall={!!selectedPlantId}>
         <GardenSide garden={garden} hint="Faites tourner la vue à deux doigts ou à la souris. Glissez une plante pour la déplacer. « Se promener » vous place à hauteur d’yeux dans le jardin. Le curseur « Dans N ans » montre vos arbres adultes et leur ombre." />
       </SidePanel>
     </div>
