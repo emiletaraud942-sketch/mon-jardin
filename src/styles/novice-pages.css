@@ -40,7 +40,6 @@
   background: var(--btn-green);
   border-color: var(--btn-green);
   color: var(--on-btn-green);
-  box-shadow: 0 3px 0 var(--btn-green-shadow);
 }
 .np-done:hover,
 .btn.primary.np-done:hover {
@@ -48,8 +47,6 @@
 }
 .np-done:active,
 .btn.primary.np-done:active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 var(--btn-green-shadow);
 }
 /* Cartes de tâches */
 .np-page .list > li.task {
