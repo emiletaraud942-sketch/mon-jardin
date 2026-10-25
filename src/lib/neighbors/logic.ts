@@ -26,6 +26,7 @@ export const categoryRequired = (kind: PostKind) => kind === 'cherche'
 
 /** Texte de l'état vide du fil, selon les filtres. */
 export function emptyFeedText(kind: KindFilter, category: CategoryFilter): { title: string; hint: string } {
+  if (kind === 'cherche' && category !== 'all') return { title: 'Aucune demande dans cette catégorie pour l’instant', hint: 'Essayez une autre catégorie, ou élargissez la distance.' }
   if (kind === 'cherche') return { title: 'Personne ne cherche rien près de chez vous pour l’instant', hint: 'Vous cherchez quelque chose ? Dites-le à vos voisins.' }
   if (category !== 'all') return { title: 'Rien dans cette catégorie pour l’instant', hint: 'Essayez une autre catégorie, ou élargissez la distance.' }
   if (kind === 'all') return { title: 'Rien près de chez vous pour l’instant', hint: 'Vous pouvez être le premier. Quelques idées :' }

@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Modal } from '../../components/Modal'
 import { report } from '../../lib/neighbors/api'
-import { NEIGHBORS_LIMITS, POST_KIND_LABELS, REPORT_REASONS, type PostKind, type ReportReason, type ReportTarget } from '../../lib/neighbors/types'
+import { NEIGHBORS_LIMITS, POST_CATEGORY_LABELS, POST_KIND_LABELS, REPORT_REASONS, type PostCategory, type PostKind, type ReportReason, type ReportTarget } from '../../lib/neighbors/types'
 import { showToast } from '../../lib/toast'
 import { errorText } from './hooks'
 
@@ -25,8 +25,12 @@ export function ErrorBox({ message, onRetry }: { message: string; onRetry?: () =
   )
 }
 
-const KIND_TONE: Record<PostKind, string> = { don: 'green', echange: '', pret: 'warn', question: '' }
+const KIND_TONE: Record<PostKind, string> = { don: 'green', echange: '', pret: 'warn', question: '', cherche: 'warn' }
 export const KindBadge = ({ kind }: { kind: PostKind }) => <span className={`badge ${KIND_TONE[kind]} nb-kind nb-kind-${kind}`}>{POST_KIND_LABELS[kind]}</span>
+
+/** Catégorie de l'annonce (rien si l'annonce n'en a pas). */
+export const CategoryBadge = ({ category }: { category: PostCategory | null }) =>
+  category ? <span className="badge nb-cat-badge">{POST_CATEGORY_LABELS[category]}</span> : null
 
 /** Confirmation avant une action irréversible. `onConfirm` peut lever : le message s'affiche dans la boîte. */
 export function Confirm({

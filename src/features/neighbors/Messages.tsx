@@ -49,14 +49,20 @@ export function ThreadList({ online, onOpen }: { online: boolean; onOpen: (t: Th
   )
 }
 
-export function ThreadView({ thread, postTitle, online, onBack }: { thread: Thread; postTitle?: string; online: boolean; onBack: () => void }) {
+/** `draft` : message proposé (modifiable) quand on arrive depuis « J’ai ce qu’il cherche ». */
+export function ThreadView({ thread, postTitle, draft, online, onBack }: { thread: Thread; postTitle?: string; draft?: string; online: boolean; onBack: () => void }) {
   const { data, error, loading, reload, setData } = useLoad(() => listMessages(thread.id), thread.id)
   const messages = useMemo(() => data ?? [], [data])
-  const [text, setText] = useState('')
+  const [text, setText] = useState(draft ?? '')
   const [busy, setBusy] = useState(false)
   const [sendError, setSendError] = useState<string>()
   const [dialog, setDialog] = useState<{ k: 'report-person' } | { k: 'report-msg'; id: string } | { k: 'block' }>()
   const endRef = useRef<HTMLDivElement>(null)
+  const draftRef = useRef<HTMLTextAreaElement>(null)
+  // Message proposé : on l'amène à l'écran, sans ouvrir le clavier.
+  useEffect(() => {
+    if (draft) draftRef.current?.scrollIntoView?.({ block: 'center' })
+  }, [draft])
 
   usePolling(() => {
     listMessages(thread.id)
@@ -136,8 +142,9 @@ export function ThreadView({ thread, postTitle, online, onBack }: { thread: Thre
       >
         <label className="field">
           <span className="sr-only">Votre message</span>
-          <textarea className="input" rows={2} maxLength={NEIGHBORS_LIMITS.messageMax} placeholder="Votre message" value={text} onChange={(e) => setText(e.target.value)} />
+          <textarea ref={draftRef} className="input" rows={draft ? 4 : 2} maxLength={NEIGHBORS_LIMITS.messageMax} placeholder="Votre message" value={text} onChange={(e) => setText(e.target.value)} />
         </label>
+        {draft && text === draft && <p className="small muted" style={{ margin: 0 }}>Message proposé. Vous pouvez le changer avant de l’envoyer.</p>}
         {sendError && <ErrorBox message={sendError} />}
         <button className="btn primary" type="submit" disabled={!text.trim() || busy || !online}>
           {busy && <span className="spinner" />} Envoyer

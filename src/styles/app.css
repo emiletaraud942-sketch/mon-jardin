@@ -1924,6 +1924,18 @@ select.nb-radius {
   width: auto;
   min-width: 84px;
 }
+select.nb-cat {
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 12rem;
+}
+.nb-cat-row {
+  flex-wrap: wrap;
+}
+.nb-cat-badge {
+  white-space: normal;
+}
 .nb-list {
   list-style: none;
   margin: 0;

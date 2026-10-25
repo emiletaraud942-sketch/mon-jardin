@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 import { SPECIES_BY_ID } from '../../data/species'
 import { listPosts } from '../../lib/neighbors/api'
-import { KIND_FILTERS, RADII, formatWhen, kindOption, type KindFilter } from '../../lib/neighbors/logic'
-import type { Post } from '../../lib/neighbors/types'
-import { ErrorBox, KindBadge, Spinner } from './common'
+import { CATEGORY_FILTERS, KIND_FILTERS, RADII, categoryOption, emptyFeedText, formatWhen, kindOption, parseCategoryFilter, type CategoryFilter, type KindFilter } from '../../lib/neighbors/logic'
+import type { Post, PostKind } from '../../lib/neighbors/types'
+import { CategoryBadge, ErrorBox, KindBadge, Spinner } from './common'
 import { useLoad } from './hooks'
 
 export function PostCard({ post, onOpen }: { post: Post; onOpen: (p: Post) => void }) {
@@ -12,6 +12,7 @@ export function PostCard({ post, onOpen }: { post: Post; onOpen: (p: Post) => vo
     <button className="nb-card" onClick={() => onOpen(post)} aria-label={`${post.title}, ${post.distanceLabel}`}>
       <span className="row nb-card-top">
         <KindBadge kind={post.kind} />
+        <CategoryBadge category={post.category} />
         <span className="small muted">{post.distanceLabel}</span>
         {post.photoPath && <span className="badge">📷 Photo</span>}
       </span>
@@ -28,23 +29,28 @@ export function PostCard({ post, onOpen }: { post: Post; onOpen: (p: Post) => vo
 
 export function Feed({
   kind,
+  category,
   radius,
   online,
   onKind,
+  onCategory,
   onRadius,
   onOpen,
   onNew,
 }: {
   kind: KindFilter
+  category: CategoryFilter
   radius: number
   online: boolean
   onKind: (k: KindFilter) => void
+  onCategory: (c: CategoryFilter) => void
   onRadius: (r: number) => void
   onOpen: (p: Post) => void
-  onNew: () => void
+  onNew: (kind?: PostKind) => void
 }) {
-  const key = `${kind}|${radius}`
-  const { data, error, loading, reload } = useLoad(() => listPosts({ kind: kindOption(kind), radiusKm: radius }), key)
+  const key = `${kind}|${category}|${radius}`
+  const { data, error, loading, reload } = useLoad(() => listPosts({ kind: kindOption(kind), category: categoryOption(category), radiusKm: radius }), key)
+  const empty = emptyFeedText(kind, category)
   const posts = useMemo(() => data ?? [], [data])
 
   return (
@@ -57,6 +63,16 @@ export function Feed({
             </button>
           ))}
         </div>
+        <label className="row small nb-cat-row" style={{ gap: 6 }}>
+          <span>Catégorie</span>
+          <select className="input nb-cat" value={category} onChange={(e) => onCategory(parseCategoryFilter(e.target.value))} aria-label="Catégorie d’annonce">
+            {CATEGORY_FILTERS.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+        </label>
         <div className="row nb-toolbar-row">
           <label className="row small" style={{ gap: 6 }}>
             <span>Distance</span>
@@ -69,8 +85,8 @@ export function Feed({
             </select>
           </label>
           <span className="spacer" />
-          <button className="btn primary" onClick={onNew}>
-            Publier une annonce
+          <button className="btn primary" onClick={() => onNew(kind === 'cherche' ? 'cherche' : undefined)}>
+            {kind === 'cherche' ? 'Je cherche quelque chose' : 'Publier une annonce'}
           </button>
         </div>
       </div>
@@ -88,21 +104,29 @@ export function Feed({
       )}
       {data && posts.length === 0 && !error && (
         <div className="card nb-empty">
-          <h2>{kind === 'all' ? 'Rien près de chez vous pour l’instant' : 'Aucune annonce de ce type'}</h2>
-          <p style={{ margin: 0 }}>Vous pouvez être le premier. Quelques idées :</p>
-          <ul className="nb-ideas">
-            <li>Don de boutures, de graines ou de surplus du potager.</li>
-            <li>Prêt d’un outil : sécateur, bêche, broyeur.</li>
-            <li>Échange de plants contre d’autres plants.</li>
-            <li>Une question : quelle plante pour un coin à l’ombre ?</li>
-          </ul>
+          <h2>{empty.title}</h2>
+          <p style={{ margin: 0 }}>{empty.hint}</p>
+          {kind === 'all' && category === 'all' && (
+            <ul className="nb-ideas">
+              <li>Don de boutures, de graines ou de surplus du potager.</li>
+              <li>Prêt d’un outil : sécateur, bêche, broyeur.</li>
+              <li>Échange de plants contre d’autres plants.</li>
+              <li>Une question : quelle plante pour un coin à l’ombre ?</li>
+              <li>Une demande : « Je cherche une bêche à emprunter. »</li>
+            </ul>
+          )}
           <div className="row">
-            <button className="btn primary" onClick={onNew}>
-              Publier une annonce
+            <button className="btn primary" onClick={() => onNew(kind === 'cherche' ? 'cherche' : undefined)}>
+              {kind === 'cherche' ? 'Je cherche quelque chose' : 'Publier une annonce'}
             </button>
             {radius < RADII[RADII.length - 1] && (
               <button className="btn" onClick={() => onRadius(RADII[RADII.length - 1])}>
                 Élargir à {RADII[RADII.length - 1]} km
+              </button>
+            )}
+            {category !== 'all' && (
+              <button className="btn" onClick={() => onCategory('all')}>
+                Toutes les catégories
               </button>
             )}
             {kind !== 'all' && (

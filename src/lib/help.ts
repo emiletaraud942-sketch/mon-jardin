@@ -84,10 +84,10 @@ export const HELP: Record<Tab, HelpContent> = {
     steps: [
       'Entrez votre e-mail : un lien arrive. Ouvrez-le sur ce téléphone.',
       'Choisissez un pseudo et votre quartier. Votre adresse reste secrète.',
-      'Les annonces montrent les dons, échanges, prêts et questions près de chez vous.',
-      '« Publier » crée une annonce. « Écrire en privé » ouvre une conversation.',
-      '« Signaler » et « Bloquer » protègent le groupe. Rien ne se vend ici.',
-      'Dans Profil, vous pouvez supprimer votre compte quand vous voulez.',
+      'Les annonces montrent les dons, échanges, prêts, demandes et questions près de chez vous.',
+      '« Publier » crée une annonce. Pour une demande, choisissez « Je cherche » et une catégorie.',
+      '« Écrire en privé » ouvre une conversation. « J’ai ce qu’il cherche » répond à une demande.',
+      '« Signaler » et « Bloquer » protègent le groupe. Rien ne se vend ici. Dans Profil, vous pouvez supprimer votre compte.',
     ],
   },
 }

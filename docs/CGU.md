@@ -1,7 +1,7 @@
 # Conditions d’utilisation
 
 > **BROUILLON À FAIRE VALIDER PAR UN PROFESSIONNEL.** Texte provisoire, à faire valider par un professionnel avant publication. Il ne constitue pas un avis juridique.
-> Version 1.1 · Dernière mise à jour : 23 octobre 2026.
+> Version 1.2 · Dernière mise à jour : 25 octobre 2026.
 
 ## Objet du service
 
@@ -28,7 +28,7 @@ Ne consommez jamais une plante, un fruit ou un champignon sur la seule foi de l�
 - Réservée aux personnes de 15 ans et plus. Un compte par personne, avec une adresse e-mail qui vous appartient.
 - Pseudo libre, mais il ne doit ni usurper une autre personne, ni révéler votre identité contre votre gré, ni être trompeur ou offensant.
 - Le quartier que vous indiquez est le vôtre. Il est arrondi à environ 1 km.
-- L’entraide est gratuite et non commerciale : dons, échanges, prêts et questions entre particuliers.
+- L’entraide est gratuite et non commerciale : dons, échanges, prêts, demandes et questions entre particuliers.
 
 ## Règles de conduite
 
@@ -63,7 +63,7 @@ L’éditeur n’est pas tenu de surveiller les contenus. Il ne peut pas garanti
 
 L’éditeur est hébergeur des contenus de l’entraide (loi n° 2004-575 du 21 juin 2004, art. 6) : sa responsabilité n’est engagée que s’il a connaissance d’un contenu manifestement illicite et ne le retire pas promptement.
 
-Les dons, échanges et prêts se font entre particuliers, sous leur seule responsabilité : l’éditeur n’est partie à aucun accord, ne garantit ni la qualité, ni la sécurité, ni l’identification d’une plante, ni la fiabilité d’une personne. Rencontrez-vous dans un lieu public, ne communiquez pas votre adresse à la légère, lavez et inspectez ce que vous recevez. Un prêt de matériel est un contrat entre vous.
+Les dons, échanges, prêts et demandes se font entre particuliers, sous leur seule responsabilité : l’éditeur n’est partie à aucun accord, ne garantit ni la qualité, ni la sécurité, ni l’identification d’une plante, ni la fiabilité d’une personne. Rencontrez-vous dans un lieu public, ne communiquez pas votre adresse à la légère, lavez et inspectez ce que vous recevez. Un prêt de matériel est un contrat entre vous.
 
 Vous restez responsable du respect de la réglementation sur les plantes et les semences que vous donnez ou échangez.
 

@@ -3,7 +3,7 @@ import { closePost, deletePost, listMyPosts, reopenPost } from '../../lib/neighb
 import { formatWhen, postStatusInfo } from '../../lib/neighbors/logic'
 import type { Post } from '../../lib/neighbors/types'
 import { showToast } from '../../lib/toast'
-import { Confirm, ErrorBox, KindBadge, Spinner } from './common'
+import { CategoryBadge, Confirm, ErrorBox, KindBadge, Spinner } from './common'
 import { errorText, useLoad } from './hooks'
 
 export function MyPosts({ online, onOpen, onNew }: { online: boolean; onOpen: (p: Post) => void; onNew: () => void }) {
@@ -35,7 +35,7 @@ export function MyPosts({ online, onOpen, onNew }: { online: boolean; onOpen: (p
       {data && posts.length === 0 && !error && (
         <div className="card nb-empty">
           <h2>Vous n’avez pas d’annonce</h2>
-          <p style={{ margin: 0 }}>Donnez un surplus, prêtez un outil ou posez une question à vos voisins.</p>
+          <p style={{ margin: 0 }}>Donnez un surplus, prêtez un outil, cherchez quelque chose ou posez une question.</p>
           <div className="row">
             <button className="btn primary" onClick={onNew}>
               Publier une annonce
@@ -51,6 +51,7 @@ export function MyPosts({ online, onOpen, onNew }: { online: boolean; onOpen: (p
             <li key={p.id} className="card stack nb-mine">
               <div className="row">
                 <KindBadge kind={p.kind} />
+                <CategoryBadge category={p.category} />
                 <span className={'badge ' + (st.tone === 'neutral' ? '' : st.tone)}>{st.label}</span>
               </div>
               <button className="link-btn nb-mine-title" onClick={() => onOpen(p)}>

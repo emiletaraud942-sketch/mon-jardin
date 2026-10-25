@@ -7,9 +7,9 @@ import { DATA_INVENTORY, type LegalBasis } from './security/inventory'
 export const DRAFT_BANNER = 'BROUILLON À FAIRE VALIDER PAR UN PROFESSIONNEL'
 export const DRAFT_NOTE = 'Texte provisoire, à faire valider par un professionnel avant publication. Il ne constitue pas un avis juridique.'
 
-export const LEGAL_VERSION = '1.1'
+export const LEGAL_VERSION = '1.2'
 /** Dernière mise à jour (AAAA-MM-JJ). */
-export const LEGAL_UPDATED = '2026-10-23'
+export const LEGAL_UPDATED = '2026-10-25'
 
 // ---------- Champs à compléter par l'éditeur (aucune donnée personnelle pré-remplie) ----------
 export const TO_COMPLETE = '[à compléter]'
@@ -140,11 +140,11 @@ export const CONFIDENTIALITE: LegalDoc = {
     {
       titre: 'Entraide entre voisins',
       blocs: [
-        p('L’entraide est facultative. Elle permet de publier des annonces de don, d’échange, de prêt ou des questions, et d’écrire en privé à d’autres jardiniers proches. Elle est réservée aux personnes de 15 ans et plus.'),
+        p('L’entraide est facultative. Elle permet de publier des annonces de don, d’échange, de prêt, des demandes (« Je cherche ») ou des questions, et d’écrire en privé à d’autres jardiniers proches. Elle est réservée aux personnes de 15 ans et plus.'),
         ul(
           'Compte : votre adresse e-mail sert uniquement à vous envoyer un lien de connexion. Elle n’est visible d’aucun autre membre.',
           'Profil public : un pseudo et un quartier. Le quartier est une position arrondie à environ 1 km, jamais votre adresse ni votre position exacte. Choisissez un pseudo qui ne révèle pas votre identité.',
-          'Annonces et réponses : titre, description, espèce et photo éventuelle. Elles sont visibles des membres situés à moins de 55 km environ, sauf ceux que vous avez bloqués. N’y écrivez ni votre adresse, ni votre téléphone, ni de données concernant d’autres personnes.',
+          'Annonces et réponses : type (don, échange, prêt, demande ou question), catégorie éventuelle, titre, description, espèce et photo éventuelle. Elles sont visibles des membres situés à moins de 55 km environ, sauf ceux que vous avez bloqués. N’y écrivez ni votre adresse, ni votre téléphone, ni de données concernant d’autres personnes.',
           'Photos : redessinées dans votre navigateur avant l’envoi (position GPS et métadonnées supprimées), 1 Mo au plus, stockées dans un espace privé. Une photo de jardin peut elle-même révéler un lieu : regardez l’arrière-plan.',
           'Messages privés : lisibles seulement par vous et votre correspondant. L’éditeur ne les lit pas, sauf pour traiter un signalement visant l’un d’eux.',
           'Signalements et blocages : un signalement est lu par l’éditeur ; il n’est pas communiqué à la personne signalée. Un blocage masque réciproquement annonces, réponses et conversations.',
@@ -273,7 +273,7 @@ export const CGU: LegalDoc = {
           'Réservée aux personnes de 15 ans et plus. Un compte par personne, avec une adresse e-mail qui vous appartient.',
           'Pseudo libre, mais il ne doit ni usurper une autre personne, ni révéler votre identité contre votre gré, ni être trompeur ou offensant.',
           'Le quartier que vous indiquez est le vôtre. Il est arrondi à environ 1 km.',
-          'L’entraide est gratuite et non commerciale : dons, échanges, prêts et questions entre particuliers.',
+          'L’entraide est gratuite et non commerciale : dons, échanges, prêts, demandes et questions entre particuliers.',
         ),
       ],
     },
@@ -316,7 +316,7 @@ export const CGU: LegalDoc = {
       titre: 'Hébergeur et responsabilité',
       blocs: [
         p('L’éditeur est hébergeur des contenus de l’entraide (loi n° 2004-575 du 21 juin 2004, art. 6) : sa responsabilité n’est engagée que s’il a connaissance d’un contenu manifestement illicite et ne le retire pas promptement.'),
-        p('Les dons, échanges et prêts se font entre particuliers, sous leur seule responsabilité : l’éditeur n’est partie à aucun accord, ne garantit ni la qualité, ni la sécurité, ni l’identification d’une plante, ni la fiabilité d’une personne. Rencontrez-vous dans un lieu public, ne communiquez pas votre adresse à la légère, lavez et inspectez ce que vous recevez. Un prêt de matériel est un contrat entre vous.'),
+        p('Les dons, échanges, prêts et demandes se font entre particuliers, sous leur seule responsabilité : l’éditeur n’est partie à aucun accord, ne garantit ni la qualité, ni la sécurité, ni l’identification d’une plante, ni la fiabilité d’une personne. Rencontrez-vous dans un lieu public, ne communiquez pas votre adresse à la légère, lavez et inspectez ce que vous recevez. Un prêt de matériel est un contrat entre vous.'),
         p('Vous restez responsable du respect de la réglementation sur les plantes et les semences que vous donnez ou échangez.'),
       ],
     },

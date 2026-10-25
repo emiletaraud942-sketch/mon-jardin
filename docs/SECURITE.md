@@ -206,3 +206,7 @@ Périmètre : tout le dépôt sur la branche courante (front, `api/`, `vercel.js
 - Navigateur réel : aucun Chromium dans cet environnement. La CSP a été vérifiée statiquement contre le build (scripts, styles, hôtes), pas par les événements `securitypolicyviolation` (le banc du 18/10 les avait mesurés). Safari et Firefox jamais testés.
 - Validité juridique des textes (brouillons), contrats de sous-traitance, transferts hors UE.
 - Intégrité de la chaîne d'approvisionnement npm au-delà de `npm audit` (pas de vérification de provenance).
+
+## 10. Entraide v2 : « Je cherche » et catégories (25 octobre 2026)
+
+Migration `supabase/neighbors/migrations/20261025000000_neighbors_v2.sql` : type `cherche`, colonne `category` (liste fermée, null permis), contrainte « une demande exige une catégorie », index partiel, `grant insert (category)` seul (jamais de `update` sur `kind` ni `category`). Aucune politique, aucune fonction, aucun quota modifiés. Banc rejoué (Postgres 16) : **209 PASS, 0 FAIL**, dont 24 contrôles `V2` (catégorie inconnue ou vide refusée, demande sans catégorie refusée, `kind` et `category` non modifiables, quota inchangé, hors zone sans lecture, pas de réponse publique sur une demande, contact privé et clôture par l'auteur).

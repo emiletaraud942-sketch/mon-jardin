@@ -14,6 +14,7 @@ select r.target_kind as type, r.nb, r.personnes, r.motifs, r.precisions,
        r.premier_signalement, r.dernier_signalement,
        coalesce(p.status, rp.status, case when m.id is not null then 'message' end) as statut,
        coalesce(p.title, left(rp.body, 120), left(m.body, 120), pr.pseudo) as contenu,
+       p.kind as type_annonce, p.category as categorie,   -- categorie : après la migration neighbors_v2 (null pour les anciennes annonces)
        coalesce(p.author, rp.author, m.sender, r.target_id) as auteur_id,
        coalesce(pa.pseudo, pra.pseudo, pma.pseudo, pr.pseudo) as auteur_pseudo,
        r.target_id,

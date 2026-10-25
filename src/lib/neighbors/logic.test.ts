@@ -70,6 +70,7 @@ describe('catégories et « Je cherche »', () => {
   it('état vide adapté', () => {
     expect(emptyFeedText('cherche', 'all').title).toBe('Personne ne cherche rien près de chez vous pour l’instant')
     expect(emptyFeedText('all', 'outils').title).toMatch(/catégorie/)
+    expect(emptyFeedText('cherche', 'outils').title).toBe('Aucune demande dans cette catégorie pour l’instant')
     expect(emptyFeedText('all', 'all').title).toMatch(/Rien près de chez vous/)
     expect(emptyFeedText('don', 'all').title).toBe('Aucune annonce de ce type')
   })

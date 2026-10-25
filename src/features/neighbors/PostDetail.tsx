@@ -1,22 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
 import { SPECIES_BY_ID } from '../../data/species'
 import { addReply, blockUser, deleteReply, getPhotoUrl, listReplies, openThread } from '../../lib/neighbors/api'
-import { formatWhen } from '../../lib/neighbors/logic'
+import { formatWhen, offerMessage } from '../../lib/neighbors/logic'
 import { NEIGHBORS_LIMITS, type Post, type Reply, type Thread } from '../../lib/neighbors/types'
 import { showToast } from '../../lib/toast'
 import { openSpecies } from '../../lib/ui'
-import { Confirm, ErrorBox, KindBadge, ReportDialog, Spinner } from './common'
+import { CategoryBadge, Confirm, ErrorBox, KindBadge, ReportDialog, Spinner } from './common'
 import { errorText, useLoad } from './hooks'
 
 type Dialog = { k: 'report-post' } | { k: 'report-reply'; reply: Reply } | { k: 'block'; id: string; pseudo: string } | { k: 'delete-reply'; reply: Reply }
 
-export function PostDetail({ post, online, onBack, onChat }: { post: Post; online: boolean; onBack: () => void; onChat: (t: Thread, post: Post) => void }) {
+export function PostDetail({ post, online, onBack, onChat }: { post: Post; online: boolean; onBack: () => void; onChat: (t: Thread, post: Post, draft?: string) => void }) {
   const [photo, setPhoto] = useState<string | null>()
   const [dialog, setDialog] = useState<Dialog>()
   const [chatBusy, setChatBusy] = useState(false)
   const [error, setError] = useState<string>()
   const species = post.speciesId ? SPECIES_BY_ID[post.speciesId] : undefined
   const isQuestion = post.kind === 'question'
+  const isRequest = post.kind === 'cherche'
 
   useEffect(() => {
     let alive = true
@@ -38,11 +39,11 @@ export function PostDetail({ post, online, onBack, onChat }: { post: Post; onlin
   const replies = useLoad(() => listReplies(post.id), post.id, isQuestion)
   const replyList = useMemo(() => replies.data ?? [], [replies.data])
 
-  async function chat() {
+  async function chat(prefill?: string) {
     setChatBusy(true)
     setError(undefined)
     try {
-      onChat(await openThread(post.authorId, post.id), post)
+      onChat(await openThread(post.authorId, post.id), post, prefill)
     } catch (e) {
       setError(errorText(e))
       setChatBusy(false)
@@ -57,6 +58,7 @@ export function PostDetail({ post, online, onBack, onChat }: { post: Post; onlin
       <article className="card stack">
         <div className="row">
           <KindBadge kind={post.kind} />
+          <CategoryBadge category={post.category} />
           <span className="small muted">{post.distanceLabel}</span>
           {post.status !== 'open' && <span className="badge warn">{post.status === 'closed' ? 'Terminée' : 'Masquée'}</span>}
         </div>
@@ -79,10 +81,20 @@ export function PostDetail({ post, online, onBack, onChat }: { post: Post; onlin
           </p>
         )}
         {error && <ErrorBox message={error} />}
+        {!post.mine && isRequest && (
+          <p className="small muted" style={{ margin: 0 }}>
+            Cette demande n’a pas de réponses publiques. Répondez en privé.
+          </p>
+        )}
         {!post.mine ? (
           <div className="row">
-            <button className="btn primary" onClick={chat} disabled={chatBusy || !online}>
-              {chatBusy && <span className="spinner" />} Écrire en privé
+            {isRequest && post.status === 'open' && (
+              <button className="btn primary" onClick={() => void chat(offerMessage(post))} disabled={chatBusy || !online}>
+                {chatBusy && <span className="spinner" />} J’ai ce qu’il cherche
+              </button>
+            )}
+            <button className={'btn' + (isRequest && post.status === 'open' ? '' : ' primary')} onClick={() => void chat()} disabled={chatBusy || !online}>
+              {chatBusy && !isRequest && <span className="spinner" />} Écrire en privé
             </button>
             <button className="btn" onClick={() => setDialog({ k: 'report-post' })}>
               Signaler

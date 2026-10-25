@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Tabs, TabPanel } from '../../components/Tabs'
 import { getProfile, getSession, onSessionChange } from '../../lib/neighbors/api'
-import { neighborhoodText, parseRadius, type KindFilter } from '../../lib/neighbors/logic'
+import { neighborhoodText, parseRadius, type CategoryFilter, type KindFilter } from '../../lib/neighbors/logic'
 import type { NeighborsSession, Post, PostKind, Profile, Thread } from '../../lib/neighbors/types'
 import { grantConsent, useConsents } from '../../lib/consent'
 import type { Garden } from '../../types'
@@ -20,7 +20,7 @@ import { ProfileTab } from './ProfileTab'
 import { SignIn } from './SignIn'
 
 type Section = 'fil' | 'messages' | 'mes' | 'profil'
-type View = { k: 'tabs' } | { k: 'new' } | { k: 'post'; post: Post } | { k: 'thread'; thread: Thread; postTitle?: string }
+type View = { k: 'tabs' } | { k: 'new'; kind?: PostKind } | { k: 'post'; post: Post } | { k: 'thread'; thread: Thread; postTitle?: string; draft?: string }
 
 const SECTIONS: { id: Section; label: string }[] = [
   { id: 'fil', label: 'Annonces' },
@@ -33,6 +33,7 @@ const EXAMPLES: { kind: PostKind; title: string; who: string }[] = [
   { kind: 'don', title: 'Boutures de menthe à donner', who: 'Marie · dans votre quartier' },
   { kind: 'pret', title: 'Je prête mon sécateur et ma bêche', who: 'Paul · à ~2 km' },
   { kind: 'question', title: 'Quelle plante pour un mur à l’ombre ?', who: 'Annie · à ~3 km' },
+  { kind: 'cherche', title: 'Je cherche des graines de capucine', who: 'Jean · à ~1 km' },
 ]
 
 /** Écran « Entraide ». Aucune requête ne part avant l'accord : un seul écran explique et demande l'autorisation. */
@@ -43,7 +44,7 @@ export function NeighborsPage({ garden }: { garden: Garden }) {
       <header className="nb-head">
         <h1>Entraide entre voisins</h1>
         <p className="muted" style={{ margin: 0 }}>
-          Donnez, échangez, prêtez ou posez une question à des jardiniers près de chez vous. C’est gratuit.
+          Donnez, échangez, prêtez, cherchez ou posez une question à des jardiniers près de chez vous. C’est gratuit.
         </p>
       </header>
       {voisins ? (
@@ -128,6 +129,7 @@ function Main({ profile, email, garden, online, onProfile }: { profile: Profile;
   const [section, setSection] = useState<Section>('fil')
   const [view, setView] = useState<View>({ k: 'tabs' })
   const [kind, setKind] = useState<KindFilter>('all')
+  const [category, setCategory] = useState<CategoryFilter>('all')
   const [radius, setRadius] = useState(readRadius)
   const toTabs = useCallback(() => setView({ k: 'tabs' }), [])
 
@@ -147,6 +149,7 @@ function Main({ profile, email, garden, online, onProfile }: { profile: Profile;
       {view.k === 'new' && (
         <PostForm
           online={online}
+          initialKind={view.kind}
           pseudo={profile.pseudo}
           where={neighborhoodText(profile.cell, garden)}
           onCancel={toTabs}
@@ -161,19 +164,29 @@ function Main({ profile, email, garden, online, onProfile }: { profile: Profile;
           post={view.post}
           online={online}
           onBack={toTabs}
-          onChat={(thread, post) => {
+          onChat={(thread, post, draft) => {
             setSection('messages')
-            setView({ k: 'thread', thread, postTitle: post.title })
+            setView({ k: 'thread', thread, postTitle: post.title, draft })
           }}
         />
       )}
-      {view.k === 'thread' && <ThreadView thread={view.thread} postTitle={view.postTitle} online={online} onBack={toTabs} />}
+      {view.k === 'thread' && <ThreadView thread={view.thread} postTitle={view.postTitle} draft={view.draft} online={online} onBack={toTabs} />}
       {view.k === 'tabs' && (
         <>
           <Tabs tabs={SECTIONS} value={section} onChange={setSection} label="Parties de l’entraide" idPrefix="nb" />
           <TabPanel idPrefix="nb" active={section}>
             {section === 'fil' && (
-              <Feed kind={kind} radius={radius} online={online} onKind={setKind} onRadius={changeRadius} onOpen={(p) => setView({ k: 'post', post: p })} onNew={() => setView({ k: 'new' })} />
+              <Feed
+                kind={kind}
+                category={category}
+                radius={radius}
+                online={online}
+                onKind={setKind}
+                onCategory={setCategory}
+                onRadius={changeRadius}
+                onOpen={(p) => setView({ k: 'post', post: p })}
+                onNew={(k) => setView({ k: 'new', kind: k })}
+              />
             )}
             {section === 'messages' && <ThreadList online={online} onOpen={(t) => setView({ k: 'thread', thread: t })} />}
             {section === 'mes' && <MyPosts online={online} onOpen={(p) => setView({ k: 'post', post: p })} onNew={() => setView({ k: 'new' })} />}

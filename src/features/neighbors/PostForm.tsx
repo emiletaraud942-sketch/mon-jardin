@@ -3,8 +3,8 @@ import '../../styles/novice-pages.css'
 import { SpeciesPicker } from '../../components/SpeciesPicker'
 import { SPECIES_BY_ID } from '../../data/species'
 import { createPost } from '../../lib/neighbors/api'
-import { CONDUCT_RULES } from '../../lib/neighbors/logic'
-import { NEIGHBORS_LIMITS, POST_KINDS, POST_KIND_LABELS, type Post, type PostKind } from '../../lib/neighbors/types'
+import { CONDUCT_RULES, categoryRequired } from '../../lib/neighbors/logic'
+import { NEIGHBORS_LIMITS, POST_CATEGORIES, POST_CATEGORY_LABELS, POST_KINDS, POST_KIND_LABELS, type Post, type PostCategory, type PostKind } from '../../lib/neighbors/types'
 import { showToast } from '../../lib/toast'
 import { ErrorBox } from './common'
 import { errorText } from './hooks'
@@ -15,10 +15,12 @@ const HINTS: Record<PostKind, { title: string; body: string }> = {
   echange: { title: 'Ex. : plants de tomates contre aromatiques', body: 'Ce que vous offrez, ce que vous cherchez.' },
   pret: { title: 'Ex. : prête sécateur et échenilloir', body: 'Durée du prêt, état du matériel.' },
   question: { title: 'Ex. : quelle plante pour un mur à l’ombre ?', body: 'Décrivez le lieu : exposition, sol, place.' },
+  cherche: { title: 'Ex. : je cherche une bêche à emprunter', body: 'Ce qu’il vous faut, pour quand, et où.' },
 }
 
-export function PostForm({ online, pseudo, where, onPublished, onCancel }: { online: boolean; pseudo?: string; where?: string; onPublished: (p: Post) => void; onCancel: () => void }) {
-  const [kind, setKind] = useState<PostKind>('don')
+export function PostForm({ online, initialKind, pseudo, where, onPublished, onCancel }: { online: boolean; initialKind?: PostKind; pseudo?: string; where?: string; onPublished: (p: Post) => void; onCancel: () => void }) {
+  const [kind, setKind] = useState<PostKind>(initialKind ?? 'don')
+  const [category, setCategory] = useState<PostCategory>()
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [speciesId, setSpeciesId] = useState<string>()
@@ -31,12 +33,14 @@ export function PostForm({ online, pseudo, where, onPublished, onCancel }: { onl
   const previewUrl = useMemo(() => (photo ? URL.createObjectURL(photo) : undefined), [photo])
   useEffect(() => () => (previewUrl ? URL.revokeObjectURL(previewUrl) : undefined), [previewUrl])
   const species = speciesId ? SPECIES_BY_ID[speciesId] : undefined
+  const needCategory = categoryRequired(kind)
+  const canContinue = !!title.trim() && (!needCategory || !!category)
 
   async function publish() {
     setBusy(true)
     setError(undefined)
     try {
-      const post = await createPost({ kind, title, body, speciesId, photo })
+      const post = await createPost({ kind, category, title, body, speciesId, photo })
       acceptConduct()
       showToast({ message: 'Annonce publiée.' })
       onPublished(post)
@@ -53,6 +57,12 @@ export function PostForm({ online, pseudo, where, onPublished, onCancel }: { onl
         <dl className="np-recap">
           <dt>Type d’annonce</dt>
           <dd>{POST_KIND_LABELS[kind]}</dd>
+          {category && (
+            <>
+              <dt>Catégorie</dt>
+              <dd>{POST_CATEGORY_LABELS[category]}</dd>
+            </>
+          )}
           <dt>Titre</dt>
           <dd>
             <bdi>{title.trim()}</bdi>
@@ -115,7 +125,7 @@ export function PostForm({ online, pseudo, where, onPublished, onCancel }: { onl
         className="card stack"
         onSubmit={(e) => {
           e.preventDefault()
-          if (title.trim() && !busy) setStep('recap')
+          if (canContinue && !busy) setStep('recap')
         }}
       >
         <h2>Nouvelle annonce</h2>
@@ -125,6 +135,22 @@ export function PostForm({ online, pseudo, where, onPublished, onCancel }: { onl
             {POST_KINDS.map((k) => (
               <button key={k} type="button" className={'btn small tall' + (kind === k ? ' on' : '')} aria-pressed={kind === k} onClick={() => setKind(k)}>
                 {POST_KIND_LABELS[k]}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+        <fieldset className="nb-fieldset">
+          <legend>{needCategory ? 'Que cherchez-vous ?' : 'Catégorie (facultatif)'}</legend>
+          <div className="nb-chips">
+            {POST_CATEGORIES.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className={'btn small tall' + (category === c.id ? ' on' : '')}
+                aria-pressed={category === c.id}
+                onClick={() => setCategory(category === c.id && !needCategory ? undefined : c.id)}
+              >
+                {c.label}
               </button>
             ))}
           </div>
@@ -184,10 +210,11 @@ export function PostForm({ online, pseudo, where, onPublished, onCancel }: { onl
         {error && <ErrorBox message={error} />}
         {!online && <p className="small warn-text" style={{ margin: 0 }}>Pas de réseau : reconnectez-vous pour publier.</p>}
         <div className="row">
-          <button className="btn primary" type="submit" disabled={!title.trim() || busy}>
+          <button className="btn primary" type="submit" disabled={!canContinue || busy}>
             Voir le récapitulatif
           </button>
           {!title.trim() && <span className="small muted">Écrivez un titre pour continuer.</span>}
+          {title.trim() && needCategory && !category && <span className="small muted">Choisissez ce que vous cherchez.</span>}
           <button type="button" className="btn ghost" onClick={onCancel} disabled={busy}>
             Annuler
           </button>

@@ -1,10 +1,10 @@
 # Entraide entre voisins
 
-Fonction facultative : annonces de don, échange, prêt et questions entre jardiniers d'un même quartier.
+Fonction facultative : annonces de don, échange, prêt, demandes (« Je cherche ») et questions entre jardiniers d'un même quartier.
 Elle repose sur un **projet Supabase dédié**, distinct de la synchro privée (`src/lib/sync.ts`, inchangée).
 Sans `NEIGHBORS_SUPABASE_URL` et `NEIGHBORS_SUPABASE_PUBLISHABLE` (noms préférés, sans préfixe `VITE_` : `vite.config.ts` expose le préfixe `NEIGHBORS_` ; `VITE_NEIGHBORS_SUPABASE_URL` et `VITE_NEIGHBORS_SUPABASE_PUBLIC_TOKEN` marchent aussi) ou `VITE_NEIGHBORS_SUPABASE_PUBLIC_TOKEN` (la clé publique « anon » / « publishable » ; l'ancien nom `VITE_NEIGHBORS_SUPABASE_ANON_KEY` marche aussi, mais Vercel peut le refuser à cause du mot « KEY »), la fonction est masquée et l'appli marche comme avant.
 
-Code : `src/lib/neighbors/{types,cell,client,api}.ts`. Base : `supabase/neighbors/migrations/20261023000000_neighbors.sql`.
+Code : `src/lib/neighbors/{types,cell,client,api}.ts`. Base : `supabase/neighbors/migrations/20261023000000_neighbors.sql`, puis `20261025000000_neighbors_v2.sql` (type « cherche » et catégories).
 
 ## Vie privée
 
@@ -21,8 +21,8 @@ Code : `src/lib/neighbors/{types,cell,client,api}.ts`. Base : `supabase/neighbor
 | Table | Contenu | Points clés |
 | --- | --- | --- |
 | `profiles` | `user_id`, `pseudo` (3 à 24 car., unique sans casse, sans caractère invisible ni de direction), `cell_lat`, `cell_lon`, `banned_at` | Cellule arrondie par trigger. `banned_at` : aucun droit client. 5 changements de pseudo ou de quartier par jour. |
-| `posts` | `kind` (don, echange, pret, question), `title` ≤ 80, `body` ≤ 1000, `species_id`, `photo_path`, `status` (open, closed, hidden), cellule, `expires_at` | Cellule, statut et expiration posés par trigger. `photo_path` doit être dans le dossier de l'auteur. 30 annonces ouvertes au plus par personne. |
-| `replies` | réponses publiques, questions ouvertes seulement | `status` open ou hidden. |
+| `posts` | `kind` (don, echange, pret, question, cherche), `category` (graines, plantes, compost, outils, materiel, services, autre ; facultative, **obligatoire pour `cherche`**, null pour les anciennes annonces ; écrite à la création seulement), `title` ≤ 80, `body` ≤ 1000, `species_id`, `photo_path`, `status` (open, closed, hidden), cellule, `expires_at` | Cellule, statut et expiration posés par trigger. `photo_path` doit être dans le dossier de l'auteur. 30 annonces ouvertes au plus par personne. |
+| `replies` | réponses publiques, questions ouvertes seulement | `status` open ou hidden. Une demande « Je cherche » n'a pas de réponses publiques : on y répond par message privé (bouton « J'ai ce qu'il cherche », message prérempli modifiable). |
 | `threads` / `messages` | conversation privée à deux, message ≤ 1000 | `user_a < user_b` : une conversation par paire. Aucun droit de modifier ou supprimer un message. |
 | `reports` | un signalement par utilisateur et par cible | Cibles : post, reply, profile, message. Ni modification ni suppression. On ne signale que ce que l'on voit. |
 | `blocks` | blocages | Garde le pseudo bloqué pour l'afficher dans la liste. |
@@ -64,7 +64,7 @@ Bucket de stockage `neighbors-photos` : privé, 1 Mo, JPEG/PNG/WebP, chemin impo
 
 ### Preuves et limites connues
 
-- **Preuves** : `supabase/neighbors/tests/run.sh` applique la migration deux fois sur un Postgres jetable (faux environnement Supabase) puis joue environ 185 contrôles hostiles (PASS/FAIL, `scenarios.sql` puis `scenarios_audit.sql`). `src/lib/neighbors/migration.test.ts` vérifie la migration sans Postgres. Dernière exécution le 2026-10-23 (2e passe d'audit) : Postgres 16, 185 PASS, 0 échec. Lancer : `PGHOST=… PGPORT=… PGUSER=postgres supabase/neighbors/tests/run.sh` (crée puis supprime la base `neighbors_test`). Ce n'est PAS un vrai projet Supabase : refaire un essai de bout en bout après l'application de la migration (voir « Étapes »).
+- **Preuves** : `supabase/neighbors/tests/run.sh` applique les migrations deux fois sur un Postgres jetable (faux environnement Supabase) puis joue environ 209 contrôles hostiles (PASS/FAIL, `scenarios.sql`, `scenarios_audit.sql` puis `scenarios_v2.sql`). `src/lib/neighbors/migration.test.ts` vérifie la migration sans Postgres. Dernière exécution le 2026-10-25 (migration v2 comprise, `scenarios_v2.sql`) : Postgres 16, 209 PASS, 0 échec. Lancer : `PGHOST=… PGPORT=… PGUSER=postgres supabase/neighbors/tests/run.sh` (crée puis supprime la base `neighbors_test`). Ce n'est PAS un vrai projet Supabase : refaire un essai de bout en bout après l'application de la migration (voir « Étapes »).
 - Un quartier est **déclaré** : rien n'empêche de choisir une autre cellule (5 changements par jour).
 - Les identifiants (UUID) ne sont pas secrets une fois vus ; il n'existe pas de moyen de les deviner. Connaître l'UUID d'un membre ne permet ni de lui écrire, ni de le bloquer, ni de signaler son profil, ni de lire son pseudo s'il n'a aucun contenu visible de vous : ces trois actions répondent de la même façon (42501) qu'il existe ou non.
 - Les connexions anonymes de Supabase ont le rôle `authenticated` : la politique `profiles_insert` refuse un profil si le jeton porte `is_anonymous`, en plus de leur désactivation dans le tableau de bord.
@@ -187,7 +187,7 @@ Contenu illicite grave ou campagne d'abus : masquer en masse (`update public.pos
 ## Étapes pour le propriétaire
 
 1. Créer un **nouveau projet Supabase** (ne pas réutiliser celui de la synchro). Région UE.
-2. Appliquer la migration : SQL Editor, coller `supabase/neighbors/migrations/20261023000000_neighbors.sql`, exécuter (rejouable). Ou `supabase db push` depuis un dossier lié au projet dédié.
+2. Appliquer les migrations : SQL Editor, coller `supabase/neighbors/migrations/20261023000000_neighbors.sql`, exécuter (rejouable), puis `20261025000000_neighbors_v2.sql` (« Je cherche » et catégories ; rejouable, ne supprime aucune donnée). Tant que la v2 n'est pas collée, l'appli marche pour les autres types d'annonce et affiche « Cette fonction n'est pas encore ouverte chez vous » pour « Je cherche ». Ou `supabase db push` depuis un dossier lié au projet dédié.
 3. **Authentication > URL Configuration** : Site URL = adresse de production. Redirect URLs : `https://<production>/**` et `http://localhost:5173/**`.
 4. **Authentication > Providers** : garder Email (lien magique). Désactiver « Confirm email » n'est pas nécessaire. Vérifier que Phone, OAuth et **Anonymous sign-ins** sont désactivés (une connexion anonyme aurait le rôle `authenticated`).
 5. **SMTP** : le service d'e-mail par défaut de Supabase est limité à quelques messages par heure. Configurez un SMTP (Resend, Brevo, Mailjet…) dans Project Settings > Authentication > SMTP, avec un expéditeur de votre domaine. Adaptez le modèle d'e-mail « Magic Link » en français.
