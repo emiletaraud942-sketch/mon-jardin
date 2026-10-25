@@ -4,7 +4,7 @@ Fonction facultative : annonces de don, échange, prêt, demandes (« Je cherche
 Elle repose sur un **projet Supabase dédié**, distinct de la synchro privée (`src/lib/sync.ts`, inchangée).
 Sans `NEIGHBORS_SUPABASE_URL` et `NEIGHBORS_SUPABASE_PUBLISHABLE` (noms préférés, sans préfixe `VITE_` : `vite.config.ts` expose le préfixe `NEIGHBORS_` ; `VITE_NEIGHBORS_SUPABASE_URL` et `VITE_NEIGHBORS_SUPABASE_PUBLIC_TOKEN` marchent aussi) ou `VITE_NEIGHBORS_SUPABASE_PUBLIC_TOKEN` (la clé publique « anon » / « publishable » ; l'ancien nom `VITE_NEIGHBORS_SUPABASE_ANON_KEY` marche aussi, mais Vercel peut le refuser à cause du mot « KEY »), la fonction est masquée et l'appli marche comme avant.
 
-Code : `src/lib/neighbors/{types,cell,client,api}.ts`. Base : `supabase/neighbors/migrations/20261023000000_neighbors.sql`, puis `20261025000000_neighbors_v2.sql` (type « cherche » et catégories), puis `20261025010000_neighbors_v3_read.sql` (date de dernière lecture des conversations, pour les messages non lus), puis `20261025020000_neighbors_v4_events.sql` (organisateurs, événements, « Je suis intéressé(e) »). À coller dans cet ordre ; si vous rejouez un ancien fichier, rejouez ensuite les suivants (la v1 remet d'anciennes versions de quelques fonctions). Nouveautés : `src/lib/neighbors/{news,newsLoad,useBadge}.ts`, `src/features/neighbors/Nouveautes.tsx`. Événements : `src/features/neighbors/{Events,EventDetail,EventForm,MyEvents,OrganizerPage}.tsx`, logique pure (liens https, dates en lettres) dans `src/lib/neighbors/logic.ts`. Invitation : `src/lib/invite.ts`, `src/components/InviteButton.tsx`.
+Code : `src/lib/neighbors/{types,cell,client,api}.ts`. Base : `supabase/neighbors/migrations/20261023000000_neighbors.sql`, puis `20261025000000_neighbors_v2.sql` (type « cherche » et catégories), puis `20261025010000_neighbors_v3_read.sql` (date de dernière lecture des conversations, pour les messages non lus), puis `20261025020000_neighbors_v4_events.sql` (organisateurs, événements, « Je suis intéressé(e) »), puis `20261025030000_neighbors_v5_push.sql` (alertes de nouveaux messages et préférences de notification). À coller dans cet ordre ; si vous rejouez un ancien fichier, rejouez ensuite les suivants (la v1 remet d'anciennes versions de quelques fonctions). Nouveautés : `src/lib/neighbors/{news,newsLoad,useBadge}.ts`, `src/features/neighbors/Nouveautes.tsx`. Événements : `src/features/neighbors/{Events,EventDetail,EventForm,MyEvents,OrganizerPage}.tsx`, logique pure (liens https, dates en lettres) dans `src/lib/neighbors/logic.ts`. Invitation : `src/lib/invite.ts`, `src/components/InviteButton.tsx`. Alertes : `src/lib/neighbors/{push,pushBridge}.ts`, `src/features/neighbors/Notifications.tsx`, `public/push-sw.js`, `supabase/functions/notify-message/`.
 
 ## Vie privée
 
@@ -28,6 +28,8 @@ Code : `src/lib/neighbors/{types,cell,client,api}.ts`. Base : `supabase/neighbor
 | `organizers` | `user_id` (clé, un par personne), `name` 3 à 60 (unique sans casse, sans balise ni caractère invisible), `description` ≤ 500, `verified_at` | La demande est une insertion **sans** `verified_at`. `verified_at` : lecture seule pour les clients ; seul l'éditeur le pose (le déclencheur l'annule de toute façon si un client l'envoie). Une demande en attente se corrige ; une fois validée, le nom ne change plus depuis l'appli. Supprimer puis recréer la fiche redonne une demande non validée. |
 | `events` | `organizer`, `title` ≤ 80, `description` ≤ 2000, `starts_at`, `ends_at` (≥ début, au plus dans 1 an), `place` ≤ 120 (texte libre, lieu public), `signup_url` (https, ≤ 300), `capacity` 1 à 10 000 (indicatif), `status` open, cancelled ou hidden, `interest_count`, cellule | Cellule, statut, compteur et date posés par déclencheur. Début au plus 1 h dans le passé. 3 événements par jour, 20 ouverts au plus. L'organisateur passe `open` <-> `cancelled` seulement ; il peut supprimer les siens. |
 | `event_interest` | `event_id`, `user_id` (clé double) | Chacun ne voit et ne gère que sa ligne ; le total est dans `events.interest_count` (tenu par déclencheur). 50 par jour. Seulement pour un événement visible, ouvert et pas fini. |
+| `push_subscriptions` | `user_id`, `endpoint` (unique), `p256dh`, `auth`, `created_at` : un appareil qui reçoit les alertes | L'adresse doit être celle d'un service d'alerte connu (Google, Mozilla, Apple, Microsoft). 5 appareils au plus par personne, 20 abonnements par jour. Chacun ne voit et ne supprime que les siens ; les clés `p256dh` et `auth` ne sont lisibles par aucun rôle client. Supprimés avec le compte. |
+| `notification_prefs` | `user_id` (clé), `messages` (vrai au départ), `nouveautes`, `evenements` (faux au départ) | Une ligne par membre, la sienne seulement. **Sans ligne, rien n'est envoyé.** Seule `messages` sert aujourd'hui. |
 | `reports` | un signalement par utilisateur et par cible | Cibles : post, reply, profile, message, event. Ni modification ni suppression. On ne signale que ce que l'on voit. |
 | `blocks` | blocages | Garde le pseudo bloqué pour l'afficher dans la liste. |
 | `quotas` | compteurs par jour | Jamais décrémentés. Aucun accès par l'API. |
@@ -45,7 +47,7 @@ Bucket de stockage `neighbors-photos` : privé, 1 Mo, JPEG/PNG/WebP, chemin impo
 - **Événements** : lisibles des membres à moins de ~55 km (`neighbors_can_see_cell`), ni masqués ni finis depuis plus de 7 jours, hors personnes bloquées dans un sens ou dans l'autre. Les annulés restent visibles, marqués. Écriture : organisateur **validé** (`neighbors_is_organizer()` : fiche validée et compte non banni) et auteur. Retirer un organisateur ou bannir une personne masque tous ses événements (rien n'est rétabli tout seul). Une fiche d'organisateur n'est lisible que par son titulaire et à travers un événement visible : pas de liste de tous les organisateurs du pays.
 - **Masquage automatique** : 3 signalements de comptes distincts, **de plus de 24 h et non bannis**, sur une annonce, une réponse ou un événement la passent en `hidden` (écrit dans `moderation_log`).
 - **Bannissement** (`banned_at`) : ne lit ni n'écrit plus rien ; un déclencheur masque aussitôt ses annonces et réponses.
-- **Quotas par jour (UTC)** : 5 annonces, 30 réponses, 200 messages, 10 nouvelles conversations, 20 signalements, 50 blocages, 5 changements de profil, 3 événements, 50 marques d'intérêt, 5 demandes ou changements de fiche d'organisateur. Comptés par trigger dans `quotas` : supprimer une annonce ne rend pas le quota. Un client ne peut pas consommer le quota d'une autre personne (`neighbors_assert_self`).
+- **Quotas par jour (UTC)** : 5 annonces, 30 réponses, 200 messages, 10 nouvelles conversations, 20 signalements, 50 blocages, 5 changements de profil, 3 événements, 50 marques d'intérêt, 20 abonnements d'alerte, 5 demandes ou changements de fiche d'organisateur. Comptés par trigger dans `quotas` : supprimer une annonce ne rend pas le quota. Un client ne peut pas consommer le quota d'une autre personne (`neighbors_assert_self`).
 - **Droits** : `revoke all` puis `grant` colonne par colonne. Les fonctions `security definer` ont `search_path = ''`, sont inaccessibles à `anon`, et seules `neighbors_is_member`, `neighbors_is_blocked`, `neighbors_can_see_cell`, `neighbors_is_organizer`, `neighbors_my_photo_count` et `delete_my_account` sont appelables par les connectés.
 
 ### Attaques considérées
@@ -99,6 +101,64 @@ Bucket de stockage `neighbors-photos` : privé, 1 Mo, JPEG/PNG/WebP, chemin impo
 - **Conservation** : un événement est supprimé 30 jours après sa fin (`neighbors_purge_expired()`, marques d'intérêt comprises). Une fiche d'organisateur reste jusqu'à son retrait ou la suppression du compte.
 - **Nouveautés** : « N événements à venir » (événements ouverts des autres, pas finis) ; seuls ceux publiés depuis la dernière visite comptent dans la pastille du menu. Tant que la v4 n'est pas collée, l'onglet Événements affiche « Les événements ne sont pas encore ouverts chez vous » et les Nouveautés restent sans erreur.
 - **Vérifier une demande** (avant de valider) : le nom correspond-il à une association, un jardin partagé, une mairie ou une personne réelle (site, annuaire, appel) ? Pas de nom qui ressemble à celui d'une institution sans lien avec elle. Doute : ne pas valider, répondre par e-mail. Retrait : les événements sont masqués d'un coup.
+
+## Alertes de nouveaux messages et préférences (v5)
+
+Fonction facultative. Sans la clé `NEIGHBORS_VAPID_PUBLIC`, l'écran « Mes notifications » dit que les alertes ne sont pas encore ouvertes et tout le reste marche.
+
+### Ce qui se passe
+
+1. La personne ouvre Entraide > Profil > **Mes notifications** > « Activer les alertes sur cet appareil ». Une fenêtre explique d'abord (autorisation `notifications`, texte `CONSENT_TEXT.notifications`). Ce n'est qu'après son accord que le programme internet pose sa propre question.
+2. Le navigateur crée un abonnement auprès du service d'alertes de l'appareil (Google, Mozilla, Apple ou Microsoft). L'appli en enregistre l'adresse et les deux clés dans `push_subscriptions`, et crée la ligne `notification_prefs` (case « messages » cochée).
+3. Quand un message est inséré, un **webhook de base** appelle la fonction `notify-message` avec l'en-tête secret `x-webhook-secret`. La fonction **ne retient que l'identifiant du message**, relit les faits par `neighbors_push_facts()` (réservée à la clé `service_role`), puis décide.
+4. Elle n'envoie **rien** si : la ligne de préférences manque ou la case « messages » est décochée ; un blocage existe dans un sens ou dans l'autre ; l'un des deux comptes est banni ; le destinataire n'a aucun appareil ; l'expéditeur a déjà écrit il y a moins de 2 minutes dans la conversation ; le webhook arrive plus de 15 minutes après le message.
+5. Sinon elle envoie une alerte **vide** (aucun corps) à chaque appareil du **destinataire** seulement, signée VAPID. Le texte « Vous avez un nouveau message » est écrit dans `public/push-sw.js`, qui ignore tout contenu reçu. Ni texte, ni pseudo, même chiffrés, ne passent par le service d'alertes. Les clés `p256dh` et `auth` sont gardées pour un usage futur (alerte chiffrée) ; elles ne servent pas aujourd'hui.
+6. Un service qui répond 404 ou 410 (appareil disparu) : la fonction supprime l'abonnement. Un autre échec est passager : l'abonnement reste.
+7. Un clic sur l'alerte ouvre l'appli sur Entraide > Messages (`/#entraide/messages`), ou la ramène au premier plan si elle est ouverte.
+
+**Repli sans alerte** : la pastille du menu et la ligne « N messages à lire » des Nouveautés comptent les messages non lus (table `thread_reads`) à l'ouverture de l'appli, toutes les 5 minutes, au retour sur l'onglet et quand une alerte arrive. Un appareil sans alertes (ancien téléphone, iPhone sans icône sur l'écran d'accueil, autorisation refusée) reste donc entièrement utilisable.
+
+**iPhone et iPad** : les alertes n'existent que si l'appli est ajoutée à l'écran d'accueil (iOS 16.4 ou plus récent). L'écran l'explique : Partager, puis « Sur l'écran d'accueil », puis ouvrir l'appli depuis son icône.
+
+**Changement de compte sur le même appareil** : se déconnecter, ou supprimer le compte, désabonne l'appareil et retire l'autorisation locale. Si l'adresse est encore enregistrée par un autre compte (déconnexion sans réseau), l'appli crée une nouvelle adresse.
+
+**Préférences** : une seule case aujourd'hui (« Quand je reçois un nouveau message privé »). Elle vaut pour tous les appareils. Les colonnes `nouveautes` et `evenements` existent déjà (fausses au départ) mais aucune alerte de ce genre n'est envoyée : l'écran n'affiche pas de case inutile.
+
+### Étapes pour le propriétaire (dans cet ordre)
+
+À faire sur le projet Supabase **de l'entraide** (jamais celui de la synchro). Remplacez `<REF>` par la référence du projet (Project Settings > General).
+
+1. **Base** : SQL Editor, coller `supabase/neighbors/migrations/20261025030000_neighbors_v5_push.sql`, exécuter. Rejouable, ne supprime aucune donnée.
+2. **Générer les clés** (sur votre ordinateur, avec Node.js ; rien n'est écrit sur le disque) :
+   ```
+   node supabase/functions/notify-message/vapid-keys.mjs
+   ```
+   Trois lignes s'affichent : `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `NOTIFY_WEBHOOK_SECRET`. Notez-les dans votre gestionnaire de mots de passe. **Ne les collez ni dans le dépôt, ni dans un e-mail, ni dans une variable `VITE_`/`NEIGHBORS_`.** (Équivalent : `npx web-push generate-vapid-keys` donne la paire VAPID ; inventez alors un secret de webhook d'au moins 32 caractères.)
+3. **Secrets de la fonction** (uniquement dans l'environnement Supabase de la fonction) :
+   ```
+   npx supabase login
+   npx supabase secrets set --project-ref <REF> \
+     VAPID_PUBLIC_KEY="<clé publique>" \
+     VAPID_PRIVATE_KEY="<clé privée>" \
+     VAPID_SUBJECT="mailto:<votre adresse de contact>" \
+     NOTIFY_WEBHOOK_SECRET="<secret du webhook>"
+   ```
+   (ou Dashboard > Edge Functions > Secrets). `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` sont fournis tout seuls à la fonction.
+4. **Déployer la fonction** (depuis la racine du dépôt) :
+   ```
+   npx supabase functions deploy notify-message --no-verify-jwt --project-ref <REF>
+   ```
+   `--no-verify-jwt` est nécessaire : le webhook n'envoie pas de jeton de connexion. La fonction se protège elle-même avec le secret partagé. Sans la ligne de commande : Dashboard > Edge Functions > Deploy a new function, nom `notify-message`, coller le contenu de `supabase/functions/notify-message/index.ts` (un seul fichier, sans dépendance), puis désactiver « Verify JWT ».
+5. **Créer le webhook** : Dashboard > Database > Webhooks > Create a new hook.
+   - Name : `notify-message` · Table : `messages` (schéma `public`) · Events : **Insert** seulement.
+   - Type : HTTP Request · Method : POST · URL : `https://<REF>.supabase.co/functions/v1/notify-message` · Timeout : 5000 ms.
+   - HTTP Headers : `Content-Type` = `application/json` et `x-webhook-secret` = le secret de l'étape 2 (le même que dans `NOTIFY_WEBHOOK_SECRET`).
+6. **Clé publique pour l'appli** : sur Vercel, ajouter `NEIGHBORS_VAPID_PUBLIC` = la clé **publique** (87 caractères), en Production, puis redéployer (la variable est lue au build). Le nom ne contient pas KEY, TOKEN ni SECRET : Vercel l'accepte. **Ne jamais mettre la clé privée ici.**
+7. **Essai** avec deux comptes de test : sur un téléphone, activer les alertes ; depuis l'autre compte, écrire un message ; l'alerte « Vous avez un nouveau message » arrive. Dashboard > Edge Functions > notify-message > Logs : une ligne `{"sent":1,"removed":0,"failed":0}` (compteurs seulement, aucune donnée personnelle). Dashboard > Database > Webhooks affiche aussi les réponses.
+8. **Arrêter** : supprimer le webhook (plus aucun appel), ou retirer `NEIGHBORS_VAPID_PUBLIC` de Vercel et redéployer (l'écran n'offre plus les alertes). Pour oublier tous les appareils : `delete from public.push_subscriptions;`.
+9. **Changer les clés VAPID** : refaire les étapes 2, 3 et 6. Chaque appareil se réabonne tout seul à sa prochaine ouverture de l'entraide (si l'alerte était activée).
+
+Limites à connaître : les alertes passent par le service d'alertes du navigateur (Google, Mozilla, Apple, Microsoft), qui voit l'adresse de l'appareil et un signal vide ; Brave demande d'activer « Utiliser les services Google pour les messages push » ; un autre service d'alertes que ceux de la liste fermée (contrainte `push_subscriptions_endpoint_check`, `PUSH_ENDPOINT` dans la fonction et `isKnownPushEndpoint` dans l'appli) serait refusé : il faut alors modifier les trois en même temps (un test compare la liste SQL et celle de la fonction). Le palier gratuit de Supabase compte une exécution de fonction par message envoyé dans l'entraide, même quand rien n'est envoyé ensuite.
 
 ## Modération par l'éditeur
 
@@ -213,7 +273,7 @@ Contenu illicite grave ou campagne d'abus : masquer en masse (`update public.pos
 ## Étapes pour le propriétaire
 
 1. Créer un **nouveau projet Supabase** (ne pas réutiliser celui de la synchro). Région UE.
-2. Appliquer les migrations : SQL Editor, coller `supabase/neighbors/migrations/20261023000000_neighbors.sql`, exécuter (rejouable), puis `20261025000000_neighbors_v2.sql` (« Je cherche » et catégories ; rejouable, ne supprime aucune donnée). Puis `20261025010000_neighbors_v3_read.sql` (messages non lus ; rejouable, ne supprime aucune donnée ; les conversations déjà ouvertes sont considérées comme lues), puis `20261025020000_neighbors_v4_events.sql` (organisateurs et événements ; rejouable, ne supprime aucune donnée ; vous validez vous-même les organisateurs). Tant que la v3 n'est pas collée, la liste « Nouveautés » affiche une erreur avec « Réessayer » et la pastille du menu reste vide. Tant que la v2 n'est pas collée, l'appli marche pour les autres types d'annonce et affiche « Cette fonction n'est pas encore ouverte chez vous » pour « Je cherche ». Ou `supabase db push` depuis un dossier lié au projet dédié.
+2. Appliquer les migrations : SQL Editor, coller `supabase/neighbors/migrations/20261023000000_neighbors.sql`, exécuter (rejouable), puis `20261025000000_neighbors_v2.sql` (« Je cherche » et catégories ; rejouable, ne supprime aucune donnée). Puis `20261025010000_neighbors_v3_read.sql` (messages non lus ; rejouable, ne supprime aucune donnée ; les conversations déjà ouvertes sont considérées comme lues), puis `20261025020000_neighbors_v4_events.sql` (organisateurs et événements ; rejouable, ne supprime aucune donnée ; vous validez vous-même les organisateurs), puis `20261025030000_neighbors_v5_push.sql` (abonnements d'alerte et préférences ; rejouable, ne supprime aucune donnée ; sans elle, « Mes notifications » dit que les alertes ne sont pas encore ouvertes). Tant que la v3 n'est pas collée, la liste « Nouveautés » affiche une erreur avec « Réessayer » et la pastille du menu reste vide. Tant que la v2 n'est pas collée, l'appli marche pour les autres types d'annonce et affiche « Cette fonction n'est pas encore ouverte chez vous » pour « Je cherche ». Ou `supabase db push` depuis un dossier lié au projet dédié.
 3. **Authentication > URL Configuration** : Site URL = adresse de production. Redirect URLs : `https://<production>/**` et `http://localhost:5173/**`.
 4. **Authentication > Providers** : garder Email (lien magique). Désactiver « Confirm email » n'est pas nécessaire. Vérifier que Phone, OAuth et **Anonymous sign-ins** sont désactivés (une connexion anonyme aurait le rôle `authenticated`).
 5. **SMTP** : le service d'e-mail par défaut de Supabase est limité à quelques messages par heure. Configurez un SMTP (Resend, Brevo, Mailjet…) dans Project Settings > Authentication > SMTP, avec un expéditeur de votre domaine. Adaptez le modèle d'e-mail « Magic Link » en français.
@@ -225,7 +285,8 @@ Contenu illicite grave ou campagne d'abus : masquer en masse (`update public.pos
 11. **Ne pas activer Realtime** sur les tables de l'entraide, et laisser le schéma `public` seul exposé dans Settings > API. Désactiver l'API GraphQL si elle n'est pas utilisée.
 12. Planifier `neighbors_purge_expired()` et `neighbors_orphan_photos()` chaque jour, et l'effacement des fichiers listés (voir « Entretien quotidien »).
 13. Créer une adresse de contact de signalement et la lire chaque jour pendant le lancement. Activer un CAPTCHA (Authentication > Attack Protection) avant l'ouverture publique.
-14. Après application de la migration sur le vrai projet : essai de bout en bout avec deux comptes de test (voir les scénarios de `supabase/neighbors/tests/scenarios.sql`), puis lancer le « Security Advisor » du tableau de bord.
+14. **Alertes de nouveaux messages** (facultatif) : suivre « Étapes pour le propriétaire » de la section « Alertes de nouveaux messages et préférences (v5) ».
+15. Après application de la migration sur le vrai projet : essai de bout en bout avec deux comptes de test (voir les scénarios de `supabase/neighbors/tests/scenarios.sql`), puis lancer le « Security Advisor » du tableau de bord.
 
 ## Modération au quotidien (résumé)
 

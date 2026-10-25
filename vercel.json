@@ -90,7 +90,7 @@
       ]
     },
     {
-      "source": "/(sw\\.js|index\\.html|manifest\\.webmanifest|registerSW\\.js)",
+      "source": "/(sw\\.js|push-sw\\.js|index\\.html|manifest\\.webmanifest|registerSW\\.js)",
       "headers": [
         {
           "key": "Cache-Control",

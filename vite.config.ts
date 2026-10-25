@@ -74,7 +74,11 @@ export default defineConfig({
         // MapLibre reste dans le précache : la carte est l'écran d'accueil et doit s'ouvrir hors ligne
         // dès la première installation (son nom ne change qu'avec la bibliothèque, il n'est donc
         // retéléchargé qu'à une mise à jour de MapLibre).
-        globIgnores: ['assets/three-*.js'],
+        globIgnores: ['assets/three-*.js', 'push-sw.js'],
+        // Alertes de nouveaux messages : deux gestionnaires (push, notificationclick) dans public/push-sw.js, chargés par le
+        // service worker généré. Le mode « prompt » et le précache ne changent pas. Le navigateur compare aussi ce fichier
+        // quand il cherche une nouvelle version. Il n'est pas précaché : il est gardé avec le service worker lui-même.
+        importScripts: ['push-sw.js'],
         // Jamais de repli sur index.html pour les fonctions serveur et les proxys.
         navigateFallbackDenylist: [/^\/api\//, /^\/ext\//],
         // Règle d'or : on ne met JAMAIS en cache /api/* (identification), /ext/meteo*

@@ -1,7 +1,7 @@
 // Les pages juridiques couvrent l'entraide entre voisins, et restent des brouillons sans donnée personnelle.
 import { describe, expect, it } from 'vitest'
-import { CGU, CONFIDENTIALITE, DRAFT_BANNER, LEGAL_DOCS, MENTIONS, getMissingFields, toMarkdown } from './legal'
-import { DATA_INVENTORY } from './security/inventory'
+import { CGU, CONFIDENTIALITE, CONSENT_TEXT, DRAFT_BANNER, LEGAL_DOCS, MENTIONS, getMissingFields, toMarkdown } from './legal'
+import { DATA_INVENTORY, PERMISSIONS } from './security/inventory'
 import { NEIGHBORS_LIMITS } from './neighbors/types'
 
 describe('pages juridiques : entraide', () => {
@@ -19,6 +19,36 @@ describe('pages juridiques : entraide', () => {
   })
   it('mentions : rôle d’hébergeur, procédure de signalement, point de contact, hébergeur Supabase', () => {
     for (const m of ['LCEN', 'promptement', 'Signaler', '2022/2065', 'Supabase', 'Vercel Inc.']) expect(mentions, m).toContain(m)
+  })
+  it('alertes de nouveaux messages : texte neutre, signal vide, sous-traitant technique, désactivation', () => {
+    for (const m of ['Alertes de nouveaux messages', 'signal vide', 'sans texte ni pseudo', '5 appareils au plus', 'Mes notifications', 'Se désabonner de cet appareil', 'Service d’alertes de votre navigateur', 'sous-traitant technique'])
+      expect(conf, m).toContain(m)
+    expect(conf).toContain('Google, Apple et Microsoft')
+    expect(conf).toMatch(/Rien n’est envoyé si la case « nouveaux messages » est décochée/)
+  })
+  it('alertes : inventaire des données, base légale, durée, effacement', () => {
+    const a = DATA_INVENTORY.find((d) => d.id === 'entraide-alertes')!
+    expect(a.base).toBe('consentement')
+    expect(a.destinataires.join(' ')).toContain('Supabase')
+    expect(a.destinataires.join(' ')).toMatch(/Google, Mozilla, Apple ou Microsoft/)
+    expect(a.destinataires.join(' ')).toMatch(/jamais de texte ni de pseudo/)
+    expect(a.duree).toContain('5 appareils')
+    expect(a.effacement).toContain('Se désabonner de cet appareil')
+    expect(a.stockage).toContain('push_subscriptions')
+    expect(a.stockage).toContain('notification_prefs')
+  })
+  it('autorisation dédiée aux alertes, demandée avant toute question du navigateur', () => {
+    const t = CONSENT_TEXT.notifications
+    expect(t.titre).toMatch(/alerte/)
+    expect(t.accepter).toMatch(/activer/i)
+    const all = t.paragraphes.join(' ')
+    for (const m of ['Vous avez un nouveau message', 'ni le texte du message, ni le pseudo', 'Supabase', 'Google, Mozilla, Apple ou Microsoft', 'Mes notifications']) expect(all, m).toContain(m)
+    expect(all).not.toMatch(/navigateur|consentement/)
+  })
+  it('la permission « Notifications » décrit aussi les alertes de l’entraide', () => {
+    const n = PERMISSIONS.find((p) => p.permission === 'Notifications')!
+    expect(n.ou).toContain('Mes notifications')
+    expect(n.pourquoi).not.toMatch(/Aucune notification poussée/)
   })
   it('chaque page garde le bandeau de brouillon et les champs à compléter', () => {
     for (const d of LEGAL_DOCS) expect(toMarkdown(d)).toContain(DRAFT_BANNER)

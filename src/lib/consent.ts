@@ -1,11 +1,11 @@
 import { useSyncExternalStore } from 'react'
 
-// Consentements de l'utilisateur (envoi de photos à Pl@ntNet, synchronisation en ligne, entraide entre voisins).
+// Consentements de l'utilisateur (envoi de photos à Pl@ntNet, synchronisation en ligne, entraide entre voisins, alertes de nouveaux messages).
 // Stockés dans localStorage (clé effacée par « Effacer toutes mes données »). Si le stockage est
 // indisponible, le choix ne vaut que pour la session : on redemande au prochain lancement.
 
-export type ConsentId = 'plantnet' | 'sync' | 'voisins'
-export const CONSENT_IDS: readonly ConsentId[] = ['plantnet', 'sync', 'voisins']
+export type ConsentId = 'plantnet' | 'sync' | 'voisins' | 'notifications'
+export const CONSENT_IDS: readonly ConsentId[] = ['plantnet', 'sync', 'voisins', 'notifications']
 /** À incrémenter quand le sens d'un consentement change : les anciens accords ne comptent plus. */
 export const CONSENT_VERSION = 1
 export const CONSENT_KEY = 'permajardin:consent'
@@ -71,7 +71,7 @@ export function useConsents(): Record<ConsentId, boolean> {
     },
     () => version,
   )
-  return { plantnet: hasConsent('plantnet'), sync: hasConsent('sync'), voisins: hasConsent('voisins') }
+  return { plantnet: hasConsent('plantnet'), sync: hasConsent('sync'), voisins: hasConsent('voisins'), notifications: hasConsent('notifications') }
 }
 
 /** Réservé aux tests. */

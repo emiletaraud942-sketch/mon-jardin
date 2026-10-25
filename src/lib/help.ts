@@ -87,7 +87,7 @@ export const HELP: Record<Tab, HelpContent> = {
       'Les annonces montrent les dons, échanges, prêts, demandes et questions près de chez vous. « Publier » en crée une. Rien ne se vend ici.',
       '« Écrire en privé » ouvre une conversation. « J’ai ce qu’il cherche » répond à une demande. « Signaler » et « Bloquer » protègent le groupe.',
       'Les événements sont des rendez-vous près de chez vous. « Je suis intéressé(e) » ajoute 1 au compteur. « S’inscrire » ouvre le site de l’organisateur. Pour en publier, touchez « Devenir organisateur » : nous vérifions votre demande.',
-      '« Inviter un voisin » partage le lien de l’appli. Vous choisissez qui le reçoit. Dans Profil, vous pouvez supprimer votre compte.',
+      '« Inviter un voisin » partage le lien de l’appli. Dans Profil, « Mes notifications » active une alerte sans texte pour les nouveaux messages. Vous pouvez aussi y supprimer votre compte.',
     ],
   },
 }

@@ -1,11 +1,26 @@
 // Entraide entre voisins : accès aux données (projet Supabase dédié). Toutes les fonctions lèvent `NeighborsError`
 // avec un message en français. Les limites sont vérifiées AVANT l'envoi ; la base les impose de toute façon (RLS, triggers).
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { hasConsent, revokeConsent } from '../consent'
 import { compressToTarget } from '../photos'
 import { imageSize, jpegMetadataSegments, sizeWithinLimits } from '../security/image'
 import { cellBounds, cellDistanceKm, distanceLabel, isValidCoord, roundCell } from './cell'
 import { isNeighborsConfigured, neighborsClient, NEIGHBORS_STORAGE_KEY } from './client'
 import { checkHttpsUrl, safeExternalUrl, unreadByThread } from './logic'
+import { neighborsVapidPublic } from './env'
+import {
+  currentSubscription,
+  detectPushSupport,
+  PERMISSION_TEXT,
+  pushEnvFromWindow,
+  readPermission,
+  requestPermission,
+  subscribeDevice,
+  SUPPORT_TEXT,
+  toDeviceRow,
+  unsubscribeDevice,
+  type DeviceRow,
+} from './push'
 import {
   NEIGHBORS_LIMITS as L,
   POST_KINDS,
@@ -70,6 +85,7 @@ const QUOTA_TEXT: Record<string, string> = {
   event_open: `Vous avez déjà ${L.openEventsMax} événements ouverts. Annulez-en un avant d’en publier un autre.`,
   interest: LIMIT_TEXT,
   organizer: LIMIT_TEXT,
+  push: LIMIT_TEXT,
 }
 
 /** Traduit une erreur Supabase / Postgres / réseau en message français lisible. */
@@ -93,6 +109,12 @@ export function translateError(e: unknown): string {
   if (low.includes('events_capacity_check')) return `Le nombre de places doit être entre 1 et ${L.eventCapacityMax}.`
   if (low.includes('organizers_name_key')) return 'Ce nom d’organisateur est déjà pris. Choisissez-en un autre.'
   if (low.includes('organizers_pkey')) return 'Vous avez déjà fait une demande.'
+  if (low.includes('push_limit')) return 'Vous avez déjà 5 appareils avec des alertes. Arrêtez-en un sur un autre appareil, puis réessayez.'
+  if (low.includes('push_subscriptions_endpoint_check') || low.includes('push_subscriptions_keys_check')) return 'Cet appareil ne peut pas recevoir nos alertes.'
+  // Base pas encore mise à jour (migration v5 non collée) : les alertes n'existent pas encore.
+  if ((err.code === 'PGRST205' || err.code === '42P01' || /could not find the table|relation .* does not exist/.test(low)) && /push_subscriptions|notification_prefs/.test(low)) {
+    return 'Les alertes ne sont pas encore ouvertes chez vous. Réessayez plus tard.'
+  }
   // Base pas encore mise à jour (migration v4 non collée) : les tables d'événements n'existent pas encore.
   if (err.code === 'PGRST205' || err.code === '42P01' || /could not find the table|relation .* does not exist/.test(low)) {
     if (/events|organizers|event_interest/.test(low)) return 'Les événements ne sont pas encore ouverts chez vous. Réessayez plus tard.'
@@ -284,6 +306,8 @@ export async function signOut(): Promise<void> {
   profileCache = undefined
   const client = neighborsClient()
   if (!client) return
+  // Les alertes sont liées au compte : on les arrête sur cet appareil avant de partir (sans jamais bloquer la déconnexion).
+  await disablePushOnThisDevice().catch(() => undefined)
   try {
     await client.auth.signOut()
   } catch {
@@ -951,6 +975,132 @@ export async function listBlocks(): Promise<BlockedUser[]> {
   const uid = await requireUserId()
   const rows = (await run<{ blocked: string; blocked_pseudo: string | null }[]>(sb().from('blocks').select('blocked, blocked_pseudo').eq('blocker', uid) as never)) ?? []
   return rows.map((r) => ({ userId: r.blocked, pseudo: r.blocked_pseudo }))
+}
+
+// ---------- Alertes de nouveaux messages et préférences ----------
+
+export interface NotificationPrefs {
+  messages: boolean
+  nouveautes: boolean
+  evenements: boolean
+}
+
+interface PrefsRow {
+  messages: boolean
+  nouveautes: boolean
+  evenements: boolean
+}
+const toPrefs = (r: PrefsRow): NotificationPrefs => ({ messages: r.messages === true, nouveautes: r.nouveautes === true, evenements: r.evenements === true })
+
+/** Préférences du compte, ou null si la personne n'en a jamais enregistré (alors rien n'est envoyé). */
+export async function getNotificationPrefs(): Promise<NotificationPrefs | null> {
+  await requireUserId()
+  const row = await run<PrefsRow | null>(sb().from('notification_prefs').select('messages, nouveautes, evenements').maybeSingle() as never)
+  return row ? toPrefs(row) : null
+}
+
+/** Enregistre les cases cochées (crée la ligne au besoin). Le propriétaire est toujours le compte connecté : le client ne l'envoie pas. */
+export async function saveNotificationPrefs(prefs: NotificationPrefs): Promise<NotificationPrefs> {
+  await requireUserId()
+  const body = { messages: prefs.messages === true, nouveautes: prefs.nouveautes === true, evenements: prefs.evenements === true }
+  await run(sb().from('notification_prefs').upsert(body, { onConflict: 'user_id' }) as never)
+  return body
+}
+
+/** Crée les préférences par défaut (messages cochés) sans toucher à celles qui existent. */
+async function ensureDefaultPrefs(): Promise<void> {
+  await run(sb().from('notification_prefs').upsert({ messages: true }, { onConflict: 'user_id', ignoreDuplicates: true }) as never)
+}
+
+/** Cet appareil (cette adresse) est-il enregistré pour le compte connecté ? */
+export async function isDeviceRegistered(endpoint: string): Promise<boolean> {
+  await requireUserId()
+  const rows = await run<{ id: string }[]>(sb().from('push_subscriptions').select('id').eq('endpoint', endpoint).limit(1) as never)
+  return (rows ?? []).length > 0
+}
+
+async function registerDevice(row: DeviceRow): Promise<void> {
+  await requireUserId()
+  await run(sb().from('push_subscriptions').insert({ endpoint: row.endpoint, p256dh: row.p256dh, auth: row.auth }) as never)
+}
+
+async function removeDevice(endpoint: string): Promise<void> {
+  await requireUserId()
+  await run(sb().from('push_subscriptions').delete().eq('endpoint', endpoint) as never)
+}
+
+/** Adresse déjà enregistrée (par un autre compte du même appareil, par exemple) : le navigateur doit en créer une nouvelle. */
+const isDuplicate = (e: unknown) => (e as NeighborsError | undefined)?.code === '23505'
+
+/** Enregistre l'abonnement du navigateur. Si l'adresse est déjà prise, en crée une nouvelle (une seule fois). */
+async function registerWithRetry(vapid: string, sub: PushSubscription): Promise<void> {
+  let row = toDeviceRow(sub)
+  if (!row) throw new NeighborsError('Cet appareil ne peut pas recevoir nos alertes.')
+  try {
+    await registerDevice(row)
+  } catch (e) {
+    if (!isDuplicate(e)) throw e
+    row = toDeviceRow(await subscribeDevice(vapid, { fresh: true }))
+    if (!row) throw new NeighborsError('Cet appareil ne peut pas recevoir nos alertes.')
+    await registerDevice(row)
+  }
+}
+
+/**
+ * Active les alertes sur CET appareil. L'autorisation « notifications » (consent.ts) doit avoir été accordée AVANT :
+ * l'interface montre d'abord son texte, et la demande du navigateur ne vient qu'après.
+ */
+export async function enablePushOnThisDevice(): Promise<void> {
+  if (!hasConsent('notifications')) throw new NeighborsError('Autorisez d’abord les alertes.', 'consent')
+  const support = detectPushSupport(pushEnvFromWindow())
+  if (!support.ok) throw new NeighborsError(SUPPORT_TEXT[support.reason], 'unsupported')
+  const vapid = neighborsVapidPublic as string
+  const permission = await requestPermission()
+  if (permission !== 'granted') throw new NeighborsError(PERMISSION_TEXT[permission === 'default' ? 'default' : 'denied'], 'permission')
+  let sub: PushSubscription
+  try {
+    sub = await subscribeDevice(vapid)
+  } catch (e) {
+    throw new NeighborsError(e instanceof Error && e.message ? e.message : 'Cet appareil n’a pas pu s’abonner aux alertes. Réessayez dans un instant.', 'subscribe')
+  }
+  await registerWithRetry(vapid, sub)
+  await ensureDefaultPrefs()
+}
+
+/**
+ * Arrête les alertes sur CET appareil : abonnement du navigateur retiré d'abord (rien ne peut plus arriver), puis ligne du serveur.
+ * Retire aussi l'autorisation « notifications » de l'appareil. Renvoie false si le serveur n'a pas pu être prévenu
+ * (hors ligne) : l'adresse sera alors retirée toute seule au prochain essai d'envoi. Ne lève pas d'erreur.
+ */
+export async function disablePushOnThisDevice(): Promise<boolean> {
+  const had = hasConsent('notifications')
+  const endpoint = await unsubscribeDevice().catch(() => null)
+  if (had) revokeConsent('notifications')
+  if (!endpoint) return true
+  try {
+    await removeDevice(endpoint)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * À l'ouverture de l'entraide : si les alertes sont activées sur cet appareil, vérifie que le serveur connaît bien l'appareil
+ * (le navigateur peut renouveler son adresse). Silencieux : ne demande rien, n'affiche rien.
+ */
+export async function resyncPushDevice(): Promise<void> {
+  try {
+    if (!hasConsent('notifications') || readPermission() !== 'granted') return
+    if (!detectPushSupport(pushEnvFromWindow()).ok) return
+    const vapid = neighborsVapidPublic as string
+    const sub = (await currentSubscription()) ?? (await subscribeDevice(vapid))
+    const row = toDeviceRow(sub)
+    if (!row || (await isDeviceRegistered(row.endpoint))) return
+    await registerWithRetry(vapid, sub)
+  } catch {
+    /* tant pis : la page « Mes notifications » dira l'état réel */
+  }
 }
 
 // ---------- Compte ----------

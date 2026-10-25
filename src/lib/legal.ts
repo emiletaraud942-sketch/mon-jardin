@@ -7,7 +7,7 @@ import { DATA_INVENTORY, type LegalBasis } from './security/inventory'
 export const DRAFT_BANNER = 'BROUILLON À FAIRE VALIDER PAR UN PROFESSIONNEL'
 export const DRAFT_NOTE = 'Texte provisoire, à faire valider par un professionnel avant publication. Il ne constitue pas un avis juridique.'
 
-export const LEGAL_VERSION = '1.2'
+export const LEGAL_VERSION = '1.3'
 /** Dernière mise à jour (AAAA-MM-JJ). */
 export const LEGAL_UPDATED = '2026-10-25'
 
@@ -107,7 +107,7 @@ export const CONFIDENTIALITE: LegalDoc = {
       blocs: [
         ul(
           'Exécution du service que vous demandez : carte, météo locale, calendrier d’entretien (RGPD, art. 6.1.b).',
-          'Votre consentement : envoi d’une photo à Pl@ntNet pour l’identification, sauvegarde en ligne, et entraide entre voisins (compte, pseudo, quartier, annonces, messages). Il est demandé avant le premier envoi et vous pouvez le retirer à tout moment dans Réglages > Vie privée (art. 6.1.a).',
+          'Votre consentement : envoi d’une photo à Pl@ntNet pour l’identification, sauvegarde en ligne, entraide entre voisins (compte, pseudo, quartier, annonces, messages) et alertes de nouveaux messages sur votre appareil. Il est demandé avant le premier envoi, séparément pour chaque fonction, et vous pouvez le retirer à tout moment dans Réglages > Vie privée (art. 6.1.a).',
           'Intérêt légitime : journaux techniques de sécurité de l’hébergeur, préférences d’usage, modération de l’entraide (signalements, blocages, limites d’usage contre les abus) (art. 6.1.f).',
           'Obligation légale : conservation des données d’identification et traitement des signalements de contenus illicites, dans les limites prévues par la loi pour la confiance dans l’économie numérique (art. 6.1.c).',
         ),
@@ -125,6 +125,7 @@ export const CONFIDENTIALITE: LegalDoc = {
           'Supabase : compte et sauvegarde en ligne, seulement si vous activez la synchronisation.',
           'Supabase (projet distinct, dédié à l’entraide) : compte, profil, annonces, photos, messages, signalements, seulement si vous rejoignez l’entraide. Supabase est notre sous-traitant (RGPD, art. 28).',
           'Prestataire d’envoi d’e-mails (à renseigner par l’éditeur) : envoi du lien de connexion de l’entraide.',
+          'Service d’alertes de votre navigateur (Google pour Chrome et Android, Mozilla pour Firefox, Apple pour Safari, Microsoft pour Edge) : il reçoit l’adresse technique de votre appareil et un signal vide « un message est arrivé », seulement si vous activez les alertes. Il ne reçoit ni le texte du message ni aucun pseudo. Ce service est le sous-traitant technique qui livre l’alerte à votre appareil.',
           'Les autres membres de l’entraide : voir la section « Entraide entre voisins ».',
         ),
         p('Chaque service applique sa propre politique de confidentialité.'),
@@ -134,7 +135,7 @@ export const CONFIDENTIALITE: LegalDoc = {
       titre: 'Transferts hors Union européenne',
       blocs: [
         p('Vercel est une société américaine : des données techniques (adresse IP, requêtes) peuvent être traitées aux États-Unis. Les garanties applicables (clauses contractuelles types ou cadre de protection des données UE-États-Unis) sont à confirmer par l’éditeur auprès de Vercel.'),
-        p('Le lieu d’hébergement des projets Supabase (synchronisation et entraide) et d’Open-Meteo est également à confirmer : la région Union européenne doit être vérifiée dans le tableau de bord Supabase avant l’ouverture au public. Supabase est une société américaine : les mêmes garanties (clauses contractuelles types, accord de traitement des données) sont à confirmer.'),
+        p('Le lieu d’hébergement des projets Supabase (synchronisation et entraide) et d’Open-Meteo est également à confirmer : la région Union européenne doit être vérifiée dans le tableau de bord Supabase avant l’ouverture au public. Supabase est une société américaine : les mêmes garanties (clauses contractuelles types, accord de traitement des données) sont à confirmer. Il en va de même des services d’alertes de Google, Apple et Microsoft si vous activez les alertes de nouveaux messages : ils ne reçoivent que l’adresse technique de votre appareil et un signal vide.'),
       ],
     },
     {
@@ -150,11 +151,12 @@ export const CONFIDENTIALITE: LegalDoc = {
           '« Je suis intéressé(e) » : enregistre une ligne à votre nom, que vous seul pouvez lire. Les autres membres et l’organisateur voient seulement le nombre de personnes intéressées, jamais leurs noms. Cela ne vaut pas inscription.',
           'Liens d’inscription : ils mènent vers des sites extérieurs que l’éditeur ne contrôle pas et dont la politique de confidentialité s’applique. L’appli affiche un avertissement « Vous quittez l’appli » avant de les ouvrir ; elle n’accepte que les liens en https.',
           'Messages privés : lisibles seulement par vous et votre correspondant. L’éditeur ne les lit pas, sauf pour traiter un signalement visant l’un d’eux. Pour compter vos messages non lus, le serveur garde la date de votre dernière lecture de chaque conversation ; vous seul pouvez la voir.',
+          'Alertes de nouveaux messages (facultatives, désactivées par défaut) : si vous les activez, l’adresse technique de votre appareil (fournie par le service d’alertes de votre navigateur) et vos préférences sont enregistrées sur le serveur de l’entraide, 5 appareils au plus. Quand un message arrive, le serveur envoie un signal vide, sans texte ni pseudo ; c’est l’appli de votre appareil qui écrit « Vous avez un nouveau message ». Rien n’est envoyé si la case « nouveaux messages » est décochée, si l’une des deux personnes est bloquée ou suspendue, ou si vous n’avez activé aucun appareil. Vous pouvez désactiver un appareil à tout moment : Entraide > Profil > Mes notifications. Un appareil dont l’adresse n’existe plus est retiré automatiquement.',
           'Nouveautés : le nombre de nouvelles annonces et de nouveaux messages est calculé dans votre appareil. La date de votre dernière visite reste sur votre appareil et n’est pas envoyée.',
           'Inviter un voisin : l’appli ouvre le partage de votre téléphone ou copie un lien. Le texte ne contient aucune donnée vous concernant. Rien n’est envoyé par l’appli et aucun contact n’est lu.',
           'Signalements et blocages : un signalement est lu par l’éditeur ; il n’est pas communiqué à la personne signalée. Un blocage masque réciproquement annonces, réponses et conversations.',
         ),
-        p('Durées de conservation : les annonces (et leurs photos) sont supprimées 60 jours après leur publication. Les événements sont supprimés 30 jours après leur fin, avec les marques d’intérêt. La demande d’organisateur est conservée jusqu’à son retrait ou la suppression du compte. Le compte, le profil, les réponses et les messages sont conservés jusqu’à la suppression du compte, que vous pouvez faire à tout moment dans l’entraide : tout est alors effacé, y compris vos photos. Les signalements sont conservés 12 mois. Certaines données d’identification peuvent être conservées plus longtemps par l’hébergeur lorsque la loi l’impose (un an pour les données permettant d’identifier l’auteur d’un contenu).'),
+        p('Durées de conservation : les annonces (et leurs photos) sont supprimées 60 jours après leur publication. Les événements sont supprimés 30 jours après leur fin, avec les marques d’intérêt. La demande d’organisateur est conservée jusqu’à son retrait ou la suppression du compte. Les appareils d’alerte et les préférences de notification sont conservés jusqu’à votre désactivation ou la suppression du compte. Le compte, le profil, les réponses et les messages sont conservés jusqu’à la suppression du compte, que vous pouvez faire à tout moment dans l’entraide : tout est alors effacé, y compris vos photos. Les signalements sont conservés 12 mois. Certaines données d’identification peuvent être conservées plus longtemps par l’hébergeur lorsque la loi l’impose (un an pour les données permettant d’identifier l’auteur d’un contenu).'),
         p('Aucune donnée de l’entraide n’est vendue, cédée à des fins publicitaires, ni utilisée pour du profilage. L’entraide n’utilise ni cookie ni traceur publicitaire ; seul un jeton de connexion est gardé dans le stockage de votre navigateur.'),
         p('Exercer vos droits : suppression du compte dans l’appli ; accès, rectification, portabilité, opposition ou limitation par e-mail à l’éditeur. Nous répondons dans un délai d’un mois. Vos annonces et réponses peuvent être exportées sur demande.'),
       ],
@@ -176,7 +178,7 @@ export const CONFIDENTIALITE: LegalDoc = {
           'Accès et portabilité : Réglages > Sauvegarde > Exporter (fichier JSON lisible).',
           'Rectification : directement dans l’appli.',
           'Effacement : Réglages > Vie privée > Effacer toutes mes données, avec suppression de la sauvegarde en ligne si vous êtes connecté.',
-          'Opposition, limitation et retrait du consentement : Réglages > Vie privée > Retirer mon consentement, ou par e-mail à l’éditeur.',
+          'Opposition, limitation et retrait du consentement : Réglages > Vie privée > Retirer mon consentement, ou par e-mail à l’éditeur. Alertes de nouveaux messages : Entraide > Profil > Mes notifications > Se désabonner de cet appareil.',
           'Entraide : suppression définitive du compte, des annonces, des photos et des messages depuis l’entraide ; accès et portabilité des données de l’entraide par e-mail à l’éditeur.',
           'Réclamation : auprès de la CNIL (www.cnil.fr).',
         ),
@@ -406,7 +408,7 @@ export interface ConsentText {
 
 const compte = DATA_INVENTORY.find((d) => d.id === 'compte')
 
-export const CONSENT_TEXT: Record<'plantnet' | 'sync' | 'voisins', ConsentText> = {
+export const CONSENT_TEXT: Record<'plantnet' | 'sync' | 'voisins' | 'notifications', ConsentText> = {
   plantnet: {
     titre: 'Envoyer la photo à Pl@ntNet ?',
     paragraphes: [
@@ -432,6 +434,17 @@ export const CONSENT_TEXT: Record<'plantnet' | 'sync' | 'voisins', ConsentText> 
       'Vous pouvez retirer votre autorisation dans Réglages, et supprimer votre compte et vos annonces à tout moment dans l’entraide.',
     ],
     accepter: 'Accepter et continuer',
+  },
+  notifications: {
+    titre: 'Recevoir une alerte pour un nouveau message ?',
+    paragraphes: [
+      'Quand vous recevez un message privé, votre appareil peut afficher une alerte. Elle dit seulement « Vous avez un nouveau message ».',
+      'Elle ne montre ni le texte du message, ni le pseudo de la personne.',
+      'Pour cela, une adresse technique de votre appareil est enregistrée sur notre serveur (Supabase, UE).',
+      'Elle est aussi connue du service d’alertes de votre programme internet : Google, Mozilla, Apple ou Microsoft. Ce service ne reçoit aucun texte.',
+      'Votre programme internet vous demandera ensuite son accord. Vous pouvez tout arrêter dans Entraide, Profil, Mes notifications.',
+    ],
+    accepter: 'Oui, activer les alertes',
   },
 }
 

@@ -28,6 +28,19 @@ describe('consentements', () => {
     expect(hasConsent('voisins')).toBe(false)
   })
 
+  it('« notifications » est un accord à part : il ne dépend pas de « voisins » et ne l’accorde pas', () => {
+    vi.stubGlobal('localStorage', memoryStorage())
+    expect(hasConsent('notifications')).toBe(false)
+    grantConsent('voisins')
+    expect(hasConsent('notifications')).toBe(false)
+    grantConsent('notifications')
+    expect(hasConsent('notifications')).toBe(true)
+    revokeConsent('voisins')
+    expect(hasConsent('notifications')).toBe(true)
+    revokeConsent('notifications')
+    expect(hasConsent('notifications')).toBe(false)
+  })
+
   it('première demande : rien n’est accordé', () => {
     vi.stubGlobal('localStorage', memoryStorage())
     expect(hasConsent('plantnet')).toBe(false)

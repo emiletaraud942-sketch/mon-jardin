@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Tabs, TabPanel } from '../../components/Tabs'
-import { getMyOrganizer, getProfile, getSession, onSessionChange } from '../../lib/neighbors/api'
+import { getMyOrganizer, getProfile, getSession, onSessionChange, resyncPushDevice } from '../../lib/neighbors/api'
 import { notifyNewsChanged, writeVisit, type NewsTarget } from '../../lib/neighbors/news'
 import { loadNews } from '../../lib/neighbors/newsLoad'
+import { consumeOpenMessages, OPEN_MESSAGES_EVENT } from '../../lib/neighbors/pushBridge'
 import { neighborhoodText, parseRadius, type CategoryFilter, type KindFilter } from '../../lib/neighbors/logic'
 import type { EventItem, NeighborsSession, Post, PostKind, Profile, Thread } from '../../lib/neighbors/types'
 import { grantConsent, useConsents } from '../../lib/consent'
@@ -158,7 +159,8 @@ function Connected({ garden }: { garden: Garden }) {
 }
 
 function Main({ userId, profile, email, garden, online, onProfile }: { userId: string; profile: Profile; email: string | null; garden: Garden; online: boolean; onProfile: (p: Profile) => void }) {
-  const [section, setSection] = useState<Section>('accueil')
+  // Un clic sur une alerte « nouveau message » ouvre directement les messages.
+  const [section, setSection] = useState<Section>(() => (consumeOpenMessages() ? 'messages' : 'accueil'))
   const [view, setView] = useState<View>({ k: 'tabs' })
   const [kind, setKind] = useState<KindFilter>('all')
   const [category, setCategory] = useState<CategoryFilter>('all')
@@ -176,6 +178,18 @@ function Main({ userId, profile, email, garden, online, onProfile }: { userId: s
     notifyNewsChanged()
   }, [news.data, userId])
   usePolling(refreshNews, POLL_MS * 2)
+  // Alerte cliquée alors que l'appli est déjà ouverte : on va aux messages. Et on vérifie que l'appareil est bien connu du serveur.
+  useEffect(() => {
+    const open = () => {
+      consumeOpenMessages('')
+      setView({ k: 'tabs' })
+      setSection('messages')
+      refreshNews()
+    }
+    window.addEventListener(OPEN_MESSAGES_EVENT, open)
+    void resyncPushDevice()
+    return () => window.removeEventListener(OPEN_MESSAGES_EVENT, open)
+  }, [refreshNews])
   const toTabs = useCallback(() => {
     setView({ k: 'tabs' })
     refreshNews()

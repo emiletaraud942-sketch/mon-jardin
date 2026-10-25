@@ -7,11 +7,13 @@ import { showToast } from '../../lib/toast'
 import type { Garden } from '../../types'
 import { Confirm, ErrorBox, Spinner } from './common'
 import { errorText, useLoad } from './hooks'
+import { Notifications } from './Notifications'
 import { ProfileForm } from './ProfileForm'
 
 export function ProfileTab({ profile, email, garden, online, onSaved }: { profile: Profile; email: string | null; garden: Garden; online: boolean; onSaved: (p: Profile) => void }) {
   const [editing, setEditing] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [notif, setNotif] = useState(false)
   const [signOutError, setSignOutError] = useState<string>()
   const blocks = useLoad(listBlocks, 'blocks')
   const blocked = useMemo(() => blocks.data ?? [], [blocks.data])
@@ -32,6 +34,7 @@ export function ProfileTab({ profile, email, garden, online, onSaved }: { profil
       />
     )
   }
+  if (notif) return <Notifications online={online} onBack={() => setNotif(false)} />
   return (
     <div className="stack">
       <section className="card stack" aria-label="Mon profil">
@@ -73,6 +76,16 @@ export function ProfileTab({ profile, email, garden, online, onSaved }: { profil
           </button>
         </div>
         {signOutError && <ErrorBox message={signOutError} />}
+      </section>
+
+      <section className="card stack" aria-label="Mes notifications">
+        <h3 style={{ margin: 0 }}>Mes notifications</h3>
+        <p style={{ margin: 0 }}>Recevez une alerte quand un message arrive. Elle ne montre jamais le texte.</p>
+        <div className="row">
+          <button className="btn" onClick={() => setNotif(true)}>
+            Régler mes notifications
+          </button>
+        </div>
       </section>
 
       <section className="card stack" aria-label="Personnes que vous ne voyez plus">

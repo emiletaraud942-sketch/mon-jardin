@@ -25,6 +25,7 @@ import { LegalModal } from './features/legal/LegalModal'
 import { neighborsEnabled } from './lib/neighbors/enabled'
 import { useNeighborsBadge } from './lib/neighbors/useBadge'
 import { badgeAria, badgeLabel } from './lib/neighbors/news'
+import { startPushBridge } from './lib/neighbors/pushBridge'
 import { readRadius } from './features/neighbors/prefs'
 import { useConsents } from './lib/consent'
 import { InviteButton } from './components/InviteButton'
@@ -107,6 +108,8 @@ export function App() {
   const { tasks, weather, weatherLoading } = useTasks(garden)
   const { voisins } = useConsents()
   const newsCount = useNeighborsBadge(neighborsEnabled && voisins, readRadius)
+  // Alertes de nouveaux messages : le service worker prévient l'appli ouverte (pastille, clic sur l'alerte).
+  useEffect(() => (neighborsEnabled && voisins ? startPushBridge() : undefined), [voisins])
   const [moreOpen, setMoreOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const mainRef = useRef<HTMLElement>(null)

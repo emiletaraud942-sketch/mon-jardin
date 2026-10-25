@@ -141,6 +141,16 @@ export const DATA_INVENTORY: readonly DataItem[] = [
     effacement: 'Supprimer mon compte ; bloquer une personne masque la conversation des deux côtés',
   },
   {
+    id: 'entraide-alertes',
+    donnee: 'Entraide : alertes de nouveaux messages (facultatives) : adresse technique de l’appareil fournie par le service d’alertes du programme internet, deux clés techniques de cet appareil, et vos préférences de notification',
+    stockage: 'Supabase de l’entraide (tables push_subscriptions et notification_prefs ; RLS : chacun ne voit que les siennes, les clés ne sont jamais lisibles par l’appli) ; l’abonnement est aussi gardé par le programme internet de l’appareil',
+    destinataires: ['Supabase (sous-traitant)', 'Service d’alertes de votre programme internet (Google, Mozilla, Apple ou Microsoft : sous-traitant technique ; il reçoit l’adresse de l’appareil et un signal vide, jamais de texte ni de pseudo)'],
+    finalite: 'Prévenir qu’un message privé est arrivé, par une alerte neutre « Vous avez un nouveau message »',
+    base: 'consentement',
+    duree: 'Jusqu’à la désactivation de l’appareil, la suppression du compte, ou la disparition de l’adresse chez le service d’alertes (retrait automatique). 5 appareils au plus par personne',
+    effacement: 'Entraide > Profil > Mes notifications > Se désabonner de cet appareil ; Réglages > Ce que j’ai autorisé > Ne plus autoriser ; suppression du compte',
+  },
+  {
     id: 'entraide-moderation',
     donnee: 'Entraide : signalements envoyés (motif, précisions facultatives), personnes bloquées, compteurs d’usage par jour, journal de modération (identifiants et décision, sans le contenu)',
     stockage: 'Supabase de l’entraide (tables reports, blocks, quotas, moderation_log ; non lisibles par les autres membres)',
@@ -183,8 +193,8 @@ export interface PermissionInfo {
 export const PERMISSIONS: readonly PermissionInfo[] = [
   {
     permission: 'Notifications',
-    ou: 'Tâches > « Activer les rappels » (clic uniquement, jamais au chargement)',
-    pourquoi: 'Un rappel local par jour au plus quand des tâches urgentes existent. Aucune notification poussée par un serveur.',
+    ou: 'Tâches > « Activer les rappels » ; Entraide > Profil > Mes notifications > « Activer les alertes » (clic uniquement, jamais au chargement)',
+    pourquoi: 'Un rappel local par jour au plus quand des tâches urgentes existent. Si vous activez les alertes de l’entraide : une alerte neutre, sans texte, quand un message privé arrive.',
     siRefusee: 'Aucun rappel ; tout le reste fonctionne.',
   },
   {

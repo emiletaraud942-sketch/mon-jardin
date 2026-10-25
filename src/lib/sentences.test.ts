@@ -5,6 +5,7 @@ import { HELP, MODES_HELP } from './help'
 import { computeProgress } from './progress'
 import { CONSENT_TEXT } from './legal'
 import { INVITE_TEXT, inviteMessage } from './invite'
+import { PERMISSION_TEXT, SUPPORT_TEXT } from './neighbors/push'
 import { FAIL_HELP, INITIAL_STEPS } from '../features/settings/createGarden'
 
 // Point 30 du plan : phrases de 20 mots au plus dans les textes de l'interface (public novice et retraité).
@@ -48,6 +49,11 @@ describe('longueur des phrases', () => {
       ...INITIAL_STEPS.map((s) => s.label),
       ...CONSENT_TEXT.plantnet.paragraphes,
     ]
+    expect(texts.flatMap(tooLong)).toEqual([])
+  })
+
+  it('alertes de nouveaux messages : autorisation, support, état du programme internet', () => {
+    const texts = [...CONSENT_TEXT.notifications.paragraphes, ...Object.values(SUPPORT_TEXT), ...Object.values(PERMISSION_TEXT)]
     expect(texts.flatMap(tooLong)).toEqual([])
   })
 

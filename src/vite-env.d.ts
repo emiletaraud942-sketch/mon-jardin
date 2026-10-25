@@ -14,4 +14,6 @@ interface ImportMetaEnv {
   readonly VITE_NEIGHBORS_SUPABASE_PUBLIC_TOKEN?: string
   /** Ancien nom de la même clé publique (Vercel peut refuser ce nom à cause du mot « KEY »). */
   readonly VITE_NEIGHBORS_SUPABASE_ANON_KEY?: string
+  /** Alertes de nouveaux messages : clé PUBLIQUE VAPID (base64url, 65 octets). Sans préfixe VITE_ ni mot KEY/TOKEN. La clé privée n'est JAMAIS ici. Absente = alertes masquées. */
+  readonly NEIGHBORS_VAPID_PUBLIC?: string
 }

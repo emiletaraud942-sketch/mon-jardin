@@ -8,8 +8,9 @@ import { showToast } from '../../lib/toast'
 import { eraseAllData, type EraseReport } from '../../lib/security/erase'
 import { ERASE_LEVELS, availableLevels, canErase, levelToRemote, remoteLeftOnline, type EraseLevel } from '../../lib/security/eraseLevels'
 import { DATA_INVENTORY, PERMISSIONS } from '../../lib/security/inventory'
-import { consentDate, revokeConsent, useConsents, type ConsentId } from '../../lib/consent'
+import { consentDate, hasConsent, revokeConsent, useConsents, type ConsentId } from '../../lib/consent'
 import { neighborsEnabled } from '../../lib/neighbors/enabled'
+import { neighborsVapidPublic } from '../../lib/neighbors/env'
 import { NETWORK_INFO } from '../../lib/legal'
 import { LegalLink } from '../legal/LegalLinks'
 
@@ -183,7 +184,21 @@ const CONSENT_ROWS: { id: ConsentId; label: string; visible: boolean }[] = [
   { id: 'plantnet', label: 'Envoyer mes photos à Pl@ntNet pour reconnaître une plante', visible: true },
   { id: 'sync', label: 'Mettre une copie de mes jardins en ligne', visible: syncConfigured },
   { id: 'voisins', label: 'Entraide entre voisins', visible: voisinsConfigured },
+  { id: 'notifications', label: 'Alertes de nouveaux messages sur cet appareil', visible: voisinsConfigured && !!neighborsVapidPublic },
 ]
+
+/** Retirer une autorisation. Pour les alertes (et pour l'entraide, dont elles dépendent), l'appareil est aussi désabonné : sinon il en recevrait encore. */
+async function withdraw(id: ConsentId) {
+  if (id === 'notifications' || (id === 'voisins' && hasConsent('notifications'))) {
+    try {
+      const api = await import('../../lib/neighbors/api')
+      await api.disablePushOnThisDevice()
+    } catch {
+      revokeConsent('notifications')
+    }
+  }
+  if (id !== 'notifications') revokeConsent(id)
+}
 
 function Consents() {
   const granted = useConsents()
@@ -200,7 +215,7 @@ function Consents() {
               </div>
             </div>
             {granted[r.id] && (
-              <button className="btn small" onClick={() => revokeConsent(r.id)} aria-label={`Ne plus autoriser : ${r.label}`}>
+              <button className="btn small" onClick={() => void withdraw(r.id)} aria-label={`Ne plus autoriser : ${r.label}`}>
                 Ne plus autoriser
               </button>
             )}

@@ -234,3 +234,32 @@ Migration `supabase/neighbors/migrations/20261025020000_neighbors_v4_events.sql`
 - Rejouer la v1 après la v4 remet d'anciennes versions des fonctions de signalement, de bannissement et de purge : rejouer ensuite la v4.
 - Non testés ici : PostgREST réel (jointure `organizers(name, description)`), un vrai projet Supabase, un navigateur autre que Chromium.
 
+## 12. Entraide v5 : alertes de nouveaux messages et préférences (25 octobre 2026)
+
+Migration `supabase/neighbors/migrations/20261025030000_neighbors_v5_push.sql` : tables `push_subscriptions` et `notification_prefs`, déclencheur de plafond, fonction `neighbors_push_facts()` réservée à `service_role`. Fonction Edge `supabase/functions/notify-message/index.ts` (Deno, un seul fichier sans dépendance), service worker `public/push-sw.js`, client `src/lib/neighbors/{push,pushBridge}.ts` et `src/features/neighbors/Notifications.tsx`. Banc rejoué deux fois (Postgres 16) : **595 PASS, 0 FAIL**, dont 110 contrôles `V5` ; 69 tests vitest nouveaux (fonction : webhook, secret, décision, jeton VAPID, traitement complet avec faux réseau ; appareil : support, service worker exécuté dans un faux environnement, pont).
+
+**Choix de conception**
+- **Alerte vide** : la fonction n'envoie aucun corps. Le texte « Vous avez un nouveau message » vit dans le service worker, qui ignore tout contenu reçu. Ni texte, ni pseudo, même chiffrés, ne passent par Google, Mozilla, Apple ou Microsoft. Cela évite aussi d'écrire un chiffrement maison (RFC 8291) impossible à vérifier ici contre un vrai service d'alertes.
+- **Décision hors du client et hors du webhook** : le webhook ne fournit que l'identifiant du message (le reste est ignoré) ; les faits sont relus par `neighbors_push_facts()` (aucun droit pour `anon` ni `authenticated`, renvoie identifiants, dates et indicateurs, jamais le texte ni le pseudo).
+- **Sans ligne de préférences, rien ne part** ; la ligne naît à l'activation explicite des alertes.
+- **Autorisation dédiée** (`notifications`) montrée avant la question du programme internet ; retirée à la déconnexion, au retrait dans Réglages et à la suppression du compte.
+
+**Attaques jouées sans succès** (banc SQL) : lire ou supprimer les appareils d'autrui (0 ligne) ; inscrire un appareil au nom d'un autre (42501, `user_id` sans droit d'insertion) ; reprendre l'adresse d'un autre (23505) ; lire les clés `p256dh`/`auth`, même les siennes, ou `select *` (42501) ; modifier une ligne (aucun droit `update`) ; 6e appareil (`push_limit`) ; 21e abonnement du jour (quota) ; compte banni (42501) ; anon (42501) ; adresse en http, hors liste, interne (`169.254.169.254`, `localhost`), avec `@`, en faux sous-domaine, trop longue ou avec espace (23514) ; clés mal formées (23514) ; préférences d'autrui (lecture 0, écriture 0 ligne ou 42501, y compris par `on conflict … do update`) ; `user_id` modifiable (42501) ; valeur NULL ou absurde ; suppression par le client (42501) ; appel de `neighbors_push_facts` par un connecté ou anon (42501) ; cascade à la suppression du compte. Côté fonction (vitest) : webhook sans secret, mauvais secret, secret vide ou trop court, mauvaise méthode, corps abîmé ou trop gros, table ou événement inattendus, identifiant non UUID, adresse hors liste présente en base (jamais contactée), service d'alertes en panne (l'abonnement reste), 404/410 (retiré).
+
+**Constats corrigés pendant l'écriture** (aucun n'est arrivé en production) :
+
+| # | Gravité | Constat | Correction |
+| --- | --- | --- | --- |
+| P1 | Moyenne | Une adresse d'abonnement libre aurait fait envoyer par la fonction des requêtes où un membre le voulait (SSRF : adresse interne, site tiers) | Liste fermée (Google, Mozilla, Apple, Microsoft) vérifiée trois fois : contrainte SQL, fonction, client ; redirections non suivies ; délai de 8 s ; un test compare la liste SQL et celle de la fonction |
+| P2 | Moyenne | Sur un appareil partagé, l'ancien compte gardait l'abonnement : les alertes de A auraient sonné chez B | Déconnexion et suppression du compte désabonnent l'appareil d'abord ; adresse déjà prise = nouvelle adresse créée ; autorisation retirée avec le désabonnement |
+| P3 | Faible | Rafale : 200 messages par jour = 200 alertes | Une alerte par rafale (message précédent du même expéditeur à moins de 2 minutes), en-tête `Topic` pour que le service remplace l'alerte en attente, plafond d'âge de 15 minutes |
+| P4 | Faible | Webhook forgé ou rejoué | Secret partagé comparé sans fuite de temps (condensats), identifiant seul retenu, faits relus en base, plafond d'âge |
+| P5 | Info | « Rien sans case cochée » : une ligne de préférences absente valait « vrai » par défaut | Absence de ligne = pas d'alerte ; la ligne est créée à l'activation |
+
+**Limites connues**
+- Non testés : un vrai service d'alertes (Google, Mozilla, Apple, Microsoft), le runtime Deno de Supabase (la fonction est exécutée sous Node avec la même API WebCrypto et `fetch`), le déclenchement réel du webhook de base, PostgREST réel pour les « upsert » (la forme SQL équivalente est testée), iOS réel. Aucune vraie notification n'a été envoyée.
+- La clé privée VAPID et le secret du webhook sont dans l'environnement de la fonction : leur fuite permettrait d'envoyer des alertes vides aux appareils inscrits (rien de plus : pas de contenu). Le secret du webhook est aussi visible des administrateurs du projet dans la définition du webhook.
+- Le service d'alertes voit l'adresse IP du serveur et celle de l'appareil, l'adresse d'abonnement et l'heure de chaque signal (inévitable avec Web Push).
+- Une clé publique VAPID qui ne correspond pas à la clé privée est acceptée à l'import : les services d'alertes répondent 401/403 (comptés « échecs », jamais d'abonnement retiré). À vérifier avec l'essai de bout en bout.
+- La liste fermée d'adresses refuse un service d'alertes inconnu : le navigateur concerné reste sur le repli (pastille).
+
