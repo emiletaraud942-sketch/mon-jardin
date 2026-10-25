@@ -2026,6 +2026,11 @@ select.nb-cat {
   height: 20px;
   flex: none;
 }
+/* Choix de la taille du quartier : titre et aide sur deux lignes, zone de toucher d'au moins 44 px. */
+.nb-size {
+  min-height: 44px;
+  padding: 6px 0;
+}
 .nb-replies {
   list-style: none;
   margin: 0;

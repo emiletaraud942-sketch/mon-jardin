@@ -45,7 +45,7 @@ describe('documents', () => {
   })
   it('le texte de consentement de l’entraide dit l’essentiel', () => {
     const t = CONSENT_TEXT.voisins.paragraphes.join(' ')
-    for (const m of ['e-mail', 'pseudo', '~1 km', '60 jours', 'jamais envoyées', 'messages']) expect(t).toContain(m)
+    for (const m of ['e-mail', 'pseudo', 'environ 2 km', 'environ 5 km', '60 jours', 'jamais envoyées', 'messages']) expect(t).toContain(m)
   })
   it('le texte de consentement Pl@ntNet dit l’essentiel', () => {
     const t = CONSENT_TEXT.plantnet.paragraphes.join(' ')

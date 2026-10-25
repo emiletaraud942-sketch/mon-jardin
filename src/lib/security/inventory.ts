@@ -102,8 +102,8 @@ export const DATA_INVENTORY: readonly DataItem[] = [
   },
   {
     id: 'entraide-profil',
-    donnee: 'Entraide : pseudo et quartier (position arrondie à 0,01°, environ 1 km). Jamais d’adresse ni de position exacte',
-    stockage: 'Supabase de l’entraide, table profiles (protégée par RLS ; arrondi refait par la base)',
+    donnee: 'Entraide : pseudo et quartier (position arrondie sur une grille : zone d’environ 2 km, ou d’environ 5 km au choix). Jamais d’adresse ni de position exacte',
+    stockage: 'Supabase de l’entraide, table profiles (protégée par RLS ; arrondi et taille de zone refaits par la base)',
     destinataires: ['Supabase (sous-traitant)', 'Autres membres de l’entraide à moins de ~55 km (pseudo et quartier, à travers vos annonces, réponses et conversations)'],
     finalite: 'Afficher qui publie et à quelle distance approximative, pour s’entraider entre voisins',
     base: 'consentement',

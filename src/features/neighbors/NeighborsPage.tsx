@@ -4,7 +4,7 @@ import { getMyOrganizer, getProfile, getSession, onSessionChange, resyncPushDevi
 import { notifyNewsChanged, writeVisit, type NewsTarget } from '../../lib/neighbors/news'
 import { loadNews } from '../../lib/neighbors/newsLoad'
 import { consumeOpenMessages, OPEN_MESSAGES_EVENT } from '../../lib/neighbors/pushBridge'
-import { neighborhoodText, parseRadius, type CategoryFilter, type KindFilter } from '../../lib/neighbors/logic'
+import { neighborhoodWithZone, parseRadius, type CategoryFilter, type KindFilter } from '../../lib/neighbors/logic'
 import type { EventItem, NeighborsSession, Post, PostKind, Profile, Thread } from '../../lib/neighbors/types'
 import { grantConsent, useConsents } from '../../lib/consent'
 import type { Garden } from '../../types'
@@ -50,9 +50,9 @@ const SECTIONS: { id: Section; label: string }[] = [
 
 const EXAMPLES: { kind: PostKind; title: string; who: string }[] = [
   { kind: 'don', title: 'Boutures de menthe à donner', who: 'Marie · dans votre quartier' },
-  { kind: 'pret', title: 'Je prête mon sécateur et ma bêche', who: 'Paul · à ~2 km' },
-  { kind: 'question', title: 'Quelle plante pour un mur à l’ombre ?', who: 'Annie · à ~3 km' },
-  { kind: 'cherche', title: 'Je cherche des graines de capucine', who: 'Jean · à ~1 km' },
+  { kind: 'pret', title: 'Je prête mon sécateur et ma bêche', who: 'Paul · à environ 2 km' },
+  { kind: 'question', title: 'Quelle plante pour un mur à l’ombre ?', who: 'Annie · à environ 4 km' },
+  { kind: 'cherche', title: 'Je cherche des graines de capucine', who: 'Jean · à environ 6 km' },
 ]
 
 const EXAMPLE_EVENT = { title: 'Atelier de taille des rosiers', when: 'Un samedi, de 14 h 00 à 16 h 00', where: 'Jardin partagé du quartier', who: 'Organisé par Les Jardiniers du quartier' }
@@ -101,7 +101,7 @@ export function NeighborsPage({ garden }: { garden: Garden }) {
             <ul className="nb-rules">
               <li>Il faut une adresse e-mail et un pseudo. Pas de mot de passe.</li>
               <li>Les voisins voient votre pseudo et votre quartier, jamais votre adresse.</li>
-              <li>Votre quartier est arrondi : environ 1 km autour de chez vous.</li>
+              <li>Votre quartier est une zone d’environ 2 km. Vous pouvez choisir plus large, environ 5 km.</li>
               <li>Vos annonces et messages sont gardés sur un serveur en Europe. Les annonces disparaissent après 60 jours.</li>
               <li>Les événements sont publiés par des organisateurs vérifiés. Un lien d’inscription mène vers un autre site.</li>
               <li>Vous pouvez tout supprimer, ou retirer votre autorisation, à tout moment.</li>
@@ -223,7 +223,7 @@ function Main({ userId, profile, email, garden, online, onProfile }: { userId: s
           online={online}
           initialKind={view.kind}
           pseudo={profile.pseudo}
-          where={neighborhoodText(profile.cell, garden)}
+          where={neighborhoodWithZone(profile.cell, garden, profile.cellSize)}
           onCancel={toTabs}
           onPublished={() => {
             setSection('fil')
@@ -256,7 +256,7 @@ function Main({ userId, profile, email, garden, online, onProfile }: { userId: s
       {view.k === 'event-new' && organizer.data?.verified && (
         <EventForm
           organizerName={organizer.data.name}
-          where={neighborhoodText(profile.cell, garden)}
+          where={neighborhoodWithZone(profile.cell, garden, profile.cellSize)}
           online={online}
           onCancel={toTabs}
           onPublished={() => {

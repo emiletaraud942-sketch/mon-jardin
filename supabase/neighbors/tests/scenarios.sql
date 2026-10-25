@@ -22,7 +22,7 @@ begin
  perform t.expect('S2 sans profil: insert post refusé', t.as(A,'insert into public.posts(kind,title) values (''don'',''x'')'), 'ERR');
  -- S3 profils
  perform t.expect('S3 profil A (arrondi)', t.as(A,'insert into public.profiles(user_id,pseudo,cell_lat,cell_lon) values ('''||A||''',''Alice'',48.856614,2.352222)'), 'OK rows=1');
- perform t.expect('S3 cellule arrondie', t.as(A,'select cell_lat||'' ''||cell_lon from public.profiles'), 'OK 48.86 2.35');
+ perform t.expect('S3 cellule arrondie', t.as(A,'select cell_lat||'' ''||cell_lon from public.profiles'), 'OK 48.86 2.34');
  perform t.expect('S3 banned_at non insérable', t.as(B,'insert into public.profiles(user_id,pseudo,cell_lat,cell_lon,banned_at) values ('''||B||''',''Bob'',48.86,2.36,now())'), 'ERR 42501');
  perform t.expect('S3 profil pour un autre refusé', t.as(B,'insert into public.profiles(user_id,pseudo,cell_lat,cell_lon) values ('''||C||''',''Mallory'',48.86,2.36)'), 'ERR 42501');
  perform t.expect('S3 pseudo <b>', t.as(B,'insert into public.profiles(user_id,pseudo,cell_lat,cell_lon) values ('''||B||''',''<b>bob</b>'',48.86,2.36)'), 'ERR 23514');
@@ -50,7 +50,7 @@ begin
  perform t.expect('S4 titre vide', t.as(A,'insert into public.posts(kind,title) values (''don'',''  '')'), 'ERR 23514');
  perform t.expect('S4 type inconnu', t.as(A,'insert into public.posts(kind,title) values (''vente'',''x'')'), 'ERR 23514');
  perform t.expect('S4 annonce A (don)', t.as(A,'insert into public.posts(kind,title,body,photo_path) values (''don'',''Boutures'',''ok'','''||A||'/11111111-1111-4111-8111-111111111111.jpg'')'), 'OK rows=1');
- perform t.expect('S4 cellule recopiée', t.as(A,'select cell_lat||'' ''||cell_lon from public.posts'), 'OK 48.86 2.35');
+ perform t.expect('S4 cellule recopiée', t.as(A,'select cell_lat||'' ''||cell_lon from public.posts'), 'OK 48.86 2.34');
  perform t.expect('S4 A question', t.as(A,'insert into public.posts(kind,title) values (''question'',''Quand tailler ?'')'), 'OK rows=1');
  -- S5 quota
  for i in 1..3 loop perform t.as(A,'insert into public.posts(kind,title) values (''pret'',''t'')'); end loop;

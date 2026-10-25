@@ -4,7 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { hasConsent, revokeConsent } from '../consent'
 import { compressToTarget } from '../photos'
 import { imageSize, jpegMetadataSegments, sizeWithinLimits } from '../security/image'
-import { cellBounds, cellDistanceKm, distanceLabel, isValidCoord, roundCell } from './cell'
+import { CELL_SLACK_KM, cellBounds, cellDistanceKm, distanceLabel, isCellSize, isValidCoord, roundCell } from './cell'
 import { isNeighborsConfigured, neighborsClient, NEIGHBORS_STORAGE_KEY } from './client'
 import { checkHttpsUrl, safeExternalUrl, unreadByThread } from './logic'
 import { neighborsVapidPublic } from './env'
@@ -28,6 +28,7 @@ import {
   REPORT_REASONS,
   type BlockedUser,
   type Cell,
+  type CellSize,
   type EventItem,
   type EventStatus,
   type InitNeighborsResult,
@@ -333,14 +334,16 @@ interface ProfileRow {
   pseudo: string
   cell_lat: number | string
   cell_lon: number | string
+  cell_size?: string | null
   created_at: string
 }
-const PROFILE_COLS = 'user_id, pseudo, cell_lat, cell_lon, created_at'
+const PROFILE_COLS = 'user_id, pseudo, cell_lat, cell_lon, cell_size, created_at'
 
 const toProfile = (r: ProfileRow): Profile => ({
   userId: r.user_id,
   pseudo: r.pseudo,
   cell: { lat: Number(r.cell_lat), lon: Number(r.cell_lon) },
+  cellSize: isCellSize(r.cell_size) ? r.cell_size : 'standard',
   createdAt: r.created_at,
 })
 
@@ -360,17 +363,32 @@ async function myCell(): Promise<Cell | null> {
   return (await getProfile())?.cell ?? null
 }
 
-/** Crée ou met à jour le profil. La position est arrondie ICI (cellule de ~1 km) avant tout envoi. */
-export async function saveProfile(input: { pseudo: string; lat: number; lon: number }): Promise<Profile> {
+/** Taille de mon quartier (le profil est déjà chargé par `myCell`). « standard » tant qu'on ne sait pas. */
+function mySize(): CellSize {
+  return profileCache?.cellSize ?? 'standard'
+}
+
+/** La plus grande des deux tailles : une distance n'est jamais plus précise que la plus grande cellule. */
+function biggerSize(a: CellSize, b?: string | null): CellSize {
+  return a === 'large' || b === 'large' ? 'large' : 'standard'
+}
+
+/**
+ * Crée ou met à jour le profil. La position est arrondie ICI sur la grille de la taille choisie
+ * (environ 2 km en « standard », environ 5 km en « large ») avant tout envoi. La base refait le même arrondi.
+ */
+export async function saveProfile(input: { pseudo: string; lat: number; lon: number; cellSize?: CellSize }): Promise<Profile> {
   const uid = await requireUserId()
   const pseudo = validatePseudo(input.pseudo)
   if (!isValidCoord(input.lat, input.lon)) throw new NeighborsError('Position invalide. Choisissez votre quartier.', 'invalid')
-  const cell = roundCell(input.lat, input.lon)
+  const cellSize = input.cellSize ?? 'standard'
+  if (!isCellSize(cellSize)) throw new NeighborsError('Taille de quartier inconnue.', 'invalid')
+  const cell = roundCell(input.lat, input.lon, cellSize)
   const client = sb()
   const existing = await run<{ user_id: string }>(client.from('profiles').select('user_id').eq('user_id', uid).maybeSingle() as never)
   const q = existing
-    ? client.from('profiles').update({ pseudo, cell_lat: cell.lat, cell_lon: cell.lon }).eq('user_id', uid).select(PROFILE_COLS).single()
-    : client.from('profiles').insert({ user_id: uid, pseudo, cell_lat: cell.lat, cell_lon: cell.lon }).select(PROFILE_COLS).single()
+    ? client.from('profiles').update({ pseudo, cell_lat: cell.lat, cell_lon: cell.lon, cell_size: cellSize }).eq('user_id', uid).select(PROFILE_COLS).single()
+    : client.from('profiles').insert({ user_id: uid, pseudo, cell_lat: cell.lat, cell_lon: cell.lon, cell_size: cellSize }).select(PROFILE_COLS).single()
   const row = await run<ProfileRow>(q as never)
   if (!row) throw new NeighborsError('Le profil n’a pas pu être enregistré.')
   profileCacheUser = uid
@@ -393,11 +411,11 @@ interface PostRow {
   cell_lon: number | string
   created_at: string
   expires_at: string
-  profiles?: { pseudo?: string } | null
+  profiles?: { pseudo?: string; cell_size?: string | null } | null
 }
-const POST_SELECT = '*, profiles(pseudo)'
+const POST_SELECT = '*, profiles(pseudo, cell_size)'
 
-function toPost(r: PostRow, uid: string, from: Cell | null): Post {
+function toPost(r: PostRow, uid: string, from: Cell | null, viewerSize: CellSize): Post {
   const cell = { lat: Number(r.cell_lat), lon: Number(r.cell_lon) }
   const km = from ? cellDistanceKm(from, cell) : null
   return {
@@ -416,7 +434,7 @@ function toPost(r: PostRow, uid: string, from: Cell | null): Post {
     createdAt: r.created_at,
     expiresAt: r.expires_at,
     distanceKm: km,
-    distanceLabel: distanceLabel(km),
+    distanceLabel: distanceLabel(km, { sameCell: from != null && from.lat === cell.lat && from.lon === cell.lon, size: biggerSize(viewerSize, r.profiles?.cell_size) }),
   }
 }
 
@@ -441,7 +459,7 @@ export async function listPosts(opts: ListPostsOptions = {}): Promise<Post[]> {
   if (opts.kind) q = q.eq('kind', opts.kind)
   if (opts.category) q = q.eq('category', opts.category)
   const rows = (await run<PostRow[]>(q.order('created_at', { ascending: false }).limit(100) as never)) ?? []
-  return rows.map((r) => toPost(r, uid, center)).filter((p) => p.distanceKm == null || p.distanceKm <= radius + 0.8)
+  return rows.map((r) => toPost(r, uid, center, mySize())).filter((p) => p.distanceKm == null || p.distanceKm <= radius + CELL_SLACK_KM)
 }
 
 /** Mes propres annonces (tous statuts, y compris masquées). */
@@ -449,7 +467,7 @@ export async function listMyPosts(): Promise<Post[]> {
   const uid = await requireUserId()
   const center = await myCell()
   const rows = (await run<PostRow[]>(sb().from('posts').select(POST_SELECT).eq('author', uid).order('created_at', { ascending: false }).limit(100) as never)) ?? []
-  return rows.map((r) => toPost(r, uid, center))
+  return rows.map((r) => toPost(r, uid, center, mySize()))
 }
 
 /** Redessine la photo (EXIF/GPS supprimés), la réduit sous 1 Mo et vérifie qu'aucune métadonnée ne subsiste. */
@@ -507,7 +525,7 @@ export async function createPost(input: NewPost): Promise<Post> {
         .single() as never,
     )
     if (!row) throw new NeighborsError('L’annonce n’a pas pu être publiée.')
-    return toPost(row, uid, center)
+    return toPost(row, uid, center, mySize())
   } catch (e) {
     if (photoPath) await removePhotos([photoPath]) // pas de photo orpheline
     throw e
@@ -827,7 +845,7 @@ interface EventRow {
 }
 const EVENT_SELECT = '*, organizers(name, description)'
 
-function toEvent(r: EventRow, uid: string, from: Cell | null, interested: boolean): EventItem {
+function toEvent(r: EventRow, uid: string, from: Cell | null, interested: boolean, viewerSize: CellSize): EventItem {
   const cell = { lat: Number(r.cell_lat), lon: Number(r.cell_lon) }
   const km = from ? cellDistanceKm(from, cell) : null
   return {
@@ -849,7 +867,8 @@ function toEvent(r: EventRow, uid: string, from: Cell | null, interested: boolea
     cell,
     createdAt: r.created_at,
     distanceKm: km,
-    distanceLabel: distanceLabel(km),
+    // La taille du quartier de l'organisateur n'est pas lisible ici : on suppose la nôtre (au moins « standard »).
+    distanceLabel: distanceLabel(km, { sameCell: from != null && from.lat === cell.lat && from.lon === cell.lon, size: viewerSize }),
   }
 }
 
@@ -884,7 +903,7 @@ export async function listEvents(opts: ListEventsOptions = {}): Promise<EventIte
         .limit(100) as never,
     )) ?? []
   const mine = await myInterests(rows.map((r) => r.id))
-  return rows.map((r) => toEvent(r, uid, center, mine.has(r.id))).filter((e) => e.distanceKm == null || e.distanceKm <= radius + 0.8)
+  return rows.map((r) => toEvent(r, uid, center, mine.has(r.id), mySize())).filter((e) => e.distanceKm == null || e.distanceKm <= radius + CELL_SLACK_KM)
 }
 
 /** Mes propres événements (tous statuts, y compris masqués), les plus récents d'abord. */
@@ -892,7 +911,7 @@ export async function listMyEvents(): Promise<EventItem[]> {
   const uid = await requireUserId()
   const center = await myCell()
   const rows = (await run<EventRow[]>(sb().from('events').select(EVENT_SELECT).eq('organizer', uid).order('starts_at', { ascending: false }).limit(100) as never)) ?? []
-  return rows.map((r) => toEvent(r, uid, center, false))
+  return rows.map((r) => toEvent(r, uid, center, false, mySize()))
 }
 
 /** Publie un événement. Réservé aux organisateurs validés (la base refuse sinon). La cellule vient du profil, posée par la base. */
@@ -911,7 +930,7 @@ export async function createEvent(input: NewEvent): Promise<EventItem> {
       .single() as never,
   )
   if (!row) throw new NeighborsError('L’événement n’a pas pu être publié.')
-  return toEvent(row, uid, center, false)
+  return toEvent(row, uid, center, false, mySize())
 }
 
 async function setEventStatus(rawId: string, status: 'open' | 'cancelled'): Promise<void> {

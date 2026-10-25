@@ -21,7 +21,11 @@ export const isPostCategory = (v: unknown): v is PostCategory => typeof v === 's
 /** `hidden` = masquée par la modération (visible de son seul auteur). */
 export type PostStatus = 'open' | 'closed' | 'hidden'
 
-/** Quartier : centre d'une cellule de 0,01° (~1 km). Jamais une position exacte. */
+/** Taille du quartier : « standard » (environ 2 km) ou « large » (environ 5 km, pour la campagne). Miroir de `profiles.cell_size`. */
+export type CellSize = 'standard' | 'large'
+export const CELL_SIZES: readonly CellSize[] = ['standard', 'large']
+
+/** Quartier : centre d'une cellule de la grille (voir cell.ts). Jamais une position exacte. */
 export interface Cell {
   lat: number
   lon: number
@@ -68,6 +72,8 @@ export interface Profile {
   userId: string
   pseudo: string
   cell: Cell
+  /** Taille du quartier choisie. */
+  cellSize: CellSize
   createdAt: string
 }
 

@@ -82,7 +82,7 @@ export const HELP: Record<Tab, HelpContent> = {
   voisins: {
     title: 'L’entraide',
     steps: [
-      'Entrez votre e-mail : un lien arrive. Ouvrez-le sur ce téléphone. Choisissez ensuite un pseudo et votre quartier.',
+      'Entrez votre e-mail : un lien arrive. Ouvrez-le sur ce téléphone. Choisissez ensuite un pseudo et votre quartier : une zone d’environ 2 km, ou environ 5 km à la campagne.',
       '« Nouveautés » résume ce qui est arrivé depuis votre dernière visite. Touchez une ligne pour la voir.',
       'Les annonces montrent les dons, échanges, prêts, demandes et questions près de chez vous. « Publier » en crée une. Rien ne se vend ici.',
       '« Écrire en privé » ouvre une conversation. « J’ai ce qu’il cherche » répond à une demande. « Signaler » et « Bloquer » protègent le groupe.',

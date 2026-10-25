@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { roundCell } from './cell'
 import {
   CONDUCT_RULES,
   DEFAULT_RADIUS,
@@ -10,7 +11,10 @@ import {
   offerMessage,
   parseCategoryFilter,
   RADII,
+  CELL_SIZE_CHOICES,
+  CELL_SIZE_EXPLAIN,
   cellPreview,
+  cellSizeLabel,
   daysLeft,
   describeCell,
   formatWhen,
@@ -22,6 +26,7 @@ import {
   shouldPoll,
   communeFromAddress,
   neighborhoodText,
+  neighborhoodWithZone,
   gardenNeighborhoodText,
 } from './logic'
 import { POST_CATEGORIES, POST_KINDS, POST_KIND_LABELS, REPORT_REASONS } from './types'
@@ -133,11 +138,29 @@ describe('statut d’une annonce', () => {
 })
 
 describe('quartier', () => {
-  it('arrondit le centre du jardin à 0,01° avant tout affichage', () => {
-    const p = cellPreview(47.2234567, 2.0678901)
+  it('arrondit le centre du jardin sur la grille avant tout affichage (standard)', () => {
+    const p = cellPreview(47.2234567, 2.0678901, 'standard')
     expect(p.cell).toEqual({ lat: 47.22, lon: 2.07 })
     expect(p.text).toBe('47.22° N, 2.07° E')
     expect(p.text).not.toContain('4567')
+  })
+  it('quartier large : cellule plus grande', () => {
+    const p = cellPreview(47.2234567, 2.0678901, 'large')
+    expect(p.cell).toEqual({ lat: 47.2, lon: 2.1 })
+  })
+  it('les deux choix de taille sont en mots simples, sans degrés', () => {
+    expect(CELL_SIZE_CHOICES.map((c) => c.id)).toEqual(['standard', 'large'])
+    expect(CELL_SIZE_CHOICES[0].title).toBe('Standard (environ 2 km)')
+    expect(CELL_SIZE_CHOICES[1].title).toBe('Large (environ 5 km, pour la campagne)')
+    for (const c of CELL_SIZE_CHOICES) expect(`${c.title} ${c.help}`).not.toMatch(/°|~|\b1 km\b/)
+    expect(CELL_SIZE_EXPLAIN).toBe('Plus la zone est grande, moins on peut deviner où vous habitez.')
+    expect(cellSizeLabel('standard')).toBe('environ 2 km')
+    expect(cellSizeLabel('large')).toBe('environ 5 km')
+  })
+  it('le nom de commune ne s’affiche que si la cellule est celle du jardin, pour la taille choisie', () => {
+    const g = { address: '3 place du Capitole 31000 Toulouse', center: { lat: 43.6047, lon: 1.4442 } }
+    expect(neighborhoodText(roundCell(43.6047, 1.4442, 'large'), g, 'large')).toBe('commune de Toulouse')
+    expect(neighborhoodText(roundCell(43.6047, 1.4442, 'large'), g, 'standard')).toBe('autour du jardin choisi à l’inscription')
   })
   it('hémisphères Sud et Ouest', () => {
     expect(describeCell({ lat: -33.87, lon: -70.5 })).toBe('33.87° S, 70.50° O')
@@ -194,19 +217,24 @@ describe('commune d’après l’adresse', () => {
 describe('texte du quartier (sans degrés)', () => {
   const garden = { address: '8 Boulevard du Port 80000 Amiens', center: { lat: 49.8941, lon: 2.2958 } }
   it('commune quand le quartier est celui du jardin actif', () => {
-    expect(neighborhoodText({ lat: 49.89, lon: 2.3 }, garden)).toBe('commune de Amiens')
+    expect(neighborhoodText({ lat: 49.9, lon: 2.31 }, garden)).toBe('commune de Amiens')
     expect(gardenNeighborhoodText(garden)).toBe('commune de Amiens')
   })
   it('sans commune : autour de votre jardin', () => {
-    expect(neighborhoodText({ lat: 49.89, lon: 2.3 }, { ...garden, address: '' })).toBe('autour de votre jardin')
+    expect(neighborhoodText({ lat: 49.9, lon: 2.31 }, { ...garden, address: '' })).toBe('autour de votre jardin')
     expect(gardenNeighborhoodText({ address: '' })).toBe('autour de votre jardin')
   })
   it('autre jardin : prudence', () => {
     expect(neighborhoodText({ lat: 43.6, lon: 1.44 }, garden)).toBe('autour du jardin choisi à l’inscription')
     expect(neighborhoodText({ lat: 43.6, lon: 1.44 }, undefined)).toBe('autour du jardin choisi à l’inscription')
   })
+  it('aperçu d’annonce : commune et taille de la zone, en mots simples', () => {
+    expect(neighborhoodWithZone({ lat: 49.9, lon: 2.31 }, garden, 'standard')).toBe('commune de Amiens, zone d’environ 2 km')
+    expect(neighborhoodWithZone({ lat: 49.9, lon: 2.31 }, undefined, 'large')).toBe('autour du jardin choisi à l’inscription, zone d’environ 5 km')
+    expect(neighborhoodWithZone({ lat: 49.9, lon: 2.31 }, garden, 'standard')).not.toMatch(/°/)
+  })
   it('jamais de degrés', () => {
-    expect(neighborhoodText({ lat: 49.89, lon: 2.3 }, garden)).not.toMatch(/°/)
+    expect(neighborhoodText({ lat: 49.9, lon: 2.31 }, garden)).not.toMatch(/°/)
   })
 })
 

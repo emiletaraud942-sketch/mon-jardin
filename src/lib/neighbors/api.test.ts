@@ -60,10 +60,10 @@ vi.mock('../photos', () => ({ compressToTarget: vi.fn(async (b: Blob) => b) }))
 import { compressToTarget } from '../photos'
 import * as api from './api'
 
-const ME = { user_id: '11111111-1111-4111-8111-111111111111', pseudo: 'Jardinier', cell_lat: 48.86, cell_lon: 2.35, created_at: '2026-10-01T00:00:00Z' }
+const ME = { user_id: '11111111-1111-4111-8111-111111111111', pseudo: 'Jardinier', cell_lat: 48.86, cell_lon: 2.34, cell_size: 'standard', created_at: '2026-10-01T00:00:00Z' }
 const postRow = (o: Record<string, unknown> = {}) => ({
   id: 'aaaaaaa1-0000-4000-8000-000000000001', author: '22222222-2222-4222-8222-222222222222', kind: 'don', title: 'Boutures', body: '', species_id: null, photo_path: null, status: 'open',
-  cell_lat: 48.87, cell_lon: 2.35, created_at: '2026-10-02T00:00:00Z', expires_at: '2026-12-01T00:00:00Z', profiles: { pseudo: 'Voisine' }, ...o,
+  cell_lat: 48.86, cell_lon: 2.34, created_at: '2026-10-02T00:00:00Z', expires_at: '2026-12-01T00:00:00Z', profiles: { pseudo: 'Voisine' }, ...o,
 })
 const set = (key: string, data: unknown, error: unknown = null, count?: number) => state.results.set(key, { data, error, count })
 const opsOf = (table: string) => state.calls.filter((c) => c.table === table).flatMap((c) => c.ops)
@@ -181,7 +181,7 @@ describe('profil', () => {
     set('profiles:insert', ME)
     await api.saveProfile({ pseudo: 'Jardinier', lat: 48.856614, lon: 2.352222 })
     const ins = state.calls.find((c) => c.table === 'profiles' && c.ops.some(([m]) => m === 'insert'))!
-    expect(ins.ops.find(([m]) => m === 'insert')![1][0]).toEqual({ user_id: '11111111-1111-4111-8111-111111111111', pseudo: 'Jardinier', cell_lat: 48.86, cell_lon: 2.35 })
+    expect(ins.ops.find(([m]) => m === 'insert')![1][0]).toEqual({ user_id: '11111111-1111-4111-8111-111111111111', pseudo: 'Jardinier', cell_lat: 48.86, cell_lon: 2.34, cell_size: 'standard' })
   })
   it('saveProfile refuse une position invalide', async () => {
     await expect(api.saveProfile({ pseudo: 'Jardinier', lat: 200, lon: 0 })).rejects.toThrow(/Position invalide/)
@@ -195,7 +195,7 @@ describe('profil', () => {
 
 describe('annonces', () => {
   it('listPosts calcule la distance et filtre par type et zone', async () => {
-    set('posts:select', [postRow(), postRow({ id: 'aaaaaaa2-0000-4000-8000-000000000002', cell_lat: 49.5, cell_lon: 2.35 })])
+    set('posts:select', [postRow(), postRow({ id: 'aaaaaaa2-0000-4000-8000-000000000002', cell_lat: 49.5, cell_lon: 2.34 })])
     const posts = await api.listPosts({ kind: 'don', radiusKm: 10 })
     expect(posts.map((p) => p.id)).toEqual(['aaaaaaa1-0000-4000-8000-000000000001']) // p2 est à ~70 km
     expect(posts[0]).toMatchObject({ authorPseudo: 'Voisine', mine: false, distanceLabel: 'dans votre quartier' })
@@ -509,7 +509,7 @@ const EV2 = 'eeeeeee2-0000-4000-8000-000000000002'
 const inDays = (n: number, h = 0) => new Date(Date.now() + n * 86_400_000 + h * 3_600_000).toISOString()
 const eventRow = (o: Record<string, unknown> = {}) => ({
   id: EV1, organizer: '22222222-2222-4222-8222-222222222222', title: 'Troc de plantes', description: 'Apportez vos boutures.', starts_at: inDays(3), ends_at: inDays(3, 2), place: 'Salle des fêtes',
-  cell_lat: 48.87, cell_lon: 2.35, signup_url: 'https://exemple.fr/inscription', capacity: 40, status: 'open', interest_count: 3, created_at: '2026-10-02T00:00:00Z',
+  cell_lat: 48.88, cell_lon: 2.34, signup_url: 'https://exemple.fr/inscription', capacity: 40, status: 'open', interest_count: 3, created_at: '2026-10-02T00:00:00Z',
   organizers: { name: 'Graines Libres', description: 'Troc et ateliers' }, ...o,
 })
 const orgRow = (o: Record<string, unknown> = {}) => ({ user_id: ME_ID, name: 'Jardin des Lilas', description: 'Asso de quartier', verified_at: null, created_at: '2026-10-20T00:00:00Z', ...o })
@@ -591,7 +591,7 @@ describe('événement : validation', () => {
 
 describe('événements : lecture', () => {
   it('listEvents : à venir, par date, dans la zone, sans les masqués', async () => {
-    set('events:select', [eventRow(), eventRow({ id: EV2, title: 'Atelier', starts_at: inDays(9), ends_at: inDays(9, 2), cell_lat: 48.86, cell_lon: 2.36, status: 'cancelled', signup_url: 'javascript:alert(1)' })])
+    set('events:select', [eventRow(), eventRow({ id: EV2, title: 'Atelier', starts_at: inDays(9), ends_at: inDays(9, 2), cell_lat: 48.86, cell_lon: 2.37, status: 'cancelled', signup_url: 'javascript:alert(1)' })])
     set('event_interest:select', [{ event_id: EV2 }])
     const list = await api.listEvents({ radiusKm: 10 })
     const ops = opsOf('events')
@@ -610,7 +610,7 @@ describe('événements : lecture', () => {
     expect((await api.listEvents()).map((e) => e.signupUrl)).toEqual([null, null])
   })
   it('listEvents : le rayon est plafonné à 50 km, un événement trop loin est écarté', async () => {
-    set('events:select', [eventRow({ cell_lat: 50.86, cell_lon: 2.35 })])
+    set('events:select', [eventRow({ cell_lat: 50.86, cell_lon: 2.34 })])
     set('event_interest:select', [])
     expect(await api.listEvents({ radiusKm: 500 })).toEqual([])
   })

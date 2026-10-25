@@ -180,7 +180,7 @@ Périmètre : tout le dépôt sur la branche courante (front, `api/`, `vercel.js
 | O2 | Moyenne | `maplibre-gl` ≤ 6.4.0 : avis critique GHSA-jrc7-96c5-q579 (la CI le tolère avec `continue-on-error`) | Non exploitable ici (fonction absente de 4.7.1, attribution constante). Planifier la montée en 6.x avec l'agent cartographie, puis retirer `continue-on-error` |
 | O3 | Moyenne | Champs légaux `[à compléter]` (éditeur, adresse, contact, hébergeur Supabase) et contact de `SECURITY.md` ; les textes de consentement affirment « Supabase, UE » alors que la politique dit « à confirmer » | Créer les projets Supabase en région UE avant publication ; compléter `legal.ts` ; faire valider par un professionnel ; activer « Private vulnerability reporting » sur GitHub |
 | O4 | Moyenne | « Annonces supprimées après 60 jours, photos comprises » n'est vrai que si `neighbors_purge_expired()` et `neighbors_orphan_photos()` sont planifiés et si les fichiers listés sont effacés par l'API Storage : rien ne le fait automatiquement | Planification quotidienne (pg_cron + fonction ou script avec clé `service_role` hors dépôt) avant l'ouverture publique |
-| O5 | Moyenne | Quartier = cellule de 0,01° (~1 km). En zone rurale une cellule peut ne contenir qu'un foyer : pseudo + cellule + photo de jardin peuvent identifier un domicile | Décision : cellule plus grosse (0,02 à 0,05°) ou rayon d'affichage minimal ; le texte « jamais votre adresse » reste vrai mais l'anonymat dépend de la densité |
+| O5 | ~~Moyenne~~ **Atténué (v6)** | Quartier = cellule de 0,01° (~1 km) : en zone rurale une cellule pouvait ne contenir qu'un foyer | Cellule de 2 km par défaut (pas 0,02° x 0,03°), « large » de 5 km au choix (0,05° x 0,07°), arrondi refait par la base (§13). Reste vrai : en très faible densité, même 5 km peut ne contenir qu'un foyer ; le pseudo et les photos de jardin restent à la charge de la personne |
 | O6 | Faible | `/api/identify` : un appel sans `Origin`/`Sec-Fetch-Site` (curl, script) est accepté, le limiteur est par instance | Règle de limitation du pare-feu Vercel (voir §6) ; CAPTCHA si l'appli devient publique |
 | O7 | Faible | `connect-src https://*.supabase.co` : n'importe quel projet Supabase | Une fois les deux projets créés, remplacer par leurs deux adresses exactes dans `vercel.json` (et adapter `vercel-config.test.ts`) |
 | O8 | Faible | `Permissions-Policy` : `camera=(self)` et `geolocation=(self)` alors que ni `getUserMedia` ni la géolocalisation ne sont utilisées | Tester `camera=()` sur iOS et Android (le sélecteur de fichiers ne dépend pas de cette politique selon les spécifications, non vérifié ici) |
@@ -263,3 +263,22 @@ Migration `supabase/neighbors/migrations/20261025030000_neighbors_v5_push.sql` :
 - Une clé publique VAPID qui ne correspond pas à la clé privée est acceptée à l'import : les services d'alertes répondent 401/403 (comptés « échecs », jamais d'abonnement retiré). À vérifier avec l'essai de bout en bout.
 - La liste fermée d'adresses refuse un service d'alertes inconnu : le navigateur concerné reste sur le repli (pastille).
 
+
+## 13. Entraide v6 : quartier de 2 km ou 5 km (25 octobre 2026)
+
+Migration `supabase/neighbors/migrations/20261025040000_neighbors_v6_cell_size.sql` ; client `src/lib/neighbors/{cell,types,api,logic}.ts`, `src/features/neighbors/ProfileForm.tsx`. Décision du propriétaire, en réponse à O5.
+
+**Mesures**
+- Grille : standard = pas 0,02° x 0,03° (environ 2,2 x 2,3 km à 47° N), large = 0,05° x 0,07° (environ 5,5 x 5,3 km). Même formule `floor(x / pas + 0,5) * pas` en SQL (`neighbors_cell_snap`) et en TypeScript ; 12 000 cas comparés, 0 écart.
+- `profiles.cell_size` (check `standard`/`large`, non nul). Droits colonne par colonne : écriture pour `authenticated` seulement, lecture pour ceux qui lisent déjà le profil ; `anon` : rien. `neighbors_cell_snap` et `neighbors_profile_round` ne sont appelables par aucun client.
+- Le déclencheur d'arrondi suit `cell_size` ; une valeur hors grille est ramenée sur la grille.
+- Profils, annonces et événements existants ré-arrondis par la migration (idempotente, sans toucher aux quotas).
+- Toute coordonnée d'une requête de l'appli (écritures et bornes de liste) est sur la grille ; la position fine du jardin ne sort jamais (vérifié en navigateur, faux Supabase intercepté).
+
+**Constat corrigé pendant l'écriture** : le déclencheur de quota (5 modifications par jour) s'exécute avant l'arrondi. Avec `cell_size`, un client aurait pu changer de taille, donc déplacer sa cellule, sans consommer de quota. Le déclencheur arrondit maintenant lui-même avant de comparer, et compte aussi le changement de taille.
+
+**Limites connues**
+- Les distances restent entre centres de cellules : l'erreur peut atteindre une demi-cellule de chaque côté (jusqu'à environ 5,5 km en large). Les libellés ne descendent jamais sous 2 km (standard) ou 5 km (large).
+- La taille de l'organisateur d'un événement n'est pas lisible par les autres membres : le libellé de distance suppose la taille du lecteur.
+- Un membre lit la taille de quartier des profils qu'il voit (pseudo, cellule et taille) : information déjà déductible de la cellule.
+- Les anciennes annonces gardent leur cellule d'origine après un passage en « large ».

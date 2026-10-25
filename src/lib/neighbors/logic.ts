@@ -1,6 +1,6 @@
 // Entraide entre voisins : logique pure de l'interface (filtres, libellés, dates). Aucun accès réseau ni navigateur.
-import { roundCell } from './cell'
-import { NEIGHBORS_LIMITS as L, POST_CATEGORIES, isPostCategory, type Cell, type EventItem, type Post, type PostCategory, type PostKind } from './types'
+import { CELL_STEPS, roundCell } from './cell'
+import { NEIGHBORS_LIMITS as L, POST_CATEGORIES, isPostCategory, type Cell, type CellSize, type EventItem, type Post, type PostCategory, type PostKind } from './types'
 
 // ---------- Filtres du fil ----------
 
@@ -107,9 +107,21 @@ export interface CellPreview {
 }
 
 /** Quartier déduit d'un point (centre du jardin actif) : arrondi ICI, avant tout affichage ou envoi. */
-export function cellPreview(lat: number, lon: number): CellPreview {
-  const cell = roundCell(lat, lon)
+export function cellPreview(lat: number, lon: number, size: CellSize): CellPreview {
+  const cell = roundCell(lat, lon, size)
   return { cell, text: describeCell(cell) }
+}
+
+/** Les deux tailles de quartier proposées. Mots simples ; aucune coordonnée. */
+export const CELL_SIZE_CHOICES: readonly { id: CellSize; title: string; help: string }[] = [
+  { id: 'standard', title: 'Standard (environ 2 km)', help: 'Convient en ville et dans les villages.' },
+  { id: 'large', title: 'Large (environ 5 km, pour la campagne)', help: 'Recommandé si peu de maisons sont proches de la vôtre.' },
+]
+export const CELL_SIZE_EXPLAIN = 'Plus la zone est grande, moins on peut deviner où vous habitez.'
+
+/** « environ 2 km » ou « environ 5 km ». */
+export function cellSizeLabel(size: CellSize): string {
+  return CELL_STEPS[size].label
 }
 
 export function describeCell(c: Cell): string {
@@ -138,11 +150,11 @@ export function communeFromAddress(address: string | undefined | null): string |
  * Texte du quartier, sans degrés. Le nom de commune n'est donné que si le quartier enregistré
  * est bien celui du jardin actif ; sinon on reste prudent.
  */
-export function neighborhoodText(cell: Cell, garden: { address?: string; center: { lat: number; lon: number } } | undefined): string {
+export function neighborhoodText(cell: Cell, garden: { address?: string; center: { lat: number; lon: number } } | undefined, size: CellSize = 'standard'): string {
   if (!garden) return 'autour du jardin choisi à l’inscription'
   const same = (() => {
     try {
-      const c = roundCell(garden.center.lat, garden.center.lon)
+      const c = roundCell(garden.center.lat, garden.center.lon, size)
       return c.lat === cell.lat && c.lon === cell.lon
     } catch {
       return false
@@ -151,6 +163,11 @@ export function neighborhoodText(cell: Cell, garden: { address?: string; center:
   if (!same) return 'autour du jardin choisi à l’inscription'
   const commune = communeFromAddress(garden.address)
   return commune ? `commune de ${commune}` : AROUND_GARDEN
+}
+
+/** Texte du quartier avec la taille de la zone, pour l’aperçu d’une annonce : « commune de Amiens, zone d’environ 2 km ». */
+export function neighborhoodWithZone(cell: Cell, garden: { address?: string; center: { lat: number; lon: number } } | undefined, size: CellSize): string {
+  return `${neighborhoodText(cell, garden, size)}, zone d’${cellSizeLabel(size)}`
 }
 
 /** Même chose pour un point pas encore enregistré (centre du jardin actif). */

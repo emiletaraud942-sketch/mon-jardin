@@ -94,7 +94,7 @@ begin
  ---------- 2. Création : cellule, liens, dates, longueurs ----------
  perform t.expect('V4 A publie un événement', t.as(A,t.evsql('Troc de plantes', place => 'Salle des fêtes d''Ancenis', url => 'https://exemple.fr/inscription?id=3#haut', cap => '40', descr => 'Apportez vos boutures.')), 'OK rows=1');
  select id into e1 from public.events where title = 'Troc de plantes';
- perform t.expect('V4 cellule recopiée du profil de A', (select 'OK '||cell_lat||'/'||cell_lon from public.events where id = e1), 'OK 48.86/2.35');
+ perform t.expect('V4 cellule recopiée du profil de A', (select 'OK '||cell_lat||'/'||cell_lon from public.events where id = e1), 'OK 48.86/2.34');
  perform t.expect('V4 statut open et compteur à 0 au départ', (select 'OK '||status||'/'||interest_count from public.events where id = e1), 'OK open/0');
  perform t.expect('V4 A tente cell_lat à l''insertion', t.as(A,format('insert into public.events(title,starts_at,ends_at,place,cell_lat) values (%L,now()+interval ''2 days'',now()+interval ''2 days 1 hour'',%L,10)','Hors cellule','Place')), 'ERR 42501');
  perform t.expect('V4 A tente cell_lon à l''insertion', t.as(A,format('insert into public.events(title,starts_at,ends_at,place,cell_lon) values (%L,now()+interval ''2 days'',now()+interval ''2 days 1 hour'',%L,10)','Hors cellule','Place')), 'ERR 42501');

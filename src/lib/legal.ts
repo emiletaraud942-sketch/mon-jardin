@@ -7,7 +7,7 @@ import { DATA_INVENTORY, type LegalBasis } from './security/inventory'
 export const DRAFT_BANNER = 'BROUILLON À FAIRE VALIDER PAR UN PROFESSIONNEL'
 export const DRAFT_NOTE = 'Texte provisoire, à faire valider par un professionnel avant publication. Il ne constitue pas un avis juridique.'
 
-export const LEGAL_VERSION = '1.3'
+export const LEGAL_VERSION = '1.4'
 /** Dernière mise à jour (AAAA-MM-JJ). */
 export const LEGAL_UPDATED = '2026-10-25'
 
@@ -86,7 +86,7 @@ export const CONFIDENTIALITE: LegalDoc = {
           'Vos jardins, plantes et photos restent sur votre appareil, dans votre navigateur.',
           'Pas de compte obligatoire, pas de publicité, pas de cookie, pas de traceur.',
           'Quelques services extérieurs reçoivent une partie de vos données uniquement quand la fonction l’exige : carte, météo, identification d’une plante, sauvegarde en ligne facultative, entraide entre voisins facultative (annonces et événements).',
-          'L’entraide entre voisins demande un compte (adresse e-mail) et un âge minimum de 15 ans. Elle ne reçoit ni votre adresse ni votre position exacte, seulement un quartier arrondi à environ 1 km.',
+          'L’entraide entre voisins demande un compte (adresse e-mail) et un âge minimum de 15 ans. Elle ne reçoit ni votre adresse ni votre position exacte, seulement un quartier arrondi : une zone d’environ 2 km, ou d’environ 5 km si vous le choisissez.',
           'Vous pouvez tout exporter ou tout effacer à tout moment depuis les Réglages.',
         ),
       ],
@@ -144,7 +144,7 @@ export const CONFIDENTIALITE: LegalDoc = {
         p('L’entraide est facultative. Elle permet de publier des annonces de don, d’échange, de prêt, des demandes (« Je cherche ») ou des questions, de consulter des événements près de chez vous, et d’écrire en privé à d’autres jardiniers proches. Elle est réservée aux personnes de 15 ans et plus.'),
         ul(
           'Compte : votre adresse e-mail sert uniquement à vous envoyer un lien de connexion. Elle n’est visible d’aucun autre membre.',
-          'Profil public : un pseudo et un quartier. Le quartier est une position arrondie à environ 1 km, jamais votre adresse ni votre position exacte. Choisissez un pseudo qui ne révèle pas votre identité.',
+          'Profil public : un pseudo et un quartier. Le quartier est une zone d’environ 2 km, ou d’environ 5 km si vous choisissez « Large ». Plus la zone est grande, moins on peut deviner où vous habitez. Ce n’est jamais votre adresse ni votre position exacte. Choisissez un pseudo qui ne révèle pas votre identité.',
           'Annonces et réponses : type (don, échange, prêt, demande ou question), catégorie éventuelle, titre, description, espèce et photo éventuelle. Elles sont visibles des membres situés à moins de 55 km environ, sauf ceux que vous avez bloqués. N’y écrivez ni votre adresse, ni votre téléphone, ni de données concernant d’autres personnes.',
           'Photos : redessinées dans votre navigateur avant l’envoi (position GPS et métadonnées supprimées), 1 Mo au plus, stockées dans un espace privé. Une photo de jardin peut elle-même révéler un lieu : regardez l’arrière-plan.',
           'Événements : seuls les organisateurs validés par l’éditeur en publient. Un organisateur donne un nom public et une courte description, jamais d’adresse ni d’e-mail. Un événement montre ce nom, un titre, des dates, un lieu en texte libre (à choisir public), un lien d’inscription éventuel, un nombre de places éventuel et le quartier arrondi de l’organisateur. Il est visible des membres situés à moins de 55 km environ, sauf ceux que l’organisateur a bloqués.',
@@ -279,7 +279,7 @@ export const CGU: LegalDoc = {
         ul(
           'Réservée aux personnes de 15 ans et plus. Un compte par personne, avec une adresse e-mail qui vous appartient.',
           'Pseudo libre, mais il ne doit ni usurper une autre personne, ni révéler votre identité contre votre gré, ni être trompeur ou offensant.',
-          'Le quartier que vous indiquez est le vôtre. Il est arrondi à environ 1 km.',
+          'Le quartier que vous indiquez est le vôtre. Il est arrondi : une zone d’environ 2 km, ou d’environ 5 km si vous le choisissez.',
           'L’entraide est gratuite et non commerciale : dons, échanges, prêts, demandes et questions entre particuliers.',
           'Les événements sont publiés par des organisateurs validés. Les autres membres les consultent, signalent un problème et indiquent leur intérêt.',
         ),
@@ -429,7 +429,7 @@ export const CONSENT_TEXT: Record<'plantnet' | 'sync' | 'voisins' | 'notificatio
   voisins: {
     titre: 'Rejoindre l’entraide entre voisins ?',
     paragraphes: [
-      'Votre adresse e-mail (pour le lien de connexion), votre pseudo, votre quartier arrondi à ~1 km, vos annonces, photos, réponses et messages privés seront enregistrés sur un serveur dédié (Supabase, UE). Votre adresse et votre position exacte ne sont jamais envoyées.',
+      'Votre adresse e-mail (pour le lien de connexion), votre pseudo, votre quartier arrondi (une zone d’environ 2 km, ou d’environ 5 km si vous le choisissez), vos annonces, photos, réponses et messages privés seront enregistrés sur un serveur dédié (Supabase, UE). Votre adresse et votre position exacte ne sont jamais envoyées.',
       'Votre pseudo, votre quartier, vos annonces et vos réponses sont visibles des autres membres. Vos messages ne sont lus que par votre correspondant. Les annonces disparaissent après 60 jours. Si vous devenez organisateur, le nom de votre organisation et vos événements sont visibles aussi.',
       'Vous pouvez retirer votre autorisation dans Réglages, et supprimer votre compte et vos annonces à tout moment dans l’entraide.',
     ],

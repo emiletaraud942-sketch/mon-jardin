@@ -9,8 +9,13 @@ describe('pages juridiques : entraide', () => {
   const cgu = toMarkdown(CGU)
   const mentions = toMarkdown(MENTIONS)
 
-  it('confidentialité : données, quartier ~1 km, durées, droits, sous-traitant, pas de vente', () => {
-    for (const m of ['pseudo', 'environ 1 km', `${NEIGHBORS_LIMITS.postLifetimeDays} jours`, 'messages privés', 'photos', 'suppression du compte', 'Supabase', 'sous-traitant', 'à confirmer', 'région Union européenne', 'n’est vendue', '15 ans', 'CNIL', 'un mois', '12 mois'])
+  it('plus aucune trace de l’ancien quartier d’environ 1 km dans les pages de l’entraide', () => {
+    // La ligne de la météo (coordonnées arrondies à 2 décimales) parle d’autre chose : on ne regarde que les lignes du quartier.
+    const quartier = conf.split('\n').filter((l) => /quartier/i.test(l)).join('\n')
+    for (const t of [quartier, cgu, CONSENT_TEXT.voisins.paragraphes.join(' ')]) expect(t).not.toMatch(/~\s?1 km|environ 1 km|0,01°/)
+  })
+  it('confidentialité : données, quartier de 2 km ou 5 km, durées, droits, sous-traitant, pas de vente', () => {
+    for (const m of ['pseudo', 'environ 2 km', 'environ 5 km', 'Plus la zone est grande', `${NEIGHBORS_LIMITS.postLifetimeDays} jours`, 'messages privés', 'photos', 'suppression du compte', 'Supabase', 'sous-traitant', 'à confirmer', 'région Union européenne', 'n’est vendue', '15 ans', 'CNIL', 'un mois', '12 mois'])
       expect(conf, m).toContain(m)
   })
   it('CGU : conduite, signalement, blocage, hébergeur LCEN, âge, suppression', () => {
@@ -61,7 +66,9 @@ describe('pages juridiques : entraide', () => {
     expect(DATA_INVENTORY.find((d) => d.id === 'entraide-evenements')!.duree).toContain('30 jours après leur fin')
     const annonces = DATA_INVENTORY.find((d) => d.id === 'entraide-annonces')!
     expect(annonces.duree).toContain('60 jours')
-    expect(DATA_INVENTORY.find((d) => d.id === 'entraide-profil')!.donnee).toContain('1 km')
+    expect(DATA_INVENTORY.find((d) => d.id === 'entraide-profil')!.donnee).toContain('environ 2 km')
+    expect(DATA_INVENTORY.find((d) => d.id === 'entraide-profil')!.donnee).toContain('environ 5 km')
+    expect(DATA_INVENTORY.find((d) => d.id === 'entraide-profil')!.donnee).not.toMatch(/0,01|1 km/)
     for (const d of DATA_INVENTORY.filter((x) => x.id.startsWith('entraide-'))) {
       expect(d.destinataires.join(' ')).toContain('Supabase')
       expect(d.base).not.toBe('execution')

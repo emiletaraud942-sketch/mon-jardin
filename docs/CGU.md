@@ -1,7 +1,7 @@
 # Conditions d’utilisation
 
 > **BROUILLON À FAIRE VALIDER PAR UN PROFESSIONNEL.** Texte provisoire, à faire valider par un professionnel avant publication. Il ne constitue pas un avis juridique.
-> Version 1.3 · Dernière mise à jour : 25 octobre 2026.
+> Version 1.4 · Dernière mise à jour : 25 octobre 2026.
 
 ## Objet du service
 
@@ -27,7 +27,7 @@ Ne consommez jamais une plante, un fruit ou un champignon sur la seule foi de l�
 
 - Réservée aux personnes de 15 ans et plus. Un compte par personne, avec une adresse e-mail qui vous appartient.
 - Pseudo libre, mais il ne doit ni usurper une autre personne, ni révéler votre identité contre votre gré, ni être trompeur ou offensant.
-- Le quartier que vous indiquez est le vôtre. Il est arrondi à environ 1 km.
+- Le quartier que vous indiquez est le vôtre. Il est arrondi : une zone d’environ 2 km, ou d’environ 5 km si vous le choisissez.
 - L’entraide est gratuite et non commerciale : dons, échanges, prêts, demandes et questions entre particuliers.
 - Les événements sont publiés par des organisateurs validés. Les autres membres les consultent, signalent un problème et indiquent leur intérêt.
 

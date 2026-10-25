@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { deleteMyAccount, listBlocks, signOut, unblockUser } from '../../lib/neighbors/api'
-import { CONDUCT_RULES, neighborhoodText } from '../../lib/neighbors/logic'
+import { CONDUCT_RULES, cellSizeLabel, neighborhoodText } from '../../lib/neighbors/logic'
 import { forgetVisit, notifyNewsChanged } from '../../lib/neighbors/news'
 import type { Profile } from '../../lib/neighbors/types'
 import { showToast } from '../../lib/toast'
@@ -46,7 +46,7 @@ export function ProfileTab({ profile, email, garden, online, onSaved }: { profil
           </dd>
           <dt>Quartier</dt>
           <dd>
-            {neighborhoodText(profile.cell, garden)} <span className="small muted">(environ 1 km autour)</span>
+            {neighborhoodText(profile.cell, garden, profile.cellSize)} <span className="small muted">(zone d’{cellSizeLabel(profile.cellSize)})</span>
           </dd>
           {email && (
             <>
