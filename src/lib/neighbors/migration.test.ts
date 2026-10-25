@@ -121,3 +121,48 @@ describe('migration entraide v2 : « Je cherche » et catégories', () => {
     expect(code2).not.toMatch(/create (policy|function|or replace function|trigger)/i)
   })
 })
+
+describe('migration entraide v3 : messages non lus (thread_reads)', () => {
+  const sql3 = readFileSync('supabase/neighbors/migrations/20261025010000_neighbors_v3_read.sql', 'utf8')
+  const code3 = sql3.replace(/--.*$/gm, '')
+
+  it('une ligne par conversation et par personne, supprimée avec elles', () => {
+    expect(code3).toMatch(/create table if not exists public\.thread_reads/)
+    expect(code3).toMatch(/primary key \(thread_id, user_id\)/)
+    expect(code3).toMatch(/thread_id\s+uuid not null references public\.threads \(id\) on delete cascade/)
+    expect(code3).toMatch(/user_id\s+uuid not null default auth\.uid\(\) references public\.profiles \(user_id\) on delete cascade/)
+  })
+  it('RLS activée ; chacun ne lit et n’écrit que sa ligne', () => {
+    expect(code3).toMatch(/alter table public\.thread_reads enable row level security/)
+    for (const name of ['thread_reads_select', 'thread_reads_insert', 'thread_reads_update']) {
+      const policy = new RegExp(`create policy ${name} on public\\.thread_reads[\\s\\S]*?;`).exec(code3)?.[0] ?? ''
+      expect(policy, name).toContain('user_id = (select auth.uid())')
+    }
+    expect(code3).toMatch(/exists \(select 1 from public\.threads t where t\.id = thread_reads\.thread_id and \(select auth\.uid\(\)\) in \(t\.user_a, t\.user_b\)\)/)
+    expect(code3).toMatch(/neighbors_is_member\(\)/)
+  })
+  it('droits colonne par colonne, rien pour anon, pas de suppression ni de quota', () => {
+    expect([...code3.matchAll(/grant ([^;]*);/g)].map((m) => m[1])).toEqual([
+      'select on public.thread_reads to authenticated',
+      'insert (thread_id, user_id, last_read_at) on public.thread_reads to authenticated',
+      'update (last_read_at) on public.thread_reads to authenticated',
+    ])
+    expect(code3).toMatch(/revoke all on public\.thread_reads from public, anon, authenticated/)
+    expect(code3).not.toMatch(/\bto (anon|public)\b/i)
+    expect(code3).not.toMatch(/using\s*\(\s*true\s*\)|with check\s*\(\s*true\s*\)/i)
+    expect(code3).not.toMatch(/neighbors_take_quota/)
+  })
+  it('la date est toujours celle du serveur (déclencheur), fonction durcie', () => {
+    expect(code3).toMatch(/new\.last_read_at := now\(\)/)
+    expect(code3).toMatch(/create trigger thread_reads_touch before insert or update on public\.thread_reads/)
+    expect(code3).toMatch(/set search_path = ''/)
+    expect(code3).toMatch(/revoke all on function public\.neighbors_thread_read_touch\(\) from public, anon, authenticated/)
+    expect(code3).not.toMatch(/grant execute/)
+  })
+  it('rejouable, sans suppression de données, et l’historique existant n’apparaît pas « non lu »', () => {
+    expect(code3).toMatch(/drop trigger if exists thread_reads_touch/)
+    for (const name of ['thread_reads_select', 'thread_reads_insert', 'thread_reads_update']) expect(code3).toMatch(new RegExp(`drop policy if exists ${name}\\b`))
+    expect(code3).not.toMatch(/\bdelete from\b|\bdrop (table|column|function)\b|\btruncate\b/i)
+    expect(code3).toMatch(/where not exists \(select 1 from public\.thread_reads\)/)
+  })
+})

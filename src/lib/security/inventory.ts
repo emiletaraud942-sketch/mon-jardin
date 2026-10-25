@@ -122,8 +122,8 @@ export const DATA_INVENTORY: readonly DataItem[] = [
   },
   {
     id: 'entraide-messages',
-    donnee: 'Entraide : messages privés entre deux membres',
-    stockage: 'Supabase de l’entraide (tables threads et messages ; RLS : seuls les deux participants les lisent)',
+    donnee: 'Entraide : messages privés entre deux membres, et pour chaque conversation la date de votre dernière lecture (pour compter les messages non lus)',
+    stockage: 'Supabase de l’entraide (tables threads, messages et thread_reads ; RLS : seuls les deux participants lisent les messages, chacun ne voit que sa propre date de lecture)',
     destinataires: ['Supabase (sous-traitant)', 'Votre correspondant', 'L’éditeur, uniquement pour traiter un signalement visant ce message'],
     finalite: 'Se mettre d’accord pour un don, un échange ou un prêt',
     base: 'consentement',
@@ -142,7 +142,7 @@ export const DATA_INVENTORY: readonly DataItem[] = [
   },
   {
     id: 'preferences',
-    donnee: 'Préférences et repères : thème, date du dernier export, première utilisation, dernière notification, dernière synchronisation',
+    donnee: 'Préférences et repères : thème, date du dernier export, première utilisation, dernière notification, dernière synchronisation, date de votre dernière visite à l’entraide (pour afficher les nouveautés)',
     stockage: 'localStorage (clés permajardin:…)',
     destinataires: [],
     finalite: 'Confort d’usage (rappel de sauvegarde, une notification par jour au plus)',

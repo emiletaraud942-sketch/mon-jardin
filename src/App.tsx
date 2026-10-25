@@ -23,6 +23,11 @@ import { CataloguePage } from './features/plants/CataloguePage'
 import { SettingsPage } from './features/settings/SettingsPage'
 import { LegalModal } from './features/legal/LegalModal'
 import { neighborsEnabled } from './lib/neighbors/enabled'
+import { useNeighborsBadge } from './lib/neighbors/useBadge'
+import { badgeAria, badgeLabel } from './lib/neighbors/news'
+import { readRadius } from './features/neighbors/prefs'
+import { useConsents } from './lib/consent'
+import { InviteButton } from './components/InviteButton'
 
 const View3D = lazy(() => import('./features/garden3d/View3D'))
 const NeighborsPage = lazy(() => import('./features/neighbors/NeighborsPage').then((m) => ({ default: m.NeighborsPage })))
@@ -55,7 +60,15 @@ const menuTabs = (mode: Mode) => [...extraTabs(mode)].sort((a, b) => Number(MORE
 
 const NEW_GARDEN = '__new'
 
-function MoreSheet({ onClose, onNewGarden }: { onClose: () => void; onNewGarden: () => void }) {
+/** Pastille de nouveautés de l'entraide (rien tant qu'il n'y a rien de nouveau). */
+const NewsBadge = ({ count }: { count: number }) =>
+  count > 0 ? (
+    <span className="badge count" aria-label={badgeAria(count)}>
+      {badgeLabel(count)}
+    </span>
+  ) : null
+
+function MoreSheet({ onClose, onNewGarden, newsCount }: { onClose: () => void; onNewGarden: () => void; newsCount: number }) {
   const { tab, mode } = useUi()
   const go = (t: Tab) => {
     onClose()
@@ -67,6 +80,7 @@ function MoreSheet({ onClose, onNewGarden }: { onClose: () => void; onNewGarden:
         {menuTabs(mode).map((t) => (
           <button key={t} className="btn more-item" aria-current={tab === t ? 'page' : undefined} onClick={() => go(t)}>
             <Icon name={NAV[t].icon} /> {MORE_LABEL[t] ?? NAV[t].label}
+            {t === 'voisins' && <NewsBadge count={newsCount} />}
           </button>
         ))}
         <button
@@ -78,6 +92,7 @@ function MoreSheet({ onClose, onNewGarden }: { onClose: () => void; onNewGarden:
         >
           <Icon name="plus" /> Nouveau jardin
         </button>
+        <InviteButton className="btn more-item" label="Faire connaître l’appli" copyLabel="Copier le lien de l’appli" />
       </div>
     </Modal>
   )
@@ -90,6 +105,8 @@ export function App() {
   const { tab, mode, placingSpeciesId } = useUi()
   const plantCount = useGardenPlants(garden?.id).length
   const { tasks, weather, weatherLoading } = useTasks(garden)
+  const { voisins } = useConsents()
+  const newsCount = useNeighborsBadge(neighborsEnabled && voisins, readRadius)
   const [moreOpen, setMoreOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const mainRef = useRef<HTMLElement>(null)
@@ -247,8 +264,12 @@ export function App() {
           <button key={t} className="navbtn hide-mobile" aria-current={tab === t ? 'page' : undefined} onClick={() => setUi({ tab: t })}>
             <Icon name={NAV[t].icon} />
             {NAV[t].label}
+            {t === 'voisins' && <NewsBadge count={newsCount} />}
           </button>
         ))}
+        <div className="sidenav-invite hide-mobile">
+          <InviteButton className="btn small" label="Faire connaître l’appli" copyLabel="Copier le lien de l’appli" />
+        </div>
         <button
           className="navbtn show-mobile"
           aria-haspopup="dialog"
@@ -257,6 +278,7 @@ export function App() {
         >
           <Icon name="menu" />
           Menu
+          {extraTabs(mode).includes('voisins') && <NewsBadge count={newsCount} />}
         </button>
       </nav>
       <main id="main-panel" ref={mainRef} tabIndex={-1} aria-label={TAB_LABEL[tab]} className={'main' + (full ? ' full' : '')}>
@@ -292,7 +314,7 @@ export function App() {
       <ToastHost />
       <LegalModal />
       {helpOpen && <HelpSheet tab={tab} onClose={() => setHelpOpen(false)} />}
-      {moreOpen && <MoreSheet onClose={() => setMoreOpen(false)} onNewGarden={startNewGarden} />}
+      {moreOpen && <MoreSheet onClose={() => setMoreOpen(false)} onNewGarden={startNewGarden} newsCount={newsCount} />}
     </div>
   )
 }

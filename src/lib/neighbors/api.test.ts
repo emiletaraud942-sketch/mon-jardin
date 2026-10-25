@@ -24,14 +24,14 @@ function builder(table: string) {
   const call: Call = { table, ops: [] }
   state.calls.push(call)
   const b: Record<string, unknown> = {}
-  for (const m of ['select', 'insert', 'update', 'delete', 'eq', 'in', 'gte', 'lte', 'order', 'limit', 'maybeSingle', 'single']) {
+  for (const m of ['select', 'insert', 'update', 'upsert', 'delete', 'eq', 'neq', 'in', 'gte', 'lte', 'order', 'limit', 'maybeSingle', 'single']) {
     b[m] = (...args: unknown[]) => {
       call.ops.push([m, args])
       return b
     }
   }
   b.then = (ok: (v: unknown) => unknown, ko: (e: unknown) => unknown) => {
-    const kind = call.ops.find(([m]) => ['insert', 'update', 'delete'].includes(m))?.[0] ?? 'select'
+    const kind = call.ops.find(([m]) => ['insert', 'update', 'upsert', 'delete'].includes(m))?.[0] ?? 'select'
     const r = state.results.get(`${table}:${kind}`) ?? { data: null, error: null }
     return Promise.resolve(r).then(ok, ko)
   }
@@ -458,5 +458,45 @@ describe('modération et compte', () => {
     state.list.mockRejectedValueOnce(new Error('Failed to fetch'))
     await expect(api.deleteMyAccount()).rejects.toThrow(/conservé/)
     expect(state.rpc).not.toHaveBeenCalled()
+  })
+})
+
+describe('messages non lus', () => {
+  const T1 = 'bbbbbbb1-0000-4000-8000-000000000001'
+  const T2 = 'bbbbbbb2-0000-4000-8000-000000000002'
+  it('listUnread compte les messages reçus après ma dernière lecture, conversation par conversation', async () => {
+    set('thread_reads:select', [{ thread_id: T1, last_read_at: '2026-10-24T11:00:00Z' }])
+    set('messages:select', [
+      { thread_id: T1, created_at: '2026-10-24T12:00:00Z' },
+      { thread_id: T1, created_at: '2026-10-24T10:00:00Z' },
+      { thread_id: T2, created_at: '2026-10-23T10:00:00Z' },
+    ])
+    expect(await api.listUnread()).toEqual({ [T1]: 1, [T2]: 1 })
+  })
+  it('listUnread ne regarde que les messages des autres, les plus récents d’abord, 200 au plus', async () => {
+    set('thread_reads:select', [])
+    set('messages:select', [])
+    await api.listUnread()
+    expect(opsOf('messages')).toContainEqual(['neq', ['sender', '11111111-1111-4111-8111-111111111111']])
+    expect(opsOf('messages')).toContainEqual(['order', ['created_at', { ascending: false }]])
+    expect(opsOf('messages')).toContainEqual(['limit', [200]])
+  })
+  it('listUnread propose une erreur claire si la lecture échoue', async () => {
+    set('messages:select', null, { message: 'Failed to fetch' })
+    await expect(api.listUnread()).rejects.toThrow()
+  })
+  it('markThreadRead enregistre ma ligne (conversation + moi), une seule par conversation', async () => {
+    await api.markThreadRead(T1)
+    const [, args] = opsOf('thread_reads').find(([m]) => m === 'upsert')!
+    expect(args[0]).toMatchObject({ thread_id: T1, user_id: '11111111-1111-4111-8111-111111111111' })
+    expect(args[1]).toEqual({ onConflict: 'thread_id,user_id' })
+  })
+  it('markThreadRead refuse un identifiant qui n’est pas un UUID (aucune requête)', async () => {
+    await expect(api.markThreadRead('x,id.neq.0')).rejects.toThrow(/invalide/)
+    expect(state.calls.filter((c) => c.table === 'thread_reads')).toHaveLength(0)
+  })
+  it('markThreadRead demande d’être connecté', async () => {
+    state.session = null
+    await expect(api.markThreadRead(T1)).rejects.toThrow(/Connectez-vous/)
   })
 })

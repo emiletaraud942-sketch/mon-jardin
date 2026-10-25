@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { blockUser, listMessages, listThreads, sendMessage } from '../../lib/neighbors/api'
+import { blockUser, listMessages, listThreads, markThreadRead, sendMessage } from '../../lib/neighbors/api'
 import { formatWhen, sameIds } from '../../lib/neighbors/logic'
 import { NEIGHBORS_LIMITS, type Message, type Thread } from '../../lib/neighbors/types'
+import { notifyNewsChanged } from '../../lib/neighbors/news'
 import { showToast } from '../../lib/toast'
 import { Confirm, ErrorBox, ReportDialog, Spinner } from './common'
 import { errorText, useLoad, usePolling } from './hooks'
 
 export const POLL_MS = 30_000
 
-export function ThreadList({ online, onOpen }: { online: boolean; onOpen: (t: Thread) => void }) {
+export function ThreadList({ online, unread, onOpen }: { online: boolean; unread?: Record<string, number>; onOpen: (t: Thread) => void }) {
   const { data, error, loading, reload, setData } = useLoad(listThreads, 'threads')
   usePolling(
     () => {
@@ -38,6 +39,7 @@ export function ThreadList({ online, onOpen }: { online: boolean; onOpen: (t: Th
             <button className="nb-card" onClick={() => onOpen(t)}>
               <strong className="nb-card-title">
                 <bdi>{t.otherPseudo}</bdi>
+                {(unread?.[t.id] ?? 0) > 0 && <span className="badge count nb-unread"> {unread?.[t.id]} à lire</span>}
               </strong>
               <span className="small muted">Dernier message {formatWhen(t.lastMessageAt)}</span>
             </button>
@@ -73,6 +75,13 @@ export function ThreadView({ thread, postTitle, draft, online, onBack }: { threa
   }, POLL_MS)
 
   const lastId = messages[messages.length - 1]?.id
+  // La conversation est ouverte : tout ce qui s'affiche est lu. Un échec n'est pas grave (le compteur sera juste un peu trop haut).
+  useEffect(() => {
+    if (!data) return
+    markThreadRead(thread.id)
+      .then(() => notifyNewsChanged())
+      .catch(() => undefined)
+  }, [thread.id, lastId, !!data]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     endRef.current?.scrollIntoView?.({ block: 'end' })
   }, [lastId])

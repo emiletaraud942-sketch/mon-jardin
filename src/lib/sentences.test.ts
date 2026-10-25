@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { HELP, MODES_HELP } from './help'
 import { computeProgress } from './progress'
 import { CONSENT_TEXT } from './legal'
+import { INVITE_TEXT, inviteMessage } from './invite'
 import { FAIL_HELP, INITIAL_STEPS } from '../features/settings/createGarden'
 
 // Point 30 du plan : phrases de 20 mots au plus dans les textes de l'interface (public novice et retraité).
@@ -50,8 +51,13 @@ describe('longueur des phrases', () => {
     expect(texts.flatMap(tooLong)).toEqual([])
   })
 
+  it('invitation et nouveautés', () => {
+    const texts = [INVITE_TEXT, inviteMessage('shared'), inviteMessage('copied'), inviteMessage('manual')]
+    expect(texts.flatMap(tooLong)).toEqual([])
+  })
+
   it('écrans : tous les textes visibles des fichiers de l’interface', () => {
-    const dirs = ['components', 'features/map', 'features/settings', 'features/legal', 'features/plants', '.']
+    const dirs = ['components', 'features/map', 'features/settings', 'features/legal', 'features/plants', 'features/neighbors', '.']
     // Icon.tsx : tracés SVG ; les trois autres fichiers appartiennent à l'agent du Catalogue.
     const skip = new Set(['CataloguePage.tsx', 'SpeciesSheet.tsx', 'MonthGrid.tsx', 'Icon.tsx'])
     const files = dirs.flatMap((d) =>

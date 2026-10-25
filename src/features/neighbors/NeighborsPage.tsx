@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Tabs, TabPanel } from '../../components/Tabs'
 import { getProfile, getSession, onSessionChange } from '../../lib/neighbors/api'
+import { notifyNewsChanged, writeVisit, type NewsTarget } from '../../lib/neighbors/news'
+import { loadNews } from '../../lib/neighbors/newsLoad'
 import { neighborhoodText, parseRadius, type CategoryFilter, type KindFilter } from '../../lib/neighbors/logic'
 import type { NeighborsSession, Post, PostKind, Profile, Thread } from '../../lib/neighbors/types'
 import { grantConsent, useConsents } from '../../lib/consent'
@@ -9,9 +11,10 @@ import { LegalLink } from '../legal/LegalLinks'
 import '../../styles/novice-pages.css'
 import { ErrorBox, KindBadge, Spinner } from './common'
 import { Feed } from './Feed'
-import { errorText, useLoad, useOnline } from './hooks'
-import { ThreadList, ThreadView } from './Messages'
+import { errorText, useLoad, useOnline, usePolling } from './hooks'
+import { POLL_MS, ThreadList, ThreadView } from './Messages'
 import { MyPosts } from './MyPosts'
+import { Nouveautes } from './Nouveautes'
 import { PostDetail } from './PostDetail'
 import { PostForm } from './PostForm'
 import { readRadius, saveRadius } from './prefs'
@@ -19,10 +22,11 @@ import { ProfileForm } from './ProfileForm'
 import { ProfileTab } from './ProfileTab'
 import { SignIn } from './SignIn'
 
-type Section = 'fil' | 'messages' | 'mes' | 'profil'
+type Section = 'accueil' | 'fil' | 'messages' | 'mes' | 'profil'
 type View = { k: 'tabs' } | { k: 'new'; kind?: PostKind } | { k: 'post'; post: Post } | { k: 'thread'; thread: Thread; postTitle?: string; draft?: string }
 
 const SECTIONS: { id: Section; label: string }[] = [
+  { id: 'accueil', label: 'Nouveautés' },
   { id: 'fil', label: 'Annonces' },
   { id: 'messages', label: 'Messages' },
   { id: 'mes', label: 'Mes annonces' },
@@ -122,16 +126,39 @@ function Connected({ garden }: { garden: Garden }) {
   }
   if (profile.data === undefined) return profile.error ? <ErrorBox message={profile.error} onRetry={profile.reload} /> : <Spinner label="Chargement du profil…" />
   if (profile.data === null) return <ProfileForm garden={garden} online={online} onSaved={(p) => profile.setData(p)} />
-  return <Main key={userId} profile={profile.data} email={session.email} garden={garden} online={online} onProfile={profile.setData} />
+  return <Main key={userId} userId={userId as string} profile={profile.data} email={session.email} garden={garden} online={online} onProfile={profile.setData} />
 }
 
-function Main({ profile, email, garden, online, onProfile }: { profile: Profile; email: string | null; garden: Garden; online: boolean; onProfile: (p: Profile) => void }) {
-  const [section, setSection] = useState<Section>('fil')
+function Main({ userId, profile, email, garden, online, onProfile }: { userId: string; profile: Profile; email: string | null; garden: Garden; online: boolean; onProfile: (p: Profile) => void }) {
+  const [section, setSection] = useState<Section>('accueil')
   const [view, setView] = useState<View>({ k: 'tabs' })
   const [kind, setKind] = useState<KindFilter>('all')
   const [category, setCategory] = useState<CategoryFilter>('all')
   const [radius, setRadius] = useState(readRadius)
-  const toTabs = useCallback(() => setView({ k: 'tabs' }), [])
+  // Nouveautés : calculées une fois la liste chargée ; la date de visite n'est mise à jour qu'après un chargement réussi.
+  const news = useLoad(() => loadNews(userId, radius), `${userId}|${radius}`)
+  const marked = useRef(false)
+  const refreshNews = news.refresh
+  useEffect(() => {
+    if (!news.data || marked.current) return
+    marked.current = true
+    writeVisit(userId)
+    notifyNewsChanged()
+  }, [news.data, userId])
+  usePolling(refreshNews, POLL_MS * 2)
+  const toTabs = useCallback(() => {
+    setView({ k: 'tabs' })
+    refreshNews()
+    notifyNewsChanged()
+  }, [refreshNews])
+  const go = (t: NewsTarget) => {
+    if (t.section === 'messages') return setSection('messages')
+    setKind(t.kind)
+    setCategory('all')
+    setSection('fil')
+  }
+  const unreadTotal = news.data?.messages ?? 0
+  const sections = SECTIONS.map((x) => (x.id === 'messages' && unreadTotal > 0 ? { ...x, label: `Messages (${unreadTotal})` } : x))
 
   const changeRadius = (r: number) => {
     const v = parseRadius(r)
@@ -156,6 +183,7 @@ function Main({ profile, email, garden, online, onProfile }: { profile: Profile;
           onPublished={() => {
             setSection('fil')
             setView({ k: 'tabs' })
+            refreshNews()
           }}
         />
       )}
@@ -173,8 +201,9 @@ function Main({ profile, email, garden, online, onProfile }: { profile: Profile;
       {view.k === 'thread' && <ThreadView thread={view.thread} postTitle={view.postTitle} draft={view.draft} online={online} onBack={toTabs} />}
       {view.k === 'tabs' && (
         <>
-          <Tabs tabs={SECTIONS} value={section} onChange={setSection} label="Parties de l’entraide" idPrefix="nb" />
+          <Tabs tabs={sections} value={section} onChange={setSection} label="Parties de l’entraide" idPrefix="nb" />
           <TabPanel idPrefix="nb" active={section}>
+            {section === 'accueil' && <Nouveautes news={news} onGo={go} onNew={() => setView({ k: 'new' })} />}
             {section === 'fil' && (
               <Feed
                 kind={kind}
@@ -188,7 +217,7 @@ function Main({ profile, email, garden, online, onProfile }: { profile: Profile;
                 onNew={(k) => setView({ k: 'new', kind: k })}
               />
             )}
-            {section === 'messages' && <ThreadList online={online} onOpen={(t) => setView({ k: 'thread', thread: t })} />}
+            {section === 'messages' && <ThreadList online={online} unread={news.data?.unreadByThread} onOpen={(t) => setView({ k: 'thread', thread: t })} />}
             {section === 'mes' && <MyPosts online={online} onOpen={(p) => setView({ k: 'post', post: p })} onNew={() => setView({ k: 'new' })} />}
             {section === 'profil' && <ProfileTab profile={profile} email={email} garden={garden} online={online} onSaved={onProfile} />}
           </TabPanel>

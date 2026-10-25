@@ -159,6 +159,25 @@ export function gardenNeighborhoodText(garden: { address?: string }): string {
   return commune ? `commune de ${commune}` : AROUND_GARDEN
 }
 
+// ---------- Messages non lus ----------
+
+/**
+ * Messages reçus pas encore lus, par conversation. `reads` donne la date de dernière lecture de chaque conversation ;
+ * sans date, tous les messages reçus comptent. Les messages doivent venir des autres (pas des siens).
+ */
+export function unreadByThread(received: { threadId: string; createdAt: string }[], reads: Record<string, string>): Record<string, number> {
+  const out: Record<string, number> = {}
+  for (const m of received) {
+    const t = Date.parse(m.createdAt)
+    if (!Number.isFinite(t)) continue
+    const r = reads[m.threadId] == null ? NaN : Date.parse(reads[m.threadId])
+    if (Number.isFinite(r) && t <= r) continue
+    out[m.threadId] = (out[m.threadId] ?? 0) + 1
+  }
+  return out
+}
+export const sumCounts = (c: Record<string, number>): number => Object.values(c).reduce((a, b) => a + b, 0)
+
 // ---------- Divers ----------
 
 /** Rafraîchit seulement onglet visible et appareil en ligne. */

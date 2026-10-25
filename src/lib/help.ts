@@ -82,12 +82,12 @@ export const HELP: Record<Tab, HelpContent> = {
   voisins: {
     title: 'L’entraide',
     steps: [
-      'Entrez votre e-mail : un lien arrive. Ouvrez-le sur ce téléphone.',
-      'Choisissez un pseudo et votre quartier. Votre adresse reste secrète.',
-      'Les annonces montrent les dons, échanges, prêts, demandes et questions près de chez vous.',
-      '« Publier » crée une annonce. Pour une demande, choisissez « Je cherche » et une catégorie.',
-      '« Écrire en privé » ouvre une conversation. « J’ai ce qu’il cherche » répond à une demande.',
-      '« Signaler » et « Bloquer » protègent le groupe. Rien ne se vend ici. Dans Profil, vous pouvez supprimer votre compte.',
+      'Entrez votre e-mail : un lien arrive. Ouvrez-le sur ce téléphone. Choisissez ensuite un pseudo et votre quartier.',
+      '« Nouveautés » résume ce qui est arrivé depuis votre dernière visite. Touchez une ligne pour la voir.',
+      'Les annonces montrent les dons, échanges, prêts, demandes et questions près de chez vous. « Publier » en crée une.',
+      '« Écrire en privé » ouvre une conversation. « J’ai ce qu’il cherche » répond à une demande.',
+      '« Signaler » et « Bloquer » protègent le groupe. Rien ne se vend ici. Dans Profil, vous pouvez supprimer votre compte.',
+      '« Inviter un voisin » partage le lien de l’appli. Vous choisissez qui le reçoit. Rien n’est envoyé tout seul.',
     ],
   },
 }

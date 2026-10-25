@@ -1901,6 +1901,7 @@ p .legal-link::after {
 .nb-page .tabs {
   margin-bottom: 12px;
   overflow-x: visible;
+  flex-wrap: wrap; /* 5 onglets : à la ligne plutôt que coupés (texte très grand) */
 }
 .nb-page .tabs button {
   flex: 1 1 auto;
@@ -2123,4 +2124,51 @@ details > summary {
   padding: 10px 0;
   min-height: var(--tap);
   cursor: pointer;
+}
+
+/* ---------- Entraide : nouveautés et invitation ---------- */
+.nb-news-line {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+}
+.nb-news-line strong {
+  flex: 1;
+  min-width: 0;
+}
+.nb-news-count {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--surface);
+  font-weight: 700;
+}
+.nb-news-go {
+  flex: none;
+  font-size: 1.5rem;
+  color: var(--muted);
+}
+.nb-unread {
+  margin-left: 6px;
+}
+.invite-msg {
+  color: var(--text);
+}
+.sidenav-invite {
+  margin-top: auto;
+  padding: 12px 4px 4px;
+}
+.sidenav-invite .btn {
+  width: 100%;
+}
+.sidenav-invite .input {
+  width: 100%;
+  min-width: 0;
 }

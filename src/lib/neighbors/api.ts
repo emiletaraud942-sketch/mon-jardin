@@ -5,6 +5,7 @@ import { compressToTarget } from '../photos'
 import { imageSize, jpegMetadataSegments, sizeWithinLimits } from '../security/image'
 import { cellBounds, cellDistanceKm, distanceLabel, isValidCoord, roundCell } from './cell'
 import { isNeighborsConfigured, neighborsClient, NEIGHBORS_STORAGE_KEY } from './client'
+import { unreadByThread } from './logic'
 import {
   NEIGHBORS_LIMITS as L,
   POST_KINDS,
@@ -633,6 +634,31 @@ export async function sendMessage(rawThreadId: string, body: string): Promise<Me
   const row = await run<MessageRow>(sb().from('messages').insert({ thread_id: threadId, sender: uid, body: text }).select('*').single() as never)
   if (!row) throw new NeighborsError('Le message n’a pas pu être envoyé.')
   return toMessage(row, uid)
+}
+
+/** Date de dernière lecture de chaque conversation, pour moi seul (la base ne montre que ma ligne). */
+async function myReads(): Promise<Record<string, string>> {
+  const rows = (await run<{ thread_id: string; last_read_at: string }[]>(sb().from('thread_reads').select('thread_id, last_read_at').limit(200) as never)) ?? []
+  const out: Record<string, string> = {}
+  for (const r of rows) out[r.thread_id] = r.last_read_at
+  return out
+}
+
+/** Messages reçus pas encore lus, par conversation (les 200 plus récents reçus sont regardés). */
+export async function listUnread(): Promise<Record<string, number>> {
+  const uid = await requireUserId()
+  const [reads, rows] = await Promise.all([
+    myReads(),
+    run<{ thread_id: string; created_at: string }[]>(sb().from('messages').select('thread_id, created_at').neq('sender', uid).order('created_at', { ascending: false }).limit(200) as never),
+  ])
+  return unreadByThread((rows ?? []).map((r) => ({ threadId: r.thread_id, createdAt: r.created_at })), reads)
+}
+
+/** Note que la conversation a été lue maintenant (la date est posée par le serveur). */
+export async function markThreadRead(rawThreadId: string): Promise<void> {
+  const threadId = assertUuid(rawThreadId, 'Conversation')
+  const uid = await requireUserId()
+  await run(sb().from('thread_reads').upsert({ thread_id: threadId, user_id: uid, last_read_at: new Date().toISOString() }, { onConflict: 'thread_id,user_id' }) as never)
 }
 
 // ---------- Modération ----------

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { deleteMyAccount, listBlocks, signOut, unblockUser } from '../../lib/neighbors/api'
 import { CONDUCT_RULES, neighborhoodText } from '../../lib/neighbors/logic'
+import { forgetVisit, notifyNewsChanged } from '../../lib/neighbors/news'
 import type { Profile } from '../../lib/neighbors/types'
 import { showToast } from '../../lib/toast'
 import type { Garden } from '../../types'
@@ -134,6 +135,8 @@ export function ProfileTab({ profile, email, garden, online, onSaved }: { profil
           onClose={() => setDeleting(false)}
           onConfirm={async () => {
             await deleteMyAccount()
+            forgetVisit(profile.userId)
+            notifyNewsChanged()
             showToast({ message: 'Votre compte et vos annonces sont supprimés.' })
           }}
         >
