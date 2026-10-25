@@ -166,3 +166,101 @@ describe('migration entraide v3 : messages non lus (thread_reads)', () => {
     expect(code3).toMatch(/where not exists \(select 1 from public\.thread_reads\)/)
   })
 })
+
+describe('migration entraide v4 : organisateurs, événements, intérêt', () => {
+  const sql4 = readFileSync('supabase/neighbors/migrations/20261025020000_neighbors_v4_events.sql', 'utf8')
+  const code4 = sql4.replace(/--.*$/gm, '')
+  const grants = [...code4.matchAll(/grant (select|insert|update|delete)( \([^)]*\))? (?:on )?(?:public\.)?(\w+)?/g)]
+
+  it('trois tables, RLS activée sur chacune', () => {
+    expect([...code4.matchAll(/create table if not exists public\.(\w+)/g)].map((m) => m[1])).toEqual(['organizers', 'events', 'event_interest'])
+    for (const t of ['organizers', 'events', 'event_interest']) expect(code4, t).toMatch(new RegExp(`alter table public\\.${t}\\s+enable row level security`))
+  })
+  it('verified_at : lecture seule pour les clients, jamais d’écriture ; posé par l’éditeur', () => {
+    const insertOrUpdate = [...code4.matchAll(/grant (insert|update) \(([^)]*)\) on public\.organizers/g)].map((m) => `${m[1]}: ${m[2]}`)
+    expect(insertOrUpdate).toEqual(['insert: user_id, name, description', 'update: name, description'])
+    expect(code4).toMatch(/grant select \(user_id, name, description, verified_at, created_at\) on public\.organizers/)
+    expect(code4).toMatch(/new\.verified_at := null/) // la demande part toujours non validée
+    expect(code4).toMatch(/new\.verified_at := old\.verified_at/)
+  })
+  it('colonnes d’événement : ni cellule, ni statut initial, ni compteur, ni date en écriture ; seul status se modifie', () => {
+    const insert = /grant insert \(([^)]*)\) on public\.events/.exec(code4)![1]
+    expect(insert).toBe('organizer, title, description, starts_at, ends_at, place, signup_url, capacity')
+    expect(/grant update \(([^)]*)\) on public\.events/.exec(code4)![1]).toBe('status')
+    expect(code4).toMatch(/grant insert \(event_id, user_id\) on public\.event_interest/)
+    expect(grants.some((g) => /update/.test(g[1]) && g[3] === 'event_interest')).toBe(false)
+  })
+  it('lien d’inscription : https seulement, 300 caractères, nom de domaine', () => {
+    expect(code4).toMatch(/char_length\(signup_url\) <= 300/)
+    expect(code4).toMatch(/signup_url ~ '\^\[Hh\]\[Tt\]\[Tt\]\[Pp\]\[Ss\]:\/\//)
+    expect(code4).not.toMatch(/signup_url ~\*/) // ~* retirerait i, s, k de la liste des caractères permis (repli de casse)
+    expect(code4).not.toMatch(/javascript|http:/)
+  })
+  it('les plafonds du client reprennent ceux de la base', () => {
+    expect(code4).toContain(`char_length(btrim(title)) between 1 and ${L.eventTitleMax}`)
+    expect(code4).toContain(`char_length(description) <= ${L.eventDescriptionMax}`)
+    expect(code4).toContain(`char_length(btrim(place)) between 1 and ${L.eventPlaceMax}`)
+    expect(code4).toContain(`capacity between 1 and ${L.eventCapacityMax}`)
+    expect(code4).toContain(`char_length(name) between ${L.organizerNameMin} and ${L.organizerNameMax}`)
+    expect(code4).toContain(`char_length(description) <= ${L.organizerDescriptionMax}`)
+    expect(code4).toContain(`neighbors_take_quota(new.organizer, 'event', ${L.eventsPerDay})`)
+    expect(code4).toContain(`neighbors_take_quota(new.user_id, 'interest', ${L.interestsPerDay})`)
+    expect(code4).toContain(`>= ${L.openEventsMax} then`)
+  })
+  it('lecture : zone de ~55 km, hors masqués, hors blocage ; écriture : organisateur validé et auteur', () => {
+    const select = /create policy events_select[\s\S]*?\);\n/.exec(code4)![0]
+    expect(select).toMatch(/neighbors_can_see_cell\(cell_lat, cell_lon\)/)
+    expect(select).toMatch(/status in \('open', 'cancelled'\)/)
+    expect(select).toMatch(/interval '7 days'/)
+    expect(select).toMatch(/not public\.neighbors_is_blocked\(organizer\)/)
+    expect(/create policy events_insert[\s\S]*?;/.exec(code4)![0]).toMatch(/neighbors_is_organizer\(\)/)
+    const upd = /create policy events_update[\s\S]*?;/.exec(code4)![0]
+    expect(upd.match(/status in \('open', 'cancelled'\)/g)).toHaveLength(2) // using ET with check : jamais hidden
+  })
+  it('signalement : cible « event » ajoutée aux contraintes, au déclencheur et au masquage automatique', () => {
+    expect(code4).toMatch(/reports_target_kind_check[\s\S]*?'event'\)/)
+    expect(code4).toMatch(/moderation_log_target_kind_check[\s\S]*?'event'\)/)
+    expect(code4).toMatch(/elsif new\.target_kind = 'event' then\s+update public\.events set status = 'hidden'/)
+    expect(code4).toMatch(/when 'event' then exists \(select 1 from public\.events e/)
+    expect(code4).toMatch(/n >= 3/)
+  })
+  it('purge : événements finis depuis plus de 30 jours', () => {
+    expect(code4).toMatch(/delete from public\.events where ends_at < now\(\) - interval '30 days'/)
+  })
+  it('fonctions durcies : search_path vide, révoquées à anon ; seule l’aide de politique est appelable', () => {
+    const fns = [...code4.matchAll(/create or replace function public\.(\w+)\(([^)]*)\)([\s\S]*?)\$\$;/g)]
+    expect(fns.length).toBeGreaterThanOrEqual(8)
+    for (const f of fns) {
+      expect(f[0], f[1]).toMatch(/set search_path = ''/)
+      expect(code4, f[1]).toMatch(new RegExp(`revoke all on function public\\.${f[1]}\\([^)]*\\) from public, anon`))
+    }
+    expect([...code4.matchAll(/grant execute on function public\.(\w+)/g)].map((m) => m[1])).toEqual(['neighbors_is_organizer'])
+  })
+  it('aucun droit à anon ou public, aucune politique ouverte, pas d’extension ni de SQL dynamique', () => {
+    expect(code4).not.toMatch(/grant [^;]*\bto\b[^;]*\b(anon|public)\b/i)
+    expect(code4).not.toMatch(/using\s*\(\s*true\s*\)|with check\s*\(\s*true\s*\)/i)
+    expect(code4).not.toMatch(/create extension|service_role|grant all/i)
+    expect(code4).not.toMatch(/\bexecute\s+(format|'|\()/i)
+  })
+  it('pas d’adresse exacte ni d’e-mail : aucune colonne lat/lon/adresse hors cellule', () => {
+    const cols = [...code4.matchAll(/^\s+(\w+)\s+(?:uuid|text|integer|timestamptz|numeric\(\d, \d\))/gm)].map((m) => m[1])
+    expect(cols.filter((c) => /mail|address|adresse|phone|tel$|^lat|^lon|gps/.test(c))).toEqual([])
+    expect(cols).toEqual(expect.arrayContaining(['cell_lat', 'cell_lon', 'place']))
+  })
+  it('rejouable : tables, index, déclencheurs, politiques et contraintes protégés ; la v1 n’est pas modifiée', () => {
+    for (const m of code4.matchAll(/^create (table|index|unique index|trigger|policy|function)\b(?! if not exists)(?! or replace)(.*)$/gim)) {
+      const stmt = m[0]
+      if (/^create (trigger|policy)/i.test(stmt)) {
+        const name = /create (?:trigger|policy) (\w+)/i.exec(stmt)![1]
+        expect(code4, name).toMatch(new RegExp(`drop (trigger|policy) if exists ${name}\\b`))
+      } else expect(stmt).toMatch(/if not exists|or replace/)
+    }
+    for (const c of ['organizers_name_check', 'organizers_description_check', 'events_signup_url_check', 'events_capacity_check', 'reports_target_kind_check', 'moderation_log_target_kind_check'])
+      expect(code4, c).toMatch(new RegExp(`drop constraint if exists ${c}\\b`))
+    expect(sql).not.toMatch(/organizers|event_interest/)
+  })
+  it('aucune suppression de données (les delete sont ceux de la purge, dans une fonction)', () => {
+    const outside = code4.replace(/create or replace function[\s\S]*?\$\$;/g, '')
+    expect(outside).not.toMatch(/\bdelete from\b|\btruncate\b|\bdrop (table|column|function|index)\b/i)
+  })
+})

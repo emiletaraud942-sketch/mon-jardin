@@ -18,11 +18,11 @@
 
 Site et application : Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis. Site : vercel.com.
 
-Données de l’entraide entre voisins (comptes, annonces, photos, messages) : Supabase, projet dédié. Raison sociale, adresse et région d’hébergement : [à compléter] (à confirmer par l’éditeur dans le tableau de bord Supabase).
+Données de l’entraide entre voisins (comptes, annonces, événements, photos, messages) : Supabase, projet dédié. Raison sociale, adresse et région d’hébergement : [à compléter] (à confirmer par l’éditeur dans le tableau de bord Supabase).
 
 ## Contenus publiés par les membres
 
-Les annonces, réponses, photos et messages de l’entraide sont publiés par leurs auteurs, qui en sont seuls responsables. L’éditeur intervient comme hébergeur de ces contenus au sens de l’article 6 de la loi n° 2004-575 du 21 juin 2004 (LCEN) : il ne les contrôle pas avant publication et n’en est pas l’auteur.
+Les annonces, réponses, photos, messages et événements de l’entraide sont publiés par leurs auteurs, qui en sont seuls responsables. L’éditeur intervient comme hébergeur de ces contenus au sens de l’article 6 de la loi n° 2004-575 du 21 juin 2004 (LCEN) : il ne les contrôle pas avant publication et n’en est pas l’auteur.
 
 Il retire promptement tout contenu manifestement illicite dès qu’il en a connaissance, ou dès qu’il lui est notifié.
 

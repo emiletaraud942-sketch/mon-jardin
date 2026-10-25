@@ -27,7 +27,8 @@ describe('pages juridiques : entraide', () => {
   })
   it('l’inventaire décrit chaque donnée de l’entraide avec sa durée et son effacement', () => {
     const ids = DATA_INVENTORY.map((d) => d.id)
-    for (const id of ['entraide-compte', 'entraide-profil', 'entraide-annonces', 'entraide-messages', 'entraide-moderation']) expect(ids).toContain(id)
+    for (const id of ['entraide-compte', 'entraide-profil', 'entraide-annonces', 'entraide-evenements', 'entraide-messages', 'entraide-moderation']) expect(ids).toContain(id)
+    expect(DATA_INVENTORY.find((d) => d.id === 'entraide-evenements')!.duree).toContain('30 jours après leur fin')
     const annonces = DATA_INVENTORY.find((d) => d.id === 'entraide-annonces')!
     expect(annonces.duree).toContain('60 jours')
     expect(DATA_INVENTORY.find((d) => d.id === 'entraide-profil')!.donnee).toContain('1 km')
@@ -35,6 +36,11 @@ describe('pages juridiques : entraide', () => {
       expect(d.destinataires.join(' ')).toContain('Supabase')
       expect(d.base).not.toBe('execution')
     }
+  })
+  it('événements : organisateurs validés, liens externes non contrôlés, durées, pas de nom des intéressés', () => {
+    for (const m of ['Événements', 'organisateurs validés', 'Liens d’inscription', 'ne contrôle pas', 'Vous quittez l’appli', 'https', '30 jours après leur fin', 'jamais leurs noms', 'lieu en texte libre']) expect(conf, m).toContain(m)
+    for (const m of ['Événements et organisateurs', 'seul responsable de son événement', 'n’est partie à aucune inscription', 'ne vaut pas inscription', 'ne contrôle pas ces sites', 'lieu public', 'Trois signalements', 'un événement']) expect(cgu, m).toContain(m)
+    expect(mentions).toContain('événements')
   })
   it('aucune adresse e-mail réelle ni numéro de téléphone dans les textes', () => {
     const all = LEGAL_DOCS.map(toMarkdown).join('\n')

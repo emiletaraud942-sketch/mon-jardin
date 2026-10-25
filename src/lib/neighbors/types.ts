@@ -44,6 +44,19 @@ export const NEIGHBORS_LIMITS = {
   postLifetimeDays: 60,
   defaultRadiusKm: 10,
   maxRadiusKm: 50,
+  // Événements (miroir de la migration v4)
+  organizerNameMin: 3,
+  organizerNameMax: 60,
+  organizerDescriptionMax: 500,
+  eventTitleMax: 80,
+  eventDescriptionMax: 2000,
+  eventPlaceMax: 120,
+  eventUrlMax: 300,
+  eventCapacityMax: 10000,
+  eventsPerDay: 3,
+  openEventsMax: 20,
+  interestsPerDay: 50,
+  eventMaxAheadDays: 365,
 } as const
 
 export interface NeighborsSession {
@@ -126,7 +139,7 @@ export interface Message {
   createdAt: string
 }
 
-export type ReportTarget = 'post' | 'reply' | 'profile' | 'message'
+export type ReportTarget = 'post' | 'reply' | 'profile' | 'message' | 'event'
 export type ReportReason = 'spam' | 'abus' | 'dangereux' | 'commerce' | 'autre'
 export const REPORT_REASONS: Record<ReportReason, string> = {
   spam: 'Publicité ou messages indésirables',
@@ -146,4 +159,70 @@ export interface InitNeighborsResult {
   handled: boolean
   signedIn?: boolean
   error?: string
+}
+
+// ---------- Événements ----------
+
+/** `hidden` = masqué par la modération (visible de son seul organisateur). */
+export type EventStatus = 'open' | 'cancelled' | 'hidden'
+
+/** Demande d'organisateur. `verified` : validée par l'éditeur (seul lui peut la valider). */
+export interface OrganizerInfo {
+  userId: string
+  name: string
+  description: string
+  verified: boolean
+  createdAt: string
+}
+
+export interface NewOrganizer {
+  name: string
+  description?: string
+}
+
+export interface EventItem {
+  id: string
+  organizerId: string
+  organizerName: string
+  /** Présentation de l'organisateur (500 caractères au plus), éventuellement vide. */
+  organizerDescription: string
+  /** Vrai si l'événement est celui de l'utilisateur connecté. */
+  mine: boolean
+  title: string
+  description: string
+  /** Dates ISO (UTC). L'affichage se fait dans le fuseau de l'appareil. */
+  startsAt: string
+  endsAt: string
+  /** Lieu en texte libre (un lieu public, jamais une adresse privée). */
+  place: string
+  /** Lien d'inscription https déjà vérifié, ou null. */
+  signupUrl: string | null
+  capacity: number | null
+  status: EventStatus
+  /** Nombre de membres intéressés (sans leurs noms). */
+  interestCount: number
+  /** Vrai si l'utilisateur connecté s'est déclaré intéressé. */
+  interested: boolean
+  cell: Cell
+  createdAt: string
+  distanceKm: number | null
+  distanceLabel: string
+}
+
+export interface ListEventsOptions {
+  /** Rayon en km (défaut 10, max 50). */
+  radiusKm?: number
+}
+
+export interface NewEvent {
+  title: string
+  description?: string
+  /** Dates ISO complètes (avec fuseau). */
+  startsAt: string
+  endsAt: string
+  place: string
+  /** Lien https facultatif. */
+  signupUrl?: string
+  /** Facultatif, entier de 1 à 10 000. */
+  capacity?: number | null
 }

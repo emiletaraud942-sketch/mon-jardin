@@ -2103,6 +2103,32 @@ select.nb-cat {
   font: inherit;
 }
 
+/* ---------- Entraide : événements ---------- */
+.nb-event {
+  gap: 8px;
+}
+.nb-event-title {
+  min-height: var(--tap);
+  font-size: 1.1rem;
+}
+.nb-event-facts {
+  grid-template-columns: minmax(5.5rem, auto) 1fr;
+}
+.nb-event-actions {
+  flex-wrap: wrap;
+}
+.nb-time-row {
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+.nb-time-row > .field {
+  flex: 1 1 8rem;
+}
+input[type='date'].input,
+input[type='time'].input {
+  min-height: var(--tap);
+}
+
 /* Case ou bouton radio + texte long : reste sur la même ligne, cible ≥ 40 px. */
 .check-row {
   display: flex;

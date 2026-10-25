@@ -29,6 +29,18 @@ Ne consommez jamais une plante, un fruit ou un champignon sur la seule foi de l�
 - Pseudo libre, mais il ne doit ni usurper une autre personne, ni révéler votre identité contre votre gré, ni être trompeur ou offensant.
 - Le quartier que vous indiquez est le vôtre. Il est arrondi à environ 1 km.
 - L’entraide est gratuite et non commerciale : dons, échanges, prêts, demandes et questions entre particuliers.
+- Les événements sont publiés par des organisateurs validés. Les autres membres les consultent, signalent un problème et indiquent leur intérêt.
+
+## Événements et organisateurs
+
+- Pour publier des événements, il faut être organisateur. La demande indique un nom public et une courte description. L’éditeur la vérifie, puis l’accepte ou la refuse, sans avoir à motiver un refus.
+- La validation porte sur le nom de l’organisateur. Elle ne garantit ni l’événement, ni sa sécurité, ni son contenu. L’éditeur peut retirer la validation à tout moment ; les événements de la personne sont alors masqués.
+- L’organisateur est seul responsable de son événement : contenu, autorisations, assurance, accueil et sécurité des participants, respect de la loi. L’éditeur n’est pas l’organisateur et n’est partie à aucune inscription.
+- Un événement ne sert pas à vendre : la règle « gratuit et non commercial » de l’entraide s’applique aussi aux événements.
+- Le lieu est un texte libre : indiquez un lieu public, jamais l’adresse d’une maison privée.
+- « Je suis intéressé(e) » est un simple compteur et ne vaut pas inscription.
+- « S’inscrire » ouvre un site extérieur, en https seulement, après un avertissement. L’éditeur ne contrôle pas ces sites et n’est pas responsable de leur contenu, de leurs conditions ni de leur traitement de vos données.
+- Trois signalements de membres distincts masquent automatiquement un événement, en attendant l’examen de l’éditeur.
 
 ## Règles de conduite
 
@@ -47,12 +59,12 @@ Il est interdit de perturber le service : création de faux comptes, envoi en ma
 
 Vous restez propriétaire de vos contenus. En les publiant, vous accordez à l’éditeur, gratuitement et pour la durée de leur publication, le droit de les héberger et de les afficher aux autres membres de l’entraide, uniquement pour faire fonctionner le service.
 
-Vous garantissez avoir le droit de les publier et en êtes seul responsable. Les annonces sont supprimées au bout de 60 jours ; vous pouvez les supprimer avant, ainsi que votre compte, à tout moment.
+Vous garantissez avoir le droit de les publier et en êtes seul responsable. Les annonces sont supprimées au bout de 60 jours ; vous pouvez les supprimer avant, ainsi que votre compte, à tout moment. Les événements sont supprimés 30 jours après leur fin ; un organisateur peut les annuler, ou supprimer son compte, à tout moment.
 
 ## Signalement, blocage et modération
 
-- Chaque membre peut signaler une annonce, une réponse, un profil ou un message qu’il reçoit, avec un motif.
-- Trois signalements de membres distincts masquent automatiquement une annonce ou une réponse, en attendant l’examen de l’éditeur. Le masquage n’est pas une sanction.
+- Chaque membre peut signaler une annonce, une réponse, un événement, un profil ou un message qu’il reçoit, avec un motif.
+- Trois signalements de membres distincts masquent automatiquement une annonce, une réponse ou un événement, en attendant l’examen de l’éditeur. Le masquage n’est pas une sanction.
 - Chaque membre peut bloquer une personne : plus aucune annonce, réponse ni message n’est visible dans un sens comme dans l’autre.
 - L’éditeur examine les signalements, peut retirer un contenu, avertir ou bannir un compte, notamment en cas de manquement aux règles de conduite. Il indique à la personne concernée le motif de la décision, sauf si la loi ou une enquête l’interdit.
 - Pour contester une décision, écrivez à l’éditeur : le dossier est réexaminé.
@@ -69,7 +81,7 @@ Vous restez responsable du respect de la réglementation sur les plantes et les 
 
 ## Suspension et suppression du compte
 
-Vous pouvez supprimer votre compte à tout moment depuis l’entraide : profil, annonces, réponses, photos et messages sont effacés définitivement. L’éditeur peut suspendre ou supprimer un compte qui enfreint ces conditions, sans préavis en cas de manquement grave. Un compte suspendu ne peut plus ni publier, ni lire les annonces.
+Vous pouvez supprimer votre compte à tout moment depuis l’entraide : profil, demande d’organisateur, événements, annonces, réponses, photos et messages sont effacés définitivement. L’éditeur peut suspendre ou supprimer un compte qui enfreint ces conditions, sans préavis en cas de manquement grave. Un compte suspendu ne peut plus ni publier, ni lire les annonces.
 
 ## Disponibilité
 

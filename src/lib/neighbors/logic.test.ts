@@ -209,3 +209,155 @@ describe('texte du quartier (sans degrés)', () => {
     expect(neighborhoodText({ lat: 49.89, lon: 2.3 }, garden)).not.toMatch(/°/)
   })
 })
+
+// ---------- Événements ----------
+import { capacityText, checkHttpsUrl, dateInput, emptyEventsText, eventCountdown, eventEnded, eventStatusInfo, externalHost, formatEventDate, interestCountText, localDateTimeToIso, safeExternalUrl, upcomingEvents } from './logic'
+
+const PARIS = 'Europe/Paris'
+
+describe('lien d’inscription : https seulement', () => {
+  it.each([
+    'https://exemple.fr/inscription?id=3#haut',
+    'HTTPS://Exemple.FR/x',
+    'https://asso.exemple.fr:8443/a/b',
+    'https://exemple.fr',
+    'https://xn--caf-dma.fr/ete',
+    '  https://exemple.fr/espaces  ',
+  ])('accepte %s', (u) => {
+    expect(checkHttpsUrl(u).ok).toBe(true)
+  })
+  it.each([
+    'javascript:alert(1)',
+    'JavaScript:alert(1)',
+    'data:text/html;base64,PHNjcmlwdD4=',
+    'vbscript:msgbox(1)',
+    'file:///etc/passwd',
+    'blob:https://exemple.fr/abc',
+    'ftp://exemple.fr/x',
+    '//exemple.fr/x',
+    'exemple.fr',
+    'https://',
+    'https://exemple',
+    'https://user:pass@exemple.fr/x',
+    'https://exemple.fr@evil.example/x',
+    'https://1.2.3.4/x',
+    'https://[::1]/x',
+    'https://localhost/x',
+    'https://exemple.fr/a b',
+    'https://exemple.fr/"onmouseover="x',
+    'https://exemple.fr/<script>',
+    'https://exemple.fr\\evil',
+    'https://-exemple.fr/x',
+    'https://exemple..fr/x',
+    'https://exemple.fr/\nx',
+    'https://exemple.fr/`x`',
+    'https://exemple.fr/‮abc',
+    'https://exemple.fr/ x',
+    'https://éxemple.fr/x',
+  ])('refuse %j', (u) => {
+    expect(checkHttpsUrl(u).ok).toBe(false)
+  })
+  it('http:// reçoit un message précis ; un lien trop long aussi', () => {
+    expect(checkHttpsUrl('http://exemple.fr/x')).toEqual({ ok: false, message: expect.stringContaining('https://') })
+    const long = checkHttpsUrl('https://exemple.fr/' + 'a'.repeat(300))
+    expect(long.ok).toBe(false)
+    expect(!long.ok && long.message).toContain('300')
+    expect(checkHttpsUrl('https://exemple.fr/' + 'a'.repeat(281)).ok).toBe(true) // 300 caractères pile
+  })
+  it('rend l’adresse nettoyée et le nom du site', () => {
+    expect(checkHttpsUrl(' https://Asso.Exemple.fr/a ')).toEqual({ ok: true, url: 'https://Asso.Exemple.fr/a', host: 'asso.exemple.fr' })
+    expect(externalHost('https://exemple.fr/x')).toBe('exemple.fr')
+    expect(externalHost('javascript:alert(1)')).toBeNull()
+  })
+  it('safeExternalUrl : jamais un lien douteux venu de la base', () => {
+    expect(safeExternalUrl('https://exemple.fr/x')).toBe('https://exemple.fr/x')
+    for (const bad of ['javascript:alert(1)', 'http://exemple.fr', null, undefined, 42, '']) expect(safeExternalUrl(bad)).toBeNull()
+  })
+})
+
+describe('événements : dates en toutes lettres', () => {
+  it('même jour : « de 14 h 00 à 16 h 00 »', () => {
+    expect(formatEventDate('2026-11-14T13:00:00Z', '2026-11-14T15:00:00Z', PARIS)).toBe('samedi 14 novembre 2026, de 14 h 00 à 16 h 00')
+  })
+  it('début seul (fin = début) : « à 14 h 00 »', () => {
+    expect(formatEventDate('2026-11-14T13:00:00Z', '2026-11-14T13:00:00Z', PARIS)).toBe('samedi 14 novembre 2026 à 14 h 00')
+  })
+  it('plusieurs jours', () => {
+    expect(formatEventDate('2026-11-14T13:00:00Z', '2026-11-15T17:30:00Z', PARIS)).toBe('du samedi 14 novembre 2026 à 14 h 00 au dimanche 15 novembre 2026 à 18 h 30')
+  })
+  it('l’heure suit le fuseau (heure d’été et d’hiver)', () => {
+    expect(formatEventDate('2026-07-14T12:00:00Z', '2026-07-14T13:00:00Z', PARIS)).toBe('mardi 14 juillet 2026, de 14 h 00 à 15 h 00')
+    expect(formatEventDate('2026-07-14T07:00:00Z', '2026-07-14T08:00:00Z', PARIS)).toContain('de 9 h 00 à 10 h 00')
+  })
+  it('date invalide : texte vide', () => {
+    expect(formatEventDate('pas une date', '2026-11-14T13:00:00Z', PARIS)).toBe('')
+  })
+})
+
+describe('événements : compte à rebours et statut', () => {
+  const now = new Date('2026-11-10T09:00:00Z')
+  it('en ce moment, aujourd’hui, demain, dans N jours, terminé', () => {
+    expect(eventCountdown('2026-11-10T08:00:00Z', '2026-11-10T12:00:00Z', now, PARIS)).toBe('En ce moment')
+    expect(eventCountdown('2026-11-10T15:00:00Z', '2026-11-10T17:00:00Z', now, PARIS)).toBe('Aujourd’hui')
+    expect(eventCountdown('2026-11-11T15:00:00Z', '2026-11-11T17:00:00Z', now, PARIS)).toBe('Demain')
+    expect(eventCountdown('2026-11-15T15:00:00Z', '2026-11-15T17:00:00Z', now, PARIS)).toBe('Dans 5 jours')
+    expect(eventCountdown('2026-11-09T15:00:00Z', '2026-11-09T17:00:00Z', now, PARIS)).toBe('Terminé')
+  })
+  it('« demain » suit le jour local, pas les 24 heures', () => {
+    const late = new Date('2026-11-10T22:30:00Z') // 23 h 30 à Paris
+    expect(eventCountdown('2026-11-10T23:30:00Z', '2026-11-11T00:30:00Z', late, PARIS)).toBe('Demain')
+  })
+  const ev = (status: 'open' | 'cancelled' | 'hidden', endsAt: string) => ({ status, startsAt: '2026-11-12T10:00:00Z', endsAt })
+  it('statut : à venir, annulé, caché, terminé', () => {
+    expect(eventStatusInfo(ev('open', '2026-11-12T12:00:00Z'), now, PARIS)).toMatchObject({ label: 'Dans 2 jours', tone: 'green', canCancel: true, canReopen: false })
+    expect(eventStatusInfo(ev('cancelled', '2026-11-12T12:00:00Z'), now, PARIS)).toMatchObject({ label: 'Annulé', tone: 'danger', canCancel: false, canReopen: true })
+    expect(eventStatusInfo(ev('hidden', '2026-11-12T12:00:00Z'), now, PARIS)).toMatchObject({ tone: 'danger', canCancel: false, canReopen: false })
+    expect(eventStatusInfo(ev('open', '2026-11-09T12:00:00Z'), now, PARIS)).toMatchObject({ label: 'Terminé', canCancel: false, canReopen: false })
+    expect(eventStatusInfo(ev('cancelled', '2026-11-09T12:00:00Z'), now, PARIS).canReopen).toBe(false)
+    expect(eventEnded({ endsAt: '2026-11-09T12:00:00Z' }, now)).toBe(true)
+  })
+  it('à venir : sans les finis, par date', () => {
+    const list = [
+      { id: 'c', startsAt: '2026-11-20T10:00:00Z', endsAt: '2026-11-20T12:00:00Z' },
+      { id: 'old', startsAt: '2026-11-01T10:00:00Z', endsAt: '2026-11-01T12:00:00Z' },
+      { id: 'a', startsAt: '2026-11-11T10:00:00Z', endsAt: '2026-11-11T12:00:00Z' },
+      { id: 'now', startsAt: '2026-11-10T07:00:00Z', endsAt: '2026-11-10T11:00:00Z' },
+      { id: 'bad', startsAt: 'x', endsAt: 'y' },
+    ]
+    expect(upcomingEvents(list, now).map((e) => e.id)).toEqual(['now', 'a', 'c'])
+  })
+})
+
+describe('événements : textes', () => {
+  it('intérêt et places, avec le bon accord', () => {
+    expect(interestCountText(0)).toBe('Personne n’est encore intéressé')
+    expect(interestCountText(1)).toBe('1 personne intéressée')
+    expect(interestCountText(12)).toBe('12 personnes intéressées')
+    expect(interestCountText(-4)).toBe('Personne n’est encore intéressé')
+    expect(capacityText(null)).toBeNull()
+    expect(capacityText(1)).toBe('1 place annoncée')
+    expect(capacityText(40)).toBe('40 places annoncées')
+  })
+  it('état vide', () => {
+    expect(emptyEventsText().title).toContain('Aucun événement')
+  })
+})
+
+describe('événements : saisie date et heure', () => {
+  it('date et heure de l’appareil → ISO', () => {
+    expect(localDateTimeToIso('2026-11-14', '14:30')).toBe(new Date(2026, 10, 14, 14, 30).toISOString())
+    expect(dateInput(new Date(2026, 10, 4))).toBe('2026-11-04')
+  })
+  it.each([
+    ['2026-02-30', '10:00'],
+    ['2026-13-01', '10:00'],
+    ['2026-11-14', '25:00'],
+    ['2026-11-14', '10:61'],
+    ['', '10:00'],
+    ['2026-11-14', ''],
+    ['14/11/2026', '10:00'],
+    ['2026-11-14', '10h00'],
+  ])('refuse %j %j', (d, t) => {
+    expect(localDateTimeToIso(d, t)).toBeNull()
+  })
+})

@@ -5,7 +5,7 @@ import { compressToTarget } from '../photos'
 import { imageSize, jpegMetadataSegments, sizeWithinLimits } from '../security/image'
 import { cellBounds, cellDistanceKm, distanceLabel, isValidCoord, roundCell } from './cell'
 import { isNeighborsConfigured, neighborsClient, NEIGHBORS_STORAGE_KEY } from './client'
-import { unreadByThread } from './logic'
+import { checkHttpsUrl, safeExternalUrl, unreadByThread } from './logic'
 import {
   NEIGHBORS_LIMITS as L,
   POST_KINDS,
@@ -13,11 +13,17 @@ import {
   REPORT_REASONS,
   type BlockedUser,
   type Cell,
+  type EventItem,
+  type EventStatus,
   type InitNeighborsResult,
+  type ListEventsOptions,
   type ListPostsOptions,
   type Message,
   type NeighborsSession,
+  type NewEvent,
+  type NewOrganizer,
   type NewPost,
+  type OrganizerInfo,
   type Post,
   type PostCategory,
   type PostKind,
@@ -48,7 +54,7 @@ interface RawError {
   name?: string
 }
 
-const REPORT_TARGETS: readonly ReportTarget[] = ['post', 'reply', 'profile', 'message']
+const REPORT_TARGETS: readonly ReportTarget[] = ['post', 'reply', 'profile', 'message', 'event']
 
 const LIMIT_TEXT = 'Vous avez atteint votre limite du jour. Revenez demain.'
 const QUOTA_TEXT: Record<string, string> = {
@@ -60,6 +66,10 @@ const QUOTA_TEXT: Record<string, string> = {
   profile: LIMIT_TEXT,
   post_open: `Vous avez déjà ${L.openPostsMax} annonces ouvertes. Fermez-en une avant d’en publier une autre.`,
   block: LIMIT_TEXT,
+  event: `Vous avez atteint la limite de ${L.eventsPerDay} événements par jour. Revenez demain.`,
+  event_open: `Vous avez déjà ${L.openEventsMax} événements ouverts. Annulez-en un avant d’en publier un autre.`,
+  interest: LIMIT_TEXT,
+  organizer: LIMIT_TEXT,
 }
 
 /** Traduit une erreur Supabase / Postgres / réseau en message français lisible. */
@@ -75,6 +85,18 @@ export function translateError(e: unknown): string {
   if (low.includes('threads_user_a_user_b_key')) return 'Une conversation existe déjà avec cette personne.'
   if (low.includes('not_member')) return 'Votre profil est absent ou suspendu. Créez-le dans l’entraide, ou contactez l’éditeur.'
   if (low.includes('reply_not_allowed')) return 'On ne peut répondre qu’à une question encore ouverte.'
+  if (low.includes('not_organizer')) return 'Votre demande d’organisateur n’est pas encore validée. Vous pourrez publier dès qu’elle le sera.'
+  if (low.includes('event_past')) return 'La date de début est passée. Choisissez une date à venir.'
+  if (low.includes('event_far')) return 'L’événement doit se terminer dans moins d’un an.'
+  if (low.includes('events_dates_check')) return 'La fin doit venir après le début.'
+  if (low.includes('events_signup_url_check')) return 'Ce lien n’est pas valable. Il doit commencer par https://.'
+  if (low.includes('events_capacity_check')) return `Le nombre de places doit être entre 1 et ${L.eventCapacityMax}.`
+  if (low.includes('organizers_name_key')) return 'Ce nom d’organisateur est déjà pris. Choisissez-en un autre.'
+  if (low.includes('organizers_pkey')) return 'Vous avez déjà fait une demande.'
+  // Base pas encore mise à jour (migration v4 non collée) : les tables d'événements n'existent pas encore.
+  if (err.code === 'PGRST205' || err.code === '42P01' || /could not find the table|relation .* does not exist/.test(low)) {
+    if (/events|organizers|event_interest/.test(low)) return 'Les événements ne sont pas encore ouverts chez vous. Réessayez plus tard.'
+  }
   if (low.includes('report_self')) return 'Vous ne pouvez pas vous signaler vous-même.'
   if (low.includes('report_target_not_found')) return 'Ce contenu n’existe plus.'
   if (low.includes('over_email_send_rate_limit') || low.includes('email rate limit') || err.status === 429 || low.includes('rate limit')) {
@@ -659,6 +681,244 @@ export async function markThreadRead(rawThreadId: string): Promise<void> {
   const threadId = assertUuid(rawThreadId, 'Conversation')
   const uid = await requireUserId()
   await run(sb().from('thread_reads').upsert({ thread_id: threadId, user_id: uid, last_read_at: new Date().toISOString() }, { onConflict: 'thread_id,user_id' }) as never)
+}
+
+// ---------- Organisateurs et événements ----------
+
+/** Nom d'organisateur : mêmes règles que le pseudo (pas de balise, pas de caractère invisible), avec ses propres longueurs. */
+export function validateOrganizerName(raw: string): string {
+  const n = raw.trim()
+  if (n.length < L.organizerNameMin || n.length > L.organizerNameMax) throw new NeighborsError(`Le nom doit faire entre ${L.organizerNameMin} et ${L.organizerNameMax} caractères.`, 'invalid')
+  if (CONTROL.test(n)) throw new NeighborsError('Le nom contient des caractères interdits (< > ou caractères de contrôle).', 'invalid')
+  if (INVISIBLE.test(n)) throw new NeighborsError('Le nom contient des caractères invisibles ou de direction.', 'invalid')
+  if (!/[\p{L}\p{N}]/u.test(n)) throw new NeighborsError('Le nom doit contenir au moins une lettre ou un chiffre.', 'invalid')
+  return n
+}
+
+export function validateOrganizer(input: NewOrganizer): { name: string; description: string } {
+  return {
+    name: validateOrganizerName(input.name),
+    description: validateText(input.description ?? '', 'Description', L.organizerDescriptionMax, false),
+  }
+}
+
+export interface ValidEvent {
+  title: string
+  description: string
+  startsAt: string
+  endsAt: string
+  place: string
+  signupUrl: string | null
+  capacity: number | null
+}
+
+const HOUR_MS = 3_600_000
+const DAY_MS = 86_400_000
+
+/** Vérifie un événement AVANT l'envoi (la base refait les mêmes contrôles). Les dates sont rendues en ISO (UTC). */
+export function validateEvent(input: NewEvent, now: Date = new Date()): ValidEvent {
+  const title = validateText(input.title, 'Titre', L.eventTitleMax, true)
+  const description = validateText(input.description ?? '', 'Description', L.eventDescriptionMax, false)
+  const place = validateText(input.place, 'Lieu', L.eventPlaceMax, true)
+  const start = Date.parse(input.startsAt)
+  const end = Date.parse(input.endsAt)
+  if (!Number.isFinite(start)) throw new NeighborsError('Choisissez le jour et l’heure du début.', 'invalid')
+  if (!Number.isFinite(end)) throw new NeighborsError('Choisissez le jour et l’heure de la fin.', 'invalid')
+  if (end < start) throw new NeighborsError('La fin doit venir après le début.', 'invalid')
+  if (start < now.getTime() - HOUR_MS) throw new NeighborsError('La date de début est passée. Choisissez une date à venir.', 'invalid')
+  if (end > now.getTime() + L.eventMaxAheadDays * DAY_MS) throw new NeighborsError('L’événement doit se terminer dans moins d’un an.', 'invalid')
+  let signupUrl: string | null = null
+  const rawUrl = (input.signupUrl ?? '').trim()
+  if (rawUrl) {
+    const c = checkHttpsUrl(rawUrl)
+    if (!c.ok) throw new NeighborsError(c.message, 'invalid')
+    signupUrl = c.url
+  }
+  let capacity: number | null = null
+  if (input.capacity != null && !(typeof input.capacity === 'string' && (input.capacity as string).trim() === '')) {
+    const n = Number(input.capacity)
+    if (!Number.isInteger(n) || n < 1 || n > L.eventCapacityMax) throw new NeighborsError(`Le nombre de places doit être un nombre entier entre 1 et ${L.eventCapacityMax}.`, 'invalid')
+    capacity = n
+  }
+  return { title, description, startsAt: new Date(start).toISOString(), endsAt: new Date(end).toISOString(), place, signupUrl, capacity }
+}
+
+interface OrganizerRow {
+  user_id: string
+  name: string
+  description: string | null
+  verified_at: string | null
+  created_at: string
+}
+const ORGANIZER_COLS = 'user_id, name, description, verified_at, created_at'
+const toOrganizer = (r: OrganizerRow): OrganizerInfo => ({ userId: r.user_id, name: r.name, description: r.description ?? '', verified: r.verified_at != null, createdAt: r.created_at })
+
+/** Ma demande d'organisateur (en attente ou validée), ou null si je n'en ai pas fait. */
+export async function getMyOrganizer(): Promise<OrganizerInfo | null> {
+  const uid = await requireUserId()
+  const row = await run<OrganizerRow>(sb().from('organizers').select(ORGANIZER_COLS).eq('user_id', uid).maybeSingle() as never)
+  return row ? toOrganizer(row) : null
+}
+
+/**
+ * Demande à devenir organisateur (ou corrige une demande en attente). La demande part toujours « non validée » :
+ * seul l'éditeur la valide. Une fois validée, le nom ne se change plus depuis l'appli.
+ */
+export async function requestOrganizer(input: NewOrganizer): Promise<OrganizerInfo> {
+  const uid = await requireUserId()
+  const v = validateOrganizer(input)
+  const existing = await getMyOrganizer()
+  if (existing?.verified) throw new NeighborsError('Vous êtes déjà organisateur. Pour changer de nom, écrivez à l’éditeur.', 'invalid')
+  const client = sb()
+  const q = existing
+    ? client.from('organizers').update({ name: v.name, description: v.description }).eq('user_id', uid).select(ORGANIZER_COLS).single()
+    : client.from('organizers').insert({ user_id: uid, name: v.name, description: v.description }).select(ORGANIZER_COLS).single()
+  const row = await run<OrganizerRow>(q as never)
+  if (!row) throw new NeighborsError('La demande n’a pas pu être envoyée.')
+  return toOrganizer(row)
+}
+
+/** Retire ma demande, ou arrête d'être organisateur. Efface aussi mes événements. */
+export async function withdrawOrganizer(): Promise<void> {
+  const uid = await requireUserId()
+  await run(sb().from('organizers').delete().eq('user_id', uid) as never)
+}
+
+interface EventRow {
+  id: string
+  organizer: string
+  title: string
+  description: string | null
+  starts_at: string
+  ends_at: string
+  place: string
+  cell_lat: number | string
+  cell_lon: number | string
+  signup_url: string | null
+  capacity: number | null
+  status: EventStatus
+  interest_count: number | null
+  created_at: string
+  organizers?: { name?: string; description?: string | null } | null
+}
+const EVENT_SELECT = '*, organizers(name, description)'
+
+function toEvent(r: EventRow, uid: string, from: Cell | null, interested: boolean): EventItem {
+  const cell = { lat: Number(r.cell_lat), lon: Number(r.cell_lon) }
+  const km = from ? cellDistanceKm(from, cell) : null
+  return {
+    id: r.id,
+    organizerId: r.organizer,
+    organizerName: r.organizers?.name ?? 'Organisateur',
+    organizerDescription: r.organizers?.description ?? '',
+    mine: r.organizer === uid,
+    title: r.title,
+    description: r.description ?? '',
+    startsAt: r.starts_at,
+    endsAt: r.ends_at,
+    place: r.place,
+    signupUrl: safeExternalUrl(r.signup_url), // jamais un lien qui ne passe pas le contrôle https
+    capacity: typeof r.capacity === 'number' ? r.capacity : null,
+    status: r.status,
+    interestCount: Math.max(0, Number(r.interest_count) || 0),
+    interested,
+    cell,
+    createdAt: r.created_at,
+    distanceKm: km,
+    distanceLabel: distanceLabel(km),
+  }
+}
+
+/** Ids parmi ceux-là pour lesquels JE suis intéressé (la base ne montre que mes lignes). */
+async function myInterests(ids: string[]): Promise<Set<string>> {
+  const clean = ids.filter((i) => UUID.test(i))
+  if (!clean.length) return new Set()
+  const rows = (await run<{ event_id: string }[]>(sb().from('event_interest').select('event_id').in('event_id', clean) as never)) ?? []
+  return new Set(rows.map((r) => r.event_id))
+}
+
+/** Événements à venir (ou en cours) autour de mon quartier, du plus proche au plus lointain. Les annulés restent visibles, marqués. */
+export async function listEvents(opts: ListEventsOptions = {}): Promise<EventItem[]> {
+  const uid = await requireUserId()
+  const center = await myCell()
+  if (!center) throw new NeighborsError('Créez d’abord votre profil (pseudo et quartier).', 'no_profile')
+  const asked = Number.isFinite(opts.radiusKm) ? (opts.radiusKm as number) : L.defaultRadiusKm
+  const radius = Math.min(L.maxRadiusKm, Math.max(1, asked))
+  const b = cellBounds(center, radius)
+  const rows =
+    (await run<EventRow[]>(
+      sb()
+        .from('events')
+        .select(EVENT_SELECT)
+        .in('status', ['open', 'cancelled'])
+        .gte('ends_at', new Date().toISOString())
+        .gte('cell_lat', b.latMin)
+        .lte('cell_lat', b.latMax)
+        .gte('cell_lon', b.lonMin)
+        .lte('cell_lon', b.lonMax)
+        .order('starts_at', { ascending: true })
+        .limit(100) as never,
+    )) ?? []
+  const mine = await myInterests(rows.map((r) => r.id))
+  return rows.map((r) => toEvent(r, uid, center, mine.has(r.id))).filter((e) => e.distanceKm == null || e.distanceKm <= radius + 0.8)
+}
+
+/** Mes propres événements (tous statuts, y compris masqués), les plus récents d'abord. */
+export async function listMyEvents(): Promise<EventItem[]> {
+  const uid = await requireUserId()
+  const center = await myCell()
+  const rows = (await run<EventRow[]>(sb().from('events').select(EVENT_SELECT).eq('organizer', uid).order('starts_at', { ascending: false }).limit(100) as never)) ?? []
+  return rows.map((r) => toEvent(r, uid, center, false))
+}
+
+/** Publie un événement. Réservé aux organisateurs validés (la base refuse sinon). La cellule vient du profil, posée par la base. */
+export async function createEvent(input: NewEvent): Promise<EventItem> {
+  const uid = await requireUserId()
+  const v = validateEvent(input)
+  const center = await myCell()
+  if (!center) throw new NeighborsError('Créez d’abord votre profil (pseudo et quartier).', 'no_profile')
+  const org = await getMyOrganizer()
+  if (!org?.verified) throw new NeighborsError('Votre demande d’organisateur n’est pas encore validée. Vous pourrez publier dès qu’elle le sera.', 'not_organizer')
+  const row = await run<EventRow>(
+    sb()
+      .from('events')
+      .insert({ organizer: uid, title: v.title, description: v.description, starts_at: v.startsAt, ends_at: v.endsAt, place: v.place, signup_url: v.signupUrl, capacity: v.capacity })
+      .select(EVENT_SELECT)
+      .single() as never,
+  )
+  if (!row) throw new NeighborsError('L’événement n’a pas pu être publié.')
+  return toEvent(row, uid, center, false)
+}
+
+async function setEventStatus(rawId: string, status: 'open' | 'cancelled'): Promise<void> {
+  const id = assertUuid(rawId, 'Événement')
+  const uid = await requireUserId()
+  const rows = await run<{ id: string }[]>(sb().from('events').update({ status }).eq('id', id).eq('organizer', uid).select('id') as never)
+  // Un événement masqué par la modération (ou supprimé, ou dont l'organisateur n'est plus validé) n'est plus modifiable : aucune ligne touchée, sans erreur.
+  if (!rows || rows.length === 0) throw new NeighborsError('Cet événement ne peut plus être modifié (masqué ou supprimé).', 'not_found')
+}
+export const cancelEvent = (id: string) => setEventStatus(id, 'cancelled')
+export const reopenEvent = (id: string) => setEventStatus(id, 'open')
+
+/**
+ * « Je suis intéressé(e) » : ajoute ou retire mon intérêt. `current` = l'état affiché. Renvoie le nouvel état.
+ * Être déjà intéressé (ligne existante) compte comme un succès. Cela n'inscrit à rien : c'est un simple compteur.
+ */
+export async function toggleInterest(rawEventId: string, current: boolean): Promise<boolean> {
+  const eventId = assertUuid(rawEventId, 'Événement')
+  const uid = await requireUserId()
+  const client = sb()
+  if (current) {
+    await run(client.from('event_interest').delete().eq('event_id', eventId).eq('user_id', uid) as never)
+    return false
+  }
+  try {
+    await run(client.from('event_interest').insert({ event_id: eventId, user_id: uid }) as never)
+  } catch (e) {
+    if (e instanceof NeighborsError && e.code === '23505') return true
+    throw e
+  }
+  return true
 }
 
 // ---------- Modération ----------

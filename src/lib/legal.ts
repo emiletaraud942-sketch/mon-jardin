@@ -85,7 +85,7 @@ export const CONFIDENTIALITE: LegalDoc = {
         ul(
           'Vos jardins, plantes et photos restent sur votre appareil, dans votre navigateur.',
           'Pas de compte obligatoire, pas de publicité, pas de cookie, pas de traceur.',
-          'Quelques services extérieurs reçoivent une partie de vos données uniquement quand la fonction l’exige : carte, météo, identification d’une plante, sauvegarde en ligne facultative, entraide entre voisins facultative.',
+          'Quelques services extérieurs reçoivent une partie de vos données uniquement quand la fonction l’exige : carte, météo, identification d’une plante, sauvegarde en ligne facultative, entraide entre voisins facultative (annonces et événements).',
           'L’entraide entre voisins demande un compte (adresse e-mail) et un âge minimum de 15 ans. Elle ne reçoit ni votre adresse ni votre position exacte, seulement un quartier arrondi à environ 1 km.',
           'Vous pouvez tout exporter ou tout effacer à tout moment depuis les Réglages.',
         ),
@@ -140,18 +140,21 @@ export const CONFIDENTIALITE: LegalDoc = {
     {
       titre: 'Entraide entre voisins',
       blocs: [
-        p('L’entraide est facultative. Elle permet de publier des annonces de don, d’échange, de prêt, des demandes (« Je cherche ») ou des questions, et d’écrire en privé à d’autres jardiniers proches. Elle est réservée aux personnes de 15 ans et plus.'),
+        p('L’entraide est facultative. Elle permet de publier des annonces de don, d’échange, de prêt, des demandes (« Je cherche ») ou des questions, de consulter des événements près de chez vous, et d’écrire en privé à d’autres jardiniers proches. Elle est réservée aux personnes de 15 ans et plus.'),
         ul(
           'Compte : votre adresse e-mail sert uniquement à vous envoyer un lien de connexion. Elle n’est visible d’aucun autre membre.',
           'Profil public : un pseudo et un quartier. Le quartier est une position arrondie à environ 1 km, jamais votre adresse ni votre position exacte. Choisissez un pseudo qui ne révèle pas votre identité.',
           'Annonces et réponses : type (don, échange, prêt, demande ou question), catégorie éventuelle, titre, description, espèce et photo éventuelle. Elles sont visibles des membres situés à moins de 55 km environ, sauf ceux que vous avez bloqués. N’y écrivez ni votre adresse, ni votre téléphone, ni de données concernant d’autres personnes.',
           'Photos : redessinées dans votre navigateur avant l’envoi (position GPS et métadonnées supprimées), 1 Mo au plus, stockées dans un espace privé. Une photo de jardin peut elle-même révéler un lieu : regardez l’arrière-plan.',
+          'Événements : seuls les organisateurs validés par l’éditeur en publient. Un organisateur donne un nom public et une courte description, jamais d’adresse ni d’e-mail. Un événement montre ce nom, un titre, des dates, un lieu en texte libre (à choisir public), un lien d’inscription éventuel, un nombre de places éventuel et le quartier arrondi de l’organisateur. Il est visible des membres situés à moins de 55 km environ, sauf ceux que l’organisateur a bloqués.',
+          '« Je suis intéressé(e) » : enregistre une ligne à votre nom, que vous seul pouvez lire. Les autres membres et l’organisateur voient seulement le nombre de personnes intéressées, jamais leurs noms. Cela ne vaut pas inscription.',
+          'Liens d’inscription : ils mènent vers des sites extérieurs que l’éditeur ne contrôle pas et dont la politique de confidentialité s’applique. L’appli affiche un avertissement « Vous quittez l’appli » avant de les ouvrir ; elle n’accepte que les liens en https.',
           'Messages privés : lisibles seulement par vous et votre correspondant. L’éditeur ne les lit pas, sauf pour traiter un signalement visant l’un d’eux. Pour compter vos messages non lus, le serveur garde la date de votre dernière lecture de chaque conversation ; vous seul pouvez la voir.',
           'Nouveautés : le nombre de nouvelles annonces et de nouveaux messages est calculé dans votre appareil. La date de votre dernière visite reste sur votre appareil et n’est pas envoyée.',
           'Inviter un voisin : l’appli ouvre le partage de votre téléphone ou copie un lien. Le texte ne contient aucune donnée vous concernant. Rien n’est envoyé par l’appli et aucun contact n’est lu.',
           'Signalements et blocages : un signalement est lu par l’éditeur ; il n’est pas communiqué à la personne signalée. Un blocage masque réciproquement annonces, réponses et conversations.',
         ),
-        p('Durées de conservation : les annonces (et leurs photos) sont supprimées 60 jours après leur publication. Le compte, le profil, les réponses et les messages sont conservés jusqu’à la suppression du compte, que vous pouvez faire à tout moment dans l’entraide : tout est alors effacé, y compris vos photos. Les signalements sont conservés 12 mois. Certaines données d’identification peuvent être conservées plus longtemps par l’hébergeur lorsque la loi l’impose (un an pour les données permettant d’identifier l’auteur d’un contenu).'),
+        p('Durées de conservation : les annonces (et leurs photos) sont supprimées 60 jours après leur publication. Les événements sont supprimés 30 jours après leur fin, avec les marques d’intérêt. La demande d’organisateur est conservée jusqu’à son retrait ou la suppression du compte. Le compte, le profil, les réponses et les messages sont conservés jusqu’à la suppression du compte, que vous pouvez faire à tout moment dans l’entraide : tout est alors effacé, y compris vos photos. Les signalements sont conservés 12 mois. Certaines données d’identification peuvent être conservées plus longtemps par l’hébergeur lorsque la loi l’impose (un an pour les données permettant d’identifier l’auteur d’un contenu).'),
         p('Aucune donnée de l’entraide n’est vendue, cédée à des fins publicitaires, ni utilisée pour du profilage. L’entraide n’utilise ni cookie ni traceur publicitaire ; seul un jeton de connexion est gardé dans le stockage de votre navigateur.'),
         p('Exercer vos droits : suppression du compte dans l’appli ; accès, rectification, portabilité, opposition ou limitation par e-mail à l’éditeur. Nous répondons dans un délai d’un mois. Vos annonces et réponses peuvent être exportées sur demande.'),
       ],
@@ -207,13 +210,13 @@ export const MENTIONS: LegalDoc = {
       titre: 'Hébergeur',
       blocs: [
         p('Site et application : Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis. Site : vercel.com.'),
-        p(`Données de l’entraide entre voisins (comptes, annonces, photos, messages) : Supabase, projet dédié. Raison sociale, adresse et région d’hébergement : ${TO_COMPLETE} (à confirmer par l’éditeur dans le tableau de bord Supabase).`),
+        p(`Données de l’entraide entre voisins (comptes, annonces, événements, photos, messages) : Supabase, projet dédié. Raison sociale, adresse et région d’hébergement : ${TO_COMPLETE} (à confirmer par l’éditeur dans le tableau de bord Supabase).`),
       ],
     },
     {
       titre: 'Contenus publiés par les membres',
       blocs: [
-        p('Les annonces, réponses, photos et messages de l’entraide sont publiés par leurs auteurs, qui en sont seuls responsables. L’éditeur intervient comme hébergeur de ces contenus au sens de l’article 6 de la loi n° 2004-575 du 21 juin 2004 (LCEN) : il ne les contrôle pas avant publication et n’en est pas l’auteur.'),
+        p('Les annonces, réponses, photos, messages et événements de l’entraide sont publiés par leurs auteurs, qui en sont seuls responsables. L’éditeur intervient comme hébergeur de ces contenus au sens de l’article 6 de la loi n° 2004-575 du 21 juin 2004 (LCEN) : il ne les contrôle pas avant publication et n’en est pas l’auteur.'),
         p('Il retire promptement tout contenu manifestement illicite dès qu’il en a connaissance, ou dès qu’il lui est notifié.'),
         p(`Pour signaler un contenu : bouton « Signaler » de l’appli, ou par e-mail à ${CONTACT_EMAIL} en indiquant la date, la description du contenu et son adresse (identifiant de l’annonce), le motif et votre identité. Un signalement abusif engage la responsabilité de son auteur.`),
         p('Point de contact pour les autorités et les utilisateurs (règlement (UE) 2022/2065, dit DSA) : voir l’adresse de contact ci-dessus. Les langues acceptées sont le français et l’anglais.'),
@@ -276,6 +279,22 @@ export const CGU: LegalDoc = {
           'Pseudo libre, mais il ne doit ni usurper une autre personne, ni révéler votre identité contre votre gré, ni être trompeur ou offensant.',
           'Le quartier que vous indiquez est le vôtre. Il est arrondi à environ 1 km.',
           'L’entraide est gratuite et non commerciale : dons, échanges, prêts, demandes et questions entre particuliers.',
+          'Les événements sont publiés par des organisateurs validés. Les autres membres les consultent, signalent un problème et indiquent leur intérêt.',
+        ),
+      ],
+    },
+    {
+      titre: 'Événements et organisateurs',
+      blocs: [
+        ul(
+          'Pour publier des événements, il faut être organisateur. La demande indique un nom public et une courte description. L’éditeur la vérifie, puis l’accepte ou la refuse, sans avoir à motiver un refus.',
+          'La validation porte sur le nom de l’organisateur. Elle ne garantit ni l’événement, ni sa sécurité, ni son contenu. L’éditeur peut retirer la validation à tout moment ; les événements de la personne sont alors masqués.',
+          'L’organisateur est seul responsable de son événement : contenu, autorisations, assurance, accueil et sécurité des participants, respect de la loi. L’éditeur n’est pas l’organisateur et n’est partie à aucune inscription.',
+          'Un événement ne sert pas à vendre : la règle « gratuit et non commercial » de l’entraide s’applique aussi aux événements.',
+          'Le lieu est un texte libre : indiquez un lieu public, jamais l’adresse d’une maison privée.',
+          '« Je suis intéressé(e) » est un simple compteur et ne vaut pas inscription.',
+          '« S’inscrire » ouvre un site extérieur, en https seulement, après un avertissement. L’éditeur ne contrôle pas ces sites et n’est pas responsable de leur contenu, de leurs conditions ni de leur traitement de vos données.',
+          'Trois signalements de membres distincts masquent automatiquement un événement, en attendant l’examen de l’éditeur.',
         ),
       ],
     },
@@ -298,15 +317,15 @@ export const CGU: LegalDoc = {
       titre: 'Contenus publiés et licence',
       blocs: [
         p('Vous restez propriétaire de vos contenus. En les publiant, vous accordez à l’éditeur, gratuitement et pour la durée de leur publication, le droit de les héberger et de les afficher aux autres membres de l’entraide, uniquement pour faire fonctionner le service.'),
-        p('Vous garantissez avoir le droit de les publier et en êtes seul responsable. Les annonces sont supprimées au bout de 60 jours ; vous pouvez les supprimer avant, ainsi que votre compte, à tout moment.'),
+        p('Vous garantissez avoir le droit de les publier et en êtes seul responsable. Les annonces sont supprimées au bout de 60 jours ; vous pouvez les supprimer avant, ainsi que votre compte, à tout moment. Les événements sont supprimés 30 jours après leur fin ; un organisateur peut les annuler, ou supprimer son compte, à tout moment.'),
       ],
     },
     {
       titre: 'Signalement, blocage et modération',
       blocs: [
         ul(
-          'Chaque membre peut signaler une annonce, une réponse, un profil ou un message qu’il reçoit, avec un motif.',
-          'Trois signalements de membres distincts masquent automatiquement une annonce ou une réponse, en attendant l’examen de l’éditeur. Le masquage n’est pas une sanction.',
+          'Chaque membre peut signaler une annonce, une réponse, un événement, un profil ou un message qu’il reçoit, avec un motif.',
+          'Trois signalements de membres distincts masquent automatiquement une annonce, une réponse ou un événement, en attendant l’examen de l’éditeur. Le masquage n’est pas une sanction.',
           'Chaque membre peut bloquer une personne : plus aucune annonce, réponse ni message n’est visible dans un sens comme dans l’autre.',
           'L’éditeur examine les signalements, peut retirer un contenu, avertir ou bannir un compte, notamment en cas de manquement aux règles de conduite. Il indique à la personne concernée le motif de la décision, sauf si la loi ou une enquête l’interdit.',
           'Pour contester une décision, écrivez à l’éditeur : le dossier est réexaminé.',
@@ -325,7 +344,7 @@ export const CGU: LegalDoc = {
     {
       titre: 'Suspension et suppression du compte',
       blocs: [
-        p('Vous pouvez supprimer votre compte à tout moment depuis l’entraide : profil, annonces, réponses, photos et messages sont effacés définitivement. L’éditeur peut suspendre ou supprimer un compte qui enfreint ces conditions, sans préavis en cas de manquement grave. Un compte suspendu ne peut plus ni publier, ni lire les annonces.'),
+        p('Vous pouvez supprimer votre compte à tout moment depuis l’entraide : profil, demande d’organisateur, événements, annonces, réponses, photos et messages sont effacés définitivement. L’éditeur peut suspendre ou supprimer un compte qui enfreint ces conditions, sans préavis en cas de manquement grave. Un compte suspendu ne peut plus ni publier, ni lire les annonces.'),
       ],
     },
     {
@@ -409,7 +428,7 @@ export const CONSENT_TEXT: Record<'plantnet' | 'sync' | 'voisins', ConsentText> 
     titre: 'Rejoindre l’entraide entre voisins ?',
     paragraphes: [
       'Votre adresse e-mail (pour le lien de connexion), votre pseudo, votre quartier arrondi à ~1 km, vos annonces, photos, réponses et messages privés seront enregistrés sur un serveur dédié (Supabase, UE). Votre adresse et votre position exacte ne sont jamais envoyées.',
-      'Votre pseudo, votre quartier, vos annonces et vos réponses sont visibles des autres membres. Vos messages ne sont lus que par votre correspondant. Les annonces disparaissent après 60 jours.',
+      'Votre pseudo, votre quartier, vos annonces et vos réponses sont visibles des autres membres. Vos messages ne sont lus que par votre correspondant. Les annonces disparaissent après 60 jours. Si vous devenez organisateur, le nom de votre organisation et vos événements sont visibles aussi.',
       'Vous pouvez retirer votre autorisation dans Réglages, et supprimer votre compte et vos annonces à tout moment dans l’entraide.',
     ],
     accepter: 'Accepter et continuer',

@@ -144,3 +144,38 @@ describe('messages non lus', () => {
     expect(unreadByThread(received, { t1: 'x' })).toEqual({ t1: 2, t2: 1 })
   })
 })
+
+describe('nouveautés : événements à venir', () => {
+  const NOW = new Date('2026-10-25T10:00:00Z')
+  const ev = (createdAt: string, o: Record<string, unknown> = {}) => ({ mine: false, createdAt, status: 'open' as const, endsAt: '2026-11-20T12:00:00Z', ...o })
+  it('compte les événements à venir des autres, ouverts, pas finis', () => {
+    const n = computeNews([], SINCE, 0, [ev('2026-10-01T00:00:00Z'), ev('2026-10-22T00:00:00Z'), ev('2026-10-22T00:00:00Z', { mine: true }), ev('2026-10-22T00:00:00Z', { status: 'cancelled' }), ev('2026-10-22T00:00:00Z', { endsAt: '2026-10-24T00:00:00Z' })], NOW)
+    expect(n.eventsUpcoming).toBe(2)
+    expect(n.eventsNew).toBe(1)
+  })
+  it('seuls les événements publiés depuis la dernière visite comptent dans la pastille', () => {
+    const n = computeNews([], SINCE, 2, [ev('2026-10-01T00:00:00Z'), ev('2026-10-22T00:00:00Z'), ev('2026-10-23T00:00:00Z')], NOW)
+    expect(n.total).toBe(2 + 2)
+  })
+  it('première visite : des événements à voir, aucun « nouveau »', () => {
+    const n = computeNews([], null, 0, [ev('2026-10-22T00:00:00Z')], NOW)
+    expect(n).toMatchObject({ eventsUpcoming: 1, eventsNew: 0, total: 0 })
+  })
+  it('événements indisponibles (base pas à jour) : rien à montrer, aucune erreur', () => {
+    const n = computeNews([], SINCE, 1, null, NOW)
+    expect(n.eventsUpcoming).toBeNull()
+    expect(newsLines(n).map((l) => l.id)).toEqual(['messages'])
+    expect(computeNews([], SINCE, 1).eventsUpcoming).toBeNull()
+  })
+  it('ligne « N événements à venir » qui mène à l’onglet Événements, avec le bon accord', () => {
+    const one = newsLines(computeNews([], SINCE, 0, [ev('2026-10-01T00:00:00Z')], NOW))
+    expect(one.map((l) => `${l.count} ${l.text}`)).toEqual(['1 événement à venir'])
+    expect(one[0].target).toEqual({ section: 'evenements' })
+    const two = newsLines(computeNews([], SINCE, 0, [ev('2026-10-01T00:00:00Z'), ev('2026-10-02T00:00:00Z')], NOW))
+    expect(two[0].text).toBe('événements à venir')
+  })
+  it('ordre : messages, annonces, puis événements', () => {
+    const lines = newsLines(computeNews([post('don', '2026-10-21T08:00:00Z')], SINCE, 1, [ev('2026-10-01T00:00:00Z')], NOW))
+    expect(lines.map((l) => l.id)).toEqual(['messages', 'don', 'evenements'])
+  })
+})

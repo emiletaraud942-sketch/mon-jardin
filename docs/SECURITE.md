@@ -210,3 +210,27 @@ Périmètre : tout le dépôt sur la branche courante (front, `api/`, `vercel.js
 ## 10. Entraide v2 : « Je cherche » et catégories (25 octobre 2026)
 
 Migration `supabase/neighbors/migrations/20261025000000_neighbors_v2.sql` : type `cherche`, colonne `category` (liste fermée, null permis), contrainte « une demande exige une catégorie », index partiel, `grant insert (category)` seul (jamais de `update` sur `kind` ni `category`). Aucune politique, aucune fonction, aucun quota modifiés. Banc rejoué (Postgres 16) : **209 PASS, 0 FAIL**, dont 24 contrôles `V2` (catégorie inconnue ou vide refusée, demande sans catégorie refusée, `kind` et `category` non modifiables, quota inchangé, hors zone sans lecture, pas de réponse publique sur une demande, contact privé et clôture par l'auteur).
+
+## 11. Entraide v4 : événements et organisateurs (25 octobre 2026)
+
+Migration `supabase/neighbors/migrations/20261025020000_neighbors_v4_events.sql` : tables `organizers`, `events`, `event_interest`, cible `event` pour les signalements et le journal, masquage automatique à 3 signalements, quotas (3 événements et 50 intérêts par jour, 5 demandes d'organisateur), purge 30 jours après la fin. Décision par défaut du propriétaire : seuls les organisateurs validés par l'éditeur publient. Banc rejoué sur Postgres 16.15 (migrations appliquées deux fois) : **485 PASS, 0 FAIL**, dont environ 250 contrôles `V4` (`scenarios_v4.sql`). `migration.test.ts` vérifie la migration sans Postgres ; `api.test.ts`, `logic.test.ts`, `news.test.ts` couvrent le client.
+
+**Attaques jouées sans succès** : devenir organisateur sans validation (`not_organizer`) ; s'auto-valider par insertion, mise à jour ou upsert (aucun droit de colonne, déclencheur) ; usurper un membre (demande, événement, intérêt : 42501) ; changer de nom après validation (mise à jour et upsert refusés) ; supprimer puis recréer la fiche (repart non validée) ; publier avec une cellule, un statut, un compteur, un identifiant ou une date de création choisis ; lire hors zone, banni, bloqué ou anonyme ; liens `javascript:`, `data:`, `vbscript:`, `http:`, sans point, avec identifiants, adresse numérique, IPv6, espaces, guillemets, balises, antislash, retour à la ligne, caractères invisibles, inversion de sens, accents, 301 caractères ; dates inversées, passées, à plus d'un an ; textes trop longs ; capacités 0, négative, 10 001 ; modifier titre, dates, lien, capacité, cellule, compteur ou organisateur ; rouvrir ou « annuler » un événement masqué ; modifier ou supprimer l'événement d'autrui ; contourner les quotas (supprimer ne rend rien ; 21e événement ouvert et 51e intérêt refusés) ; intérêt pour un événement inconnu, annulé, fini ou invisible (même réponse 42501) ; lire les intérêts des autres (l'organisateur non plus) ; appeler les déclencheurs ou la purge ; se signaler soi-même, signaler deux fois, signaler l'invisible ; masquer avec des comptes de moins de 24 h (non comptés).
+
+**Constats corrigés pendant l'écriture** (aucun n'est arrivé en production) :
+
+| # | Gravité | Constat | Correction |
+| --- | --- | --- | --- |
+| E1 | Moyenne | Contrôle du lien avec `~*` (casse ignorée) : la plage exclue `\u0080-\uffff` retirait aussi `i`, `s`, `k` (ı, ſ et K se replient sur eux) : tout lien contenant un « i » était refusé | Comparaison sensible à la casse ; un scénario garde la régression (`inscription`, `ski`, `kiosque`) |
+| E2 | Faible | Un lien pouvait contenir des caractères invisibles ou d'inversion de sens | ASCII seulement, côté SQL et côté client ; le client n'affiche que le nom du site, jamais le chemin |
+| E3 | Faible | Le formulaire laissait le navigateur bloquer une date passée avec un message natif | `noValidate` : nos messages en français simple |
+| E4 | Info | Le banc laisse `request.jwt.claim.sub` en place après chaque appel : l'éditeur simulé était pris pour le dernier membre | Le scénario remet la valeur à vide avant chaque validation (en production, le SQL Editor n'a pas d'identifiant) |
+
+**Limites connues**
+- La validation porte sur le **nom** de l'organisateur, pas sur ses événements ni sur le site d'inscription : un organisateur validé peut publier un lien vers un site hostile (signalement, retrait, avertissement « Vous quittez l'appli »). Nom ressemblant à un autre : à repérer à la validation.
+- Le lieu est un texte libre : une adresse privée peut y être écrite malgré la consigne (signalement, masquage).
+- Un retrait d'organisateur ou un bannissement masque les événements ; lever la mesure ne les rétablit pas (à faire à la main).
+- `capacity` est indicative et ne borne pas les marques d'intérêt.
+- Rejouer la v1 après la v4 remet d'anciennes versions des fonctions de signalement, de bannissement et de purge : rejouer ensuite la v4.
+- Non testés ici : PostgREST réel (jointure `organizers(name, description)`), un vrai projet Supabase, un navigateur autre que Chromium.
+

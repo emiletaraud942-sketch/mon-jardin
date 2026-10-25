@@ -121,6 +121,16 @@ export const DATA_INVENTORY: readonly DataItem[] = [
     effacement: 'Entraide > Mes annonces > Supprimer (photo comprise) ; suppression du compte',
   },
   {
+    id: 'entraide-evenements',
+    donnee: 'Entraide : demande d’organisateur (nom public, courte description), événements (titre, description, dates, lieu en texte libre, lien d’inscription https, nombre de places, quartier arrondi) et « Je suis intéressé(e) » (une ligne par membre et par événement)',
+    stockage: 'Supabase de l’entraide (tables organizers, events et event_interest ; RLS ; chaque membre ne voit que sa propre ligne d’intérêt, les autres voient seulement le total)',
+    destinataires: ['Supabase (sous-traitant)', 'Autres membres de l’entraide à moins de ~55 km (nom de l’organisateur et événement ; seulement le nombre de personnes intéressées)', 'L’éditeur (validation des organisateurs et modération)'],
+    finalite: 'Faire connaître des rendez-vous entre jardiniers voisins, publiés par des organisateurs vérifiés',
+    base: 'consentement',
+    duree: 'Événements : 30 jours après leur fin, puis suppression automatique (marques d’intérêt comprises). Demande d’organisateur : jusqu’à son retrait ou la suppression du compte',
+    effacement: 'Entraide > Événements > Ma demande > Retirer ma demande ou Ne plus être organisateur (efface aussi les événements) ; « Je suis intéressé(e) » se retire d’un toucher ; suppression du compte',
+  },
+  {
     id: 'entraide-messages',
     donnee: 'Entraide : messages privés entre deux membres, et pour chaque conversation la date de votre dernière lecture (pour compter les messages non lus)',
     stockage: 'Supabase de l’entraide (tables threads, messages et thread_reads ; RLS : seuls les deux participants lisent les messages, chacun ne voit que sa propre date de lecture)',

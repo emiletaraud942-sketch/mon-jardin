@@ -1,6 +1,6 @@
 // Nouveautés de l'entraide : ce qui est arrivé depuis la dernière visite. Logique pure (aucun réseau) et mémoire locale.
 // Le calcul se fait ici, dans le navigateur, à partir des annonces et messages que la base montre déjà.
-import type { Post, PostKind } from './types'
+import type { EventItem, Post, PostKind } from './types'
 
 /** Ordre d'affichage des lignes. */
 const KIND_ORDER: readonly PostKind[] = ['don', 'echange', 'pret', 'cherche', 'question']
@@ -12,14 +12,24 @@ export interface News {
   posts: Record<PostKind, number>
   /** Messages reçus et pas encore lus. */
   messages: number
-  /** posts + messages. */
+  /** Événements des autres, à venir ou en cours, ouverts (null : événements indisponibles, rien à montrer). */
+  eventsUpcoming: number | null
+  /** Parmi eux, ceux publiés depuis la dernière visite. */
+  eventsNew: number
+  /** posts + événements nouveaux + messages (les événements « à venir » ne sont pas des nouveautés : ils restent hors pastille). */
   total: number
 }
 
 const emptyPosts = (): Record<PostKind, number> => ({ don: 0, echange: 0, pret: 0, question: 0, cherche: 0 })
 
 /** Annonces des autres publiées après `since`. À la première visite (since null), rien n'est « nouveau ». */
-export function computeNews(posts: Pick<Post, 'kind' | 'mine' | 'createdAt'>[], since: string | null, unreadMessages: number): News {
+export function computeNews(
+  posts: Pick<Post, 'kind' | 'mine' | 'createdAt'>[],
+  since: string | null,
+  unreadMessages: number,
+  events?: Pick<EventItem, 'mine' | 'createdAt' | 'status' | 'endsAt'>[] | null,
+  now: Date = new Date(),
+): News {
   const counts = emptyPosts()
   const t0 = since == null ? NaN : Date.parse(since)
   if (Number.isFinite(t0)) {
@@ -30,11 +40,22 @@ export function computeNews(posts: Pick<Post, 'kind' | 'mine' | 'createdAt'>[], 
     }
   }
   const messages = Math.max(0, Math.floor(unreadMessages) || 0)
-  const total = KIND_ORDER.reduce((s, k) => s + counts[k], 0) + messages
-  return { since: Number.isFinite(t0) ? (since as string) : null, posts: counts, messages, total }
+  let eventsUpcoming: number | null = null
+  let eventsNew = 0
+  if (events) {
+    eventsUpcoming = 0
+    for (const e of events) {
+      if (e.mine || e.status !== 'open' || !(Date.parse(e.endsAt) >= now.getTime())) continue
+      eventsUpcoming++
+      const t = Date.parse(e.createdAt)
+      if (Number.isFinite(t0) && Number.isFinite(t) && t > t0) eventsNew++
+    }
+  }
+  const total = KIND_ORDER.reduce((s, k) => s + counts[k], 0) + messages + eventsNew
+  return { since: Number.isFinite(t0) ? (since as string) : null, posts: counts, messages, eventsUpcoming, eventsNew, total }
 }
 
-export type NewsTarget = { section: 'fil'; kind: PostKind | 'all' } | { section: 'messages' }
+export type NewsTarget = { section: 'fil'; kind: PostKind | 'all' } | { section: 'messages' } | { section: 'evenements' }
 export interface NewsLine {
   id: string
   count: number
@@ -59,6 +80,8 @@ export function newsLines(n: News): NewsLine[] {
     const c = n.posts[k]
     if (c > 0) lines.push({ id: k, count: c, text: PLURAL[k][c > 1 ? 1 : 0], target: { section: 'fil', kind: k } })
   }
+  const ev = n.eventsUpcoming ?? 0
+  if (ev > 0) lines.push({ id: 'evenements', count: ev, text: ev > 1 ? 'événements à venir' : 'événement à venir', target: { section: 'evenements' } })
   return lines
 }
 

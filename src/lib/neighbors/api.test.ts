@@ -500,3 +500,268 @@ describe('messages non lus', () => {
     await expect(api.markThreadRead(T1)).rejects.toThrow(/Connectez-vous/)
   })
 })
+
+// ---------- Organisateurs et événements ----------
+
+const ME_ID = '11111111-1111-4111-8111-111111111111'
+const EV1 = 'eeeeeee1-0000-4000-8000-000000000001'
+const EV2 = 'eeeeeee2-0000-4000-8000-000000000002'
+const inDays = (n: number, h = 0) => new Date(Date.now() + n * 86_400_000 + h * 3_600_000).toISOString()
+const eventRow = (o: Record<string, unknown> = {}) => ({
+  id: EV1, organizer: '22222222-2222-4222-8222-222222222222', title: 'Troc de plantes', description: 'Apportez vos boutures.', starts_at: inDays(3), ends_at: inDays(3, 2), place: 'Salle des fêtes',
+  cell_lat: 48.87, cell_lon: 2.35, signup_url: 'https://exemple.fr/inscription', capacity: 40, status: 'open', interest_count: 3, created_at: '2026-10-02T00:00:00Z',
+  organizers: { name: 'Graines Libres', description: 'Troc et ateliers' }, ...o,
+})
+const orgRow = (o: Record<string, unknown> = {}) => ({ user_id: ME_ID, name: 'Jardin des Lilas', description: 'Asso de quartier', verified_at: null, created_at: '2026-10-20T00:00:00Z', ...o })
+const newEvent = (o: Record<string, unknown> = {}) => ({ title: 'Atelier greffe', description: 'Venez avec un couteau.', startsAt: inDays(5), endsAt: inDays(5, 2), place: 'Jardin partagé', ...o })
+
+describe('événements : erreurs en français simple', () => {
+  it.each([
+    [{ message: 'not_organizer' }, 'pas encore validée'],
+    [{ message: 'event_past' }, 'date de début est passée'],
+    [{ message: 'event_far' }, 'moins d’un an'],
+    [{ message: 'new row for relation "events" violates check constraint "events_dates_check"', code: '23514' }, 'fin doit venir après'],
+    [{ message: 'new row for relation "events" violates check constraint "events_signup_url_check"', code: '23514' }, 'https://'],
+    [{ message: 'new row for relation "events" violates check constraint "events_capacity_check"', code: '23514' }, 'entre 1 et 10000'],
+    [{ message: 'duplicate key value violates unique constraint "organizers_name_key"', code: '23505' }, 'déjà pris'],
+    [{ message: 'quota_exceeded:event' }, '3 événements par jour'],
+    [{ message: 'quota_exceeded:event_open' }, 'événements ouverts'],
+    [{ message: 'quota_exceeded:interest' }, 'limite du jour'],
+    [{ message: 'quota_exceeded:organizer' }, 'limite du jour'],
+    [{ message: "Could not find the table 'public.events' in the schema cache", code: 'PGRST205' }, 'pas encore ouverts'],
+    [{ message: 'relation "public.organizers" does not exist', code: '42P01' }, 'pas encore ouverts'],
+  ])('%j', (e, expected) => {
+    expect(api.translateError(e)).toContain(expected)
+  })
+})
+
+describe('organisateur : validation', () => {
+  it('nom : 3 à 60 caractères, sans balise ni caractère invisible', () => {
+    expect(api.validateOrganizerName('  Jardin des Lilas  ')).toBe('Jardin des Lilas')
+    expect(() => api.validateOrganizerName('ab')).toThrow(/entre 3 et 60/)
+    expect(() => api.validateOrganizerName('x'.repeat(61))).toThrow(/entre 3 et 60/)
+    expect(() => api.validateOrganizerName('<b>Mairie</b>')).toThrow(/interdits/)
+    expect(() => api.validateOrganizerName('Mai​rie')).toThrow(/invisibles/)
+    expect(() => api.validateOrganizerName('Mairie ‮edalP')).toThrow(/invisibles/)
+    expect(() => api.validateOrganizerName('!!!!')).toThrow(/lettre ou un chiffre/)
+  })
+  it('description : 500 caractères au plus', () => {
+    expect(api.validateOrganizer({ name: 'Jardin des Lilas' })).toEqual({ name: 'Jardin des Lilas', description: '' })
+    expect(() => api.validateOrganizer({ name: 'Jardin des Lilas', description: 'd'.repeat(501) })).toThrow(/500 caractères/)
+  })
+})
+
+describe('événement : validation', () => {
+  const now = new Date('2026-10-25T10:00:00Z')
+  const base = { title: ' Troc ', description: '', place: ' Salle des fêtes ', startsAt: '2026-11-14T13:00:00Z', endsAt: '2026-11-14T15:00:00Z' }
+  it('nettoie et normalise', () => {
+    expect(api.validateEvent(base, now)).toEqual({ title: 'Troc', description: '', place: 'Salle des fêtes', startsAt: '2026-11-14T13:00:00.000Z', endsAt: '2026-11-14T15:00:00.000Z', signupUrl: null, capacity: null })
+  })
+  it('titre, lieu, description : obligatoires et limités', () => {
+    expect(() => api.validateEvent({ ...base, title: '  ' }, now)).toThrow(/obligatoire/)
+    expect(() => api.validateEvent({ ...base, title: 'x'.repeat(81) }, now)).toThrow(/80 caractères/)
+    expect(() => api.validateEvent({ ...base, place: '' }, now)).toThrow(/Lieu : ce champ est obligatoire/)
+    expect(() => api.validateEvent({ ...base, place: 'x'.repeat(121) }, now)).toThrow(/120 caractères/)
+    expect(() => api.validateEvent({ ...base, description: 'x'.repeat(2001) }, now)).toThrow(/2000 caractères/)
+    expect(api.validateEvent({ ...base, description: 'x'.repeat(2000), place: 'x'.repeat(120), title: 'x'.repeat(80) }, now).place).toHaveLength(120)
+  })
+  it('dates absurdes refusées', () => {
+    expect(() => api.validateEvent({ ...base, startsAt: 'oups' }, now)).toThrow(/début/)
+    expect(() => api.validateEvent({ ...base, endsAt: '' }, now)).toThrow(/fin/)
+    expect(() => api.validateEvent({ ...base, endsAt: '2026-11-14T12:00:00Z' }, now)).toThrow(/fin doit venir après/)
+    expect(() => api.validateEvent({ ...base, startsAt: '2026-10-20T10:00:00Z', endsAt: '2026-10-21T10:00:00Z' }, now)).toThrow(/passée/)
+    expect(() => api.validateEvent({ ...base, endsAt: '2028-01-01T10:00:00Z' }, now)).toThrow(/moins d’un an/)
+    // Tolérance d'une heure pour un début « maintenant », comme la base
+    expect(api.validateEvent({ ...base, startsAt: '2026-10-25T09:30:00Z', endsAt: '2026-10-25T12:00:00Z' }, now).title).toBe('Troc')
+  })
+  it('lien : https seulement', () => {
+    expect(api.validateEvent({ ...base, signupUrl: ' https://exemple.fr/inscription ' }, now).signupUrl).toBe('https://exemple.fr/inscription')
+    expect(api.validateEvent({ ...base, signupUrl: '   ' }, now).signupUrl).toBeNull()
+    for (const bad of ['javascript:alert(1)', 'data:text/html;base64,AAAA', 'http://exemple.fr', 'https://user:pw@exemple.fr', 'ftp://exemple.fr']) {
+      expect(() => api.validateEvent({ ...base, signupUrl: bad }, now), bad).toThrow()
+    }
+  })
+  it('places : entier de 1 à 10 000, ou rien', () => {
+    expect(api.validateEvent({ ...base, capacity: 40 }, now).capacity).toBe(40)
+    expect(api.validateEvent({ ...base, capacity: null }, now).capacity).toBeNull()
+    expect(api.validateEvent({ ...base, capacity: 10000 }, now).capacity).toBe(10000)
+    for (const bad of [0, -3, 10001, 2.5, Number.NaN]) expect(() => api.validateEvent({ ...base, capacity: bad }, now), String(bad)).toThrow(/nombre entier entre 1 et 10000/)
+  })
+})
+
+describe('événements : lecture', () => {
+  it('listEvents : à venir, par date, dans la zone, sans les masqués', async () => {
+    set('events:select', [eventRow(), eventRow({ id: EV2, title: 'Atelier', starts_at: inDays(9), ends_at: inDays(9, 2), cell_lat: 48.86, cell_lon: 2.36, status: 'cancelled', signup_url: 'javascript:alert(1)' })])
+    set('event_interest:select', [{ event_id: EV2 }])
+    const list = await api.listEvents({ radiusKm: 10 })
+    const ops = opsOf('events')
+    expect(ops).toContainEqual(['in', ['status', ['open', 'cancelled']]])
+    expect(ops).toContainEqual(['order', ['starts_at', { ascending: true }]])
+    expect(ops.find(([m, a]) => m === 'gte' && (a as unknown[])[0] === 'ends_at')).toBeTruthy()
+    expect(ops.filter(([m]) => m === 'gte' || m === 'lte').length).toBeGreaterThanOrEqual(5)
+    expect(list.map((e) => e.id)).toEqual([EV1, EV2])
+    expect(list[0]).toMatchObject({ title: 'Troc de plantes', organizerName: 'Graines Libres', interestCount: 3, interested: false, capacity: 40, signupUrl: 'https://exemple.fr/inscription', mine: false })
+    expect(list[1]).toMatchObject({ status: 'cancelled', interested: true })
+    expect(opsOf('event_interest')).toContainEqual(['in', ['event_id', [EV1, EV2]]])
+  })
+  it('un lien d’inscription qui ne passe pas le contrôle https n’est jamais rendu', async () => {
+    set('events:select', [eventRow({ signup_url: 'javascript:alert(1)' }), eventRow({ id: EV2, signup_url: 'http://exemple.fr' })])
+    set('event_interest:select', [])
+    expect((await api.listEvents()).map((e) => e.signupUrl)).toEqual([null, null])
+  })
+  it('listEvents : le rayon est plafonné à 50 km, un événement trop loin est écarté', async () => {
+    set('events:select', [eventRow({ cell_lat: 50.86, cell_lon: 2.35 })])
+    set('event_interest:select', [])
+    expect(await api.listEvents({ radiusKm: 500 })).toEqual([])
+  })
+  it('listEvents sans événement : une seule requête, pas de requête d’intérêts', async () => {
+    set('events:select', [])
+    expect(await api.listEvents()).toEqual([])
+    expect(state.calls.filter((c) => c.table === 'event_interest')).toHaveLength(0)
+  })
+  it('listEvents demande un profil et une connexion', async () => {
+    state.session = null
+    await expect(api.listEvents()).rejects.toThrow(/Connectez-vous/)
+    state.session = { user: { id: ME_ID, email: 'moi@example.org' } }
+    await api.signOut()
+    set('profiles:select', null)
+    await expect(api.listEvents()).rejects.toThrow(/profil/)
+  })
+  it('listEvents : une base sans la version 4 donne une phrase claire', async () => {
+    set('events:select', null, { message: "Could not find the table 'public.events' in the schema cache", code: 'PGRST205' })
+    await expect(api.listEvents()).rejects.toThrow(/pas encore ouverts/)
+  })
+  it('listMyEvents : les miens, tous statuts, marqués « mine »', async () => {
+    set('events:select', [eventRow({ organizer: ME_ID, status: 'hidden' })])
+    const list = await api.listMyEvents()
+    expect(opsOf('events')).toContainEqual(['eq', ['organizer', ME_ID]])
+    expect(list[0]).toMatchObject({ mine: true, status: 'hidden' })
+  })
+})
+
+describe('événements : écriture', () => {
+  it('createEvent : envoie les champs validés, jamais la cellule, le statut ni le compteur', async () => {
+    set('organizers:select', orgRow({ verified_at: '2026-10-21T00:00:00Z' }))
+    set('events:insert', eventRow({ organizer: ME_ID, title: 'Atelier greffe' }))
+    const ev = await api.createEvent(newEvent({ signupUrl: 'https://exemple.fr/i', capacity: 12 }))
+    const [, args] = opsOf('events').find(([m]) => m === 'insert')!
+    expect(Object.keys(args[0] as object).sort()).toEqual(['capacity', 'description', 'ends_at', 'organizer', 'place', 'signup_url', 'starts_at', 'title'])
+    expect(args[0]).toMatchObject({ organizer: ME_ID, title: 'Atelier greffe', signup_url: 'https://exemple.fr/i', capacity: 12 })
+    expect(ev.mine).toBe(true)
+  })
+  it('createEvent : un lien javascript: ou des dates absurdes ne partent jamais', async () => {
+    set('organizers:select', orgRow({ verified_at: '2026-10-21T00:00:00Z' }))
+    await expect(api.createEvent(newEvent({ signupUrl: 'javascript:alert(1)' }))).rejects.toThrow()
+    await expect(api.createEvent(newEvent({ startsAt: inDays(5), endsAt: inDays(4) }))).rejects.toThrow(/fin doit venir après/)
+    await expect(api.createEvent(newEvent({ startsAt: inDays(-5), endsAt: inDays(-4) }))).rejects.toThrow(/passée/)
+    expect(state.calls.filter((c) => c.table === 'events')).toHaveLength(0)
+  })
+  it('createEvent : refusé tant que la demande n’est pas validée (aucune requête d’écriture)', async () => {
+    set('organizers:select', orgRow())
+    await expect(api.createEvent(newEvent())).rejects.toThrow(/pas encore validée/)
+    set('organizers:select', null)
+    await expect(api.createEvent(newEvent())).rejects.toThrow(/pas encore validée/)
+    expect(state.calls.filter((c) => c.table === 'events')).toHaveLength(0)
+  })
+  it('createEvent : le refus de la base est traduit', async () => {
+    set('organizers:select', orgRow({ verified_at: '2026-10-21T00:00:00Z' }))
+    set('events:insert', null, { message: 'quota_exceeded:event', code: 'P0001' })
+    await expect(api.createEvent(newEvent())).rejects.toThrow(/3 événements par jour/)
+  })
+  it('cancelEvent / reopenEvent : changent seulement le statut, de mon événement', async () => {
+    set('events:update', [{ id: EV1 }])
+    await api.cancelEvent(EV1)
+    let ops = opsOf('events')
+    expect(ops).toContainEqual(['update', [{ status: 'cancelled' }]])
+    expect(ops).toContainEqual(['eq', ['organizer', ME_ID]])
+    state.calls.length = 0
+    await api.reopenEvent(EV1)
+    expect(opsOf('events')).toContainEqual(['update', [{ status: 'open' }]])
+  })
+  it('cancelEvent : événement masqué ou supprimé = phrase claire', async () => {
+    set('events:update', [])
+    await expect(api.cancelEvent(EV1)).rejects.toThrow(/ne peut plus être modifié/)
+  })
+  it('cancelEvent refuse un identifiant qui n’est pas un UUID', async () => {
+    await expect(api.cancelEvent('x,id.neq.0')).rejects.toThrow(/invalide/)
+    expect(state.calls.filter((c) => c.table === 'events')).toHaveLength(0)
+  })
+})
+
+describe('événements : intérêt', () => {
+  it('ajoute mon intérêt, puis le retire', async () => {
+    expect(await api.toggleInterest(EV1, false)).toBe(true)
+    expect(opsOf('event_interest')).toContainEqual(['insert', [{ event_id: EV1, user_id: ME_ID }]])
+    state.calls.length = 0
+    expect(await api.toggleInterest(EV1, true)).toBe(false)
+    const ops = opsOf('event_interest')
+    expect(ops).toContainEqual(['delete', []])
+    expect(ops).toContainEqual(['eq', ['event_id', EV1]])
+    expect(ops).toContainEqual(['eq', ['user_id', ME_ID]])
+  })
+  it('déjà intéressé (ligne existante) : succès, pas d’erreur', async () => {
+    set('event_interest:insert', null, { message: 'duplicate key value violates unique constraint "event_interest_pkey"', code: '23505' })
+    expect(await api.toggleInterest(EV1, false)).toBe(true)
+  })
+  it('quota du jour : phrase claire', async () => {
+    set('event_interest:insert', null, { message: 'quota_exceeded:interest', code: 'P0001' })
+    await expect(api.toggleInterest(EV1, false)).rejects.toThrow(/limite du jour/)
+  })
+  it('identifiant invalide : aucune requête', async () => {
+    await expect(api.toggleInterest('nimporte quoi', false)).rejects.toThrow(/invalide/)
+    expect(state.calls.filter((c) => c.table === 'event_interest')).toHaveLength(0)
+  })
+})
+
+describe('organisateur : demande', () => {
+  it('getMyOrganizer : en attente, validé, ou aucun', async () => {
+    set('organizers:select', orgRow())
+    expect(await api.getMyOrganizer()).toEqual({ userId: ME_ID, name: 'Jardin des Lilas', description: 'Asso de quartier', verified: false, createdAt: '2026-10-20T00:00:00Z' })
+    set('organizers:select', orgRow({ verified_at: '2026-10-21T00:00:00Z' }))
+    expect((await api.getMyOrganizer())?.verified).toBe(true)
+    set('organizers:select', null)
+    expect(await api.getMyOrganizer()).toBeNull()
+  })
+  it('requestOrganizer : insère nom et description, jamais verified_at', async () => {
+    set('organizers:select', null)
+    set('organizers:insert', orgRow())
+    const o = await api.requestOrganizer({ name: ' Jardin des Lilas ', description: 'Asso de quartier' })
+    const [, args] = opsOf('organizers').find(([m]) => m === 'insert')!
+    expect(args[0]).toEqual({ user_id: ME_ID, name: 'Jardin des Lilas', description: 'Asso de quartier' })
+    expect(o.verified).toBe(false)
+  })
+  it('requestOrganizer : corrige une demande en attente (mise à jour, pas de doublon)', async () => {
+    set('organizers:select', orgRow())
+    set('organizers:update', orgRow({ name: 'Jardin des Lilas 2' }))
+    await api.requestOrganizer({ name: 'Jardin des Lilas 2' })
+    const ops = opsOf('organizers')
+    expect(ops.some(([m]) => m === 'insert')).toBe(false)
+    expect(ops).toContainEqual(['update', [{ name: 'Jardin des Lilas 2', description: '' }]])
+    expect(ops).toContainEqual(['eq', ['user_id', ME_ID]])
+  })
+  it('requestOrganizer : déjà validé = on n’envoie rien', async () => {
+    set('organizers:select', orgRow({ verified_at: '2026-10-21T00:00:00Z' }))
+    await expect(api.requestOrganizer({ name: 'Mairie de Paris' })).rejects.toThrow(/déjà organisateur/)
+    expect(opsOf('organizers').some(([m]) => m === 'insert' || m === 'update')).toBe(false)
+  })
+  it('requestOrganizer : nom invalide, aucune requête ; nom déjà pris, phrase claire', async () => {
+    await expect(api.requestOrganizer({ name: 'ab' })).rejects.toThrow(/entre 3 et 60/)
+    expect(state.calls.filter((c) => c.table === 'organizers')).toHaveLength(0)
+    set('organizers:select', null)
+    set('organizers:insert', null, { message: 'duplicate key value violates unique constraint "organizers_name_key"', code: '23505' })
+    await expect(api.requestOrganizer({ name: 'Graines Libres' })).rejects.toThrow(/déjà pris/)
+  })
+  it('withdrawOrganizer : supprime ma fiche', async () => {
+    await api.withdrawOrganizer()
+    expect(opsOf('organizers')).toContainEqual(['delete', []])
+    expect(opsOf('organizers')).toContainEqual(['eq', ['user_id', ME_ID]])
+  })
+})
+
+describe('signalement d’un événement', () => {
+  it('report accepte la cible « event »', async () => {
+    await api.report('event', EV1, 'spam')
+    const [, args] = opsOf('reports').find(([m]) => m === 'insert')!
+    expect(args[0]).toMatchObject({ reporter: ME_ID, target_kind: 'event', target_id: EV1, reason: 'spam' })
+  })
+})

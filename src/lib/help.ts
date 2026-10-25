@@ -84,10 +84,10 @@ export const HELP: Record<Tab, HelpContent> = {
     steps: [
       'Entrez votre e-mail : un lien arrive. Ouvrez-le sur ce téléphone. Choisissez ensuite un pseudo et votre quartier.',
       '« Nouveautés » résume ce qui est arrivé depuis votre dernière visite. Touchez une ligne pour la voir.',
-      'Les annonces montrent les dons, échanges, prêts, demandes et questions près de chez vous. « Publier » en crée une.',
-      '« Écrire en privé » ouvre une conversation. « J’ai ce qu’il cherche » répond à une demande.',
-      '« Signaler » et « Bloquer » protègent le groupe. Rien ne se vend ici. Dans Profil, vous pouvez supprimer votre compte.',
-      '« Inviter un voisin » partage le lien de l’appli. Vous choisissez qui le reçoit. Rien n’est envoyé tout seul.',
+      'Les annonces montrent les dons, échanges, prêts, demandes et questions près de chez vous. « Publier » en crée une. Rien ne se vend ici.',
+      '« Écrire en privé » ouvre une conversation. « J’ai ce qu’il cherche » répond à une demande. « Signaler » et « Bloquer » protègent le groupe.',
+      'Les événements sont des rendez-vous près de chez vous. « Je suis intéressé(e) » ajoute 1 au compteur. « S’inscrire » ouvre le site de l’organisateur. Pour en publier, touchez « Devenir organisateur » : nous vérifions votre demande.',
+      '« Inviter un voisin » partage le lien de l’appli. Vous choisissez qui le reçoit. Dans Profil, vous pouvez supprimer votre compte.',
     ],
   },
 }

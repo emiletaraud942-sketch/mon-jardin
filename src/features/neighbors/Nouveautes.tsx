@@ -51,6 +51,9 @@ export function Nouveautes({ news, onGo, onNew }: { news: Loaded<NewsData>; onGo
           <button className="btn" onClick={() => onGo({ section: 'fil', kind: 'all' })}>
             Voir toutes les annonces
           </button>
+          <button className="btn" onClick={() => onGo({ section: 'evenements' })}>
+            Voir les événements
+          </button>
         </div>
       </section>
       <section className="card stack" aria-label="Inviter un voisin">
