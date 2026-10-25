@@ -190,7 +190,7 @@ export function TasksPage({ garden }: { garden: Garden }) {
             </div>
           )}
           {weather && <WeatherStrip weather={weather} />}
-          {weatherError && <div className="alert small">Attention : la météo n’est pas disponible. Les tâches ne tiennent pas compte du temps.</div>}
+          {weatherError && <div className="alert small">La météo n’est pas disponible. Les tâches ne tiennent pas compte du temps.</div>}
           {plants.length === 0 ? (
             <div className="card empty">
               <p>

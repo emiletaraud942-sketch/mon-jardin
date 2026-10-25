@@ -239,7 +239,7 @@ describe('annonces', () => {
   it('createPost retire la photo si l’insertion échoue', async () => {
     set('posts:select', null, null, 0)
     set('posts:insert', null, { message: 'quota_exceeded:post' })
-    await expect(api.createPost({ kind: 'don', title: 'x', photo: new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xd9])]) })).rejects.toThrow(/Limite atteinte/)
+    await expect(api.createPost({ kind: 'don', title: 'x', photo: new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xd9])]) })).rejects.toThrow(/limite du jour/)
     expect(state.remove).toHaveBeenCalledTimes(1)
   })
   it('closePost / deletePost ne ciblent que mes annonces', async () => {
