@@ -1185,7 +1185,7 @@ label.field > span {
   gap: 8px;
   margin-bottom: 16px;
   padding: 2px;
-  overflow-x: auto;
+  flex-wrap: wrap;
 }
 .tabs button {
   border: 0;
@@ -2609,4 +2609,38 @@ details > summary {
 .sidenav-invite .input {
   width: 100%;
   min-width: 0;
+}
+
+/* Téléphone : bandeaux resserrés pour laisser de la hauteur à la carte. */
+@media (max-width: 760px) {
+  .alert.demo-banner::before {
+    display: none;
+  }
+  .alert.demo-banner {
+    padding: 6px 10px;
+  }
+  .alert.demo-banner > span {
+    flex: 1 1 9rem;
+    min-width: 0;
+  }
+  .alert.demo-banner .btn {
+    flex: none;
+  }
+  .nudge {
+    padding: 4px 10px 6px;
+    gap: 4px 8px;
+  }
+  .nudge .small {
+    flex: 1 1 9rem;
+    font-size: 0.875rem;
+    line-height: 1.3;
+  }
+  .nudge .row {
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
+  .guide-toggle {
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
 }

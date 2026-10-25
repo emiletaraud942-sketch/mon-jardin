@@ -305,3 +305,18 @@
   flex: 1 1 8rem;
   min-width: 0;
 }
+
+/* Météo sur téléphone : une seule ligne qui défile, tuiles serrées. */
+@media (max-width: 600px) {
+  .np-weather {
+    display: flex;
+    overflow-x: auto;
+    gap: 6px;
+    padding-bottom: 6px;
+    scroll-snap-type: x proximity;
+  }
+  .np-weather .d {
+    flex: 0 0 4.6rem;
+    scroll-snap-align: start;
+  }
+}
