@@ -107,7 +107,7 @@
     --accent-soft: #2b432e;
     --btn-green: #3b7149;
     --btn-green-shadow: #244a2e;
-    --cta: #bf5a33;
+    --cta: #b8532d;
     --cta-shadow: #7c3519;
     --wheat: #e9c46a;
     --warn: #e7a35c;
@@ -158,7 +158,7 @@
   --accent-soft: #2b432e;
   --btn-green: #3b7149;
   --btn-green-shadow: #244a2e;
-  --cta: #bf5a33;
+  --cta: #b8532d;
   --cta-shadow: #7c3519;
   --wheat: #e9c46a;
   --warn: #e7a35c;
@@ -1845,7 +1845,8 @@ dialog.modal::backdrop {
 .ill {
   display: block;
   width: 100%;
-  height: 170px;
+  height: auto;
+  aspect-ratio: 330 / 180;
   margin-top: 16px;
   border-radius: 28px;
   overflow: hidden;
