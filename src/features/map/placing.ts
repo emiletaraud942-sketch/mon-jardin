@@ -39,14 +39,14 @@ export function placePlant(garden: Garden, speciesId: string, position: XY, stat
   setUi({ placingSpeciesId: undefined, placingCustomName: undefined, pendingPhotos: undefined, selectedPlantId: id, ...(opts.tab ? { tab: opts.tab } : {}) })
   if (status === 'projet') {
     showToast({
-      message: `« ${name} » est prévue. Quand vous l’aurez plantée, touchez « C’est planté ».`,
+      message: `« ${name} » est prévue. Quand vous l’aurez plantée, touchez « C’est planté ».`,
       actionLabel: 'C’est planté',
       onAction: () => updatePlant(id, { status: 'en-place' }),
     })
   }
 }
 
-/** « Déplacer cette plante » : la plante prend la position touchée ; un message permet de la remettre où elle était. */
+/** « Déplacer cette plante » : la plante prend la position touchée ; un message permet de la remettre où elle était. */
 export function movePlant(plantId: string, position: XY) {
   const before = getState().plants.find((p) => p.id === plantId)?.position
   setUi({ movingPlantId: undefined, selectedPlantId: plantId })
@@ -55,5 +55,5 @@ export function movePlant(plantId: string, position: XY) {
   updatePlant(plantId, { position: next })
   const plant = getState().plants.find((p) => p.id === plantId)
   const name = plant ? plantName(plant) : 'Plante'
-  showToast({ message: `« ${name} » déplacée.`, actionLabel: 'Annuler', onAction: () => updatePlant(plantId, { position: before }) })
+  showToast({ message: `« ${name} » déplacée.`, actionLabel: 'Annuler', onAction: () => updatePlant(plantId, { position: before }) })
 }

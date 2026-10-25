@@ -1,6 +1,6 @@
 // Thème de l'interface : Auto (réglage du système), Clair ou Sombre. Mémorisé sur l'appareil.
 export type Theme = 'auto' | 'light' | 'dark'
-export const THEME_LABEL: Record<Theme, string> = { auto: 'Automatique (réglage du téléphone)', light: 'Clair', dark: 'Sombre' }
+export const THEME_LABEL: Record<Theme, string> = { auto: 'Automatique', light: 'Clair', dark: 'Sombre' }
 
 const KEY = 'permajardin:theme'
 

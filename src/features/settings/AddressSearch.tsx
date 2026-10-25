@@ -1,4 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { ErrorNote } from '../../components/ErrorNote'
+import { friendlyError, type FriendlyError } from '../../lib/http'
 import { geocode, type GeocodeResult } from '../../lib/ign'
 
 type Status = 'idle' | 'loading' | 'empty' | 'error'
@@ -11,7 +13,7 @@ export function AddressSearch({ onSelect, onClear, autoFocus }: { onSelect: (r: 
   const [q, setQ] = useState('')
   const [results, setResults] = useState<GeocodeResult[]>([])
   const [status, setStatus] = useState<Status>('idle')
-  const [error, setError] = useState<string>()
+  const [error, setError] = useState<FriendlyError>()
   /** Valeur choisie dans la liste : tant que le champ la contient, on ne cherche plus. */
   const chosen = useRef<string>()
   const listId = useId()
@@ -36,7 +38,7 @@ export function AddressSearch({ onSelect, onClear, autoFocus }: { onSelect: (r: 
         (e) => {
           if (ctrl.signal.aborted || (e as Error).name === 'AbortError') return
           setResults([])
-          setError((e as Error).message)
+          setError(friendlyError(e))
           setStatus('error')
         },
       )
@@ -50,7 +52,7 @@ export function AddressSearch({ onSelect, onClear, autoFocus }: { onSelect: (r: 
   return (
     <div>
       <label className="field">
-        <span>Adresse du jardin</span>
+        <span>Votre adresse</span>
         <div className="input-wrap">
           <input
             className="input"
@@ -78,10 +80,10 @@ export function AddressSearch({ onSelect, onClear, autoFocus }: { onSelect: (r: 
         </div>
       </label>
       <div aria-live="polite">
-        {status === 'error' && error && <p className="alert error small" style={{ marginTop: 8 }}>{error}</p>}
-        {status === 'empty' && <p className="alert small" style={{ marginTop: 8 }}>Aucune adresse trouvée — essayez avec la commune seule.</p>}
+        {status === 'error' && error && <ErrorNote error={error} className="alert error" />}
+        {status === 'empty' && <p className="alert small" style={{ marginTop: 8 }}>Aucune adresse trouvée. Essayez avec le nom de la commune seul.</p>}
       </div>
-      <ul className="suggestions" id={listId} role="listbox" aria-live="polite" aria-label="Adresses proposées" hidden={results.length === 0}>
+      <ul className="suggestions" id={listId} role="listbox" aria-live="polite" aria-label="Adresses proposées : touchez la vôtre" hidden={results.length === 0}>
         {results.map((r) => (
           <li key={`${r.lon},${r.lat},${r.label}`} role="presentation">
             <button

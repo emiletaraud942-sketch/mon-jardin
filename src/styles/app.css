@@ -3,6 +3,8 @@
   --surface: #fffdf8;
   --surface-2: #efeadd;
   --border: #ddd5c3;
+  --border-strong: #857f6b; /* contour des champs et boutons : au moins 3,3:1 sur les fonds clairs */
+  --focus: #0b57d0; /* anneau de focus clavier : 5,7:1 et plus */
   --text: #22301f;
   --muted: #5a6454;
   --accent: #2f5d3a;
@@ -22,6 +24,7 @@
   --radius: 12px;
   --shadow: 0 1px 2px rgb(40 40 20 / 8%), 0 4px 16px rgb(40 40 20 / 6%);
   --nav-h: 64px;
+  --tap: 44px; /* taille minimale d'une cible tactile */
   color-scheme: light;
 }
 
@@ -31,6 +34,8 @@
     --surface: #1c241b;
     --surface-2: #253023;
     --border: #344232;
+    --border-strong: #76816f;
+    --focus: #8ab4ff;
     --text: #e6ecdf;
     --accent: #8cc47f;
     --accent-2: #a9d18e;
@@ -54,6 +59,8 @@
   --surface: #1c241b;
   --surface-2: #253023;
   --border: #344232;
+  --border-strong: #76816f;
+  --focus: #8ab4ff;
   --text: #e6ecdf;
   --accent: #8cc47f;
   --accent-2: #a9d18e;
@@ -75,6 +82,17 @@
 * {
   box-sizing: border-box;
 }
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+/* Taille du texte choisie dans Réglages : tout est en rem, tout suit. */
+html[data-text-size='grand'] {
+  font-size: 118.75%;
+}
+html[data-text-size='tres-grand'] {
+  font-size: 137.5%;
+}
 html,
 body,
 #root {
@@ -84,7 +102,7 @@ body,
 body {
   background: var(--bg);
   color: var(--text);
-  font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  font: 1rem/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 h1,
@@ -117,15 +135,48 @@ textarea {
   font: inherit;
   color: inherit;
 }
-/* 16 px : en dessous, iOS zoome la page à chaque focus d'un champ. */
+/* 1 rem (16 px au moins) : en dessous, iOS zoome la page à chaque focus d'un champ. */
 input,
 select,
 textarea {
-  font-size: 16px;
+  font-size: 1rem;
 }
 :focus-visible {
-  outline: 2px solid var(--accent-2);
+  outline: 3px solid var(--focus);
   outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .spinner {
+    animation: none;
+    border-top-color: var(--border);
+    border-right-color: var(--accent);
+  }
+}
+/* Lien d'évitement : visible seulement au clavier. */
+.skip-link {
+  position: absolute;
+  left: 8px;
+  top: -80px;
+  z-index: 100;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--surface);
+  font-weight: 600;
+}
+.skip-link:focus {
+  top: 8px;
+}
+.main:focus {
+  outline: none;
 }
 .sr-only {
   position: absolute;
@@ -140,7 +191,7 @@ textarea {
 }
 /* Entrée de fichier masquée mais focalisable : le libellé montre le focus. */
 label:focus-within:has(> input.sr-only) {
-  outline: 2px solid var(--accent-2);
+  outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
 
@@ -148,15 +199,16 @@ label:focus-within:has(> input.sr-only) {
 .app {
   display: grid;
   grid-template-columns: 220px 1fr;
-  grid-template-rows: 56px auto 1fr;
+  grid-template-rows: minmax(56px, auto) auto minmax(0, 1fr);
   height: 100%;
 }
 .topbar {
   grid-column: 1 / -1;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 16px;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 6px 16px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
@@ -185,21 +237,23 @@ label:focus-within:has(> input.sr-only) {
   padding: 6px 16px;
   min-width: 0;
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
-  gap: 12px;
+  gap: 8px 12px;
 }
 .modeswitch {
-  flex: 0 1 480px;
+  flex: 0 1 520px;
   display: flex;
+  flex-wrap: wrap; /* texte très grand : les boutons passent sur plusieurs lignes */
   gap: 4px;
   padding: 3px;
   border-radius: 12px;
   background: var(--surface-2);
 }
 .modeswitch button {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
-  min-height: 40px;
+  min-height: var(--tap);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -211,7 +265,7 @@ label:focus-within:has(> input.sr-only) {
   color: var(--muted);
   font-weight: 600;
   cursor: pointer;
-  white-space: nowrap;
+  text-align: center;
 }
 .modeswitch button:hover {
   color: var(--text);
@@ -219,23 +273,47 @@ label:focus-within:has(> input.sr-only) {
 .modeswitch button[aria-selected='true'] {
   background: var(--surface);
   color: var(--accent);
-  box-shadow: 0 0 0 1px var(--border), var(--shadow);
+  box-shadow: 0 0 0 1px var(--border-strong), var(--shadow);
 }
 .modeswitch button:focus-visible {
-  outline: 2px solid var(--accent-2);
+  outline: 3px solid var(--focus);
   outline-offset: 1px;
 }
 .help-btn {
-  min-width: 40px;
-  min-height: 40px;
+  font-weight: 600;
+  padding: 4px 14px;
+  border-radius: 999px;
+}
+.help-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 1.6em;
+  height: 1.6em;
   border-radius: 50%;
+  background: var(--accent);
+  color: var(--surface);
   font-weight: 700;
-  padding: 0;
-  justify-content: center;
+}
+.garden-name {
+  max-width: 40vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.demo-banner {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 12px;
 }
 .guide {
   flex: 1 1 280px;
-  max-width: 460px;
+  max-width: 640px;
   min-width: 0;
 }
 .progresscard {
@@ -247,10 +325,11 @@ label:focus-within:has(> input.sr-only) {
 .guide-toggle {
   width: 100%;
   min-width: 0;
-  min-height: 40px;
+  min-height: var(--tap);
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 2px 8px;
   padding: 4px 10px;
   border: 0;
   background: transparent;
@@ -259,7 +338,7 @@ label:focus-within:has(> input.sr-only) {
   border-radius: 10px;
 }
 .guide-toggle:focus-visible {
-  outline: 2px solid var(--accent-2);
+  outline: 3px solid var(--focus);
   outline-offset: -2px;
 }
 .guide-toggle .chev {
@@ -272,17 +351,21 @@ label:focus-within:has(> input.sr-only) {
   transform: rotate(180deg);
 }
 .gauge-label {
-  font-size: 0.85rem;
-  white-space: nowrap;
+  flex: 1 1 auto;
 }
 .gauge {
-  flex: 1;
+  order: 3;
+  flex: 1 1 100%;
   min-width: 40px;
   height: 10px;
+  margin-bottom: 6px;
   border-radius: 999px;
   background: var(--surface-2);
-  border: 1px solid var(--muted);
+  border: 1px solid var(--border-strong);
   overflow: hidden;
+}
+.guide-toggle .chev {
+  order: 2;
 }
 .gauge > span {
   display: block;
@@ -290,11 +373,7 @@ label:focus-within:has(> input.sr-only) {
   background: var(--accent);
   border-radius: 999px;
 }
-.gauge-pct {
-  font-variant-numeric: tabular-nums;
-  min-width: 3.2em;
-  text-align: right;
-}
+
 /* Détails dépliés : par-dessus la carte, sans la redimensionner. */
 .progress-body {
   position: absolute;
@@ -341,7 +420,7 @@ label:focus-within:has(> input.sr-only) {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 44px;
+  min-height: var(--tap);
   padding: 4px 0;
   border-top: 1px solid var(--border);
 }
@@ -350,7 +429,7 @@ label:focus-within:has(> input.sr-only) {
   width: 22px;
   height: 22px;
   border-radius: 6px;
-  border: 2px solid var(--muted);
+  border: 2px solid var(--border-strong);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -403,6 +482,7 @@ label:focus-within:has(> input.sr-only) {
   .modebar {
     padding: 6px 8px;
     flex-direction: column;
+    flex-wrap: nowrap;
     align-items: stretch;
     gap: 6px;
   }
@@ -411,14 +491,11 @@ label:focus-within:has(> input.sr-only) {
   }
   .modeswitch button {
     padding: 4px 4px;
-    font-size: 0.9rem;
+    font-size: 0.9375rem;
   }
   .guide {
     flex: none;
     max-width: none;
-  }
-  .gauge-label {
-    font-size: 0.8rem;
   }
   .progress-body {
     max-height: calc(100dvh - 230px);
@@ -436,6 +513,7 @@ label:focus-within:has(> input.sr-only) {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-height: var(--tap);
   border: 0;
   background: transparent;
   padding: 10px 12px;
@@ -478,7 +556,7 @@ label:focus-within:has(> input.sr-only) {
 @media (max-width: 760px) {
   .app {
     grid-template-columns: 1fr;
-    grid-template-rows: 52px auto 1fr var(--nav-h);
+    grid-template-rows: minmax(52px, auto) auto minmax(0, 1fr) minmax(var(--nav-h), auto);
   }
   .sidenav {
     grid-row: 4;
@@ -493,7 +571,9 @@ label:focus-within:has(> input.sr-only) {
     flex-direction: column;
     gap: 2px;
     padding: 6px 4px;
-    font-size: 11px;
+    font-size: 0.8125rem; /* 13 px */
+    line-height: 1.2;
+    text-align: center;
     flex: 1;
     align-items: center;
     min-width: 0;
@@ -503,8 +583,8 @@ label:focus-within:has(> input.sr-only) {
     top: 2px;
     left: calc(50% + 4px);
     margin: 0;
-    font-size: 0.7rem;
-    min-width: 18px;
+    font-size: 0.8125rem;
+    min-width: 20px;
   }
   .navbtn {
     position: relative;
@@ -524,7 +604,7 @@ label:focus-within:has(> input.sr-only) {
     justify-content: center;
   }
   .garden-select {
-    max-width: 58vw;
+    max-width: 50vw;
   }
 }
 .show-mobile {
@@ -573,17 +653,17 @@ select.garden-select {
   color: var(--muted);
 }
 .small {
-  font-size: 0.85rem;
+  font-size: 0.9375rem; /* 15 px */
 }
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 40px;
+  min-height: var(--tap);
   padding: 8px 14px;
   border-radius: 10px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   background: var(--surface);
   cursor: pointer;
   font-weight: 500;
@@ -606,49 +686,71 @@ select.garden-select {
   border-color: var(--danger);
   background: transparent;
 }
+/* Bouton rouge plein : il dit ce qu'il va faire (« Supprimer ce jardin »). */
+.btn.danger-solid {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--bg);
+  font-weight: 600;
+}
+.btn.danger-solid:hover {
+  background: var(--danger);
+  filter: brightness(1.1);
+}
+.btn.big {
+  min-height: 56px;
+  width: 100%;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+.row > .btn.big {
+  flex: 1 1 14rem;
+}
+.stack > .btn.big {
+  flex: none;
+}
 .btn.ghost {
   border-color: transparent;
   background: transparent;
 }
 .btn.small {
-  min-height: 32px;
-  padding: 4px 10px;
-  font-size: 0.85rem;
+  min-height: var(--tap);
+  padding: 4px 12px;
+  font-size: 0.9375rem;
 }
 .btn.small.tall {
-  min-height: 40px;
+  min-height: var(--tap);
 }
 .btn.on {
   background: var(--accent-soft);
   border-color: var(--accent-2);
   color: var(--accent);
 }
-.btn.icon-btn {
-  min-width: 40px;
+.btn.icon-btn,
+.btn.small.icon-btn {
+  min-width: var(--tap);
   padding: 4px;
 }
-.btn.small.icon-btn {
-  min-width: 36px;
+.btn.close-btn {
+  flex: none;
+  gap: 4px;
 }
 .link-btn {
   padding: 0 2px;
-  min-height: 40px;
+  min-height: var(--tap);
   color: var(--accent);
   text-decoration: underline;
 }
-@media (max-width: 760px) {
-  /* Cibles tactiles : 36 px au minimum pour les petits boutons, 40 px pour les icônes seules. */
-  .btn.small {
-    min-height: 36px;
-  }
-  .btn.small.icon-btn {
-    min-width: 40px;
-    min-height: 40px;
-  }
-}
+/* Bouton inactif : fond neutre et texte lisible (5:1), jamais « fantôme ». La raison est écrite à côté. */
 .btn:disabled {
-  opacity: 0.5;
+  background: var(--surface-2);
+  color: var(--muted);
+  border-style: dashed;
+  border-color: var(--border-strong);
   cursor: not-allowed;
+}
+.btn:disabled:hover {
+  background: var(--surface-2);
 }
 .btn svg {
   width: 18px;
@@ -658,23 +760,23 @@ select.garden-select {
 select.input,
 textarea.input {
   width: 100%;
-  min-height: 40px;
+  min-height: var(--tap);
   padding: 8px 12px;
   border-radius: 10px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   background: var(--surface);
 }
 .input:focus,
 .btn:focus-visible,
 .navbtn:focus-visible {
-  outline: 2px solid var(--accent-2);
+  outline: 3px solid var(--focus);
   outline-offset: 1px;
 }
 label.field {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 0.9rem;
+  font-size: 0.9375rem;
   color: var(--muted);
 }
 label.field > span {
@@ -684,9 +786,9 @@ label.field > span {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 1px 8px;
+  padding: 2px 10px;
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem; /* 13 px */
   font-weight: 600;
   background: var(--surface-2);
   color: var(--muted);
@@ -717,6 +819,113 @@ label.field > span {
   color: var(--text);
   border-left: 4px solid var(--warn);
 }
+/* Chaque alerte commence par un mot et une icône : la couleur ne porte jamais seule le message. */
+.alert::before {
+  content: '⚠ Attention : ';
+  font-weight: 700;
+  color: var(--warn-text);
+}
+.alert.info::before {
+  content: 'ℹ Information : ';
+  color: var(--accent);
+}
+.alert.error::before {
+  content: '⛔ Problème : ';
+  color: var(--danger);
+}
+/* Alerte en colonnes (message + boutons) : le mot passe seul sur la première ligne. */
+.alert.banner::before,
+.alert.data-banner:not(.compact)::before,
+.alert.demo-banner::before {
+  flex: 0 0 100%;
+}
+.alert.data-banner.compact::before {
+  flex: none;
+  margin-right: 6px;
+}
+.alert.data-banner.compact > div {
+  flex: 1 1 8rem;
+}
+.alert.demo-banner::before {
+  content: 'ℹ Exemple : ';
+}
+.alert.demo-banner > span > strong {
+  font-weight: 600;
+}
+.tech-details {
+  margin-top: 6px;
+}
+.tech-details summary {
+  cursor: pointer;
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  color: var(--accent);
+  text-decoration: underline;
+}
+.tech-details p {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+.saved-note {
+  color: var(--accent);
+  font-weight: 600;
+  margin-left: 6px;
+}
+.danger-zone {
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.panel-actions {
+  gap: 10px;
+}
+.confirm-actions {
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+.confirm-body > p,
+.confirm-body .alert {
+  margin: 0;
+}
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.segmented .btn {
+  flex: 1 1 7rem;
+}
+.sure-row {
+  padding: 10px;
+  border: 2px solid var(--danger);
+  border-radius: 10px;
+}
+.custom-open {
+  width: 100%;
+  margin-bottom: 8px;
+}
+.custom-form {
+  gap: 12px;
+}
+.onboarding {
+  padding: 24px;
+}
+.onboarding h1 {
+  margin: 8px 0 8px;
+}
+.brand-row {
+  gap: 10px;
+}
+.brand-name {
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 1.125rem;
+}
+.choose-start .btn.big {
+  flex: none;
+}
 .alert.info {
   background: var(--accent-soft);
   border-left-color: var(--accent);
@@ -731,7 +940,7 @@ label.field > span {
   padding: 0;
 }
 .list > li {
-  padding: 10px 0;
+  padding: 12px 0;
   border-bottom: 1px solid var(--border);
 }
 .list > li:last-child {
@@ -755,7 +964,7 @@ label.field > span {
 .tabs button {
   border: 0;
   background: transparent;
-  min-height: 44px;
+  min-height: var(--tap);
   padding: 8px 12px;
   border-bottom: 2px solid transparent;
   cursor: pointer;
@@ -881,7 +1090,7 @@ label.field > span {
   height: 72px;
   object-fit: cover;
   border-radius: 8px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   background: var(--surface-2);
   flex: none;
 }
@@ -903,25 +1112,39 @@ label.field > span {
   margin: 0 auto;
   border-radius: 8px;
 }
+.photo-row {
+  gap: 12px;
+}
 .photo-add {
-  height: 72px;
-  width: 72px;
+  min-height: 72px;
+  min-width: 88px;
   flex-direction: column;
   gap: 2px;
+  text-align: center;
 }
+/* Croix de la photo : zone tactile de 44 px, pastille visible plus petite. */
 .photo-remove {
   position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 28px;
-  height: 28px;
+  top: -14px;
+  right: -14px;
+  width: var(--tap);
+  height: var(--tap);
   display: grid;
   place-items: center;
   padding: 0;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--surface);
+  border: 0;
+  background: transparent;
   cursor: pointer;
+  color: var(--text);
+}
+.photo-remove > span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
 }
 .scorebar {
   height: 8px;
@@ -1010,7 +1233,7 @@ label.field > span {
     justify-content: center;
     align-items: center;
     width: 100%;
-    min-height: 40px;
+    min-height: var(--tap);
     margin-bottom: 0;
     border: 0;
     background: transparent;
@@ -1026,7 +1249,7 @@ label.field > span {
     height: 5px;
     border-radius: 3px;
     background: var(--border);
-    border: 1px solid var(--muted);
+    border: 1px solid var(--border-strong);
   }
 }
 /* Téléphone en paysage : écran large mais très bas. Navigation et panneau latéral réduits. */
@@ -1045,7 +1268,7 @@ label.field > span {
   .navbtn {
     padding: 6px 8px;
     gap: 8px;
-    font-size: 0.9rem;
+    font-size: 0.9375rem;
   }
   .sidepanel {
     width: 250px;
@@ -1056,36 +1279,71 @@ label.field > span {
   position: absolute;
   z-index: 5;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 8px;
 }
-/* Consigne de placement : en bas de la zone carte, sur plusieurs lignes si besoin. */
+/* Consigne de placement : grande, en bas de la zone carte, sur deux lignes ou plus. */
 .placing-banner {
-  bottom: 36px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 2px solid var(--accent);
   white-space: normal;
-  width: max-content;
-  max-width: calc(100% - 24px);
+}
+.placing-banner > svg {
+  flex: none;
+  color: var(--accent);
 }
 .placing-banner .placing-text {
+  flex: 1 1 12rem;
   min-width: 0;
-  line-height: 1.3;
+  font-size: 1.0625rem;
+  line-height: 1.35;
 }
 .placing-banner .btn {
   flex: none;
+}
+@media (min-width: 761px) {
+  .placing-banner {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: min(640px, calc(100% - 24px));
+  }
+}
+.map-empty {
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+}
+.map-empty p {
+  margin: 0;
+}
+@media (min-width: 761px) {
+  .map-empty {
+    right: auto;
+    max-width: 360px;
+  }
 }
 /* Barre d'outils et avis de la carte : colonne en haut, sans gêner les commandes de zoom (à droite). */
 .map-top {
   position: absolute;
   top: 12px;
   left: 12px;
-  right: 12px;
+  right: 68px; /* place pour les boutons + et − de la carte (44 px) */
+  max-height: calc(100% - 24px); /* texte très grand : la carte est petite, les réglages défilent */
+  overflow-y: auto;
   z-index: 5;
   display: flex;
   flex-direction: column;
@@ -1106,26 +1364,28 @@ label.field > span {
 .map-toolbar .short {
   display: none;
 }
-@media (min-width: 761px) {
-  .map-top {
-    right: 56px;
-  }
+.map-toolbar .btn.small {
+  padding: 4px 10px;
 }
-@media (max-width: 760px) {
-  .map-toolbar .long {
-    display: none;
-  }
-  .map-toolbar .short {
-    display: inline;
-  }
-  .map-toolbar {
-    gap: 3px;
-    padding: 3px;
-  }
-  .map-toolbar .btn.small {
-    padding: 4px 6px;
-    font-size: 0.8rem;
-  }
+.map-options {
+  align-items: stretch;
+  gap: 6px;
+  min-width: 11rem;
+}
+.map-options .btn {
+  justify-content: flex-start;
+}
+/* Boutons + et − de MapLibre : 44 px, bien séparés. */
+.maplibregl-ctrl-top-right {
+  top: 4px;
+  right: 4px;
+}
+.maplibregl-ctrl-group button {
+  width: var(--tap);
+  height: var(--tap);
+}
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--border-strong);
 }
 .map-top .legend {
   flex-direction: column;
@@ -1139,6 +1399,7 @@ label.field > span {
 }
 .data-banner {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
@@ -1148,7 +1409,7 @@ label.field > span {
 .data-banner.compact {
   margin: 0;
   padding: 8px 10px;
-  font-size: 0.85rem;
+  font-size: 0.9375rem;
   line-height: 1.3;
 }
 .data-banner .btn {
@@ -1159,17 +1420,44 @@ label.field > span {
   inset: 0;
 }
 .marker-hit {
-  /* Zone tactile de 40 px autour du point visible (14 px). */
-  width: 40px;
-  height: 40px;
+  /* Zone tactile de 44 px autour du point visible (18 px). */
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   background: transparent;
   cursor: grab;
   border-radius: 50%;
+  position: relative;
 }
 .marker-hit:focus-visible {
-  outline: 2px solid #ffd54a;
+  outline: 3px solid #ffd54a;
+}
+/* Nom de la plante sous son point : « Afficher les noms », et toujours pour la plante choisie. */
+.marker-label {
+  position: absolute;
+  top: calc(50% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 11rem;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  font-size: 0.875rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+.marker-label[hidden] {
+  display: none;
+}
+.marker-hit.selected .marker-label {
+  font-weight: 700;
+  border-color: var(--accent);
 }
 /* En mode placement, seule la pastille reste cliquable : on peut poser une plante tout près d'une autre. */
 .placing .marker-hit {
@@ -1198,7 +1486,7 @@ label.field > span {
 
 /* ---------- Dialogue ---------- */
 dialog.modal {
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: 16px;
   padding: 0;
   width: min(560px, calc(100vw - 32px));
@@ -1215,7 +1503,8 @@ dialog.modal::backdrop {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
+  gap: 8px;
+  padding: 10px 12px 10px 16px;
   border-bottom: 1px solid var(--border);
 }
 .modal-head h2 {
@@ -1239,8 +1528,8 @@ dialog.modal::backdrop {
 }
 .more-item {
   justify-content: flex-start;
-  min-height: 52px;
-  font-size: 1.05rem;
+  min-height: 56px;
+  font-size: 1.0625rem;
   width: 100%;
 }
 .more-item[aria-current='page'] {
@@ -1258,11 +1547,14 @@ dialog.modal::backdrop {
 .hero .card {
   width: min(640px, 100%);
 }
+.hero .onboarding .btn.big {
+  width: 100%;
+}
 .suggestions {
   list-style: none;
   margin: 4px 0 0;
   padding: 0;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -1271,11 +1563,11 @@ dialog.modal::backdrop {
 }
 .suggestions button {
   width: 100%;
-  min-height: 44px;
+  min-height: var(--tap);
   text-align: left;
   border: 0;
   background: var(--surface);
-  padding: 10px 12px;
+  padding: 12px;
   cursor: pointer;
 }
 .input-wrap {
@@ -1302,10 +1594,10 @@ dialog.modal::backdrop {
   display: flex;
   gap: 8px;
   align-items: center;
-  padding: 4px 0;
+  padding: 6px 0;
 }
 .step-icon {
-  width: 18px;
+  width: 22px;
   text-align: center;
   flex: none;
   font-weight: 700;
@@ -1317,11 +1609,11 @@ dialog.modal::backdrop {
 }
 @media (max-width: 480px) {
   .weather-day {
-    font-size: 0.7rem;
+    font-size: 0.8125rem;
     padding: 6px 2px;
   }
   .weather-day strong {
-    font-size: 0.85rem;
+    font-size: 0.9375rem;
   }
 }
 .weather-day {
@@ -1329,7 +1621,7 @@ dialog.modal::backdrop {
   padding: 8px 4px;
   border-radius: 10px;
   background: var(--surface-2);
-  font-size: 0.8rem;
+  font-size: 0.875rem;
 }
 .weather-day.frost {
   background: var(--frost-bg);
@@ -1434,12 +1726,20 @@ dialog.modal::backdrop {
   left: 50%;
   transform: translateX(-50%);
   bottom: 16px;
-  width: min(520px, calc(100% - 16px));
+  width: min(560px, calc(100% - 16px));
   z-index: 50;
   display: flex;
   flex-direction: column;
   gap: 8px;
   pointer-events: none;
+}
+.toast-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toast-list:empty {
+  display: none;
 }
 @media (max-width: 760px) {
   .toast-host {
@@ -1449,20 +1749,21 @@ dialog.modal::backdrop {
 .toast {
   pointer-events: auto;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  padding: 6px 6px 6px 14px;
+  gap: 4px 8px;
+  padding: 8px 8px 8px 14px;
   border-radius: var(--radius);
   background: var(--text);
   color: var(--bg);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow), 0 6px 20px rgb(0 0 0 / 25%);
 }
 .toast.error {
   background: var(--danger);
-  color: var(--surface);
+  color: var(--bg);
 }
 .toast-msg {
-  flex: 1;
+  flex: 1 1 12rem;
   min-width: 0;
 }
 .toast .btn {
@@ -1470,8 +1771,14 @@ dialog.modal::backdrop {
   background: transparent;
   border-color: currentcolor;
 }
+.toast .btn:hover {
+  background: rgb(127 127 127 / 25%);
+}
 .toast .btn.ghost {
   border-color: transparent;
+}
+.toast :focus-visible {
+  outline-color: var(--bg);
 }
 .error-screen .card {
   text-align: center;
@@ -1486,8 +1793,8 @@ dialog.modal::backdrop {
 .legal-link {
   background: none;
   border: 0;
-  padding: 0;
-  min-height: 40px;
+  padding: 0 4px;
+  min-height: var(--tap);
   display: inline-flex;
   align-items: center;
   color: var(--accent);
@@ -1495,8 +1802,20 @@ dialog.modal::backdrop {
   text-decoration: underline;
   cursor: pointer;
 }
+/* Lien au milieu d'une phrase : reste dans la ligne ; la zone touchable (44 px) déborde en haut et en bas. */
+p .legal-link {
+  display: inline;
+  min-height: 0;
+  padding: 0;
+  position: relative;
+}
+p .legal-link::after {
+  content: '';
+  position: absolute;
+  inset: -12px -6px;
+}
 .legal-link:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 3px solid var(--focus);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -1505,8 +1824,8 @@ dialog.modal::backdrop {
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 0 4px;
-  font-size: 0.85rem;
+  gap: 0 20px;
+  font-size: 0.9375rem;
 }
 .legal-links-item {
   display: inline-flex;
@@ -1519,9 +1838,11 @@ dialog.modal::backdrop {
 .legal-accept {
   margin-bottom: 0;
 }
-.legal-accept .legal-link {
-  min-height: 40px;
+.legal-accept {
+  margin-top: 16px;
+  line-height: 1.7;
 }
+
 .legal-doc {
   overflow-wrap: anywhere;
 }
@@ -1556,7 +1877,7 @@ dialog.modal::backdrop {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 8px 12px;
 }
 .consent-actions {
   justify-content: flex-end;
@@ -1622,7 +1943,7 @@ select.nb-radius {
   text-align: left;
   color: var(--text);
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   cursor: pointer;
@@ -1631,7 +1952,7 @@ select.nb-radius {
   background: var(--surface-2);
 }
 .nb-card:focus-visible {
-  outline: 2px solid var(--accent-2);
+  outline: 3px solid var(--focus);
   outline-offset: 1px;
 }
 .nb-card-top {
@@ -1685,7 +2006,7 @@ select.nb-radius {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 40px;
+  min-height: var(--tap);
 }
 .nb-radio input {
   width: 20px;
@@ -1773,14 +2094,21 @@ select.nb-radius {
 .check-row {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  min-height: 40px;
+  gap: 12px;
+  min-height: var(--tap);
   cursor: pointer;
 }
 .check-row input {
   flex: none;
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   margin: 1px 0 0;
   accent-color: var(--accent);
+}
+
+/* Titres repliables (« Sources et licences »…) : zone touchable de 44 px. */
+details > summary {
+  padding: 10px 0;
+  min-height: var(--tap);
+  cursor: pointer;
 }

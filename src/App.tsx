@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { notifyDailyTasks } from './lib/notify'
 import { Icon } from './components/Icon'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -9,11 +9,12 @@ import { ProgressCard } from './components/ProgressCard'
 import { StorageBanner } from './components/StorageBanner'
 import { ToastHost } from './components/Toast'
 import { UpdateBanner } from './components/UpdateBanner'
-import { consumeExportReminder } from './lib/backup'
+import { consumeExportReminder, exportCurrentState } from './lib/backup'
 import { getLoadWarnings, getState, setActiveGarden, useActiveGarden, useGardenPlants, useStore } from './lib/store'
 import { showToast } from './lib/toast'
-import { ALWAYS_TABS, MODE_TABS, applyDefaultMode, noteVisit, setUi, useUi, type Mode, type Tab } from './lib/ui'
+import { ALWAYS_TABS, MODE_TABS, TAB_LABEL, applyDefaultMode, noteVisit, setUi, useUi, type Mode, type Tab } from './lib/ui'
 import { Onboarding } from './features/settings/Onboarding'
+import { isDemoGarden } from './features/settings/demo'
 import { PlantsPage } from './features/plants/PlantsPage'
 import { TasksPage } from './features/tasks/TasksPage'
 import { useTasks } from './features/tasks/useTasks'
@@ -33,20 +34,24 @@ const Loading = ({ label }: { label: string }) => (
   </div>
 )
 
-const NAV: Record<Tab, { label: string; icon: string }> = {
-  carte: { label: 'Carte', icon: 'map' },
-  '3d': { label: '3D', icon: 'cube' },
-  plantes: { label: 'Plantes', icon: 'leaf' },
-  entretien: { label: 'Entretien', icon: 'check' },
-  planter: { label: 'Planter', icon: 'sprout' },
-  catalogue: { label: 'Catalogue', icon: 'book' },
-  reglages: { label: 'Réglages', icon: 'settings' },
-  voisins: { label: 'Voisins', icon: 'users' },
+const NAV_ICON: Record<Tab, string> = {
+  carte: 'map',
+  '3d': 'cube',
+  plantes: 'leaf',
+  entretien: 'check',
+  planter: 'sprout',
+  catalogue: 'book',
+  reglages: 'settings',
+  voisins: 'users',
 }
-const MORE_LABEL: Partial<Record<Tab, string>> = { catalogue: 'Catalogue des espèces', reglages: 'Réglages et sauvegarde', voisins: 'Entraide entre voisins' }
+const NAV: Record<Tab, { label: string; icon: string }> = Object.fromEntries((Object.keys(TAB_LABEL) as Tab[]).map((t) => [t, { label: TAB_LABEL[t], icon: NAV_ICON[t] }])) as Record<Tab, { label: string; icon: string }>
+/** Libellés plus longs du menu. « Sauvegarde et réglages » passe en tête : c'est ce que l'on cherche le plus. */
+const MORE_LABEL: Partial<Record<Tab, string>> = { catalogue: 'Catalogue des plantes', reglages: 'Sauvegarde et réglages', voisins: 'Entraide entre voisins' }
+const MORE_FIRST: Tab[] = ['reglages']
 
-/** Catalogue et Réglages restent accessibles dans tous les modes : barre du bas si le mode les contient, sinon menu « Plus ». */
+/** Catalogue et Réglages restent accessibles dans tous les modes : barre du bas si le mode les contient, sinon menu. */
 const extraTabs = (mode: Mode) => ALWAYS_TABS.filter((t) => !MODE_TABS[mode].includes(t) && (t !== 'voisins' || neighborsEnabled))
+const menuTabs = (mode: Mode) => [...extraTabs(mode)].sort((a, b) => Number(MORE_FIRST.includes(b)) - Number(MORE_FIRST.includes(a)))
 
 const NEW_GARDEN = '__new'
 
@@ -57,9 +62,9 @@ function MoreSheet({ onClose, onNewGarden }: { onClose: () => void; onNewGarden:
     setUi({ tab: t })
   }
   return (
-    <Modal title="Plus" sheet onClose={onClose}>
+    <Modal title="Menu" sheet onClose={onClose}>
       <div className="stack more-list">
-        {extraTabs(mode).map((t) => (
+        {menuTabs(mode).map((t) => (
           <button key={t} className="btn more-item" aria-current={tab === t ? 'page' : undefined} onClick={() => go(t)}>
             <Icon name={NAV[t].icon} /> {MORE_LABEL[t] ?? NAV[t].label}
           </button>
@@ -87,6 +92,8 @@ export function App() {
   const { tasks, weather, weatherLoading } = useTasks(garden)
   const [moreOpen, setMoreOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
+  const mainRef = useRef<HTMLElement>(null)
+  const firstPaint = useRef(true)
   const open = tasks.filter((t) => !t.blockedBy && !t.done).length
   const weatherReady = !weatherLoading && !!weather
   useEffect(() => {
@@ -96,18 +103,21 @@ export function App() {
   // Messages de démarrage : données corrigées, rappel d'export mensuel.
   useEffect(() => {
     if (!loaded) return
-    if (getLoadWarnings().length > 0) showToast({ message: 'Certaines données enregistrées ont été corrigées (détail dans Réglages › Sauvegarde).', durationMs: 8000 })
+    if (getLoadWarnings().length > 0) showToast({ message: 'Certaines données ont été corrigées au démarrage. Le détail est dans Réglages.' })
     if (consumeExportReminder(getState().plants.length > 0)) {
       showToast({
-        message: 'Pensez à exporter une sauvegarde de vos données.',
-        actionLabel: 'Ouvrir les réglages',
-        onAction: () => setUi({ tab: 'reglages' }),
-        durationMs: 12000,
+        message: 'Pensez à faire une sauvegarde de vos données.',
+        actionLabel: 'Faire une sauvegarde',
+        onAction: () => {
+          exportCurrentState()
+          showToast({ message: 'Sauvegarde faite. Le fichier est dans vos téléchargements.' })
+        },
+        durationMs: 30000,
       })
     }
   }, [loaded])
 
-  // Premier lancement sans mode mémorisé : « Mon jardin » s'il y a peu de plantes, sinon « Entretenir ».
+  // Premier lancement sans mode mémorisé : « Mon jardin » s'il y a peu de plantes, sinon « Entretenir ».
   const gardenId = garden?.id
   useEffect(() => {
     if (loaded && gardenId) applyDefaultMode(plantCount)
@@ -118,12 +128,26 @@ export function App() {
     if (loaded && gardenId) noteVisit(tab, gardenId)
   }, [loaded, gardenId, tab])
 
+  // Titre de la page, et focus sur le contenu à chaque changement d'écran (lecteurs d'écran, clavier).
+  useEffect(() => {
+    document.title = garden ? `${TAB_LABEL[tab]} – PermaJardin` : 'PermaJardin'
+  }, [tab, garden])
+  useEffect(() => {
+    if (!loaded || !garden) return
+    if (firstPaint.current) {
+      firstPaint.current = false
+      return
+    }
+    mainRef.current?.focus({ preventScroll: true })
+    // Seul le changement d'écran compte.
+  }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const startNewGarden = () => setUi({ tab: 'reglages', newGarden: true })
 
   if (!loaded) {
     return (
       <div className="hero">
-        <span className="spinner" role="status" aria-label="Chargement" />
+        <span className="spinner" role="status" aria-label="Chargement en cours" />
       </div>
     )
   }
@@ -144,30 +168,49 @@ export function App() {
 
   return (
     <div className="app">
+      <a
+        className="skip-link"
+        href="#main-panel"
+        onClick={(e) => {
+          e.preventDefault()
+          mainRef.current?.focus()
+        }}
+      >
+        Aller au contenu
+      </a>
       <header className="topbar">
         <div className="brand">
           <img src="/icon.svg" alt="" />
           <span>PermaJardin</span>
         </div>
         <div className="spacer" />
-        <select
-          className="input garden-select"
-          aria-label="Jardin actif"
-          value={garden.id}
-          onChange={(e) => (e.target.value === NEW_GARDEN ? startNewGarden() : setActiveGarden(e.target.value))}
-        >
-          {gardens.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.name}
-            </option>
-          ))}
-          <option value={NEW_GARDEN}>+ Nouveau jardin…</option>
-        </select>
+        {gardens.length > 1 ? (
+          <select
+            className="input garden-select"
+            aria-label="Jardin affiché"
+            value={garden.id}
+            onChange={(e) => (e.target.value === NEW_GARDEN ? startNewGarden() : setActiveGarden(e.target.value))}
+          >
+            {gardens.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
+            ))}
+            <option value={NEW_GARDEN}>+ Nouveau jardin…</option>
+          </select>
+        ) : (
+          <span className="garden-name" title={garden.name}>
+            {garden.name}
+          </span>
+        )}
         <button className="btn small hide-mobile" onClick={startNewGarden}>
-          <Icon name="plus" size={16} /> Jardin
+          <Icon name="plus" size={16} /> Nouveau jardin
         </button>
-        <button className="btn icon-btn help-btn" aria-label="Aide" aria-haspopup="dialog" title="Aide" onClick={() => setHelpOpen(true)}>
-          ?
+        <button className="btn help-btn" aria-haspopup="dialog" onClick={() => setHelpOpen(true)}>
+          <span className="help-mark" aria-hidden>
+            ?
+          </span>{' '}
+          Aide
         </button>
       </header>
       <div className="modebar">
@@ -175,6 +218,16 @@ export function App() {
         {mode === 'jardin' && MODE_TABS.jardin.includes(tab) && !placingSpeciesId && (
           <div className="guide">
             <ProgressCard garden={garden} />
+          </div>
+        )}
+        {isDemoGarden(garden) && (
+          <div className="alert info demo-banner" role="status">
+            <span>
+              <strong>Ceci est un jardin d’exemple.</strong>
+            </span>
+            <button className="btn small primary" onClick={startNewGarden}>
+              Créer mon vrai jardin
+            </button>
           </div>
         )}
       </div>
@@ -203,10 +256,10 @@ export function App() {
           onClick={() => setMoreOpen(true)}
         >
           <Icon name="menu" />
-          Plus
+          Menu
         </button>
       </nav>
-      <main id="main-panel" className={'main' + (full ? ' full' : '')}>
+      <main id="main-panel" ref={mainRef} tabIndex={-1} aria-label={TAB_LABEL[tab]} className={'main' + (full ? ' full' : '')}>
         <ErrorBoundary inline resetKey={tab}>
           {tab === 'carte' && (
             <Suspense fallback={<Loading label="Chargement de la carte…" />}>
@@ -215,7 +268,7 @@ export function App() {
           )}
           {tab === '3d' && (
             <ErrorBoundary inline resetKey={tab}>
-              <Suspense fallback={<Loading label="Chargement de la 3D…" />}>
+              <Suspense fallback={<Loading label="Chargement de la Vue 3D…" />}>
                 <View3D garden={garden} />
               </Suspense>
             </ErrorBoundary>

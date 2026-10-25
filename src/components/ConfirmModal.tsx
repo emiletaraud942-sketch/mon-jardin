@@ -4,8 +4,8 @@ import { Modal } from './Modal'
 
 /**
  * Demande de confirmation avant une action qu'on ne peut pas défaire d'un geste.
- * Le bouton rouge dit ce qu'il fait (« Supprimer ce jardin »), « Annuler » est toujours à côté.
- * `onBackup` ajoute « Faire d'abord une sauvegarde » ; `photosNote` rappelle que les photos n'y sont pas.
+ * Le bouton rouge dit ce qu'il fait (« Supprimer ce jardin »), « Annuler » est toujours à côté.
+ * `onBackup` ajoute « Faire d'abord une sauvegarde » ; `photosNote` rappelle que les photos n'y sont pas.
  */
 export function ConfirmModal({
   title,

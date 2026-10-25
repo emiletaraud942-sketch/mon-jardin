@@ -42,7 +42,6 @@ export function MonthGrid({ rows }: { rows: MonthRow[] }) {
           <caption className="sr-only">Calendrier des mois</caption>
           <thead>
             <tr>
-              <td />
               {LETTERS.map((l, i) => (
                 <th key={i} scope="col" className={i + 1 === now ? 'now' : undefined} aria-label={MONTHS[i] + (i + 1 === now ? ' (mois en cours)' : '')}>
                   <span aria-hidden>{l}</span>
@@ -50,12 +49,16 @@ export function MonthGrid({ rows }: { rows: MonthRow[] }) {
               ))}
             </tr>
           </thead>
-          <tbody>
-            {visible.map((r) => {
-              const k = r.kind ?? 'default'
-              return (
-                <tr key={r.label}>
-                  <th scope="row">{r.label}</th>
+          {visible.map((r) => {
+            const k = r.kind ?? 'default'
+            return (
+              <tbody key={r.label}>
+                <tr>
+                  <th scope="rowgroup" colSpan={12} className="mg-title">
+                    {r.label}
+                  </th>
+                </tr>
+                <tr>
                   {Array.from({ length: 12 }, (_, i) => {
                     const on = r.months!.includes((i + 1) as Month)
                     return (
@@ -63,16 +66,16 @@ export function MonthGrid({ rows }: { rows: MonthRow[] }) {
                         {on && (
                           <>
                             <span aria-hidden>{SYMBOL[k]}</span>
-                            <span className="sr-only">oui</span>
+                            <span className="sr-only">{MONTHS[i]} : oui</span>
                           </>
                         )}
                       </td>
                     )
                   })}
                 </tr>
-              )
-            })}
-          </tbody>
+              </tbody>
+            )
+          })}
         </table>
       </div>
       <ul className="legend small" aria-label="Légende du calendrier">

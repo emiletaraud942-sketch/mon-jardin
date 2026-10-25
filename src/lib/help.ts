@@ -1,6 +1,6 @@
 import type { Tab } from './ui'
 
-// Textes de l'aide contextuelle (bouton « ? »). Données pures : un contenu par écran.
+// Textes de l'aide contextuelle (bouton « ? »). Données pures : un contenu par écran.
 
 export interface HelpContent {
   title: string
@@ -12,10 +12,10 @@ export const HELP: Record<Tab, HelpContent> = {
   carte: {
     title: 'La carte',
     steps: [
-      'Touchez « Ajouter une plante au jardin », puis choisissez la plante.',
+      'Touchez « Ajouter une plante au jardin », puis choisissez la plante.',
       'Touchez la carte à l’endroit où elle pousse.',
       'Touchez une plante pour ouvrir sa fiche : état, photos, soins.',
-      'Pour la déplacer, touchez « Déplacer cette plante », puis le nouvel endroit.',
+      'Pour la déplacer, touchez « Déplacer cette plante », puis le nouvel endroit.',
       'Pour zoomer, pincez avec deux doigts ou touchez + et −.',
       'Le trait jaune montre les limites du terrain. Il est facultatif.',
     ],
@@ -24,9 +24,9 @@ export const HELP: Record<Tab, HelpContent> = {
     title: 'La Vue 3D',
     steps: [
       'Faites tourner la vue avec deux doigts, ou avec la souris.',
-      'Choisissez « Vue de dessus », « Vue en perspective » ou « Se promener ».',
+      'Choisissez « Vue de dessus », « Vue en perspective » ou « Se promener ».',
       'Le curseur montre vos arbres dans quelques années, avec leur ombre.',
-      '« Se promener » vous place dans le jardin, à hauteur d’yeux.',
+      '« Se promener » vous place dans le jardin, à hauteur d’yeux.',
       'Glissez une plante pour la déplacer.',
     ],
   },
@@ -34,10 +34,10 @@ export const HELP: Record<Tab, HelpContent> = {
     title: 'Mes plantes',
     steps: [
       'Vos plantes sont rangées par type : légumes, fruitiers, fleurs…',
-      '« Ajouter » vous fait choisir une plante, puis la placer.',
-      '« Identifier » reconnaît une plante grâce à une photo.',
+      '« Ajouter » vous fait choisir une plante, puis la placer.',
+      '« Identifier » reconnaît une plante grâce à une photo.',
       'Touchez une plante pour ouvrir sa fiche et ajouter des photos.',
-      '« Voir sur la carte » montre où elle se trouve.',
+      '« Voir sur la carte » montre où elle se trouve.',
     ],
   },
   entretien: {
@@ -45,7 +45,7 @@ export const HELP: Record<Tab, HelpContent> = {
     steps: [
       'La liste dit quoi faire cette semaine : tailler, désherber, arroser, récolter.',
       'La météo et la saison sont prises en compte.',
-      'Cochez une tâche quand elle est faite. « Annuler » la remet dans la liste.',
+      'Cochez une tâche quand elle est faite. « Annuler » la remet dans la liste.',
       'Touchez le nom d’une plante pour la voir sur la carte.',
       'Le calendrier de l’année montre les mois à venir.',
     ],
@@ -56,7 +56,7 @@ export const HELP: Record<Tab, HelpContent> = {
       'Touchez un endroit sur la carte.',
       'L’appli regarde le soleil, la pente et les voisins de cet endroit.',
       'Les plantes sont classées de la plus adaptée à la moins adaptée.',
-      '« Prévoir ici » ajoute la plante comme prévue.',
+      '« Prévoir ici » ajoute la plante comme prévue.',
       'Plus bas, voyez ce que vous pouvez semer ou planter ce mois-ci.',
     ],
   },
@@ -74,9 +74,9 @@ export const HELP: Record<Tab, HelpContent> = {
     steps: [
       'Choisissez la nature du sol : nos conseils en tiennent compte.',
       'Faites une sauvegarde de vos données de temps en temps.',
-      'Agrandissez le texte avec « Taille du texte ».',
+      'Agrandissez le texte avec « Taille du texte ».',
       'Choisissez l’apparence : clair, sombre ou automatique.',
-      'Créez un autre jardin avec « Nouveau jardin ».',
+      'Créez un autre jardin avec « Nouveau jardin ».',
     ],
   },
   voisins: {
@@ -85,8 +85,8 @@ export const HELP: Record<Tab, HelpContent> = {
       'Entrez votre e-mail : un lien arrive. Ouvrez-le sur ce téléphone.',
       'Choisissez un pseudo et votre quartier. Votre adresse reste secrète.',
       'Les annonces montrent les dons, échanges, prêts et questions près de chez vous.',
-      '« Publier » crée une annonce. « Écrire en privé » ouvre une conversation.',
-      '« Signaler » et « Bloquer » protègent le groupe. Rien ne se vend ici.',
+      '« Publier » crée une annonce. « Écrire en privé » ouvre une conversation.',
+      '« Signaler » et « Bloquer » protègent le groupe. Rien ne se vend ici.',
       'Dans Profil, vous pouvez supprimer votre compte quand vous voulez.',
     ],
   },

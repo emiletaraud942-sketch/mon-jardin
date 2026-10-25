@@ -3,7 +3,8 @@ import { SPECIES_BY_ID } from '../../data/species'
 import { STATUS_LABEL } from '../../data/labels'
 import { Icon } from '../../components/Icon'
 import { SpeciesPicker } from '../../components/SpeciesPicker'
-import { useGardenPlants } from '../../lib/store'
+import { UNKNOWN_SPECIES_ID, yourPlant } from '../../lib/customName'
+import { useGardenPlants, useStore } from '../../lib/store'
 import { closePlantSheet, setUi, startPlacing, stopPlacing, useUi } from '../../lib/ui'
 import type { Garden } from '../../types'
 import { PlantPanel, plantName } from '../plants/PlantPanel'
@@ -29,7 +30,7 @@ export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
         </div>
       </div>
       <button className="btn primary" onClick={() => setPicking(true)}>
-        <Icon name="plus" /> Placer une plante
+        <Icon name="plus" /> Ajouter une plante au jardin
       </button>
       <p className="muted small">{hint}</p>
       {plants.length > 0 && (
@@ -47,18 +48,22 @@ export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
           })}
           {plants.length > MAX_LISTED && (
             <li className="muted">
-              + {plants.length - MAX_LISTED} autres : voir l'onglet « Plantes ».
+              + {plants.length - MAX_LISTED} autres : voir l’écran « Plantes ».
             </li>
           )}
         </ul>
       )}
       {picking && (
         <SpeciesPicker
-          title="Que voulez-vous placer ?"
+          title="Quelle plante ajouter ?"
           onClose={() => setPicking(false)}
           onPick={(s) => {
             setPicking(false)
             startPlacing(s.id)
+          }}
+          onPickCustom={(name) => {
+            setPicking(false)
+            startPlacing(UNKNOWN_SPECIES_ID, { customName: name })
           }}
         />
       )}
@@ -66,21 +71,24 @@ export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
   )
 }
 
+/** Consigne affichée tant qu'une plante est à placer ou à déplacer : grande, sur deux lignes, avec « Annuler ». */
 export function PlacingBanner() {
-  const { placingSpeciesId, placingCustomName, placingSeries } = useUi()
-  if (!placingSpeciesId) return null
-  const name = placingCustomName || SPECIES_BY_ID[placingSpeciesId]?.nomCommun
+  const { placingSpeciesId, placingCustomName, placingSeries, movingPlantId } = useUi()
+  const moving = useStore((s) => (movingPlantId ? s.plants.find((p) => p.id === movingPlantId) : undefined))
+  if (!placingSpeciesId && !movingPlantId) return null
+  const name = movingPlantId
+    ? moving
+      ? plantName(moving)
+      : 'plante'
+    : placingCustomName || (placingSpeciesId && placingSpeciesId !== UNKNOWN_SPECIES_ID ? SPECIES_BY_ID[placingSpeciesId]?.nomCommun : undefined) || 'plante'
   return (
     <div className="floating placing-banner" role="status">
-      <Icon name="pin" />
+      <Icon name={movingPlantId ? 'move' : 'pin'} size={24} />
       <span className="placing-text">
-        <strong>{name}</strong>
-        {placingSeries && placingSeries.count > 0 ? ` · ${placingSeries.count} placé${placingSeries.count > 1 ? 's' : ''}` : ''}
-        <span className="small muted" style={{ display: 'block' }}>
-          Touchez la carte pour placer — glissez un point pour déplacer
-        </span>
+        <strong>{movingPlantId ? `Touchez sur la carte le nouvel emplacement de ${yourPlant(name)}.` : `Touchez sur la carte l’endroit où se trouve ${yourPlant(name)}.`}</strong>
+        {placingSeries && placingSeries.count > 0 && <span className="small muted" style={{ display: 'block' }}>{placingSeries.count} plante{placingSeries.count > 1 ? 's' : ''} placée{placingSeries.count > 1 ? 's' : ''}. Touchez encore pour en ajouter.</span>}
       </span>
-      <button className={'btn small' + (placingSeries ? ' primary' : '')} onClick={stopPlacing}>
+      <button className={'btn' + (placingSeries ? ' primary' : '')} onClick={stopPlacing}>
         {placingSeries ? 'Terminé' : 'Annuler'}
       </button>
     </div>

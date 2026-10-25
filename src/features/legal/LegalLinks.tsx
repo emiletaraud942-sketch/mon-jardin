@@ -19,13 +19,12 @@ export function LegalLink({ id, label, onOpen }: { id: LegalId; label?: string; 
   )
 }
 
-/** « Confidentialité · Mentions légales · Conditions d'utilisation ». */
+/** « Confidentialité · Mentions légales · Conditions d'utilisation ». */
 export function LegalLinks({ onOpen }: { onOpen?: () => void }) {
   return (
     <nav className="legal-links" aria-label="Informations légales">
-      {ORDER.map((id, i) => (
+      {ORDER.map((id) => (
         <span key={id} className="legal-links-item">
-          {i > 0 && <span aria-hidden="true">·</span>}
           <LegalLink id={id} onOpen={onOpen} />
         </span>
       ))}

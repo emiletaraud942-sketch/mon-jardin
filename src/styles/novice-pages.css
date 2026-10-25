@@ -124,12 +124,11 @@
   color: var(--text);
   border-bottom: 3px solid var(--text);
 }
-.mg-table tbody th {
+.mg-table .mg-title {
   text-align: left;
   font-weight: 600;
-  width: 28%;
-  padding-right: 4px;
-  overflow-wrap: anywhere;
+  font-size: 0.9rem;
+  padding-top: 6px;
 }
 .mg-table td {
   height: 28px;
@@ -214,12 +213,10 @@
   overflow-wrap: anywhere;
 }
 @media (max-width: 420px) {
-  .np-facts,
   .np-recap {
     grid-template-columns: 1fr;
   }
-  .np-recap dd,
-  .np-facts dd {
+  .np-recap dd {
     margin-bottom: 6px;
   }
 }

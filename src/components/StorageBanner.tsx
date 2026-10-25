@@ -32,7 +32,7 @@ export function StorageBanner() {
             }}
           >
             <p>Vos données illisibles seront remplacées dès le prochain enregistrement. Vous ne pourrez plus les retrouver.</p>
-            <p className="small muted">Essayez d’abord « Réessayer » : le problème est parfois passager.</p>
+            <p className="small muted">Essayez d’abord « Réessayer » : le problème est parfois passager.</p>
           </ConfirmModal>
         )}
       </div>

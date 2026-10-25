@@ -19,12 +19,12 @@ export interface Progress {
   steps: ProgressStep[]
   /** 0 à 100. */
   percent: number
-  /** Étapes faites et nombre total (« 3 étapes sur 5 »). */
+  /** Étapes faites et nombre total (« 3 étapes sur 5 »). */
   doneCount: number
   total: number
   /** Première étape à faire, s'il en reste. */
   next?: ProgressStep
-  /** Plantes au statut « en place ». */
+  /** Plantes au statut « en place ». */
   placedCount: number
   /** L'utilisateur a déjà ouvert l'écran Entretien pour ce jardin. */
   openedEntretien: boolean
@@ -35,13 +35,13 @@ export interface ProgressOpts {
   openedEntretien?: boolean
 }
 
-/** « Premiers pas » : les 3 étapes qui demandent un geste de l'utilisateur (les deux autres se font toutes seules). */
+/** « Premiers pas » : les 3 étapes qui demandent un geste de l'utilisateur (les deux autres se font toutes seules). */
 export const FIRST_STEP_IDS: StepId[] = ['premier-arbre', 'cinq-plantes', 'sol']
 export const firstSteps = (p: Progress): ProgressStep[] => FIRST_STEP_IDS.map((id) => p.steps.find((s) => s.id === id)!).filter(Boolean)
 
 const TREE_STRATES = new Set(['canopee', 'arbre-bas', 'arbuste'])
 export const PLANTS_GOAL = 5
-/** Seuil de la proposition « passer à l'entretien ». */
+/** Seuil de la proposition « passer à l'entretien ». */
 export const READY_PERCENT = 70
 export const READY_PLANTS = 3
 
@@ -95,8 +95,8 @@ export function computeProgress(garden: Garden, plants: Plant[], opts: ProgressO
 export type SuggestedMode = 'jardin' | 'entretenir' | 'planifier'
 
 /**
- * Mode conseillé. « entretenir » dès que le jardin est assez modélisé (≥ 70 % et ≥ 3 plantes en place) ;
- * « planifier » seulement si l'utilisateur a déjà ouvert Entretien ; sinon « jardin ».
+ * Mode conseillé. « entretenir » dès que le jardin est assez modélisé (≥ 70 % et ≥ 3 plantes en place) ;
+ * « planifier » seulement si l'utilisateur a déjà ouvert Entretien ; sinon « jardin ».
  */
 export function suggestedMode(p: Progress): SuggestedMode {
   if (p.percent < READY_PERCENT || p.placedCount < READY_PLANTS) return 'jardin'

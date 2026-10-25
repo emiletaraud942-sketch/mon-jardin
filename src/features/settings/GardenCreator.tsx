@@ -9,8 +9,10 @@ import { AddressSearch } from './AddressSearch'
 import { buildGarden, FAIL_HELP, INITIAL_STEPS, type Step } from './createGarden'
 import { DEFAULT_GARDEN_NAME, uniqueGardenName } from './gardenName'
 import { DEMO_PLACE, demoPlants } from '../../data/demo'
+import { TechDetails } from '../../components/ErrorNote'
+import { DEMO_GARDEN_NAME } from './demo'
 
-const ICON: Record<Step['state'], string> = { attente: '○', 'en-cours': '…', ok: '✓', echec: '✗' }
+const ICON: Record<Step['state'], string> = { attente: '○', 'en-cours': '…', ok: '✓', echec: '!' }
 
 interface Built {
   garden: Garden
@@ -24,19 +26,18 @@ function StepList({ steps, withHelp }: { steps: Step[]; withHelp?: boolean }) {
     <ul className="steps" aria-live="polite">
       {steps.map((s) => (
         <li key={s.id} style={{ alignItems: 'flex-start' }}>
-          <span className="step-icon" style={{ color: s.state === 'echec' ? 'var(--danger)' : 'var(--accent)' }} aria-label={s.state === 'ok' ? 'réussi' : s.state === 'echec' ? 'échec' : undefined}>
+          <span className="step-icon" style={{ color: s.state === 'echec' ? 'var(--danger)' : 'var(--accent)' }} aria-label={s.state === 'ok' ? 'réussi' : s.state === 'echec' ? 'manquant' : undefined}>
             {s.state === 'en-cours' ? <span className="spinner" /> : ICON[s.state]}
           </span>
-          <span>
+          <span style={{ minWidth: 0 }}>
             {s.label}
-            {s.state === 'ok' && s.detail && <span className="muted small"> — {s.detail}</span>}
+            {s.state === 'ok' && s.detail && <span className="muted small"> : {s.detail}</span>}
             {s.state === 'echec' && withHelp && (
               <span className="small" style={{ display: 'block' }}>
                 {FAIL_HELP[s.id]}
-                {s.detail && <span className="muted"> ({s.detail})</span>}
+                {s.detail && <TechDetails detail={s.detail} />}
               </span>
             )}
-            {s.state === 'echec' && !withHelp && s.detail && <span className="muted small"> — {s.detail}</span>}
           </span>
         </li>
       ))}
@@ -45,8 +46,9 @@ function StepList({ steps, withHelp }: { steps: Step[]; withHelp?: boolean }) {
 }
 
 /**
- * Création d'un jardin en trois temps : adresse, récupération des données, écran de résultat.
- * Le jardin n'est ajouté à l'appli qu'au clic sur « Continuer » : l'utilisateur voit d'abord ce qui a échoué.
+ * Création d'un jardin en trois temps : adresse, récupération des informations, écran de résultat.
+ * Le jardin n'est ajouté à l'appli qu'au clic sur « Voir mon jardin » : l'utilisateur voit d'abord ce qui manque.
+ * Avec `allowDemo` (premier écran), on choisit d'abord entre « Entrer mon adresse » et « Visiter un jardin d'exemple ».
  */
 export function GardenCreator({ onDone, allowDemo }: { onDone?: () => void; allowDemo?: boolean }) {
   const mobile = useIsMobile()
@@ -55,6 +57,8 @@ export function GardenCreator({ onDone, allowDemo }: { onDone?: () => void; allo
   const [steps, setSteps] = useState<Step[]>()
   const [built, setBuilt] = useState<Built>()
   const [busy, setBusy] = useState(false)
+  const [stage, setStage] = useState<'choose' | 'address'>(allowDemo ? 'choose' : 'address')
+  const [renaming, setRenaming] = useState(false)
   const heading = useRef<HTMLHeadingElement>(null)
   const busyRef = useRef(false)
 
@@ -82,9 +86,11 @@ export function GardenCreator({ onDone, allowDemo }: { onDone?: () => void; allo
     if (!built) return
     addGarden(built.garden)
     if (built.demo) for (const pl of demoPlants(built.garden)) addPlant({ ...pl, id: uid() })
-    // Nouveau jardin : on ouvre « Mon jardin » avec la checklist « Premiers pas » (une fois ; la modélisation reste facultative).
-    showFirstSteps()
+    // Nouveau jardin : on ouvre « Mon jardin » avec la checklist « Premiers pas » (une fois ; la modélisation reste facultative).
+    showFirstSteps({ open: false })
     onDone?.()
+    // L'écran de création était peut-être défilé : le nouvel écran repart du haut.
+    requestAnimationFrame(() => window.scrollTo(0, 0))
   }
 
   // ---- Écran de résultat ----
@@ -93,24 +99,21 @@ export function GardenCreator({ onDone, allowDemo }: { onDone?: () => void; allo
     return (
       <div className="stack" style={{ gap: 12 }}>
         <h2 ref={heading} tabIndex={-1} style={{ marginBottom: 0 }}>
-          {failed.length === 0 ? 'Votre jardin est prêt' : 'Jardin créé, avec des données manquantes'}
+          {failed.length === 0 ? 'Votre jardin est prêt' : 'Il manque quelques informations'}
         </h2>
-        <p className="small muted" style={{ margin: 0 }}>
-          {built.name} · {built.place.label}
+        <p className="muted" style={{ margin: 0 }}>
+          {built.name}
+          {built.demo ? '' : ` · ${built.place.label}`}
         </p>
         <StepList steps={steps} withHelp />
-        {failed.length > 0 && (
-          <p className="alert small">
-            Ce n'est pas bloquant : vous pouvez continuer. Un bandeau « Réessayer » restera visible sur la carte et dans les Réglages tant que des données manquent.
-          </p>
-        )}
+        {failed.length > 0 && <p className="alert small">Ce n’est pas grave : vous pouvez continuer. Un bouton « Réessayer » restera sur la carte tant qu’il manque quelque chose.</p>}
         <div className="row">
-          <button className="btn primary" onClick={proceed}>
-            Continuer vers le jardin
+          <button className="btn primary big" onClick={proceed}>
+            Voir mon jardin
           </button>
           {failed.length > 0 && (
-            <button className="btn" disabled={busy} onClick={() => create(built.place, built.name, built.demo)}>
-              Réessayer maintenant
+            <button className="btn big" disabled={busy} onClick={() => create(built.place, built.name, built.demo)}>
+              Réessayer
             </button>
           )}
         </div>
@@ -123,9 +126,26 @@ export function GardenCreator({ onDone, allowDemo }: { onDone?: () => void; allo
     return (
       <div className="stack">
         <p role="status">
-          <span className="spinner" /> Récupération des données du jardin…
+          <span className="spinner" /> Je prépare votre jardin… Cela peut prendre une minute.
         </p>
         <StepList steps={steps} />
+      </div>
+    )
+  }
+
+  // ---- Premier choix ----
+  if (stage === 'choose') {
+    return (
+      <div className="stack choose-start" style={{ gap: 12 }}>
+        <button className="btn primary big" onClick={() => setStage('address')}>
+          Entrer mon adresse
+        </button>
+        <button className="btn big" onClick={() => create(DEMO_PLACE, DEMO_GARDEN_NAME, true)}>
+          Visiter un jardin d’exemple
+        </button>
+        <p className="small muted" style={{ margin: 0 }}>
+          Le jardin d’exemple se visite sans donner d’adresse. Vous pourrez créer le vôtre ensuite.
+        </p>
       </div>
     )
   }
@@ -133,25 +153,34 @@ export function GardenCreator({ onDone, allowDemo }: { onDone?: () => void; allo
   // ---- Saisie de l'adresse ----
   return (
     <div className="stack" style={{ gap: 14 }}>
-      {allowDemo && (
-        <p className="muted small" style={{ margin: 0 }}>
-          Pas d'adresse sous la main ?{' '}
-          <button className="btn small ghost link-btn" onClick={() => create(DEMO_PLACE, 'Jardin de démonstration', true)}>
-            Essayer avec un jardin de démonstration
-          </button>
-        </p>
-      )}
+      <p style={{ margin: 0 }}>Tapez votre adresse, puis touchez-la dans la liste.</p>
       <AddressSearch onSelect={setPlace} onClear={() => setPlace(undefined)} autoFocus={!mobile} />
       {place && (
         <>
-          <label className="field">
-            <span>Nom du jardin</span>
-            <input className="input" value={name} onChange={(e) => setName(e.target.value)} onBlur={() => setName((n) => n.trim() || DEFAULT_GARDEN_NAME)} />
-          </label>
-          <button className="btn primary" onClick={() => create(place, name)}>
-            Créer le jardin
+          {renaming ? (
+            <label className="field">
+              <span>Nom du jardin</span>
+              <input className="input" autoFocus value={name} onChange={(e) => setName(e.target.value)} onBlur={() => setName((n) => n.trim() || DEFAULT_GARDEN_NAME)} />
+            </label>
+          ) : (
+            <p className="row" style={{ margin: 0 }}>
+              <span>
+                Nom du jardin : <strong>{name}</strong>
+              </span>
+              <button className="btn small ghost link-btn" onClick={() => setRenaming(true)}>
+                Changer le nom
+              </button>
+            </p>
+          )}
+          <button className="btn primary big" onClick={() => create(place, name)}>
+            Créer mon jardin
           </button>
         </>
+      )}
+      {allowDemo && !place && (
+        <button className="btn ghost link-btn" style={{ alignSelf: 'flex-start' }} onClick={() => setStage('choose')}>
+          ← Retour
+        </button>
       )}
     </div>
   )

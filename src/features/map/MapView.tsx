@@ -69,7 +69,7 @@ const TILE_SOURCES = new Set(['ortho', 'plan', 'cadastre'])
 const isPhone = () => window.matchMedia('(max-width: 760px)').matches
 const isTouch = () => window.matchMedia('(pointer: coarse)').matches
 
-/** « Afficher les noms » : choix mémorisé ; sans choix, les noms s'affichent tant que le jardin reste lisible. */
+/** « Afficher les noms » : choix mémorisé ; sans choix, les noms s'affichent tant que le jardin reste lisible. */
 const NAMES_KEY = 'pj.mapNames'
 const MANY_PLANTS = 15
 function readNames(plantCount: number): boolean {
@@ -213,7 +213,7 @@ export function MapView({ garden }: { garden: Garden }) {
     })
   }, [garden, ready])
 
-  // La parcelle vient d'être récupérée (bouton « Réessayer ») : on recadre dessus.
+  // La parcelle vient d'être récupérée (bouton « Réessayer ») : on recadre dessus.
   const hasParcel = !!garden.parcel?.length
   const hadParcel = useRef(hasParcel)
   useEffect(() => {
@@ -278,7 +278,7 @@ export function MapView({ garden }: { garden: Garden }) {
           const before = from
           if (before) {
             const name = plantName(plantsRef.current.find((x) => x.id === p.id) ?? p)
-            showToast({ message: `« ${name} » déplacée.`, actionLabel: 'Annuler', onAction: () => updatePlant(p.id, { position: before }) })
+            showToast({ message: `« ${name} » déplacée.`, actionLabel: 'Annuler', onAction: () => updatePlant(p.id, { position: before }) })
           }
         })
         markers.current.set(p.id, mk)
@@ -289,12 +289,12 @@ export function MapView({ garden }: { garden: Garden }) {
       const sel = p.id === selectedPlantId
       hit.className = 'marker-hit' + (sel ? ' selected' : '')
       dot.className = 'map-marker' + (sel ? ' selected' : '') + (p.status === 'projet' ? ' projet' : '')
-      dot.style.width = dot.style.height = (sel ? 20 : 14) + 'px'
+      dot.style.width = dot.style.height = (sel ? 26 : 18) + 'px'
       dot.style.background = s?.couleurAccent ?? s?.couleur ?? cssVar('--accent-2', '#4f8a4b')
       const label = plantName(p) + (p.status === 'projet' ? ' (prévue)' : '')
       hit.title = label
       hit.setAttribute('aria-label', label)
-      // Le nom s'affiche pour la plante choisie, et pour toutes si « Afficher les noms » est actif.
+      // Le nom s'affiche pour la plante choisie, et pour toutes si « Afficher les noms » est actif.
       tag.textContent = names || sel ? plantName(p) : ''
       tag.hidden = !(names || sel)
     }
@@ -306,7 +306,7 @@ export function MapView({ garden }: { garden: Garden }) {
     }
   }, [plants, selectedPlantId, garden.center, ready, names])
 
-  // « 📍 plante » d'une tâche, « Voir sur la carte » : la carte se centre sur la plante.
+  // « 📍 plante » d'une tâche, « Voir sur la carte » : la carte se centre sur la plante.
   const { focusPlantId } = useUi()
   useEffect(() => {
     const m = map.current
@@ -323,59 +323,87 @@ export function MapView({ garden }: { garden: Garden }) {
     if (c) c.style.cursor = placingSpeciesId || movingPlantId ? 'crosshair' : ''
   }, [placingSpeciesId, movingPlantId, ready])
 
+  const setNamesPref = (on: boolean) => {
+    setNames(on)
+    try {
+      localStorage.setItem(NAMES_KEY, on ? '1' : '0')
+    } catch {
+      /* mémoire indisponible */
+    }
+  }
+
   return (
     <div className="workspace">
       <div className={'canvas-wrap' + (placingSpeciesId || movingPlantId ? ' placing' : '')}>
         <div ref={el} className="map" />
         <div className="map-top">
-          <div className="floating row small map-toolbar" role="toolbar" aria-label="Réglages de la carte">
+          <div className="floating row map-toolbar" role="toolbar" aria-label="Réglages de la carte">
             <button className={'btn small' + (base === 'ortho' ? ' primary' : '')} aria-pressed={base === 'ortho'} onClick={() => setBase('ortho')}>
-              Photo
+              Vue photo
             </button>
             <button className={'btn small' + (base === 'plan' ? ' primary' : '')} aria-pressed={base === 'plan'} onClick={() => setBase('plan')}>
-              Plan
+              Vue plan
             </button>
-            <button className={'btn small' + (cadastre ? ' on' : '')} aria-pressed={cadastre} onClick={() => setCadastre((c) => !c)}>
-              Cadastre
-            </button>
-            <button className={'btn small' + (adult ? ' on' : '')} aria-pressed={adult} onClick={() => setAdult((a) => !a)}>
-              <span className="long">Voir la taille adulte</span>
-              <span className="short">Adulte</span>
-            </button>
-            <button className="btn small icon-btn" onClick={() => fit()} title="Recentrer sur la parcelle" aria-label="Recentrer sur la parcelle">
-              <Icon name="pin" size={16} />
-            </button>
-            <button className={'btn small icon-btn' + (legendOpen ? ' on' : '')} aria-pressed={legendOpen} aria-label="Légende de la carte" title="Légende" onClick={() => setLegendOpen((o) => !o)}>
-              ?
+            <button className={'btn small' + (optionsOpen ? ' on' : '')} aria-expanded={optionsOpen} aria-controls="map-options" onClick={() => setOptionsOpen((o) => !o)}>
+              Options <span aria-hidden>{optionsOpen ? '▴' : '▾'}</span>
             </button>
           </div>
+          {optionsOpen && (
+            <div id="map-options" className="floating stack map-options">
+              <button className="btn small" onClick={() => fit()}>
+                <Icon name="pin" size={16} /> Recentrer sur mon terrain
+              </button>
+              <button className={'btn small' + (cadastre ? ' on' : '')} aria-pressed={cadastre} onClick={() => setCadastre((c) => !c)}>
+                {cadastre ? '✓ ' : ''}Limites du terrain
+              </button>
+              <button className={'btn small' + (adult ? ' on' : '')} aria-pressed={adult} onClick={() => setAdult((a) => !a)}>
+                {adult ? '✓ ' : ''}Taille adulte
+              </button>
+              <button className={'btn small' + (names ? ' on' : '')} aria-pressed={names} onClick={() => setNamesPref(!names)}>
+                {names ? '✓ ' : ''}Afficher les noms
+              </button>
+              <button className={'btn small' + (legendOpen ? ' on' : '')} aria-pressed={legendOpen} onClick={() => setLegendOpen((o) => !o)}>
+                {legendOpen ? '✓ ' : ''}Légende
+              </button>
+            </div>
+          )}
           {legendOpen && (
             <ul className="floating legend small" aria-label="Légende de la carte">
               <li>
-                <span className="swatch line parcel" aria-hidden /> Limite de la parcelle (jaune)
+                <span className="swatch line parcel" aria-hidden /> Trait jaune : limites du terrain
               </li>
               <li>
-                <span className="swatch disc" aria-hidden /> Disque : envergure de la plante
+                <span className="swatch disc" aria-hidden /> Disque : largeur de la plante
               </li>
               <li>
-                <span className="swatch dashed" aria-hidden /> Pointillé : plante en projet
+                <span className="swatch dashed" aria-hidden /> Pointillé : plante prévue
               </li>
               <li>
-                <span className="swatch building" aria-hidden /> Blanc translucide : bâtiments
+                <span className="swatch building" aria-hidden /> Blanc : maisons voisines
               </li>
             </ul>
           )}
           {tileProblem && (
             <div className="alert small map-notice" role="status">
-              Les tuiles IGN ne répondent pas. La carte se recharge dès que le réseau revient.
+              Les images de la carte ne s’affichent pas. Elles reviendront dès que la connexion reviendra.
             </div>
           )}
           <GardenDataBanner garden={garden} compact />
         </div>
+        {plants.length === 0 && !placingSpeciesId && !movingPlantId && (
+          <div className="floating map-empty">
+            <p>
+              <strong>Votre jardin est vide.</strong> Ajoutez votre première plante, puis touchez la carte là où elle pousse.
+            </p>
+            <PlaceAction>
+              <Icon name="plus" /> Ajouter une plante au jardin
+            </PlaceAction>
+          </div>
+        )}
         <PlacingBanner />
       </div>
-      <SidePanel tall={!!selectedPlantId}>
-        <GardenSide garden={garden} hint="Vue du dessus sur la photo aérienne IGN (précision ≈ 20 cm). Glissez un point pour déplacer une plante ; les disques montrent l'envergure actuelle ou adulte." />
+      <SidePanel tall={!!selectedPlantId} collapse={!!(placingSpeciesId || movingPlantId)}>
+        <GardenSide garden={garden} hint="Touchez une plante pour ouvrir sa fiche. Pincez ou touchez deux fois pour zoomer. Les disques montrent la largeur de chaque plante." />
       </SidePanel>
     </div>
   )

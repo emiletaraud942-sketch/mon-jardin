@@ -7,9 +7,11 @@ import { PhotoThumb } from '../../components/PhotoThumb'
 import { startPlacing } from '../../lib/ui'
 import { hasConsent } from '../../lib/consent'
 import { ConsentDialog } from '../legal/ConsentDialog'
+import { ErrorNote } from '../../components/ErrorNote'
+import { confidenceLabel, listLabel } from './identifyLabels'
 
 const ORGANS = [
-  ['auto', 'Automatique'],
+  ['auto', 'Je ne sais pas'],
   ['leaf', 'Feuille'],
   ['flower', 'Fleur'],
   ['fruit', 'Fruit'],
@@ -20,7 +22,7 @@ export function IdentifyDialog({ onClose }: { onClose: () => void }) {
   const [photos, setPhotos] = useState<string[]>([])
   const [organ, setOrgan] = useState<(typeof ORGANS)[number][0]>('auto')
   const [results, setResults] = useState<Identification[]>()
-  const [error, setError] = useState<string>()
+  const [error, setError] = useState<unknown>()
   const [busy, setBusy] = useState(false)
   const [asking, setAsking] = useState(false)
 
@@ -39,7 +41,7 @@ export function IdentifyDialog({ onClose }: { onClose: () => void }) {
         console.warn('Photo non enregistrée', e)
       }
     }
-    if (failed) setError(failed === files.length ? 'Photo illisible. Essayez un autre format (JPEG ou PNG) ou une autre photo.' : `${failed} photo(s) illisible(s) ignorée(s).`)
+    if (failed) setError(new Error(failed === files.length ? 'Photo illisible. Essayez une autre photo (JPEG ou PNG).' : `${failed} photo(s) illisible(s) mises de côté.`))
     if (ids.length) {
       setPhotos((p) => [...p, ...ids])
       setResults(undefined)
@@ -57,10 +59,10 @@ export function IdentifyDialog({ onClose }: { onClose: () => void }) {
     setError(undefined)
     try {
       const blobs = (await Promise.all(photos.map(getPhoto))).filter((b): b is Blob => !!b)
-      if (blobs.length === 0) throw new Error('Les photos ne sont plus disponibles. Reprenez-les.')
+      if (blobs.length === 0) throw new Error('Les photos ne sont plus là. Reprenez-les.')
       setResults(await identifyPlant(blobs, organ))
     } catch (e) {
-      setError((e as Error).message)
+      setError(e)
     } finally {
       setBusy(false)
     }
@@ -81,49 +83,53 @@ export function IdentifyDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Modal title="Identifier une plante" onClose={close}>
-      <p className="small muted">
-        Prenez 1 à 5 photos nettes de la même plante (feuille, fleur, fruit). L'identification utilise Pl@ntNet : vos photos lui sont envoyées uniquement quand vous cliquez sur « Identifier », après votre accord.
-      </p>
-      <div className="row" style={{ marginBottom: 12 }}>
+      <p className="muted">Prenez 1 à 5 photos nettes de la même plante : feuille, fleur ou fruit.</p>
+      <div className="row photo-row" style={{ marginBottom: 12 }}>
         {photos.map((id) => (
           <PhotoThumb key={id} id={id} zoomable />
         ))}
         {photos.length < 5 && (
           <label className="btn photo-add">
             <Icon name="camera" />
-            <span className="small">Photo</span>
+            <span className="small">Ajouter une photo</span>
             <input className="sr-only" type="file" accept="image/*" multiple onChange={(e) => void add(e.target)} />
           </label>
         )}
       </div>
-      <div className="row" style={{ marginBottom: 12 }}>
-        <select className="input" style={{ width: 'auto', flex: '1 1 140px' }} value={organ} onChange={(e) => setOrgan(e.target.value as typeof organ)} aria-label="Partie photographiée">
+      <label className="field" style={{ marginBottom: 12 }}>
+        <span>Que montre la photo ?</span>
+        <select className="input" value={organ} onChange={(e) => setOrgan(e.target.value as typeof organ)}>
           {ORGANS.map(([k, v]) => (
             <option key={k} value={k}>
               {v}
             </option>
           ))}
         </select>
+      </label>
+      <div className="stack" style={{ marginBottom: 12 }}>
         <button className="btn primary" disabled={photos.length === 0 || busy} onClick={start}>
-          {busy ? <span className="spinner" /> : <Icon name="search" />} Identifier
+          {busy ? <span className="spinner" /> : <Icon name="search" />} Identifier la plante
         </button>
+        {photos.length === 0 && <p className="small muted" style={{ margin: 0 }}>Ajoutez une photo pour continuer.</p>}
       </div>
-      {error && <div className="alert error small">{error}</div>}
-      {results && results.length === 0 && <div className="alert small">Aucune espèce reconnue. Essayez une photo plus nette d'une feuille ou d'une fleur.</div>}
+      {error !== undefined && <ErrorNote error={error} />}
+      {results && results.length === 0 && <div className="alert small">Aucune plante reconnue. Essayez une photo plus nette d’une feuille ou d’une fleur.</div>}
       {results && results.length > 0 && (
         <ul className="list">
           {results.map((r) => (
-            <li key={r.latin} className="row" style={{ justifyContent: 'space-between' }}>
-              <div>
+            <li key={r.latin} className="row" style={{ justifyContent: 'space-between', flexWrap: 'nowrap', alignItems: 'flex-start' }}>
+              <div style={{ minWidth: 0 }}>
                 <strong>{r.commonNames[0] ?? r.latin}</strong> <span className="muted small"><i>{r.latin}</i></span>
                 <div className="small">
-                  {Math.round(r.score * 100)} % de confiance
-                  {r.species ? <span className="badge green" style={{ marginLeft: 6 }}>Fiche : {r.species.nomCommun}</span> : <span className="badge" style={{ marginLeft: 6 }}>Hors catalogue</span>}
-                  {r.species && r.approx && <span className="badge warn" style={{ marginLeft: 6 }}>Espèce proche (même genre)</span>}
+                  {confidenceLabel(r.score)}
+                  <span className={'badge ' + (r.species ? 'green' : '')} style={{ marginLeft: 6 }}>
+                    {listLabel(!!r.species, r.approx)}
+                  </span>
+                  {r.species && !r.approx && <span className="muted"> : {r.species.nomCommun}</span>}
                 </div>
               </div>
               <button className="btn small" onClick={() => choose(r)}>
-                Placer
+                Ajouter au jardin
               </button>
             </li>
           ))}

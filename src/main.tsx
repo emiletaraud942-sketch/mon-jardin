@@ -6,12 +6,14 @@ import { App } from './App'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { loadState } from './lib/store'
 import { applyStoredTheme } from './lib/theme'
+import { applyStoredTextSize } from './lib/textSize'
 import { showToast } from './lib/toast'
 import { hasConsent } from './lib/consent'
 import { neighborsEnabled } from './lib/neighbors/enabled'
 import { setUi } from './lib/ui'
 
 applyStoredTheme()
+applyStoredTextSize()
 
 // Entraide entre voisins : le retour d'un lien magique (`/?entraide=1&code=…`) est traité AVANT la synchro privée,
 // qui lit aussi `?code=` : initNeighbors() échange le code puis remplace l'URL par `#entraide`.
@@ -32,8 +34,8 @@ function startNeighbors(): Promise<void> {
     .then((r) => {
       if (!r.handled) return
       setUi({ tab: 'voisins' })
-      if (r.error) showToast({ message: r.error, tone: 'error', durationMs: 15000 })
-      else if (r.signedIn) showToast({ message: 'Connecté à l’entraide entre voisins.' })
+      if (r.error) showToast({ message: r.error, tone: 'error' })
+      else if (r.signedIn) showToast({ message: 'Vous êtes connecté à l’entraide.' })
     })
     .catch((e) => console.warn('Entraide indisponible', e))
 }
@@ -50,8 +52,8 @@ function startSync() {
     .then((r) => {
       if (!r.handled) return
       setUi({ tab: 'reglages' })
-      if (r.error) showToast({ message: r.error, tone: 'error', durationMs: 15000 })
-      else if (r.signedIn) showToast({ message: 'Connecté. Vous pouvez synchroniser vos données.' })
+      if (r.error) showToast({ message: r.error, tone: 'error' })
+      else if (r.signedIn) showToast({ message: 'Vous êtes connecté. Vous pouvez mettre vos jardins en ligne.' })
     })
     .catch((e) => console.warn('Synchronisation indisponible', e))
 }

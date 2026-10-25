@@ -1,31 +1,33 @@
 import { Modal } from '../../components/Modal'
-import { DRAFT_NOTE, LEGAL_DOC, LEGAL_VERSION, formatLegalDate, getMissingFields, type LegalId } from '../../lib/legal'
+import { DRAFT_NOTE, LEGAL_DOC, LEGAL_VERSION, formatLegalDate, isLegalReady, legalText, type LegalId } from '../../lib/legal'
 import { closeLegal, useLegal } from '../../lib/ui'
 import { LegalLink } from './LegalLinks'
 
 /** Rendu React du document : aucun HTML injecté. */
 export function LegalDocView({ id }: { id: LegalId }) {
   const doc = LEGAL_DOC[id]
-  const missing = getMissingFields()
+  // Tant que l'éditeur n'a pas rempli ses informations, le texte est annoncé comme provisoire. Ensuite, plus rien à signaler.
+  const provisional = !isLegalReady()
   return (
     <article className="legal-doc">
       <p className="legal-meta small muted">
         Version {LEGAL_VERSION} · Dernière mise à jour : {formatLegalDate()}
       </p>
-      <p className="legal-draft small" role="note">
-        {DRAFT_NOTE}
-        {missing.length > 0 && ' Les passages entre crochets sont à compléter.'}
-      </p>
+      {provisional && (
+        <p className="legal-draft small" role="note">
+          {DRAFT_NOTE}
+        </p>
+      )}
       {doc.sections.map((s) => (
         <section key={s.titre}>
           <h3>{s.titre}</h3>
           {s.blocs.map((b, i) =>
             b.t === 'p' ? (
-              <p key={i}>{b.text}</p>
+              <p key={i}>{legalText(b.text)}</p>
             ) : (
               <ul key={i}>
                 {b.items.map((it) => (
-                  <li key={it}>{it}</li>
+                  <li key={it}>{legalText(it)}</li>
                 ))}
               </ul>
             ),

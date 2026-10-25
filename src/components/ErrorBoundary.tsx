@@ -18,7 +18,7 @@ interface Props {
   inline?: boolean
 }
 
-/** Texte technique d'une erreur, pour le lien « Détails ». */
+/** Texte technique d'une erreur, pour le lien « Détails ». */
 function describe(err: unknown): string {
   const e = err as { name?: string; message?: string } | null
   return [e?.name, e?.message].filter(Boolean).join(' : ') || String(err)

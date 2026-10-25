@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { SPECIES_BY_ID } from '../../data/species'
 import { CATEGORY_LABEL, STATUS_LABEL, formatDate } from '../../data/labels'
 import { Icon } from '../../components/Icon'
@@ -6,6 +6,7 @@ import { SpeciesPicker, normalize } from '../../components/SpeciesPicker'
 import { PlaceAction } from '../../components/PlaceAction'
 import { PhotoThumb } from '../../components/PhotoThumb'
 import { useGardenPlants } from '../../lib/store'
+import { UNKNOWN_SPECIES_ID } from '../../lib/customName'
 import { closePlantSheet, setUi, startPlacing, useUi } from '../../lib/ui'
 import type { Garden, PlantStatus } from '../../types'
 import { PlantPanel, plantName } from './PlantPanel'
@@ -19,6 +20,11 @@ export function PlantsPage({ garden }: { garden: Garden }) {
   const [picking, setPicking] = useState(false)
   const [identifying, setIdentifying] = useState(false)
   const selected = plants.find((p) => p.id === selectedPlantId)
+  // Sur téléphone la fiche s'ouvre sous la liste : on y amène l'écran, sinon rien ne semble se passer.
+  const sheetRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (selected) sheetRef.current?.scrollIntoView({ block: 'start' })
+  }, [selected?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const groups = useMemo(() => {
     const n = normalize(q)
@@ -37,17 +43,17 @@ export function PlantsPage({ garden }: { garden: Garden }) {
         <h1>Mes plantes ({plants.length})</h1>
         <div className="row">
           <button className="btn" onClick={() => setIdentifying(true)}>
-            <Icon name="camera" /> Identifier
+            <Icon name="camera" /> Identifier par photo
           </button>
           <button className="btn primary" onClick={() => setPicking(true)}>
-            <Icon name="plus" /> Ajouter
+            <Icon name="plus" /> Ajouter une plante
           </button>
         </div>
       </div>
       <div className="row" style={{ margin: '8px 0 16px' }}>
-        <input className="input" style={{ flex: 2, minWidth: 180 }} type="search" aria-label="Rechercher une plante" placeholder="Rechercher une plante" value={q} onChange={(e) => setQ(e.target.value)} />
-        <select className="input" style={{ flex: 1, minWidth: 140 }} value={status} onChange={(e) => setStatus(e.target.value as PlantStatus | '')} aria-label="Filtrer par état">
-          <option value="">Tous les états</option>
+        <input className="input" style={{ flex: '2 1 200px' }} type="search" aria-label="Rechercher une plante" placeholder="Rechercher une plante" value={q} onChange={(e) => setQ(e.target.value)} />
+        <select className="input" style={{ flex: '1 1 180px' }} value={status} onChange={(e) => setStatus(e.target.value as PlantStatus | '')} aria-label="Où en sont-elles ?">
+          <option value="">Toutes les plantes</option>
           {Object.entries(STATUS_LABEL).map(([k, v]) => (
             <option key={k} value={k}>
               {v}
@@ -60,12 +66,12 @@ export function PlantsPage({ garden }: { garden: Garden }) {
           {plants.length === 0 && (
             <div className="empty">
               <p>
-                <strong>Ajoutez vos plantes pour suivre leur croissance et leurs soins.</strong>
+                <strong>Vous n’avez pas encore ajouté de plante.</strong>
               </p>
-              <p>Placez-les sur la carte, ou identifiez une plante à partir d'une photo.</p>
+              <p>Ajoutez-les sur la carte, ou reconnaissez une plante grâce à une photo.</p>
               <div className="row empty-actions">
                 <PlaceAction>
-                  <Icon name="plus" /> Placer
+                  <Icon name="plus" /> Ajouter une plante
                 </PlaceAction>
                 <button className="btn" onClick={() => setIdentifying(true)}>
                   <Icon name="camera" /> Identifier par photo
@@ -90,7 +96,7 @@ export function PlantsPage({ garden }: { garden: Garden }) {
                         <span style={{ textAlign: 'left', flex: 1 }}>
                           <strong>{plantName(p)}</strong>
                           <span className="muted small" style={{ display: 'block' }}>
-                            {STATUS_LABEL[p.status]} · {p.status === 'projet' ? 'prévu le' : 'planté le'} {formatDate(p.plantedAt)}
+                            {p.status === 'projet' ? `Prévue pour le ${formatDate(p.plantedAt)}` : `${p.status === 'en-place' ? '' : STATUS_LABEL[p.status] + ' · '}Plantée le ${formatDate(p.plantedAt)}`}
                           </span>
                         </span>
                       </button>
@@ -102,9 +108,9 @@ export function PlantsPage({ garden }: { garden: Garden }) {
           ))}
         </div>
         {selected && (
-          <div className="card">
+          <div className="card" ref={sheetRef} style={{ scrollMarginTop: 8 }}>
             <PlantPanel garden={garden} plant={selected} onClose={closePlantSheet} />
-            <button className="btn small" style={{ marginTop: 8 }} onClick={() => setUi({ tab: 'carte', focusPlantId: selected.id })}>
+            <button className="btn" style={{ marginTop: 8 }} onClick={() => setUi({ tab: 'carte', focusPlantId: selected.id })}>
               <Icon name="map" size={16} /> Voir sur la carte
             </button>
           </div>
@@ -112,11 +118,15 @@ export function PlantsPage({ garden }: { garden: Garden }) {
       </div>
       {picking && (
         <SpeciesPicker
-          title="Ajouter une plante"
+          title="Quelle plante ajouter ?"
           onClose={() => setPicking(false)}
           onPick={(s) => {
             setPicking(false)
             startPlacing(s.id)
+          }}
+          onPickCustom={(name) => {
+            setPicking(false)
+            startPlacing(UNKNOWN_SPECIES_ID, { customName: name })
           }}
         />
       )}

@@ -1,7 +1,7 @@
 import { friendlyError, type FriendlyError } from '../lib/http'
 
 /**
- * Message d'erreur pour l'écran : une phrase simple, puis « Détails » replié pour le texte technique
+ * Message d'erreur pour l'écran : une phrase simple, puis « Détails » replié pour le texte technique
  * (utile si l'on demande de l'aide, inutile pour le reste).
  */
 export function ErrorNote({ error, className = 'alert error small', role = 'alert' }: { error: unknown | FriendlyError; className?: string; role?: 'alert' | 'status' }) {
@@ -17,7 +17,7 @@ export function ErrorNote({ error, className = 'alert error small', role = 'aler
   )
 }
 
-/** « Détails » replié : le texte technique d'une erreur. */
+/** « Détails » replié : le texte technique d'une erreur. */
 export function TechDetails({ detail }: { detail: string }) {
   return (
     <details className="tech-details">

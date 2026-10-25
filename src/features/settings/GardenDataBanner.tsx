@@ -1,11 +1,12 @@
 import type { Garden } from '../../types'
+import { TechDetails } from '../../components/ErrorNote'
 import { FAIL_HELP, missingSources, type Step } from './createGarden'
 import { useRefreshGarden } from './useRefreshGarden'
 
-const SHORT: Record<Step['id'], string> = { parcelle: 'parcelle', batiments: 'bâtiments', relief: 'relief', climat: 'climat' }
+const SHORT: Record<Step['id'], string> = { parcelle: 'plan du terrain', batiments: 'maisons voisines', relief: 'pente', climat: 'gel et pluie' }
 
 /**
- * Bandeau persistant tant que la parcelle, le relief ou les bâtiments manquent. Rien si tout est là.
+ * Bandeau persistant tant que le plan du terrain, la pente ou les maisons voisines manquent. Rien si tout est là.
  * `compact` (sur la carte) : une phrase ; sinon (Réglages) : l'explication de chaque source.
  */
 export function GardenDataBanner({ garden, compact }: { garden: Garden; compact?: boolean }) {
@@ -18,9 +19,9 @@ export function GardenDataBanner({ garden, compact }: { garden: Garden; compact?
   return (
     <div className={'alert data-banner' + (compact ? ' compact' : '')} role="status">
       <div>
-        <strong>{noParcel ? 'Parcelle non récupérée — le cadrage est approximatif.' : 'Données du jardin incomplètes.'}</strong>
+        <strong>{compact ? (noParcel ? 'Le plan du terrain manque.' : `Il manque : ${others.map((m) => SHORT[m]).join(', ')}.`) : noParcel ? 'Le plan de votre terrain manque : la carte est cadrée à peu près.' : 'Il manque quelques informations sur votre jardin.'}</strong>
         {compact ? (
-          others.length > 0 && <div className="small">Manquent aussi : {others.map((m) => SHORT[m]).join(', ')}.</div>
+          noParcel && others.length > 0 && <div className="small">Il manque aussi : {others.map((m) => SHORT[m]).join(', ')}.</div>
         ) : (
           <ul className="small" style={{ margin: '4px 0 0', paddingLeft: 18 }}>
             {missing.map((m) => (
@@ -28,8 +29,13 @@ export function GardenDataBanner({ garden, compact }: { garden: Garden; compact?
             ))}
           </ul>
         )}
-        {compact && noParcel && <div className="small">Vous pouvez quand même placer vos plantes : la parcelle est facultative.</div>}
-        {failedAgain.length > 0 && <div className="small muted">Nouvel essai sans succès : {failedAgain.map((s) => s.detail || s.label).join(' · ')}</div>}
+
+        {failedAgain.length > 0 && (
+          <div className="small">
+            Nouvel essai sans succès. Vérifiez votre connexion.
+            <TechDetails detail={failedAgain.map((s) => `${s.label} : ${s.detail || 'sans réponse'}`).join(' · ')} />
+          </div>
+        )}
       </div>
       <button className="btn small" onClick={refresh} disabled={busy}>
         {busy ? <span className="spinner" /> : null} Réessayer

@@ -161,7 +161,7 @@ export function PostDetail({ post, online, onBack, onChat }: { post: Post; onlin
             onBack()
           }}
         >
-          <p style={{ margin: 0 }}>Vous ne verrez plus ses annonces ni ses messages, et elle ne verra plus les vôtres. Vous pourrez changer d’avis dans l’onglet Profil.</p>
+          <p style={{ margin: 0 }}>Vous ne verrez plus ses annonces ni ses messages, et cette personne ne verra plus les vôtres. Vous pourrez changer d’avis dans l’onglet Profil.</p>
         </Confirm>
       )}
       {dialog?.k === 'delete-reply' && (

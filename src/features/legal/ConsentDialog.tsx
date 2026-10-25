@@ -15,11 +15,11 @@ export function ConsentDialog({ id, onAccept, onRefuse }: { id: ConsentId; onAcc
           </p>
         ))}
         <p className="small" style={{ margin: 0 }}>
-          Détails : <LegalLink id="confidentialite" label="politique de confidentialité" />.
+          Pour en savoir plus : <LegalLink id="confidentialite" label="politique de confidentialité" />.
         </p>
         <div className="row consent-actions">
           <button className="btn" onClick={onRefuse}>
-            Annuler
+            Non merci
           </button>
           <button
             className="btn primary"

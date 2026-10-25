@@ -1,6 +1,7 @@
 import { fetchBuildings, fetchParcel, fetchTerrain, type GeocodeResult } from '../../lib/ign'
 import { fetchClimate } from '../../lib/weather'
 import { polygonArea, toLocal, uid } from '../../lib/geo'
+import { frNumber, plural } from '../../lib/format'
 import type { Garden, LonLat } from '../../types'
 
 export type StepState = 'attente' | 'en-cours' | 'ok' | 'echec'
@@ -12,21 +13,21 @@ export interface Step {
 }
 
 export const INITIAL_STEPS: Step[] = [
-  { id: 'parcelle', label: 'Parcelle cadastrale (IGN)', state: 'attente' },
-  { id: 'batiments', label: 'Bâtiments voisins et hauteurs (BD TOPO)', state: 'attente' },
-  { id: 'relief', label: 'Relief du terrain (RGE ALTI)', state: 'attente' },
-  { id: 'climat', label: 'Gelées et pluie sur 5 ans', state: 'attente' },
+  { id: 'parcelle', label: 'Plan de votre terrain', state: 'attente' },
+  { id: 'batiments', label: 'Maisons voisines (pour l’ombre)', state: 'attente' },
+  { id: 'relief', label: 'Pente du terrain', state: 'attente' },
+  { id: 'climat', label: 'Gel et pluie de votre région', state: 'attente' },
 ]
 
-/** Explication humaine d'un échec, par source : ce que l'utilisateur perd et quoi faire. */
+/** Ce qui manque, ce que l'utilisateur perd : des phrases courtes, sans nom de service. */
 export const FAIL_HELP: Record<Step['id'], string> = {
-  parcelle: 'Parcelle non récupérée : le cadrage de la carte sera approximatif et les distances aux voisins ne seront pas vérifiées.',
-  batiments: "Bâtiments non récupérés : l'ombre des constructions voisines ne sera pas calculée.",
-  relief: 'Relief non récupéré : le terrain sera plat en 3D et la pente inconnue.',
-  climat: 'Climat non récupéré : le calendrier suivra les dates nationales, sans adaptation aux gelées locales.',
+  parcelle: 'Le plan de votre terrain manque. La carte sera cadrée à peu près, sans vérifier les distances avec les voisins.',
+  batiments: 'Les maisons voisines manquent. L’ombre qu’elles font ne sera pas calculée.',
+  relief: 'La pente du terrain manque. Le terrain sera plat en Vue 3D.',
+  climat: 'Le gel et la pluie de votre région manquent. Le calendrier suivra les dates de toute la France.',
 }
 
-/** Sources manquantes d'un jardin existant (bandeau « Réessayer »). Le climat n'en fait pas partie : « aucune gelée » est une réponse valide. */
+/** Sources manquantes d'un jardin existant (bandeau « Réessayer »). Le climat n'en fait pas partie : « aucune gelée » est une réponse valide. */
 export function missingSources(g: Garden): Step['id'][] {
   const out: Step['id'][] = []
   if (!g.parcel?.length) out.push('parcelle')
@@ -65,8 +66,8 @@ export async function buildGarden(
       garden.parcel = ring.map((p) => toLocal(c, p))
       garden.parcelRefs = [parcel.ref]
       garden.areaM2 = Math.round(parcel.contenanceM2 ?? polygonArea(garden.parcel))
-      onStep('parcelle', 'ok', `${parcel.ref} · ${garden.areaM2} m²`)
-    } else onStep('parcelle', 'echec', 'Aucune parcelle trouvée à cette adresse')
+      onStep('parcelle', 'ok', `${frNumber(garden.areaM2, 0)} m²`)
+    } else onStep('parcelle', 'echec', 'Aucun terrain trouvé à cette adresse.')
   } catch (e) {
     onStep('parcelle', 'echec', (e as Error).message)
   }
@@ -78,7 +79,7 @@ export async function buildGarden(
       try {
         const bs = await fetchBuildings(center, SCENE_HALF_SIZE + 20)
         garden.buildings = bs.map((b) => ({ id: b.id, heightM: b.heightM, ring: b.ring.map((p) => toLocal(center, p)) }))
-        onStep('batiments', 'ok', `${bs.length} bâtiment${bs.length > 1 ? 's' : ''}`)
+        onStep('batiments', 'ok', bs.length ? plural(bs.length, 'maison ou bâtiment', 'maisons ou bâtiments') + ' autour' : 'aucune maison autour')
       } catch (e) {
         onStep('batiments', 'echec', (e as Error).message)
       }
@@ -90,7 +91,7 @@ export async function buildGarden(
         garden.terrain = grid
         garden.altitudeM = Math.round(altitudeCenterM)
         const span = Math.max(...grid.heights) - Math.min(...grid.heights)
-        onStep('relief', 'ok', `Altitude ${garden.altitudeM} m · dénivelé ${span.toFixed(1)} m`)
+        onStep('relief', 'ok', `altitude ${frNumber(garden.altitudeM, 0)} m · dénivelé ${frNumber(span)} m`)
       } catch (e) {
         onStep('relief', 'echec', (e as Error).message)
       }
@@ -101,7 +102,7 @@ export async function buildGarden(
         const c = await fetchClimate(center)
         garden.lastFrostDoy = c.lastFrostDoy ?? undefined
         garden.firstFrostDoy = c.firstFrostDoy ?? undefined
-        onStep('climat', 'ok', `${Math.round(c.rainMmPerYear)} mm/an · ${c.zone}`)
+        onStep('climat', 'ok', `${frNumber(c.rainMmPerYear, 0)} mm de pluie par an · ${c.zone}`)
       } catch (e) {
         onStep('climat', 'echec', (e as Error).message)
       }

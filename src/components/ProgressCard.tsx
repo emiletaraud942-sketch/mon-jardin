@@ -7,8 +7,8 @@ import { useProgress } from './useProgress'
 import type { Garden } from '../types'
 
 /**
- * Jauge « Mon jardin : 3 étapes sur 5 » en haut de « Mon jardin ». Une ligne ; elle déplie (par-dessus l'écran, sans le redimensionner)
- * la prochaine étape et la checklist « Premiers pas ». Propose discrètement de passer à l'entretien quand le jardin est prêt.
+ * Jauge « Mon jardin : 3 étapes sur 5 » en haut de « Mon jardin ». Une ligne ; elle déplie (par-dessus l'écran, sans le redimensionner)
+ * la prochaine étape et la checklist « Premiers pas ». Propose discrètement de passer à l'entretien quand le jardin est prêt.
  */
 export function ProgressCard({ garden }: { garden: Garden }) {
   const { guide } = useUi()

@@ -277,9 +277,12 @@ export function noteVisit(tab: Tab, gardenId: string) {
   if (tab === 'entretien' && !ui.guide.openedEntretien.includes(gardenId)) setGuide({ openedEntretien: [...ui.guide.openedEntretien, gardenId] })
 }
 
-/** Réaffiche la checklist « Premiers pas » (ouverte) sur « Mon jardin ». */
-export function showFirstSteps() {
-  setGuide({ stepsHidden: false, stepsOpen: true, progressOpen: true })
+/**
+ * Réaffiche la checklist « Premiers pas » sur « Mon jardin ». Ouverte par défaut (demande dans l'aide) ;
+ * `open: false` la laisse repliée (jardin tout juste créé : on ne couvre pas la carte).
+ */
+export function showFirstSteps(opts: { open?: boolean } = {}) {
+  setGuide({ stepsHidden: false, stepsOpen: true, progressOpen: opts.open ?? true })
   setMode('jardin')
 }
 

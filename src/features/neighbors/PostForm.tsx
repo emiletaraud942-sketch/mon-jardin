@@ -51,7 +51,7 @@ export function PostForm({ online, pseudo, where, onPublished, onCancel }: { onl
       <section className="card stack" aria-label="Récapitulatif">
         <h2>Vérifiez votre annonce</h2>
         <dl className="np-recap">
-          <dt>Je veux</dt>
+          <dt>Type d’annonce</dt>
           <dd>{POST_KIND_LABELS[kind]}</dd>
           <dt>Titre</dt>
           <dd>

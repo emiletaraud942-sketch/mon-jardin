@@ -18,7 +18,7 @@ export function searchSpecies(q: string, category?: Category | ''): Species[] {
 }
 
 /**
- * Choix d'une plante dans la liste. Avec `onPickCustom`, un bouton « Ma plante n'est pas dans la liste »
+ * Choix d'une plante dans la liste. Avec `onPickCustom`, un bouton « Ma plante n'est pas dans la liste »
  * demande un nom et le renvoie tel quel (la plante est placée sans fiche).
  */
 export function SpeciesPicker({

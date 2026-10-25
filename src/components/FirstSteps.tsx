@@ -6,7 +6,7 @@ import { useProgress } from './useProgress'
 import type { Garden } from '../types'
 
 /**
- * Checklist « Premiers pas » : cases cochées d'après l'avancement réel. Repliable ; « Masquer pour l'instant »
+ * Checklist « Premiers pas » : cases cochées d'après l'avancement réel. Repliable ; « Masquer pour l'instant »
  * la cache (elle revient depuis l'aide). Purement facultative.
  */
 export function FirstSteps({ garden }: { garden: Garden }) {

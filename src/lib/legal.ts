@@ -383,7 +383,6 @@ export interface ConsentText {
   accepter: string
 }
 
-const idf = DATA_INVENTORY.find((d) => d.id === 'identification')
 const compte = DATA_INVENTORY.find((d) => d.id === 'compte')
 
 export const CONSENT_TEXT: Record<'plantnet' | 'sync' | 'voisins', ConsentText> = {
