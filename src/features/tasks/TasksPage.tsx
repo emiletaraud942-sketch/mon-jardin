@@ -26,7 +26,7 @@ function WeatherStrip({ weather }: { weather: WeatherBundle }) {
       <h2>Météo des 7 prochains jours</h2>
       <div className="np-weather">
         {weather.forecast.slice(0, 7).map((d) => (
-          <div key={d.date} className={'d' + (d.tMin <= 0 ? ' frost' : '')}>
+          <div key={d.date} className={'d' + (d.tMin <= 0 ? ' frost' : d.rainMm >= 0.5 ? ' rain' : '')}>
             <div>{new Date(d.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' })}</div>
             <strong>{Math.round(d.tMax)}°</strong>
             <div className="muted">{Math.round(d.tMin)}°</div>

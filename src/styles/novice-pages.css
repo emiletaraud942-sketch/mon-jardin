@@ -1,5 +1,4 @@
 /* Pages simplifiées : Entretien, Où planter ?, Catalogue, Entraide. Couleurs : variables de :root uniquement. */
-.np-page .btn,
 .np-page .btn.small,
 .np-page .btn.small.tall {
   min-height: 44px;
@@ -31,9 +30,47 @@
   outline: 3px solid var(--accent-2);
   outline-offset: 2px;
 }
-.np-done {
-  min-width: 96px;
-  font-weight: 600;
+/* « Fait » : grand bouton vert pleine largeur dans la carte de tâche. */
+.np-done,
+.btn.primary.np-done {
+  flex: 1 1 100%;
+  min-height: 52px;
+  font-weight: 700;
+  font-size: 1.125rem;
+  background: var(--btn-green);
+  border-color: var(--btn-green);
+  color: var(--on-btn-green);
+  box-shadow: 0 3px 0 var(--btn-green-shadow);
+}
+.np-done:hover,
+.btn.primary.np-done:hover {
+  background: var(--btn-green);
+}
+.np-done:active,
+.btn.primary.np-done:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--btn-green-shadow);
+}
+/* Cartes de tâches */
+.np-page .list > li.task {
+  margin: 0 0 12px;
+  padding: 16px;
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+.np-page .list > li.task:last-child {
+  margin-bottom: 0;
+}
+.task .task-title {
+  font-family: var(--font-title);
+  font-size: 1.25rem;
+  line-height: 1.2;
+  color: var(--title);
+}
+.task.blocked {
+  background: var(--surface-2);
+  border-style: dashed;
 }
 .np-task-actions {
   display: flex;
@@ -49,13 +86,29 @@
 }
 .np-weather .d {
   text-align: center;
-  padding: 6px 4px;
-  border-radius: 8px;
-  background: var(--surface-2);
+  padding: 10px 4px;
+  border-radius: var(--radius-btn-lg);
+  background: var(--dry-bg);
+  color: var(--dry-text);
+  font-size: 0.9375rem;
+}
+.np-weather .d .muted {
+  color: inherit;
+  opacity: 0.85;
+}
+.np-weather .d strong {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+.np-weather .d.rain {
+  background: var(--water-bg);
+  color: var(--water-text);
 }
 .np-weather .d.frost {
-  background: var(--warn-soft);
-  color: var(--warn-text);
+  background: var(--frost-bg);
+  color: var(--frost-text);
+  font-weight: 700;
 }
 .np-steps {
   list-style: none;
@@ -75,11 +128,12 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--accent);
-  color: var(--surface);
+  background: var(--btn-green);
+  color: var(--on-btn-green);
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  font-family: var(--font-title);
   font-weight: 700;
 }
 .np-reco {
@@ -88,8 +142,8 @@
 }
 .np-fit {
   font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 8px;
+  padding: 3px 10px;
+  border-radius: 12px;
   background: var(--surface-2);
 }
 .np-fit.green {
@@ -188,8 +242,8 @@
   flex-direction: column;
   gap: 4px;
   padding: 12px;
-  border: 1px dashed var(--border-strong, var(--border));
-  border-radius: 12px;
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius-btn-lg);
   background: var(--surface);
 }
 .np-photo-btn {
@@ -223,4 +277,31 @@
 .consent-actions .btn,
 .nb-radio {
   min-height: 44px;
+}
+
+/* Liste de tâches : les cartes se posent directement sur le fond, comme dans la maquette. */
+.np-page .card:has(> .list > li.task) {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.np-page .card:has(> .list > li.task) > h2,
+.np-page .card:has(> .list > li.task) > h3 {
+  margin: 8px 2px 12px;
+}
+.task-main .row > span[aria-hidden='true']:first-child,
+.task-main .row > span[aria-hidden]:first-child {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--give-bg);
+  font-size: 1.4rem;
+}
+.task-main .row > .task-title {
+  flex: 1 1 8rem;
+  min-width: 0;
 }
