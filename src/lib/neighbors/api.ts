@@ -47,15 +47,16 @@ interface RawError {
 
 const REPORT_TARGETS: readonly ReportTarget[] = ['post', 'reply', 'profile', 'message']
 
+const LIMIT_TEXT = 'Vous avez atteint votre limite du jour. Revenez demain.'
 const QUOTA_TEXT: Record<string, string> = {
-  post: `Limite atteinte : ${L.postsPerDay} annonces par jour. Revenez demain.`,
-  reply: `Limite atteinte : ${L.repliesPerDay} réponses par jour. Revenez demain.`,
-  message: `Limite atteinte : ${L.messagesPerDay} messages par jour. Revenez demain.`,
-  report: `Limite atteinte : ${L.reportsPerDay} signalements par jour. Revenez demain.`,
-  thread: 'Limite atteinte : 10 nouvelles conversations par jour. Revenez demain.',
-  profile: 'Limite atteinte : 5 modifications du profil par jour. Revenez demain.',
-  post_open: `Limite atteinte : ${L.openPostsMax} annonces ouvertes en même temps. Fermez-en une avant d’en publier une autre.`,
-  block: 'Limite atteinte : trop de blocages aujourd’hui. Revenez demain.',
+  post: LIMIT_TEXT,
+  reply: LIMIT_TEXT,
+  message: LIMIT_TEXT,
+  report: LIMIT_TEXT,
+  thread: LIMIT_TEXT,
+  profile: LIMIT_TEXT,
+  post_open: `Vous avez déjà ${L.openPostsMax} annonces ouvertes. Fermez-en une avant d’en publier une autre.`,
+  block: LIMIT_TEXT,
 }
 
 /** Traduit une erreur Supabase / Postgres / réseau en message français lisible. */
@@ -64,7 +65,7 @@ export function translateError(e: unknown): string {
   const msg = String(err.message ?? (typeof e === 'string' ? e : ''))
   const low = msg.toLowerCase()
   const quota = /quota_exceeded:(\w+)/.exec(msg)
-  if (quota) return QUOTA_TEXT[quota[1]] ?? 'Limite journalière atteinte. Revenez demain.'
+  if (quota) return QUOTA_TEXT[quota[1]] ?? LIMIT_TEXT
   if (low.includes('profiles_pseudo_key')) return 'Ce pseudo est déjà pris. Choisissez-en un autre.'
   if (low.includes('reports_reporter_target_kind_target_id_key')) return 'Vous avez déjà signalé ce contenu. Merci.'
   if (low.includes('blocks_pkey')) return 'Cette personne est déjà bloquée.'

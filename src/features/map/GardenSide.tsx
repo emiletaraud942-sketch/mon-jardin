@@ -73,9 +73,10 @@ export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
 
 /** Consigne affichée tant qu'une plante est à placer ou à déplacer : grande, sur deux lignes, avec « Annuler ». */
 export function PlacingBanner() {
-  const { placingSpeciesId, placingCustomName, placingSeries, movingPlantId } = useUi()
+  const { tab, placingSpeciesId, placingCustomName, placingSeries, movingPlantId } = useUi()
   const moving = useStore((s) => (movingPlantId ? s.plants.find((p) => p.id === movingPlantId) : undefined))
-  if (!placingSpeciesId && !movingPlantId) return null
+  // En Vue 3D, la scène affiche sa propre consigne : une seule bannière.
+  if (tab === '3d' || (!placingSpeciesId && !movingPlantId)) return null
   const name = movingPlantId
     ? moving
       ? plantName(moving)

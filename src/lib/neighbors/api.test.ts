@@ -86,8 +86,8 @@ function jpegHeader(width: number, height: number): Uint8Array {
 
 describe('translateError', () => {
   it.each([
-    [{ message: 'quota_exceeded:post' }, '5 annonces par jour'],
-    [{ message: 'quota_exceeded:message' }, 'messages par jour'],
+    [{ message: 'quota_exceeded:post' }, 'limite du jour'],
+    [{ message: 'quota_exceeded:message' }, 'limite du jour'],
     [{ message: 'duplicate key value violates unique constraint "profiles_pseudo_key"', code: '23505' }, 'pseudo est déjà pris'],
     [{ message: 'duplicate key ... "reports_reporter_target_kind_target_id_key"' }, 'déjà signalé'],
     [{ message: 'new row violates row-level security policy for table "posts"', code: '42501' }, 'non autorisée'],
@@ -211,7 +211,7 @@ describe('annonces', () => {
   })
   it('createPost refuse au-delà du quota du jour', async () => {
     set('posts:select', null, null, 5)
-    await expect(api.createPost({ kind: 'don', title: 'x' })).rejects.toThrow(/5 annonces par jour/)
+    await expect(api.createPost({ kind: 'don', title: 'x' })).rejects.toThrow(/limite du jour/)
     expect(opsOf('posts').some(([m]) => m === 'insert')).toBe(false)
   })
   it('createPost passe la photo par la fonction de nettoyage puis l’envoie dans le dossier de l’utilisateur', async () => {
@@ -301,7 +301,7 @@ describe('défauts corrigés (audit)', () => {
     expect(api.translateError({ message: 'détail interne : table posts, colonne secrète é' })).toBe('Une erreur est survenue. Réessayez dans un instant.')
   })
   it('translateError : quotas de profil et d’annonces ouvertes, usurpation', () => {
-    expect(api.translateError({ message: 'quota_exceeded:profile' })).toContain('profil')
+    expect(api.translateError({ message: 'quota_exceeded:profile' })).toContain('limite du jour')
     expect(api.translateError({ message: 'quota_exceeded:post_open' })).toContain('ouvertes')
     expect(api.translateError({ message: 'forbidden', code: '42501' })).toContain('non autorisée')
   })
