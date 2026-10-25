@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest'
 import {
   CONDUCT_RULES,
   DEFAULT_RADIUS,
+  CATEGORY_FILTERS,
   KIND_FILTERS,
+  categoryOption,
+  categoryRequired,
+  emptyFeedText,
+  offerMessage,
+  parseCategoryFilter,
   RADII,
   cellPreview,
   daysLeft,
@@ -18,13 +24,15 @@ import {
   neighborhoodText,
   gardenNeighborhoodText,
 } from './logic'
-import { POST_KINDS, POST_KIND_LABELS, REPORT_REASONS } from './types'
+import { POST_CATEGORIES, POST_KINDS, POST_KIND_LABELS, REPORT_REASONS } from './types'
 
 const NOW = new Date('2026-10-23T12:00:00Z')
+const sentencesOf = (t: string) => t.split(/(?<=[.!?])\s+(?=[A-ZÀ-ÖØ-Þ«“"'])/).map((x) => x.trim()).filter(Boolean)
+const wordCount = (s: string) => s.split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length
 
 describe('filtres', () => {
-  it('Tout / Dons / Échanges / Prêts / Questions, dans cet ordre', () => {
-    expect(KIND_FILTERS.map((f) => f.label)).toEqual(['Tout', 'Dons', 'Échanges', 'Prêts', 'Questions'])
+  it('Tout / Dons / Échanges / Prêts / Questions / Je cherche, dans cet ordre', () => {
+    expect(KIND_FILTERS.map((f) => f.label)).toEqual(['Tout', 'Dons', 'Échanges', 'Prêts', 'Questions', 'Je cherche'])
     expect(kindOption('all')).toBeUndefined()
     for (const k of POST_KINDS) expect(kindOption(k)).toBe(k)
   })
@@ -35,6 +43,47 @@ describe('filtres', () => {
     expect(parseRadius('7')).toBe(DEFAULT_RADIUS)
     expect(parseRadius(null)).toBe(10)
     expect(parseRadius('abc')).toBe(10)
+  })
+})
+
+describe('catégories et « Je cherche »', () => {
+  it('libellés de type en français simple', () => {
+    expect(POST_KINDS.map((k) => POST_KIND_LABELS[k])).toEqual(['Je donne', 'J’échange', 'Je prête', 'Je pose une question', 'Je cherche'])
+  })
+  it('sept catégories, filtre « toutes » en tête', () => {
+    expect(POST_CATEGORIES.map((c) => c.id)).toEqual(['graines', 'plantes', 'compost', 'outils', 'materiel', 'services', 'autre'])
+    expect(CATEGORY_FILTERS[0]).toEqual({ id: 'all', label: 'Toutes les catégories' })
+    expect(CATEGORY_FILTERS).toHaveLength(8)
+    expect(categoryOption('all')).toBeUndefined()
+    expect(categoryOption('outils')).toBe('outils')
+  })
+  it('une valeur mémorisée inconnue donne « toutes »', () => {
+    expect(parseCategoryFilter('outils')).toBe('outils')
+    expect(parseCategoryFilter('voitures')).toBe('all')
+    expect(parseCategoryFilter(null)).toBe('all')
+    expect(parseCategoryFilter('toString')).toBe('all')
+  })
+  it('la catégorie est obligatoire pour une demande seulement', () => {
+    expect(categoryRequired('cherche')).toBe(true)
+    for (const k of POST_KINDS.filter((x) => x !== 'cherche')) expect(categoryRequired(k)).toBe(false)
+  })
+  it('état vide adapté', () => {
+    expect(emptyFeedText('cherche', 'all').title).toBe('Personne ne cherche rien près de chez vous pour l’instant')
+    expect(emptyFeedText('all', 'outils').title).toMatch(/catégorie/)
+    expect(emptyFeedText('all', 'all').title).toMatch(/Rien près de chez vous/)
+    expect(emptyFeedText('don', 'all').title).toBe('Aucune annonce de ce type')
+  })
+  it('message prérempli : cite l’annonce, phrases courtes, tient dans un message', () => {
+    const m = offerMessage({ title: 'Une bêche' })
+    expect(m).toContain('« Une bêche »')
+    for (const s of sentencesOf(m)) expect(wordCount(s)).toBeLessThanOrEqual(20)
+    expect(offerMessage({ title: 'x'.repeat(80) }).length).toBeLessThanOrEqual(1000)
+  })
+  it('textes d’état vide : phrases de 20 mots au plus', () => {
+    for (const k of KIND_FILTERS) for (const c of ['all', 'outils'] as const) {
+      const t = emptyFeedText(k.id, c)
+      for (const s of [...sentencesOf(t.title), ...sentencesOf(t.hint)]) expect(wordCount(s)).toBeLessThanOrEqual(20)
+    }
   })
 })
 
@@ -115,7 +164,7 @@ describe('divers', () => {
 
 describe('libellés simples', () => {
   it('types d’annonce à la première personne', () => {
-    expect(POST_KINDS.map((k) => POST_KIND_LABELS[k])).toEqual(['Je donne', 'J’échange', 'Je prête', 'Je pose une question'])
+    expect(POST_KINDS.map((k) => POST_KIND_LABELS[k])).toEqual(['Je donne', 'J’échange', 'Je prête', 'Je pose une question', 'Je cherche'])
   })
   it('motifs de signalement sans jargon', () => {
     const all = Object.values(REPORT_REASONS).join(' ')

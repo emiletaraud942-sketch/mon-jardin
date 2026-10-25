@@ -8,6 +8,7 @@ import { isNeighborsConfigured, neighborsClient, NEIGHBORS_STORAGE_KEY } from '.
 import {
   NEIGHBORS_LIMITS as L,
   POST_KINDS,
+  isPostCategory,
   REPORT_REASONS,
   type BlockedUser,
   type Cell,
@@ -17,6 +18,7 @@ import {
   type NeighborsSession,
   type NewPost,
   type Post,
+  type PostCategory,
   type PostKind,
   type Profile,
   type Reply,
@@ -83,6 +85,11 @@ export function translateError(e: unknown): string {
   if (low.includes('forbidden') && err.code === '42501') return 'Action non autorisée.'
   if (err.code === '42501' || low.includes('row-level security') || low.includes('permission denied')) {
     return 'Action non autorisée. Vérifiez que vous êtes connecté et que votre profil existe.'
+  }
+  if (low.includes('posts_cherche_category_check')) return 'Choisissez ce que vous cherchez : graines, outils, plantes…'
+  // Base pas encore mise à jour (migration v2 non collée) : « Je cherche » et les catégories n'existent pas encore.
+  if (low.includes('posts_kind_check') || (low.includes('category') && (err.code === 'PGRST204' || low.includes('schema cache')))) {
+    return 'Cette fonction n’est pas encore ouverte chez vous. Réessayez plus tard.'
   }
   if (err.code === '23514') return 'Les informations envoyées dépassent les limites autorisées.'
   if (err.code === '23503') return 'Ce contenu n’existe plus.'
@@ -153,17 +160,21 @@ function validateText(raw: string, label: string, max: number, required: boolean
 
 export interface ValidPost {
   kind: PostKind
+  category: PostCategory | null
   title: string
   body: string
   speciesId: string | null
 }
 
-export function validatePost(input: Pick<NewPost, 'kind' | 'title' | 'body' | 'speciesId'>): ValidPost {
+export function validatePost(input: Pick<NewPost, 'kind' | 'title' | 'body' | 'speciesId' | 'category'>): ValidPost {
   if (!POST_KINDS.includes(input.kind)) throw new NeighborsError('Type d’annonce inconnu.', 'invalid')
+  if (input.category != null && !isPostCategory(input.category)) throw new NeighborsError('Catégorie inconnue.', 'invalid')
+  if (input.kind === 'cherche' && !input.category) throw new NeighborsError('Choisissez ce que vous cherchez : graines, outils, plantes…', 'invalid')
   const species = input.speciesId?.trim() || null
   if (species && species.length > L.speciesIdMax) throw new NeighborsError('Espèce invalide.', 'invalid')
   return {
     kind: input.kind,
+    category: input.category ?? null,
     title: validateText(input.title, 'Titre', L.titleMax, true),
     body: validateText(input.body ?? '', 'Description', L.bodyMax, false),
     speciesId: species,
@@ -325,6 +336,7 @@ interface PostRow {
   id: string
   author: string
   kind: PostKind
+  category?: PostCategory | null
   title: string
   body: string
   species_id: string | null
@@ -347,6 +359,7 @@ function toPost(r: PostRow, uid: string, from: Cell | null): Post {
     authorPseudo: r.profiles?.pseudo ?? 'Voisin',
     mine: r.author === uid,
     kind: r.kind,
+    category: isPostCategory(r.category) ? r.category : null,
     title: r.title,
     body: r.body ?? '',
     speciesId: r.species_id,
@@ -377,7 +390,9 @@ export async function listPosts(opts: ListPostsOptions = {}): Promise<Post[]> {
     .lte('cell_lat', b.latMax)
     .gte('cell_lon', b.lonMin)
     .lte('cell_lon', b.lonMax)
+  if (opts.category !== undefined && !isPostCategory(opts.category)) throw new NeighborsError('Catégorie inconnue.', 'invalid')
   if (opts.kind) q = q.eq('kind', opts.kind)
+  if (opts.category) q = q.eq('category', opts.category)
   const rows = (await run<PostRow[]>(q.order('created_at', { ascending: false }).limit(100) as never)) ?? []
   return rows.map((r) => toPost(r, uid, center)).filter((p) => p.distanceKm == null || p.distanceKm <= radius + 0.8)
 }
@@ -439,7 +454,8 @@ export async function createPost(input: NewPost): Promise<Post> {
     const row = await run<PostRow>(
       client
         .from('posts')
-        .insert({ author: uid, kind: v.kind, title: v.title, body: v.body, species_id: v.speciesId, photo_path: photoPath })
+        // « category » n'est envoyée que si elle est choisie : une base pas encore mise à jour accepte alors les anciennes annonces.
+        .insert({ author: uid, kind: v.kind, title: v.title, body: v.body, species_id: v.speciesId, photo_path: photoPath, ...(v.category ? { category: v.category } : {}) })
         .select(POST_SELECT)
         .single() as never,
     )

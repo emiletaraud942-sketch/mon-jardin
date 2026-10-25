@@ -96,6 +96,9 @@ describe('translateError', () => {
     [{ message: 'Failed to fetch' }, 'Connexion impossible'],
     [{ message: 'not_member' }, 'profil'],
     [{ message: 'reply_not_allowed' }, 'question'],
+    [{ message: 'new row violates check constraint "posts_cherche_category_check"', code: '23514' }, 'ce que vous cherchez'],
+    [{ message: 'new row violates check constraint "posts_kind_check"', code: '23514' }, 'pas encore ouverte'],
+    [{ message: "Could not find the 'category' column of 'posts' in the schema cache", code: 'PGRST204' }, 'pas encore ouverte'],
     [{ message: 'something obscure in english' }, 'Une erreur est survenue'],
   ])('%j', (e, expected) => {
     expect(api.translateError(e)).toContain(expected)
@@ -116,11 +119,18 @@ describe('validation', () => {
     expect(() => api.validatePseudo('<b>gras</b>')).toThrow(/interdits/)
   })
   it('annonce', () => {
-    expect(api.validatePost({ kind: 'don', title: ' Tomates ', body: undefined })).toEqual({ kind: 'don', title: 'Tomates', body: '', speciesId: null })
+    expect(api.validatePost({ kind: 'don', title: ' Tomates ', body: undefined })).toEqual({ kind: 'don', category: null, title: 'Tomates', body: '', speciesId: null })
     expect(() => api.validatePost({ kind: 'don', title: '   ' })).toThrow(/obligatoire/)
     expect(() => api.validatePost({ kind: 'don', title: 'x'.repeat(81) })).toThrow(/80 caractères/)
     expect(() => api.validatePost({ kind: 'don', title: 'ok', body: 'x'.repeat(1001) })).toThrow(/1000 caractères/)
     expect(() => api.validatePost({ kind: 'vente' as never, title: 'ok' })).toThrow(/inconnu/)
+  })
+  it('annonce : « Je cherche » exige une catégorie connue', () => {
+    expect(() => api.validatePost({ kind: 'cherche', title: 'Une bêche' })).toThrow(/ce que vous cherchez/)
+    expect(() => api.validatePost({ kind: 'cherche', title: 'Une bêche', category: 'voitures' as never })).toThrow(/Catégorie inconnue/)
+    expect(() => api.validatePost({ kind: 'don', title: 'ok', category: 'voitures' as never })).toThrow(/Catégorie inconnue/)
+    expect(api.validatePost({ kind: 'cherche', title: 'Une bêche', category: 'outils' })).toMatchObject({ kind: 'cherche', category: 'outils' })
+    expect(api.validatePost({ kind: 'don', title: 'ok', category: 'graines' }).category).toBe('graines')
   })
   it('message', () => {
     expect(() => api.validateMessage('  ')).toThrow()
@@ -192,6 +202,32 @@ describe('annonces', () => {
     const ops = opsOf('posts')
     expect(ops).toContainEqual(['eq', ['kind', 'don']])
     expect(ops).toContainEqual(['eq', ['status', 'open']])
+  })
+  it('listPosts filtre par type « cherche » et par catégorie', async () => {
+    set('posts:select', [postRow({ kind: 'cherche', category: 'outils' })])
+    const posts = await api.listPosts({ kind: 'cherche', category: 'outils' })
+    expect(posts[0]).toMatchObject({ kind: 'cherche', category: 'outils' })
+    const ops = opsOf('posts')
+    expect(ops).toContainEqual(['eq', ['kind', 'cherche']])
+    expect(ops).toContainEqual(['eq', ['category', 'outils']])
+  })
+  it('listPosts sans catégorie n’envoie aucun filtre de catégorie ; une catégorie inconnue est refusée', async () => {
+    set('posts:select', [postRow()])
+    const posts = await api.listPosts({})
+    expect(posts[0].category).toBeNull() // ancienne annonce, ou base pas encore mise à jour
+    expect(opsOf('posts').some(([m, a]) => m === 'eq' && a[0] === 'category')).toBe(false)
+    await expect(api.listPosts({ category: 'voitures' as never })).rejects.toThrow(/inconnue/)
+  })
+  it('createPost « Je cherche » envoie la catégorie ; sans catégorie, il est refusé avant tout envoi', async () => {
+    set('posts:select', null, null, 0)
+    set('posts:insert', postRow({ author: '11111111-1111-4111-8111-111111111111', kind: 'cherche', category: 'graines' }))
+    const post = await api.createPost({ kind: 'cherche', category: 'graines', title: 'Graines de courge' })
+    expect(post.category).toBe('graines')
+    const payload = opsOf('posts').find(([m]) => m === 'insert')![1][0] as Record<string, unknown>
+    expect(payload).toMatchObject({ kind: 'cherche', category: 'graines' })
+    state.calls.length = 0
+    await expect(api.createPost({ kind: 'cherche', title: 'Une bêche' })).rejects.toThrow(/ce que vous cherchez/)
+    expect(opsOf('posts')).toHaveLength(0)
   })
   it('listPosts exige un profil', async () => {
     set('profiles:select', null)

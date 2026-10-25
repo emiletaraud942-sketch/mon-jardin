@@ -1,6 +1,6 @@
 // Entraide entre voisins : logique pure de l'interface (filtres, libellés, dates). Aucun accès réseau ni navigateur.
 import { roundCell } from './cell'
-import type { Cell, Post, PostKind } from './types'
+import { POST_CATEGORIES, isPostCategory, type Cell, type Post, type PostCategory, type PostKind } from './types'
 
 // ---------- Filtres du fil ----------
 
@@ -11,8 +11,31 @@ export const KIND_FILTERS: { id: KindFilter; label: string }[] = [
   { id: 'echange', label: 'Échanges' },
   { id: 'pret', label: 'Prêts' },
   { id: 'question', label: 'Questions' },
+  { id: 'cherche', label: 'Je cherche' },
 ]
 export const kindOption = (f: KindFilter): PostKind | undefined => (f === 'all' ? undefined : f)
+
+export type CategoryFilter = 'all' | PostCategory
+export const CATEGORY_FILTERS: { id: CategoryFilter; label: string }[] = [{ id: 'all', label: 'Toutes les catégories' }, ...POST_CATEGORIES]
+export const categoryOption = (f: CategoryFilter): PostCategory | undefined => (f === 'all' ? undefined : f)
+/** Une valeur lue hors de l'appli (mémoire locale) : toute valeur inconnue donne « toutes ». */
+export const parseCategoryFilter = (v: unknown): CategoryFilter => (isPostCategory(v) ? v : 'all')
+
+/** Une demande « Je cherche » ne se publie pas sans catégorie. */
+export const categoryRequired = (kind: PostKind) => kind === 'cherche'
+
+/** Texte de l'état vide du fil, selon les filtres. */
+export function emptyFeedText(kind: KindFilter, category: CategoryFilter): { title: string; hint: string } {
+  if (kind === 'cherche') return { title: 'Personne ne cherche rien près de chez vous pour l’instant', hint: 'Vous cherchez quelque chose ? Dites-le à vos voisins.' }
+  if (category !== 'all') return { title: 'Rien dans cette catégorie pour l’instant', hint: 'Essayez une autre catégorie, ou élargissez la distance.' }
+  if (kind === 'all') return { title: 'Rien près de chez vous pour l’instant', hint: 'Vous pouvez être le premier. Quelques idées :' }
+  return { title: 'Aucune annonce de ce type', hint: 'Essayez « Tout », ou élargissez la distance.' }
+}
+
+/** Message proposé à celui qui a ce qu'une demande recherche. Modifiable avant l'envoi. */
+export function offerMessage(post: Pick<Post, 'title'>): string {
+  return `Bonjour, j’ai peut-être ce que vous cherchez : « ${post.title} ». Quand seriez-vous disponible pour en parler ?`
+}
 
 export const RADII = [5, 10, 25] as const
 export const DEFAULT_RADIUS = 10
@@ -25,7 +48,7 @@ export function parseRadius(v: unknown): number {
 
 export const CONDUCT_RULES: string[] = [
   'Soyez poli. Pas d’insultes ni de harcèlement.',
-  'Rien ne se vend : dons, échanges, prêts et questions seulement.',
+  'Rien ne se vend : dons, échanges, prêts, demandes et questions seulement.',
   'Ne donnez ni adresse, ni téléphone, ni e-mail dans une annonce. Utilisez les messages privés.',
   'Signalez les plantes toxiques ou envahissantes. Ne proposez rien de dangereux.',
 ]

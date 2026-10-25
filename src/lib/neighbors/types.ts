@@ -1,8 +1,22 @@
 // Entraide entre voisins : types et plafonds partagés (miroir des contraintes SQL de supabase/neighbors/migrations).
 
-export type PostKind = 'don' | 'echange' | 'pret' | 'question'
-export const POST_KINDS: readonly PostKind[] = ['don', 'echange', 'pret', 'question']
-export const POST_KIND_LABELS: Record<PostKind, string> = { don: 'Je donne', echange: 'J’échange', pret: 'Je prête', question: 'Je pose une question' }
+export type PostKind = 'don' | 'echange' | 'pret' | 'question' | 'cherche'
+export const POST_KINDS: readonly PostKind[] = ['don', 'echange', 'pret', 'question', 'cherche']
+export const POST_KIND_LABELS: Record<PostKind, string> = { don: 'Je donne', echange: 'J’échange', pret: 'Je prête', question: 'Je pose une question', cherche: 'Je cherche' }
+
+/** Catégories d'annonce (miroir de `posts_category_check`). Facultatives, sauf pour « Je cherche ». */
+export type PostCategory = 'graines' | 'plantes' | 'compost' | 'outils' | 'materiel' | 'services' | 'autre'
+export const POST_CATEGORIES: readonly { id: PostCategory; label: string }[] = [
+  { id: 'graines', label: 'Graines' },
+  { id: 'plantes', label: 'Plantes et boutures' },
+  { id: 'compost', label: 'Compost et terreau' },
+  { id: 'outils', label: 'Outils' },
+  { id: 'materiel', label: 'Pots, grillage et autre matériel' },
+  { id: 'services', label: 'Un coup de main' },
+  { id: 'autre', label: 'Autre chose' },
+]
+export const POST_CATEGORY_LABELS = Object.fromEntries(POST_CATEGORIES.map((c) => [c.id, c.label])) as Record<PostCategory, string>
+export const isPostCategory = (v: unknown): v is PostCategory => typeof v === 'string' && POST_CATEGORIES.some((c) => c.id === v)
 
 /** `hidden` = masquée par la modération (visible de son seul auteur). */
 export type PostStatus = 'open' | 'closed' | 'hidden'
@@ -51,6 +65,8 @@ export interface Post {
   /** Vrai si l'annonce est celle de l'utilisateur connecté. */
   mine: boolean
   kind: PostKind
+  /** Null pour les annonces d'avant les catégories, et quand l'auteur n'en a pas choisi. */
+  category: PostCategory | null
   title: string
   body: string
   speciesId: string | null
@@ -68,12 +84,15 @@ export interface Post {
 
 export interface ListPostsOptions {
   kind?: PostKind
+  category?: PostCategory
   /** Rayon en km (défaut 10, max 50). */
   radiusKm?: number
 }
 
 export interface NewPost {
   kind: PostKind
+  /** Obligatoire pour « Je cherche », facultative sinon. */
+  category?: PostCategory
   title: string
   body?: string
   speciesId?: string

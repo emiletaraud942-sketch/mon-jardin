@@ -2,7 +2,7 @@
 // Les scénarios hostiles réels sont dans supabase/neighbors/tests/ (run.sh sur un Postgres jetable).
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { NEIGHBORS_LIMITS as L } from './types'
+import { NEIGHBORS_LIMITS as L, POST_CATEGORIES, POST_KINDS } from './types'
 
 const sql = readFileSync('supabase/neighbors/migrations/20261023000000_neighbors.sql', 'utf8')
 const code = sql.replace(/--.*$/gm, '') // sans commentaires
@@ -88,5 +88,36 @@ describe('migration entraide : durcissement', () => {
         expect(code, name).toMatch(new RegExp(`drop (trigger|policy) if exists ${name}\\b`))
       } else expect(stmt).toMatch(/if not exists|or replace/)
     }
+  })
+})
+
+describe('migration entraide v2 : « Je cherche » et catégories', () => {
+  const sql2 = readFileSync('supabase/neighbors/migrations/20261025000000_neighbors_v2.sql', 'utf8')
+  const code2 = sql2.replace(/--.*$/gm, '')
+  const list = (re: RegExp) => [...(re.exec(code2)?.[1] ?? '').matchAll(/'(\w+)'/g)].map((m) => m[1])
+
+  it('les types et les catégories de la base sont ceux du client', () => {
+    expect(list(/posts_kind_check\s+check \(kind in \(([^)]*)\)/)).toEqual([...POST_KINDS])
+    expect(list(/posts_category_check\s+check \(category is null or category in \(([^)]*)\)/)).toEqual(POST_CATEGORIES.map((c) => c.id))
+  })
+  it('une demande exige une catégorie, les anciennes annonces gardent null', () => {
+    expect(code2).toMatch(/check \(kind <> 'cherche' or category is not null\)/)
+    expect(code2).toMatch(/add column if not exists category text;/)
+    expect(code2).not.toMatch(/category text not null/)
+  })
+  it('seul le droit d’insertion de la colonne category est ajouté', () => {
+    expect([...code2.matchAll(/grant ([^;]*);/g)].map((m) => m[1])).toEqual(['insert (category) on public.posts to authenticated'])
+  })
+  it('rejouable : colonne, index et contraintes protégés ; la v1 n’est pas modifiée', () => {
+    expect(code2).toMatch(/drop constraint if exists posts_kind_check/)
+    expect(code2).toMatch(/drop constraint if exists posts_category_check/)
+    expect(code2).toMatch(/drop constraint if exists posts_cherche_category_check/)
+    expect(code2).toMatch(/create index if not exists posts_category_idx/)
+    expect(sql).not.toMatch(/cherche|category/)
+  })
+  it('aucune suppression de données, aucune politique ni fonction nouvelle', () => {
+    expect(code2).not.toMatch(/\bdelete\b/i)
+    expect(code2).not.toMatch(/\bdrop (table|column|policy|trigger|function|index)\b/i)
+    expect(code2).not.toMatch(/create (policy|function|or replace function|trigger)/i)
   })
 })
