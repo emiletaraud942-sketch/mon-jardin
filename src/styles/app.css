@@ -3369,3 +3369,100 @@ dialog.modal.full .modal-body {
   height: 42dvh;
   object-fit: cover;
 }
+
+/* ---------- Placement précis : aimant, viseur, règle, grille, incertitude ---------- */
+.map-aid {
+  gap: 6px;
+  padding: 6px;
+  flex-wrap: wrap;
+}
+.map-aid .btn.small {
+  min-height: 44px;
+}
+/* Viseur fixe au centre de la carte (mode « Viser »). */
+.aim-cross {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 56px;
+  height: 56px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 4;
+}
+.aim-cross::before,
+.aim-cross::after {
+  content: '';
+  position: absolute;
+  background: var(--sun);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 65%);
+}
+.aim-cross::before {
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  transform: translateX(-50%);
+}
+.aim-cross::after {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  transform: translateY(-50%);
+}
+/* Distances affichées pendant le placement. */
+.dist-label {
+  pointer-events: none;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+  z-index: 3;
+}
+.dist-label.limite {
+  border-color: var(--sun);
+}
+.dist-label.limite.warn {
+  border-color: var(--cta);
+  color: var(--cta);
+}
+.pending-card {
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+}
+.pending-card .btn {
+  min-height: 44px;
+}
+@media (min-width: 761px) {
+  .pending-card {
+    right: auto;
+    max-width: 420px;
+  }
+}
+@media (max-width: 760px) {
+  .pending-card {
+    bottom: 102px;
+  }
+}
+.measure-box .input {
+  min-height: 44px;
+}
+.measure-list li {
+  padding: 2px 0;
+}
+.measure-list .btn {
+  min-height: 44px;
+  min-width: 44px;
+  flex: none;
+}

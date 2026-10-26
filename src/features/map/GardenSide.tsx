@@ -9,6 +9,7 @@ import { closePlantSheet, setUi, startPlacing, stopPlacing, useUi } from '../../
 import type { Garden } from '../../types'
 import { PlantPanel, plantName } from '../plants/PlantPanel'
 import { openScan } from '../scan/scanUi'
+import { placeAtAim } from './aimBridge'
 
 const MAX_LISTED = 60
 
@@ -90,7 +91,7 @@ export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
 
 /** Consigne affichée tant qu'une plante est à placer ou à déplacer : grande, sur deux lignes, avec « Annuler ». */
 export function PlacingBanner() {
-  const { tab, placingSpeciesId, placingCustomName, placingSeries, movingPlantId } = useUi()
+  const { tab, placingSpeciesId, placingCustomName, placingSeries, movingPlantId, aim } = useUi()
   const moving = useStore((s) => (movingPlantId ? s.plants.find((p) => p.id === movingPlantId) : undefined))
   // En Vue 3D, la scène affiche sa propre consigne : une seule bannière.
   if (tab === '3d' || (!placingSpeciesId && !movingPlantId)) return null
@@ -103,8 +104,13 @@ export function PlacingBanner() {
     <div className="floating placing-banner" role="status">
       <Icon name={movingPlantId ? 'move' : 'pin'} size={24} />
       <span className="placing-text">
-        <strong>{movingPlantId ? `Touchez sur la carte le nouvel emplacement de ${yourPlant(name)}.` : `Touchez sur la carte l’endroit où se trouve ${yourPlant(name)}.`}</strong>
-        {!movingPlantId && (
+        <strong>{aim ? `Déplacez la carte : le viseur doit être sur l’endroit de ${yourPlant(name)}.` : movingPlantId ? `Touchez sur la carte le nouvel emplacement de ${yourPlant(name)}.` : `Touchez sur la carte l’endroit où se trouve ${yourPlant(name)}.`}</strong>
+        {aim && (
+          <button className="btn primary" style={{ marginTop: 6, marginRight: 8 }} onClick={placeAtAim}>
+            <Icon name="pin" size={18} /> Placer ici
+          </button>
+        )}
+        {!movingPlantId && !aim && (
           <button className="btn small" style={{ marginTop: 6 }} onClick={() => openScan('mesures', { kind: 'new' })}>
             Placer par mesures
           </button>
