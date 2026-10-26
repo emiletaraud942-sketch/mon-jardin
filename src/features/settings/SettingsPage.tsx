@@ -27,6 +27,7 @@ import { hasConsent } from '../../lib/consent'
 import { ConsentDialog } from '../legal/ConsentDialog'
 import { LegalLinks } from '../legal/LegalLinks'
 import { FAIL_HELP } from './createGarden'
+import { ScanCard } from '../scan/ScanCard'
 import { removeGardenData, photosOf, restoreGardenData } from './gardenDelete'
 import { uniqueGardenName } from './gardenName'
 import { backupErrorNote, describeCounts, importQuestion } from './importSummary'
@@ -510,6 +511,7 @@ export function SettingsPage({ garden }: { garden: Garden }) {
         <div className="stack" style={{ gap: 12 }}>
           <Backup />
           <GardenInfo garden={garden} />
+          <ScanCard garden={garden} />
           <div className="card" ref={addRef}>
             <h2>Ajouter un autre jardin</h2>
             {adding ? (

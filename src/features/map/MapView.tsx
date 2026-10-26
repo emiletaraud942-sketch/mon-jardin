@@ -17,6 +17,9 @@ import { GardenSide, PlacingBanner, useSheetHead } from './GardenSide'
 import { SidePanel } from './SidePanel'
 import { movePlant, placePlant } from './placing'
 import { dragThresholdPx, nudgePosition } from './nudge'
+import { loadQueue, useScanQueue } from '../scan/queueStore'
+import { forGarden } from '../scan/queue'
+import { openScan } from '../scan/scanUi'
 
 type Feature = GeoJSON.Feature<GeoJSON.Polygon, Record<string, unknown>>
 
@@ -185,6 +188,8 @@ export function MapView({ garden }: { garden: Garden }) {
     return () => {
       markers.current.forEach((mk) => mk.remove())
       markers.current.clear()
+      scanMarkers.current.forEach((mk) => mk.remove())
+      scanMarkers.current.clear()
       m.remove()
       map.current = undefined
       setReady(false)
@@ -308,6 +313,48 @@ export function MapView({ garden }: { garden: Garden }) {
   }, [plants, selectedPlantId, garden.center, ready, names])
 
   // « 📍 plante » d'une tâche, « Voir sur la carte » : la carte se centre sur la plante.
+  // Plantes scannées « à valider » : pastilles en pointillés, un appui rouvre la revue.
+  const scanQueue = useScanQueue()
+  const scanMarkers = useRef(new Map<string, maplibregl.Marker>())
+  useEffect(() => {
+    void loadQueue()
+  }, [])
+  useEffect(() => {
+    const m = map.current
+    if (!m || !ready) return
+    const live = forGarden(scanQueue, garden.id).filter((i) => i.status === 'a-valider' || i.status === 'en-attente')
+    const seen = new Set<string>()
+    live.forEach((i, n) => {
+      seen.add(i.id)
+      const ll = toLonLat(garden.center, i.position)
+      let mk = scanMarkers.current.get(i.id)
+      if (!mk) {
+        const hit = document.createElement('button')
+        hit.className = 'scan-pending-hit main'
+        hit.type = 'button'
+        hit.style.border = '0'
+        hit.style.background = 'transparent'
+        hit.appendChild(Object.assign(document.createElement('span'), { className: 'scan-pending' }))
+        hit.addEventListener('click', (ev) => {
+          ev.stopPropagation()
+          openScan('scanner')
+        })
+        mk = new maplibregl.Marker({ element: hit }).setLngLat([ll.lon, ll.lat]).addTo(m)
+        scanMarkers.current.set(i.id, mk)
+      } else mk.setLngLat([ll.lon, ll.lat])
+      const hit = mk.getElement()
+      hit.setAttribute('aria-label', `Plante à valider ${n + 1}. Toucher pour la revoir.`)
+      hit.title = 'Plante à valider'
+      ;(hit.firstElementChild as HTMLElement).textContent = String(n + 1)
+    })
+    for (const [id, mk] of scanMarkers.current) {
+      if (!seen.has(id)) {
+        mk.remove()
+        scanMarkers.current.delete(id)
+      }
+    }
+  }, [scanQueue, garden.id, garden.center, ready])
+
   const { focusPlantId } = useUi()
   useEffect(() => {
     const m = map.current

@@ -4,7 +4,7 @@ import type { XY } from '../../types'
 
 /** « 3,5 », « 3.5 », « 3,5 m » → 3.5. `undefined` si vide, illisible, nul ou au-delà de 200 m. */
 export function parseMeters(text: string): number | undefined {
-  const t = text.trim().replace(/\s*m(ètres?|etres?)?\.?$/i, '').replace(',', '.').replace(/\s/g, '')
+  const t = text.trim().replace(/\s*m(ètres?|etres?)?\.?$/i, '').replace(',', '.')
   if (!/^\d+(\.\d+)?$|^\.\d+$/.test(t)) return undefined
   const n = Number(t)
   return Number.isFinite(n) && n > 0 && n <= 200 ? n : undefined

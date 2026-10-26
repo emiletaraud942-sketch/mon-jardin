@@ -8,6 +8,7 @@ import { useGardenPlants, useStore } from '../../lib/store'
 import { closePlantSheet, setUi, startPlacing, stopPlacing, useUi } from '../../lib/ui'
 import type { Garden } from '../../types'
 import { PlantPanel, plantName } from '../plants/PlantPanel'
+import { openScan } from '../scan/scanUi'
 
 const MAX_LISTED = 60
 
@@ -41,6 +42,9 @@ export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
       <button className="btn primary" onClick={() => setPicking(true)}>
         <Icon name="plus" /> Ajouter une plante au jardin
       </button>
+      <button className="btn" onClick={() => openScan('menu')}>
+        <Icon name="camera" /> Scanner mon jardin
+      </button>
       <p className="muted small">{hint}</p>
       {plants.length > 0 && (
         <ul className="list small">
@@ -66,6 +70,10 @@ export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
         <SpeciesPicker
           title="Quelle plante ajouter ?"
           onClose={() => setPicking(false)}
+          onScan={() => {
+            setPicking(false)
+            openScan('menu')
+          }}
           onPick={(s) => {
             setPicking(false)
             startPlacing(s.id)
@@ -98,6 +106,11 @@ export function PlacingBanner() {
         <strong>{movingPlantId ? `Touchez sur la carte le nouvel emplacement de ${yourPlant(name)}.` : `Touchez sur la carte l’endroit où se trouve ${yourPlant(name)}.`}</strong>
         {placingSeries && placingSeries.count > 0 && <span className="small muted" style={{ display: 'block' }}>{placingSeries.count} plante{placingSeries.count > 1 ? 's' : ''} placée{placingSeries.count > 1 ? 's' : ''}. Touchez encore pour en ajouter.</span>}
       </span>
+      {!movingPlantId && (
+        <button className="btn" onClick={() => openScan('mesures', { kind: 'new' })}>
+          Par mesures
+        </button>
+      )}
       <button className={'btn' + (placingSeries ? ' primary' : '')} onClick={stopPlacing}>
         {placingSeries ? 'Terminé' : 'Annuler'}
       </button>

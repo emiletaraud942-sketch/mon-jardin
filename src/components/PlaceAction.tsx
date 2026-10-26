@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { startPlacing } from '../lib/ui'
+import { openScan } from '../features/scan/scanUi'
 import { UNKNOWN_SPECIES_ID } from '../lib/customName'
 import { SpeciesPicker } from './SpeciesPicker'
 
@@ -15,6 +16,10 @@ export function PlaceAction({ children, className = 'btn primary', title = 'Quel
         <SpeciesPicker
           title={title}
           onClose={() => setPicking(false)}
+          onScan={() => {
+            setPicking(false)
+            openScan('menu')
+          }}
           onPick={(s) => {
             setPicking(false)
             startPlacing(s.id)

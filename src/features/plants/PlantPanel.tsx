@@ -7,6 +7,7 @@ import { addPlant, getState, removePlant, updatePlant, useGardenPlants } from '.
 import { showToast } from '../../lib/toast'
 import { cleanCustomName } from '../../lib/customName'
 import { frMeters, frNumber } from '../../lib/format'
+import { openScan } from '../scan/scanUi'
 import { closePlantSheet, openSpecies, setUi, startMoving, startPlacing } from '../../lib/ui'
 import { plantAgeYears, plantSizeAt } from '../../engine/growth'
 import { companionReport, legalDistance } from '../../engine/planting'
@@ -220,6 +221,9 @@ export function PlantPanel({ garden, plant, onClose }: { garden: Garden; plant: 
       <div className="stack panel-actions">
         <button className="btn" onClick={() => startMoving(plant.id)}>
           <Icon name="move" size={16} /> Déplacer cette plante
+        </button>
+        <button className="btn" onClick={() => openScan('mesures', { kind: 'plant', plantId: plant.id })}>
+          <Icon name="pin" size={16} /> Placer par mesures
         </button>
         <button className="btn" onClick={() => startPlacing(plant.speciesId, { customName: plant.customName, series: true })}>
           <Icon name="plus" size={16} /> Ajouter une autre « {plantName(plant)} »

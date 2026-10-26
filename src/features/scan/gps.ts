@@ -90,6 +90,9 @@ export function summarizeFixes(center: LonLat, fixes: GpsFix[]): Sample | undefi
   return { x: avg.x, y: avg.y, spreadM: avg.spreadM, accuracyM, quality: gpsQuality(accuracyM), n: pts.length }
 }
 
+/** Qualité d'un relevé d'après sa précision annoncée. */
+export const gpsQualityOf = (accuracyM: number): Quality => gpsQuality(accuracyM)
+
 export const QUALITY_LABEL: Record<Quality, string> = { bonne: 'Signal bon', moyenne: 'Signal moyen', faible: 'Signal faible' }
 export const QUALITY_HELP: Record<Quality, string> = {
   bonne: 'Vous pouvez continuer.',

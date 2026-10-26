@@ -4,6 +4,7 @@ import { identifyPlant } from '../../lib/plantnet'
 import { hasConsent } from '../../lib/consent'
 import { SCAN_QUEUE_KEY } from '../../lib/store'
 import { deletePhoto, getPhoto } from '../../lib/photos'
+import { dedupeQueue } from './dedupe'
 import { applyResults, dueItems, markFailed, markNeedsConsent, sanitizeQueue, type Queue, type Suggestion } from './queue'
 
 // File d'attente partagée entre l'écran de scan et la carte. Local-first : tout reste dans IndexedDB.
@@ -15,6 +16,8 @@ let loading: Promise<void> | undefined
 let version = 0
 const listeners = new Set<() => void>()
 let running = false
+/** Pause entre deux identifications d'images de vidéo (ms). */
+export const VIDEO_PAUSE_MS = 1500
 
 function emit() {
   version++
@@ -99,7 +102,9 @@ export async function processQueue(): Promise<void> {
         const blob = await getPhoto(next.photoId)
         if (!blob) throw new Error('Photo introuvable')
         const results = await identifyPlant([blob])
-        updateQueue((q) => applyResults(q, next.id, toSuggestions(results)))
+        updateQueue((q) => dedupeQueue(applyResults(q, next.id, toSuggestions(results))))
+        // Images d'une vidéo : jamais en rafale, une pause entre deux envois (quota Pl@ntNet partagé).
+        if (next.from === 'video') await new Promise((r) => setTimeout(r, VIDEO_PAUSE_MS))
       } catch (e) {
         console.warn('Identification impossible', e)
         updateQueue((q) => markFailed(q, next.id, { offline: !isOnline(), now: Date.now() }))

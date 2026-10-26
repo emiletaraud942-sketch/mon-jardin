@@ -25,11 +25,14 @@ export function SpeciesPicker({
   title = 'Choisir une plante',
   onPick,
   onPickCustom,
+  onScan,
   onClose,
 }: {
   title?: string
   onPick: (s: Species) => void
   onPickCustom?: (name: string) => void
+  /** Bouton « Scanner mon jardin » (recalage, photos, mesures). */
+  onScan?: () => void
   onClose: () => void
 }) {
   const [q, setQ] = useState('')
@@ -51,6 +54,11 @@ export function SpeciesPicker({
           ))}
         </select>
       </div>
+      )}
+      {onScan && custom === undefined && (
+        <button className="btn custom-open" onClick={onScan}>
+          <Icon name="camera" /> Scanner mon jardin
+        </button>
       )}
       {onPickCustom && custom === undefined && (
         <button className="btn custom-open" onClick={() => setCustom(cleanCustomName(q))}>

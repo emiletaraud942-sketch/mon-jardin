@@ -30,9 +30,11 @@ import { readRadius } from './features/neighbors/prefs'
 import { useConsents } from './lib/consent'
 import { InstallButton } from './components/InstallButton'
 import { InviteButton } from './components/InviteButton'
+import { openScan, useScanUi } from './features/scan/scanUi'
 
 const View3D = lazy(() => import('./features/garden3d/View3D'))
 const NeighborsPage = lazy(() => import('./features/neighbors/NeighborsPage').then((m) => ({ default: m.NeighborsPage })))
+const ScanHost = lazy(() => import('./features/scan/ScanHost'))
 const MapView = lazy(() => import('./features/map/MapView').then((m) => ({ default: m.MapView })))
 
 const Loading = ({ label }: { label: string }) => (
@@ -89,6 +91,15 @@ function MoreSheet({ onClose, onNewGarden, newsCount }: { onClose: () => void; o
           className="btn more-item"
           onClick={() => {
             onClose()
+            openScan('menu')
+          }}
+        >
+          <Icon name="camera" /> Scanner mon jardin
+        </button>
+        <button
+          className="btn more-item"
+          onClick={() => {
+            onClose()
             onNewGarden()
           }}
         >
@@ -112,6 +123,7 @@ export function App() {
   const newsCount = useNeighborsBadge(neighborsEnabled && voisins, readRadius)
   // Alertes de nouveaux messages : le service worker prévient l'appli ouverte (pastille, clic sur l'alerte).
   useEffect(() => (neighborsEnabled && voisins ? startPushBridge() : undefined), [voisins])
+  const scanOpen = !!useScanUi().screen
   const [moreOpen, setMoreOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const mainRef = useRef<HTMLElement>(null)
@@ -332,6 +344,11 @@ export function App() {
       </div>
       <ToastHost />
       <LegalModal />
+      {scanOpen && (
+        <Suspense fallback={null}>
+          <ScanHost />
+        </Suspense>
+      )}
       {helpOpen && <HelpSheet tab={tab} onClose={() => setHelpOpen(false)} />}
       {moreOpen && <MoreSheet onClose={() => setMoreOpen(false)} onNewGarden={startNewGarden} newsCount={newsCount} />}
     </div>

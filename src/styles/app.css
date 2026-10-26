@@ -3108,3 +3108,264 @@ details > summary {
   vertical-align: middle;
   color: var(--accent);
 }
+
+/* ---------- Scanner mon jardin ---------- */
+dialog.modal.full .modal-body {
+  padding: 0;
+}
+.scan-layout {
+  display: flex;
+  flex-direction: column;
+}
+.scan-map {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 38dvh;
+  min-height: 220px;
+  background: var(--surface-2);
+  flex: none;
+}
+.scan-panel {
+  padding: 14px 16px 18px;
+  gap: 12px;
+}
+.scan-panel h3 {
+  font-size: 1.1rem;
+}
+.scan-steps {
+  margin: 0;
+  padding-left: 22px;
+  display: grid;
+  gap: 10px;
+}
+.scan-steps li::marker {
+  font-weight: 800;
+  color: var(--accent);
+}
+.scan-foot {
+  margin-top: 4px;
+}
+.scan-meter {
+  display: grid;
+  gap: 6px;
+}
+.scan-meter .gauge {
+  margin-bottom: 0;
+}
+.scan-photo {
+  cursor: pointer;
+  text-align: center;
+}
+.scan-photo.is-disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.scan-offset summary {
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 700;
+}
+.scan-offset .stack {
+  padding: 4px 0 8px;
+}
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--tap);
+}
+.check-row input {
+  width: 22px;
+  height: 22px;
+}
+.scan-list {
+  display: grid;
+  gap: 8px;
+}
+.scan-item {
+  border: var(--border-w) solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+.scan-item.open {
+  border-color: var(--accent);
+  border-width: 2px;
+}
+.scan-item-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 64px;
+  padding: 8px 10px;
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.scan-item-head .photo-thumb {
+  width: 48px;
+  height: 48px;
+  flex: none;
+}
+.scan-item-text {
+  display: grid;
+  min-width: 0;
+}
+.scan-item-text strong {
+  overflow-wrap: anywhere;
+}
+.scan-item-body {
+  padding: 0 12px 12px;
+  gap: 10px;
+}
+.scan-num {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+  border: 2px dashed var(--border-strong);
+  font-weight: 800;
+  font-size: 0.875rem;
+}
+.scan-alts .btn {
+  min-height: var(--tap);
+}
+.scan-summary {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+.scan-ref {
+  border: var(--border-w) solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 10px 12px 12px;
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  min-width: 0;
+}
+.scan-ref.active {
+  border-color: var(--accent);
+  border-width: 2px;
+}
+.scan-ref legend {
+  font-weight: 800;
+  padding: 0 6px;
+}
+/* Repères sur la carte */
+.scan-dot {
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 0.9375rem;
+  color: var(--on-cta);
+  background: var(--cta);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 50%);
+  pointer-events: none;
+}
+.scan-dot[data-tone='verite'] {
+  background: var(--btn-green);
+  color: var(--on-btn-green);
+}
+.scan-dot[data-tone='choix'] {
+  background: var(--sun);
+  color: #2b2a22;
+}
+.scan-dot[data-tone='ref'] {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--cta);
+}
+/* Plante à valider : pastille en pointillés, bien distincte d'une plante placée */
+.scan-pending-hit {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  cursor: grab;
+  border-radius: 50%;
+}
+.scan-pending-hit:focus-visible {
+  outline: 3px solid var(--focus);
+}
+.scan-pending {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  color: var(--text);
+  border: 3px dashed var(--cta);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 50%);
+  font-weight: 800;
+  font-size: 0.9375rem;
+}
+.scan-pending-hit.selected .scan-pending {
+  background: var(--sun);
+  color: #2b2a22;
+  border-style: solid;
+  transform: scale(1.2);
+}
+.scan-pending-hit.main .scan-pending {
+  width: 30px;
+  height: 30px;
+}
+@media (max-width: 760px) {
+  dialog.modal.full {
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    border: 0;
+  }
+  dialog.modal.full[open] {
+    display: flex;
+    flex-direction: column;
+  }
+  dialog.modal.full .modal-body {
+    max-height: none;
+    flex: 1;
+    min-height: 0;
+  }
+}
+/* Résultat et consigne en haut du panneau : toujours visibles sans défiler. */
+.scan-result {
+  order: -1;
+  gap: 8px;
+}
+.scan-result:empty {
+  display: none;
+}
+.scan-video-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #000;
+  flex: none;
+}
+.scan-video {
+  display: block;
+  width: 100%;
+  height: 42dvh;
+  object-fit: cover;
+}

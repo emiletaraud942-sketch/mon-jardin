@@ -38,17 +38,21 @@ export interface ScanItem {
   plantStatus: 'en-place' | 'projet'
   /** Plante créée à la validation. */
   plantId?: string
+  /** D'où vient la photo : prise à la main, ou image tirée d'une vidéo. */
+  from?: 'photo' | 'video'
+  /** Doublon regroupé avec cet autre élément (scan en filmant). */
+  mergedInto?: string
 }
 
 export const MAX_ATTEMPTS = 5
 /** Attente avant réessai : 10 s, 30 s, 2 min, 5 min, 10 min. */
 export const BACKOFF_MS = [10_000, 30_000, 120_000, 300_000, 600_000]
-/** Au plus 40 éléments en attente de revue : au-delà, on demande de finir la revue. */
-export const MAX_ITEMS = 40
+/** Au plus 60 éléments en attente de revue : au-delà, on demande de finir la revue. */
+export const MAX_ITEMS = 60
 
 export type Queue = ScanItem[]
 
-export function newItem(p: { id: string; gardenId: string; photoId: string; position: XY; accuracyM: number; now?: Date; plantStatus?: 'en-place' | 'projet' }): ScanItem {
+export function newItem(p: { id: string; gardenId: string; photoId: string; position: XY; accuracyM: number; now?: Date; plantStatus?: 'en-place' | 'projet'; from?: 'photo' | 'video' }): ScanItem {
   return {
     id: p.id,
     gardenId: p.gardenId,
@@ -61,6 +65,7 @@ export function newItem(p: { id: string; gardenId: string; photoId: string; posi
     attempts: 0,
     suggestions: [],
     plantStatus: p.plantStatus ?? 'en-place',
+    from: p.from,
   }
 }
 
@@ -210,6 +215,8 @@ export function sanitizeQueue(raw: unknown): Queue {
       customName: typeof r.customName === 'string' ? r.customName.slice(0, 80) : undefined,
       plantStatus: r.plantStatus === 'projet' ? 'projet' : 'en-place',
       plantId: typeof r.plantId === 'string' ? r.plantId : undefined,
+      from: r.from === 'video' ? 'video' : undefined,
+      mergedInto: typeof r.mergedInto === 'string' ? r.mergedInto : undefined,
     })
   }
   return out

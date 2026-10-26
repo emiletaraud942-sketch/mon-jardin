@@ -14,9 +14,19 @@ let lastSeriesToast: number | undefined
  * Hors placement en série, la plante est sélectionnée (sa fiche s'ouvre). En série, le mode reste actif
  * pour poser la suivante ; un message permet d'annuler la dernière.
  */
-export function placePlant(garden: Garden, speciesId: string, position: XY, status: 'en-place' | 'projet' = 'en-place', opts: { tab?: Tab } = {}) {
+export function placePlant(
+  garden: Garden,
+  speciesId: string,
+  position: XY,
+  status: 'en-place' | 'projet' = 'en-place',
+  opts: { tab?: Tab; silent?: boolean; customName?: string; photos?: string[] } = {},
+): string {
   const id = uid()
-  const { placingCustomName, pendingPhotos, placingSeries } = getUi()
+  const ui = getUi()
+  // `silent` (scan des plantes) : le nom et les photos viennent de l'appelant, l'état d'interface n'est pas touché.
+  const placingCustomName = opts.silent ? opts.customName : ui.placingCustomName
+  const pendingPhotos = opts.silent ? opts.photos : ui.pendingPhotos
+  const placingSeries = opts.silent ? undefined : ui.placingSeries
   const name = placingCustomName || SPECIES_BY_ID[speciesId]?.nomCommun || 'Plante'
   addPlant({
     customName: placingCustomName,
@@ -28,13 +38,14 @@ export function placePlant(garden: Garden, speciesId: string, position: XY, stat
     status,
     photos: pendingPhotos ?? [],
   })
+  if (opts.silent) return id
   if (placingSeries) {
     const count = placingSeries.count + 1
     setUi({ placingSeries: { count }, pendingPhotos: undefined, selectedPlantId: undefined })
     // Un seul message à la fois pour la série : le précédent est remplacé (sa plante reste placée).
     if (lastSeriesToast !== undefined) dismissToast(lastSeriesToast)
     lastSeriesToast = showToast({ message: `Plante placée : ${name} (${count} de suite).`, actionLabel: 'Annuler', onAction: () => removePlant(id) })
-    return
+    return id
   }
   setUi({ placingSpeciesId: undefined, placingCustomName: undefined, pendingPhotos: undefined, selectedPlantId: id, ...(opts.tab ? { tab: opts.tab } : {}) })
   if (status === 'projet') {
@@ -44,6 +55,7 @@ export function placePlant(garden: Garden, speciesId: string, position: XY, stat
       onAction: () => updatePlant(id, { status: 'en-place' }),
     })
   }
+  return id
 }
 
 /** « Déplacer cette plante » : la plante prend la position touchée ; un message permet de la remettre où elle était. */
