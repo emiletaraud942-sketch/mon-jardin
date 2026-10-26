@@ -4,7 +4,7 @@
 //
 // ÉTAT DE VÉRIFICATION (octobre 2026) : le conteneur de dev n'atteint pas data.geopf.fr (403 du tunnel).
 // RIEN ci-dessous n'est vérifié sur le service réel. Éléments SUPPOSÉS d'après la documentation publique :
-// - noms de couches WMS-Raster (constantes LIDAR_LAYERS, à confirmer par GetCapabilities) ;
+// - noms de couches WMS-Raster (constantes LIDAR_LAYERS : noms confirmés par GetCapabilities, suffixe .WGS = France métropolitaine ; format x-bil encore à confirmer) ;
 // - format `image/x-bil;bits=32` : float32 little-endian brut, première ligne = nord, sans en-tête
 //   (même format que RGE ALTI sur la Géoplateforme), valeur « pas de donnée » ≤ -9999 ;
 // - couverture progressive du territoire : hors zone, le service renvoie une erreur XML ou du « pas de donnée ».
@@ -15,9 +15,9 @@ import { fetchWithTimeout } from './http'
 import { heightAt } from './terrain'
 
 export const LIDAR_LAYERS = {
-  mnt: 'IGNF_LIDAR-HD_MNT_ELEVATION.ELEVATIONGRIDCOVERAGE',
-  mns: 'IGNF_LIDAR-HD_MNS_ELEVATION.ELEVATIONGRIDCOVERAGE',
-  mnh: 'IGNF_LIDAR-HD_MNH_ELEVATION.ELEVATIONGRIDCOVERAGE',
+  mnt: 'IGNF_LIDAR-HD_MNT_ELEVATION.ELEVATIONGRIDCOVERAGE.WGS',
+  mns: 'IGNF_LIDAR-HD_MNS_ELEVATION.ELEVATIONGRIDCOVERAGE.WGS',
+  mnh: 'IGNF_LIDAR-HD_MNH_ELEVATION.ELEVATIONGRIDCOVERAGE.WGS',
 } as const
 export type LidarLayer = keyof typeof LIDAR_LAYERS
 
