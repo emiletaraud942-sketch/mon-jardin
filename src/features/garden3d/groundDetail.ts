@@ -133,8 +133,8 @@ export function createGroundDetail(): GroundDetail {
 {
   // Herbe moins uniforme : grandes plaques plus vertes ou plus sèches (bruit procédural, sans texture).
   float pn = pjNoise(vDetailXZ * 0.05) * 0.6 + pjNoise(vDetailXZ * 0.19 + 7.3) * 0.3 + pjNoise(vDetailXZ * 0.7 + 3.1) * 0.1 - 0.5;
-  vec3 patch = mix(vec3(0.9, 1.0, 0.88), vec3(1.1, 1.05, 0.8), smoothstep(-0.14, 0.14, pn));
-  diffuseColor.rgb *= mix(vec3(1.0), patch, uNoise);
+  vec3 patchTint = mix(vec3(0.9, 1.0, 0.88), vec3(1.1, 1.05, 0.8), smoothstep(-0.14, 0.14, pn));
+  diffuseColor.rgb *= mix(vec3(1.0), patchTint, uNoise);
 }
 if (uWalk > 0.5) {
   float far = 1.0 - smoothstep(20.0, 70.0, vDetailDist);
