@@ -270,11 +270,11 @@ async function writeCache(key: string, data: LidarData): Promise<void> {
  */
 export async function fetchLidar(
   center: LonLat,
-  opts: { halfSizeM?: number; signal?: AbortSignal; onWarning?: (message: string, detail?: string) => void } = {},
+  opts: { halfSizeM?: number; signal?: AbortSignal; /** Ignore le cache (bouton « Actualiser »). */ force?: boolean; onWarning?: (message: string, detail?: string) => void } = {},
 ): Promise<LidarData | null> {
   const half = opts.halfSizeM ?? 60
   const key = lidarCacheKey(center, half)
-  const cached = await readCache(key)
+  const cached = opts.force ? null : await readCache(key)
   if (cached) return cached
   const n = lidarPixels(half)
   try {
