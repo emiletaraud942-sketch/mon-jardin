@@ -75,7 +75,7 @@ Les « rappels » sont une notification **locale**, au plus une fois par jour, a
 ## 8. Quotas et licences
 - **Pl@ntNet** : 500 identifications par jour pour **toute** l'appli (clé gratuite partagée). L'appli limite aussi chaque visiteur (20 demandes / 10 min par instance). Au-delà : erreur 429, retour le lendemain.
 - **Open-Meteo** : gratuit pour un usage **non commercial** uniquement (CC BY 4.0). Pour un usage commercial, il faut une clé payante ou une autre source météo.
-- **IGN Géoplateforme** : Licence Ouverte 2.0, usage commercial possible, avec mention de la source.
+- **IGN Géoplateforme** : Licence Ouverte 2.0, usage commercial possible, avec mention de la source (inclut le LiDAR HD : « © IGN – LiDAR HD », `LIDAR_ATTRIBUTION` dans `src/lib/lidar.ts`).
 - **Vercel Hobby** : usage non commercial, limites généreuses (bande passante 100 Go/mois). **Supabase gratuit** : 500 Mo de base ; un projet inactif est mis en pause après 7 jours (réactivable d'un clic).
 
 ## 9. Dépannage

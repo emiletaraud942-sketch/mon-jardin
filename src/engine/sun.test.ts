@@ -7,6 +7,7 @@ import {
   sunDirection,
   sunHoursAt,
   sunHoursGrid,
+  treeObstacles,
   type Obstacle,
 } from './sun'
 
@@ -125,6 +126,35 @@ describe('obstaclesFor', () => {
       expect(crown.baseM).toBeCloseTo(crown.topM * 0.35, 6)
       expect(crown.radiusM).toBeCloseTo(5, 0)
     }
+  })
+})
+
+describe('arbres voisins (LiDAR)', () => {
+  it('ajoute des couronnes et ignore les entrées invalides', () => {
+    const obs = treeObstacles([
+      { x: 0, y: 5, heightM: 12, radiusM: 4 },
+      { x: 0, y: 5, heightM: 1, radiusM: 4 },
+      { x: NaN, y: 5, heightM: 12, radiusM: 4 },
+    ])
+    expect(obs).toHaveLength(1)
+    expect(obs[0]).toMatchObject({ kind: 'crown', topM: 12, radiusM: 4 })
+  })
+
+  it('obstaclesFor les inclut en dernier ; sans eux rien ne change', () => {
+    const g = garden()
+    expect(obstaclesFor(g, [], {}, new Date(2026, 6, 1))).toHaveLength(0)
+    const obs = obstaclesFor(g, [], {}, new Date(2026, 6, 1), [{ x: 0, y: 5, heightM: 12, radiusM: 4 }])
+    expect(obs).toHaveLength(1)
+  })
+
+  it('un grand arbre au nord ombrage le point à midi d’hiver sans gêner l’ensoleillement d’été au sud', () => {
+    const g = garden()
+    const at = new Date(2026, 11, 21, 12)
+    const free = sunHoursAt({ x: 0, y: 0 }, g, [], at)
+    const south = treeObstacles([{ x: 0, y: -25, heightM: 15, radiusM: 5 }])
+    const north = treeObstacles([{ x: 0, y: 25, heightM: 15, radiusM: 5 }])
+    expect(sunHoursAt({ x: 0, y: 0 }, g, south, at)).toBeLessThan(free - 0.3)
+    expect(sunHoursAt({ x: 0, y: 0 }, g, north, at)).toBeCloseTo(free, 1)
   })
 })
 
