@@ -104,13 +104,13 @@ export function PlacingBanner() {
       <Icon name={movingPlantId ? 'move' : 'pin'} size={24} />
       <span className="placing-text">
         <strong>{movingPlantId ? `Touchez sur la carte le nouvel emplacement de ${yourPlant(name)}.` : `Touchez sur la carte l’endroit où se trouve ${yourPlant(name)}.`}</strong>
+        {!movingPlantId && (
+          <button className="btn small" style={{ marginTop: 6 }} onClick={() => openScan('mesures', { kind: 'new' })}>
+            Placer par mesures
+          </button>
+        )}
         {placingSeries && placingSeries.count > 0 && <span className="small muted" style={{ display: 'block' }}>{placingSeries.count} plante{placingSeries.count > 1 ? 's' : ''} placée{placingSeries.count > 1 ? 's' : ''}. Touchez encore pour en ajouter.</span>}
       </span>
-      {!movingPlantId && (
-        <button className="btn" onClick={() => openScan('mesures', { kind: 'new' })}>
-          Par mesures
-        </button>
-      )}
       <button className={'btn' + (placingSeries ? ' primary' : '')} onClick={stopPlacing}>
         {placingSeries ? 'Terminé' : 'Annuler'}
       </button>

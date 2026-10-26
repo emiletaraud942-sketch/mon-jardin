@@ -72,6 +72,7 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
   const timer = useRef<number>()
   const frames = useRef<Kept[]>([])
   const busy = useRef(false)
+  const finishing = useRef(false)
   const startedAt = useRef(0)
   const skippedRef = useRef<Record<Skipped, number>>({ floue: 0, 'sans-plante': 0 })
   const { request: askCompass } = useHeading(false)
@@ -106,11 +107,11 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
     }
     await askCompass()
     frames.current = []
+    finishing.current = false
     skippedRef.current = { floue: 0, 'sans-plante': 0 }
     setKept(0)
     setSkipped({ floue: 0, 'sans-plante': 0 })
-    if (!support) journal.current = undefined
-    else journal.current = startJournal(garden.center, setProblem)
+    journal.current = support ? undefined : startJournal(garden.center, setProblem)
     startedAt.current = Date.now()
     setStep('live')
   }
@@ -145,6 +146,8 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
   }, [step]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function finishLive() {
+    if (finishing.current) return
+    finishing.current = true
     const j = journal.current
     const track = j ? [...j.track] : []
     const heads = j ? [...j.heads] : []
