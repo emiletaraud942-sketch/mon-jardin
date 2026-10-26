@@ -12,7 +12,7 @@ import { UpdateBanner } from './components/UpdateBanner'
 import { consumeExportReminder, exportCurrentState } from './lib/backup'
 import { getLoadWarnings, getState, setActiveGarden, useActiveGarden, useGardenPlants, useStore } from './lib/store'
 import { showToast } from './lib/toast'
-import { ALWAYS_TABS, MODE_TABS, TAB_LABEL, applyDefaultMode, noteVisit, setUi, useUi, type Mode, type Tab } from './lib/ui'
+import { ALWAYS_TABS, MODE_TABS, TAB_LABEL, mobileBarTabs, mobileMenuTabs, setGuide, applyDefaultMode, noteVisit, setUi, useUi, type Mode, type Tab } from './lib/ui'
 import { Onboarding } from './features/settings/Onboarding'
 import { isDemoGarden } from './features/settings/demo'
 import { PlantsPage } from './features/plants/PlantsPage'
@@ -52,12 +52,12 @@ const NAV_ICON: Record<Tab, string> = {
 }
 const NAV: Record<Tab, { label: string; icon: string }> = Object.fromEntries((Object.keys(TAB_LABEL) as Tab[]).map((t) => [t, { label: TAB_LABEL[t], icon: NAV_ICON[t] }])) as Record<Tab, { label: string; icon: string }>
 /** Libellés plus longs du menu. « Sauvegarde et réglages » passe en tête : c'est ce que l'on cherche le plus. */
-const MORE_LABEL: Partial<Record<Tab, string>> = { catalogue: 'Catalogue des plantes', reglages: 'Sauvegarde et réglages', voisins: 'Entraide entre voisins' }
+const MORE_LABEL: Partial<Record<Tab, string>> = { '3d': 'Vue 3D de mon jardin', catalogue: 'Catalogue des plantes', reglages: 'Sauvegarde et réglages', voisins: 'Entraide entre voisins' }
 const MORE_FIRST: Tab[] = ['reglages']
 
 /** Catalogue et Réglages restent accessibles dans tous les modes : barre du bas si le mode les contient, sinon menu. */
 const extraTabs = (mode: Mode) => ALWAYS_TABS.filter((t) => !MODE_TABS[mode].includes(t) && (t !== 'voisins' || neighborsEnabled))
-const menuTabs = (mode: Mode) => [...extraTabs(mode)].sort((a, b) => Number(MORE_FIRST.includes(b)) - Number(MORE_FIRST.includes(a)))
+const menuTabs = () => [...mobileMenuTabs()].sort((a, b) => Number(MORE_FIRST.includes(b)) - Number(MORE_FIRST.includes(a)))
 
 const NEW_GARDEN = '__new'
 
@@ -70,7 +70,7 @@ const NewsBadge = ({ count }: { count: number }) =>
   ) : null
 
 function MoreSheet({ onClose, onNewGarden, newsCount }: { onClose: () => void; onNewGarden: () => void; newsCount: number }) {
-  const { tab, mode } = useUi()
+  const { tab } = useUi()
   const go = (t: Tab) => {
     onClose()
     setUi({ tab: t })
@@ -78,7 +78,7 @@ function MoreSheet({ onClose, onNewGarden, newsCount }: { onClose: () => void; o
   return (
     <Modal title="Menu" sheet onClose={onClose}>
       <div className="stack more-list">
-        {menuTabs(mode).map((t) => (
+        {menuTabs().map((t) => (
           <button key={t} className="btn more-item" aria-current={tab === t ? 'page' : undefined} onClick={() => go(t)}>
             <Icon name={NAV[t].icon} /> {MORE_LABEL[t] ?? NAV[t].label}
             {t === 'voisins' && <NewsBadge count={newsCount} />}
@@ -103,7 +103,7 @@ export function App() {
   const loaded = useStore((s) => s.loaded)
   const gardens = useStore((s) => s.gardens)
   const garden = useActiveGarden()
-  const { tab, mode, placingSpeciesId } = useUi()
+  const { tab, mode, placingSpeciesId, guide } = useUi()
   const plantCount = useGardenPlants(garden?.id).length
   const { tasks, weather, weatherLoading } = useTasks(garden)
   const { voisins } = useConsents()
@@ -240,7 +240,7 @@ export function App() {
             <ProgressCard garden={garden} />
           </div>
         )}
-        {isDemoGarden(garden) && (
+        {isDemoGarden(garden) && !guide.demoHidden && (
           <div className="alert info demo-banner" role="status">
             <span>
               <strong>Ceci est un jardin d’exemple.</strong>
@@ -248,12 +248,15 @@ export function App() {
             <button className="btn small primary" onClick={startNewGarden}>
               Créer mon vrai jardin
             </button>
+            <button className="btn small ghost demo-close" aria-label="Fermer ce bandeau" onClick={() => setGuide({ demoHidden: true })}>
+              <Icon name="x" size={16} />
+            </button>
           </div>
         )}
       </div>
       <nav className="sidenav" aria-label="Navigation principale">
         {MODE_TABS[mode].map((t) => (
-          <button key={t} className="navbtn" aria-current={tab === t ? 'page' : undefined} onClick={() => setUi({ tab: t })}>
+          <button key={t} className="navbtn hide-mobile" aria-current={tab === t ? 'page' : undefined} onClick={() => setUi({ tab: t })}>
             <Icon name={NAV[t].icon} />
             {NAV[t].label}
             {t === 'entretien' && open > 0 && (
@@ -273,15 +276,26 @@ export function App() {
         <div className="sidenav-invite hide-mobile">
           <InviteButton className="btn small" label="Faire connaître l’appli" copyLabel="Copier le lien de l’appli" />
         </div>
+        {mobileBarTabs(neighborsEnabled).map((t) => (
+          <button key={t} className="navbtn show-mobile" aria-current={tab === t ? 'page' : undefined} onClick={() => setUi({ tab: t })}>
+            <Icon name={NAV[t].icon} />
+            {NAV[t].label}
+            {t === 'entretien' && open > 0 && (
+              <span className="badge count" aria-label={`${open} tâche${open > 1 ? 's' : ''} à faire`}>
+                {open}
+              </span>
+            )}
+            {t === 'voisins' && <NewsBadge count={newsCount} />}
+          </button>
+        ))}
         <button
           className="navbtn show-mobile"
           aria-haspopup="dialog"
-          aria-current={extraTabs(mode).includes(tab) ? 'page' : undefined}
+          aria-current={mobileMenuTabs(neighborsEnabled).includes(tab) ? 'page' : undefined}
           onClick={() => setMoreOpen(true)}
         >
           <Icon name="menu" />
           Menu
-          {extraTabs(mode).includes('voisins') && <NewsBadge count={newsCount} />}
         </button>
       </nav>
       <main id="main-panel" ref={mainRef} tabIndex={-1} aria-label={TAB_LABEL[tab]} className={'main' + (full ? ' full' : '')}>

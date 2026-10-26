@@ -38,6 +38,7 @@ export function SpeciesPicker({
   const list = useMemo(() => searchSpecies(q, cat), [q, cat])
   return (
     <Modal title={title} onClose={onClose}>
+      <div className="plants-ui">
       {custom === undefined && (
       <div className="row" style={{ marginBottom: 12 }}>
         <input className="input" style={{ flex: 2, minWidth: 160 }} autoFocus placeholder="Rechercher (pommier, tomate…)" aria-label="Rechercher une plante" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -95,6 +96,7 @@ export function SpeciesPicker({
         {list.length === 0 && <li className="muted">Aucune plante ne correspond.</li>}
       </ul>
       )}
+      </div>
     </Modal>
   )
 }

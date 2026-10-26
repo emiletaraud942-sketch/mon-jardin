@@ -38,7 +38,7 @@ export function PlantsPage({ garden }: { garden: Garden }) {
   }, [plants, q, status])
 
   return (
-    <div className="page">
+    <div className="page plants-ui">
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <h1>Mes plantes ({plants.length})</h1>
         <div className="row">
@@ -88,7 +88,7 @@ export function PlantsPage({ garden }: { garden: Garden }) {
                   return (
                     <li key={p.id}>
                       <button
-                        className="btn ghost"
+                        className="btn ghost plant-row"
                         style={{ width: '100%', justifyContent: 'flex-start', gap: 10, background: p.id === selectedPlantId ? 'var(--accent-soft)' : undefined }}
                         onClick={() => setUi({ selectedPlantId: p.id })}
                       >

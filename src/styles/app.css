@@ -2821,3 +2821,265 @@ details > summary {
 .bsheet[data-snap='min'] .sheet-body {
   visibility: hidden;
 }
+
+/* ---------- Téléphone : bandeau du haut compact (en-tête, modes, jauge, bandeaux sur ≈ 130 px) ---------- */
+@media (max-width: 760px) {
+  .app {
+    grid-template-rows: auto auto minmax(0, 1fr) minmax(var(--nav-h), auto);
+  }
+  .topbar {
+    flex-wrap: nowrap;
+    padding: 4px 12px 0;
+    min-height: 0;
+  }
+  .brand img {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+  }
+  .topbar .btn,
+  .help-btn {
+    min-height: 40px;
+    padding: 2px 12px;
+  }
+  .modebar {
+    padding: 4px 12px 4px;
+    gap: 4px;
+  }
+  .modeswitch {
+    flex-wrap: nowrap;
+    gap: 2px;
+    padding: 2px;
+  }
+  .modeswitch button {
+    min-height: 40px;
+    padding: 2px 4px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-radius: 12px;
+  }
+  .progresscard {
+    border: 0;
+    background: transparent;
+  }
+  .guide-toggle {
+    flex-wrap: nowrap;
+    min-height: 40px;
+    padding: 0 4px;
+    gap: 8px;
+    font-weight: 400;
+    font-size: 0.8125rem;
+  }
+  .guide-toggle .gauge-label {
+    flex: 0 1 auto;
+    white-space: nowrap;
+    color: var(--muted);
+  }
+  .guide-toggle .gauge-label strong {
+    font-weight: 600;
+    color: var(--text);
+  }
+  .guide-toggle .gauge {
+    order: 0;
+    flex: 1 1 40px;
+    height: 6px;
+    margin: 0;
+  }
+  .guide-toggle .chev {
+    margin-left: 0;
+  }
+  .nudge {
+    flex-wrap: nowrap;
+    padding: 0 4px;
+    border-top: 0;
+    min-height: 40px;
+  }
+  .nudge .small {
+    flex: 1 1 auto;
+    font-size: 0.8125rem;
+  }
+  .nudge .row .btn {
+    min-height: 40px;
+  }
+  .alert.demo-banner {
+    flex-wrap: nowrap;
+    padding: 0 4px 0 10px;
+    min-height: 40px;
+    font-size: 0.8125rem;
+    gap: 4px;
+  }
+  .alert.demo-banner > span {
+    flex: 1 1 auto;
+  }
+  .alert.demo-banner .btn {
+    min-height: 40px;
+  }
+  .alert.demo-banner .demo-close {
+    min-width: 40px;
+    padding: 0;
+  }
+  .progress-body {
+    max-height: calc(100dvh - 200px);
+  }
+}
+.demo-close {
+  display: none;
+}
+@media (max-width: 760px) {
+  .alert.demo-banner .demo-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* ---------- Rubrique Plantes (liste, fiche, ajout, catalogue) : texte et graisses allégés ---------- */
+.plants-ui {
+  font-size: 0.92rem; /* ≈ 14,7 px sur ordinateur, 13,8 px sur téléphone */
+  line-height: 1.45;
+}
+.plants-ui h1 {
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+.plants-ui h2 {
+  font-size: 1.12rem; /* ≈ 17-18 px */
+  font-weight: 600;
+}
+.plants-ui h3 {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 4px 0 6px;
+}
+.plants-ui strong,
+.plants-ui b,
+.plants-ui .np-facts dd,
+.plants-ui label.field > span {
+  font-weight: 600;
+}
+.plants-ui .small,
+.plants-ui label.field {
+  font-size: 0.84rem;
+}
+.plants-ui .btn {
+  font-weight: 500;
+  font-size: 0.92rem;
+  min-height: 44px;
+}
+.plants-ui .btn.small {
+  font-size: 0.86rem;
+}
+.plants-ui .btn.primary {
+  font-weight: 600;
+}
+/* Boutons secondaires de la fiche : contour fin, fond transparent. */
+.plants-ui .panel-actions .btn,
+.plants-ui .danger-zone .btn,
+.plants-ui .btn.close-btn {
+  background: transparent;
+  border-color: var(--border-strong);
+  font-weight: 500;
+}
+.plants-ui .btn.danger {
+  border-color: var(--danger);
+}
+.plants-ui .btn.ghost {
+  border-color: transparent;
+}
+.plants-ui .badge {
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+.plants-ui .list > li {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.plants-ui .list > li:last-child {
+  border-bottom: 0;
+}
+.plants-ui .list .btn.ghost {
+  min-height: 44px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+.plants-ui .plant-row strong,
+.plants-ui .list .btn.ghost {
+  font-weight: 500;
+}
+.plants-ui .plant-row strong {
+  font-weight: 600;
+}
+.plants-ui .dot {
+  width: 10px;
+  height: 10px;
+}
+.plants-ui .card {
+  padding-top: 12px;
+}
+@media (max-width: 760px) {
+  .plants-ui .small,
+  .plants-ui label.field {
+    font-size: 0.86rem;
+  }
+  .plants-ui .badge {
+    font-size: 0.72rem;
+    padding: 1px 7px;
+  }
+  .plants-ui h1 {
+    font-size: 1.3rem;
+  }
+}
+
+/* Téléphone : bandeaux d'info sur une ligne, fermables. */
+.later-x {
+  display: none;
+}
+@media (max-width: 760px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .topbar > * {
+    min-width: 0;
+  }
+  .garden-name {
+    min-width: 0;
+    font-size: 0.9375rem;
+  }
+  .modeswitch {
+    padding: 0;
+  }
+  .guide-toggle {
+    min-height: 36px;
+  }
+  .alert.demo-banner,
+  .nudge {
+    background: var(--surface);
+    border: var(--border-w) solid var(--border);
+    border-radius: var(--radius-btn-lg);
+    padding: 0 2px 0 10px;
+    margin: 0;
+  }
+  .nudge .row {
+    flex: none;
+  }
+  .later-text {
+    display: none;
+  }
+  .later-x {
+    display: inline-flex;
+  }
+  .nudge .nudge-later {
+    min-width: 40px;
+    padding: 0;
+  }
+}
+.plants-ui.page > h1 {
+  font-size: 1.35rem;
+  font-weight: 600;
+}

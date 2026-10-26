@@ -22,6 +22,11 @@ export const DEFAULT_TAB: Record<Mode, Tab> = { jardin: 'carte', entretenir: 'en
 /** En dessous de ce nombre de plantes, on ouvre sur « Mon jardin ». */
 export const MIN_PLANTS_FOR_CARE = 3
 
+/** Barre du bas sur téléphone (5 entrées au plus, « Menu » compris) : la même dans tous les modes. Entraide seulement si activée. */
+export const mobileBarTabs = (neighbors: boolean = neighborsEnabled): Tab[] => ['carte', 'plantes', 'entretien', ...(neighbors ? (['voisins'] as Tab[]) : (['planter'] as Tab[]))]
+/** Écrans qui passent par le « Menu » sur téléphone. */
+export const mobileMenuTabs = (neighbors: boolean = neighborsEnabled): Tab[] => TABS.filter((t) => !mobileBarTabs(neighbors).includes(t) && tabAvailable(t))
+
 export const tabInMode = (mode: Mode, tab: Tab) => MODE_TABS[mode].includes(tab) || ALWAYS_TABS.includes(tab)
 /** Mode qui contient l'onglet : le mode courant s'il convient, sinon le premier qui le propose. */
 export function modeForTab(tab: Tab, current: Mode): Mode {
@@ -57,13 +62,15 @@ export interface GuideState {
   /** Checklist « Premiers pas » masquée par l'utilisateur (ou jamais affichée). */
   stepsHidden: boolean
   stepsOpen: boolean
+  /** Bandeau « jardin d'exemple » fermé par l'utilisateur. */
+  demoHidden: boolean
   /** Date (ms) avant laquelle on ne repropose pas « passer à l'entretien ». */
   nudgeUntil: number
   /** Ids des jardins dont la vue 3D / l'écran Entretien ont déjà été ouverts. */
   opened3d: string[]
   openedEntretien: string[]
 }
-const DEFAULT_GUIDE: GuideState = { progressOpen: false, stepsHidden: true, stepsOpen: true, nudgeUntil: 0, opened3d: [], openedEntretien: [] }
+const DEFAULT_GUIDE: GuideState = { progressOpen: false, stepsHidden: true, stepsOpen: true, demoHidden: false, nudgeUntil: 0, opened3d: [], openedEntretien: [] }
 export const NUDGE_SNOOZE_MS = 7 * 86400000
 
 function readGuide(): GuideState {
@@ -75,6 +82,7 @@ function readGuide(): GuideState {
       progressOpen: bool(raw.progressOpen, DEFAULT_GUIDE.progressOpen),
       stepsHidden: bool(raw.stepsHidden, DEFAULT_GUIDE.stepsHidden),
       stepsOpen: bool(raw.stepsOpen, DEFAULT_GUIDE.stepsOpen),
+      demoHidden: bool(raw.demoHidden, DEFAULT_GUIDE.demoHidden),
       nudgeUntil: typeof raw.nudgeUntil === 'number' && Number.isFinite(raw.nudgeUntil) ? raw.nudgeUntil : 0,
       opened3d: ids(raw.opened3d),
       openedEntretien: ids(raw.openedEntretien),

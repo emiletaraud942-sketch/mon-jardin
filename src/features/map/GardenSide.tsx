@@ -30,7 +30,7 @@ export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
   if (selected) return <PlantPanel garden={garden} plant={selected} onClose={closePlantSheet} />
 
   return (
-    <div className="stack" style={{ gap: 12 }}>
+    <div className="stack plants-ui" style={{ gap: 12 }}>
       <div className="gs-head">
         <h2 style={{ marginBottom: 2 }}>{garden.name}</h2>
         <div className="muted small">
@@ -48,7 +48,7 @@ export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
             const s = SPECIES_BY_ID[p.speciesId]
             return (
               <li key={p.id}>
-                <button className="btn ghost small tall" style={{ width: '100%', justifyContent: 'flex-start' }} onClick={() => setUi({ selectedPlantId: p.id, focusPlantId: p.id })}>
+                <button className="btn ghost small tall plant-row" style={{ width: '100%', justifyContent: 'flex-start' }} onClick={() => setUi({ selectedPlantId: p.id, focusPlantId: p.id })}>
                   <span className="dot" style={{ background: s?.couleurAccent ?? s?.couleur ?? 'var(--accent-2)' }} /> {plantName(p)}
                   {p.status !== 'en-place' && <span className="badge">{STATUS_LABEL[p.status]}</span>}
                 </button>

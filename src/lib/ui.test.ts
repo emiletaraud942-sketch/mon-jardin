@@ -241,6 +241,18 @@ describe('modes', () => {
     expect(ui.tabInMode('entretenir', 'carte')).toBe(false)
   })
 
+  it('barre du bas du téléphone : 4 entrées + Menu, Entraide seulement si activée', async () => {
+    const { ui } = await load()
+    expect(ui.mobileBarTabs(true)).toEqual(['carte', 'plantes', 'entretien', 'voisins'])
+    expect(ui.mobileBarTabs(false)).not.toContain('voisins')
+    expect(ui.mobileBarTabs(true).length + 1).toBeLessThanOrEqual(5)
+    expect(ui.mobileMenuTabs(true)).toEqual(expect.arrayContaining(['3d', 'planter', 'catalogue', 'reglages']))
+    expect(ui.mobileMenuTabs(false)).not.toContain('voisins')
+    for (const t of ui.TABS.filter((x) => ui.tabAvailable(x))) {
+      expect(ui.mobileBarTabs().includes(t) || ui.mobileMenuTabs().includes(t)).toBe(true)
+    }
+  })
+
   it('mode par défaut : jardin sous 3 plantes, sinon entretenir', async () => {
     const { ui } = await load()
     expect(ui.defaultMode(0)).toBe('jardin')

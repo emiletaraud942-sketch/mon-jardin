@@ -40,7 +40,7 @@ function SpeciesLinks({ ids }: { ids: string[] }) {
 export function SpeciesSheet({ species: s, garden }: { species: Species; garden: Garden }) {
   const cal = plantingCalendar(s, garden)
   return (
-    <div className="stack" style={{ gap: 14 }}>
+    <div className="stack plants-ui" style={{ gap: 14 }}>
       <div>
         <h2 style={{ marginBottom: 2 }}>{s.nomCommun}</h2>
         <div className="muted small">
@@ -137,7 +137,7 @@ export function SpeciesSheet({ species: s, garden }: { species: Species; garden:
         </div>
       )}
 
-      <button className="btn primary" style={{ minHeight: 44 }} onClick={() => startPlacing(s.id)}>
+      <button className="btn primary place-btn" style={{ minHeight: 44 }} onClick={() => startPlacing(s.id)}>
         <Icon name="pin" /> Placer dans mon jardin
       </button>
     </div>

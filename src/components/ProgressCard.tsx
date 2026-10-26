@@ -1,6 +1,7 @@
 import { NUDGE_SNOOZE_MS, setGuide, setMode, useUi } from '../lib/ui'
 import { suggestedMode } from '../lib/progress'
 import { FirstSteps } from './FirstSteps'
+import { isDemoGarden } from '../features/settings/demo'
 import { Icon } from './Icon'
 import { StepButton } from './StepButton'
 import { useProgress } from './useProgress'
@@ -14,7 +15,8 @@ export function ProgressCard({ garden }: { garden: Garden }) {
   const { guide } = useUi()
   const progress = useProgress(garden)
   const open = guide.progressOpen
-  const nudge = suggestedMode(progress) === 'entretenir' && Date.now() >= guide.nudgeUntil
+  // Dans le jardin d'exemple, son bandeau parle déjà : pas de second message, même fermé.
+  const nudge = suggestedMode(progress) === 'entretenir' && Date.now() >= guide.nudgeUntil && !isDemoGarden(garden)
   return (
     <section
       className="progresscard"
@@ -44,8 +46,12 @@ export function ProgressCard({ garden }: { garden: Garden }) {
             <button className="btn small primary" onClick={() => setMode('entretenir')}>
               Entretenir
             </button>
-            <button className="btn small ghost" onClick={() => setGuide({ nudgeUntil: Date.now() + NUDGE_SNOOZE_MS })}>
-              Plus tard
+            <button className="btn small ghost nudge-later" onClick={() => setGuide({ nudgeUntil: Date.now() + NUDGE_SNOOZE_MS })}>
+              <span className="later-text">Plus tard</span>
+              <span className="later-x" aria-hidden>
+                <Icon name="x" size={16} />
+              </span>
+              <span className="sr-only"> (fermer ce message)</span>
             </button>
           </div>
         </div>

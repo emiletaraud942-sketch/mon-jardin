@@ -73,7 +73,7 @@ export function CataloguePage({ garden }: { garden: Garden }) {
   )
 
   return (
-    <div className="page np-page">
+    <div className="page np-page plants-ui">
       <h1>Catalogue des plantes ({list.length})</h1>
       <div className="row" style={{ margin: '8px 0 16px' }}>
         <input

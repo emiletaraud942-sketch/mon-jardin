@@ -89,7 +89,7 @@ export function PlantPanel({ garden, plant, onClose }: { garden: Garden; plant: 
   const ageYears = plantAgeYears(plant, now)
 
   return (
-    <div className="stack" style={{ gap: 12 }}>
+    <div className="stack plants-ui" style={{ gap: 12 }}>
       <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'nowrap' }}>
         <div style={{ minWidth: 0 }}>
           <h2 style={{ marginBottom: 2 }}>{plantName(plant)}</h2>
