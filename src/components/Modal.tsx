@@ -5,8 +5,9 @@ import { Icon } from './Icon'
  * Boîte de dialogue native (`<dialog>`) : piège le focus, se ferme avec Échap, rend le focus à l'élément
  * qui l'a ouverte. `onClose` n'est appelée qu'une fois, quelle que soit la façon de fermer.
  * `sheet` : sur mobile, la boîte se colle en bas de l'écran.
+ * `full` : sur mobile, la boîte prend tout l'écran (écrans de scan : carte en haut, consignes dessous).
  */
-export function Modal({ title, onClose, children, sheet }: { title: string; onClose: () => void; children: ReactNode; sheet?: boolean }) {
+export function Modal({ title, onClose, children, sheet, full }: { title: string; onClose: () => void; children: ReactNode; sheet?: boolean; full?: boolean }) {
   const ref = useRef<HTMLDialogElement>(null)
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
@@ -25,7 +26,7 @@ export function Modal({ title, onClose, children, sheet }: { title: string; onCl
   return (
     <dialog
       ref={ref}
-      className={'modal' + (sheet ? ' sheet' : '')}
+      className={'modal' + (sheet ? ' sheet' : '') + (full ? ' full' : '')}
       aria-labelledby={titleId}
       onClose={() => onCloseRef.current()}
       onClick={(e) => {

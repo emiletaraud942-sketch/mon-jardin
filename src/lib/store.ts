@@ -24,6 +24,8 @@ export interface StorageStatus {
 
 const KEY = 'permajardin:state:v1'
 const BACKUP_KEY = KEY + ':avant-migration'
+/** File d'attente du scan des plantes (IndexedDB) : ses photos ne sont pas des orphelines. Voir features/scan/queueStore.ts. */
+export const SCAN_QUEUE_KEY = 'permajardin:scan-queue'
 const WRITE_ERROR = "Impossible d'enregistrer sur cet appareil (stockage plein ou bloqué). Exportez une sauvegarde depuis les réglages."
 
 let state: AppState = { gardens: [], plants: [], tasksDone: [], loaded: false }
@@ -261,6 +263,9 @@ export async function purgeOrphanPhotos(): Promise<number> {
     for (const p of Array.isArray(stored?.plants) ? stored.plants : []) {
       if (Array.isArray(p?.photos)) for (const id of p.photos) if (typeof id === 'string') refs.add(id)
     }
+    // Photos du scan des plantes encore en attente de revue : à garder.
+    const queued = await get(SCAN_QUEUE_KEY)
+    if (Array.isArray(queued)) for (const i of queued) if (typeof i?.photoId === 'string') refs.add(i.photoId)
     let n = 0
     for (const id of await listPhotoIds()) {
       if (refs.has(id)) continue

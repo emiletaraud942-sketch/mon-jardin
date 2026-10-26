@@ -1,7 +1,6 @@
-import { gpsQuality } from '../../lib/calibration'
+import { averageFixes, gpsQuality } from '../../lib/calibration'
 import { toLocal } from '../../lib/geo'
-import type { LonLat, XY } from '../../types'
-import { averageFixes } from '../../lib/calibration'
+import type { LonLat } from '../../types'
 
 // Logique pure du GPS (sans DOM) : problèmes possibles, messages simples, moyenne d'un relevé.
 
