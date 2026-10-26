@@ -1,6 +1,6 @@
 // Validation et migration des données (stockage local, import JSON, synchronisation).
 // PROPRIÉTAIRE : dev-backend-supabase. La signature de `migrateState` est le contrat ; ne pas la changer.
-import type { Building, Garden, Plant, PlantStatus, SoilTexture, TaskDone, TerrainGrid, XY } from '../types'
+import type { Building, Garden, Plant, PlantMeasurement, PlantStatus, SoilTexture, TaskDone, TerrainGrid, XY } from '../types'
 import { isoDate } from './dates'
 import { isValidCalibration } from './calibration'
 import { uid } from './geo'
@@ -37,7 +37,7 @@ const inRange = (n: number, max: number) => Math.abs(n) <= max
 const text = (v: string, max: number = LIMITS.shortText) => clipText(v, max)
 
 const GARDEN_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'address', 'center', 'altitudeM', 'parcel', 'parcelRefs', 'areaM2', 'buildings', 'terrain', 'sol', 'lastFrostDoy', 'firstFrostDoy', 'calibration', 'createdAt'])
-const PLANT_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'speciesId', 'customName', 'position', 'plantedAt', 'ageAtPlanting', 'status', 'notes', 'photos'])
+const PLANT_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'speciesId', 'customName', 'position', 'plantedAt', 'ageAtPlanting', 'status', 'notes', 'photos', 'measurements'])
 const TASK_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'taskKey', 'doneAt'])
 
 /** Date ISO plausible : « 2024-03-10 » ou date-heure complète. Rejette « 2024-13-45 ». */
@@ -167,6 +167,25 @@ function sanitizeGarden(raw: unknown, report: Report): Garden | undefined {
   return g
 }
 
+const MAX_MEASUREMENTS = 50
+const MAX_MEASURE_M = 60
+
+/** Mesures valides (date correcte, nombres finis entre 0 et 60 m, au moins une valeur), 50 au plus. */
+function validMeasurements(v: unknown): PlantMeasurement[] | undefined {
+  if (!Array.isArray(v)) return undefined
+  const out: PlantMeasurement[] = []
+  for (const m of v) {
+    if (out.length >= MAX_MEASUREMENTS) break
+    if (!isRec(m) || !isValidDate(m.at)) continue
+    const ok = (n: unknown): n is number => isNum(n) && n >= 0 && n <= MAX_MEASURE_M
+    const r: PlantMeasurement = { at: m.at }
+    if (ok(m.heightM)) r.heightM = m.heightM
+    if (ok(m.spreadM)) r.spreadM = m.spreadM
+    if (r.heightM !== undefined || r.spreadM !== undefined) out.push(r)
+  }
+  return out
+}
+
 function sanitizePlant(raw: unknown, gardenIds: Set<string>, report: Report): Plant | undefined {
   if (!isRec(raw) || !isId(raw.id)) {
     report.add('p-id', '{n} plante sans identifiant a été ignorée.', '{n} plantes sans identifiant ont été ignorées.')
@@ -207,6 +226,14 @@ function sanitizePlant(raw: unknown, gardenIds: Set<string>, report: Report): Pl
     report.add('p-statut', '{n} plante avec un statut inconnu a été remise « en place ».', '{n} plantes avec un statut inconnu ont été remises « en place ».')
   }
   if (isNum(raw.ageAtPlanting) && raw.ageAtPlanting >= 0 && raw.ageAtPlanting <= 1000) p.ageAtPlanting = raw.ageAtPlanting
+  const meas = validMeasurements(raw.measurements)
+  if (meas) {
+    if (meas.length > 0) p.measurements = meas
+    else delete p.measurements
+    if (!Array.isArray(raw.measurements) || meas.length !== raw.measurements.length) {
+      report.add('p-mesures', "{n} plante avait des mesures invalides : elles ont été écartées.", "{n} plantes avaient des mesures invalides : elles ont été écartées.")
+    }
+  } else delete p.measurements
   if (typeof raw.notes === 'string') p.notes = text(raw.notes, LIMITS.longText)
   if (typeof raw.customName === 'string') p.customName = text(raw.customName)
   return p

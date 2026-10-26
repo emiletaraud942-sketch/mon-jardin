@@ -8,6 +8,8 @@ import { getUi, setUi } from '../../lib/ui'
 import { getState, updatePlant, useGardenPlants } from '../../lib/store'
 import { showToast } from '../../lib/toast'
 import { placePlant } from '../map/placing'
+import { updateQueue } from './queueStore'
+import { moveItem } from './queue'
 import { plantName } from '../plants/PlantPanel'
 import type { Garden, XY } from '../../types'
 import { proposePosition } from './capture'
@@ -100,6 +102,13 @@ export function MesuresScreen({ garden, target }: { garden: Garden; target?: Mea
       updatePlant(target.plantId, { position: rounded })
       setUi({ selectedPlantId: target.plantId, tab: 'carte', focusPlantId: target.plantId })
       showToast({ message: `« ${plantName(before)} » placée.`, actionLabel: 'Annuler', onAction: () => updatePlant(before.id, { position: before.position }) })
+      closeScan()
+      return
+    }
+    if (target?.kind === 'item') {
+      // Plante scannée à valider : sa position est affinée, elle reste à valider.
+      updateQueue((q) => moveItem(q, target.itemId, rounded, precision ?? 1))
+      showToast({ message: 'Position affinée. La plante reste à valider.' })
       closeScan()
       return
     }
@@ -240,7 +249,7 @@ export function MesuresScreen({ garden, target }: { garden: Garden; target?: Mea
             </div>
           )}
           <button className="btn primary big" disabled={!found} onClick={() => found && place(found)}>
-            <Icon name="check" /> {target?.kind === 'plant' ? 'Placer la plante ici' : 'Utiliser ce point'}
+            <Icon name="check" /> {target?.kind === 'plant' ? 'Placer la plante ici' : target?.kind === 'item' ? 'Affiner la position' : 'Utiliser ce point'}
           </button>
           </div>
           <button className="btn ghost" onClick={() => openScan('menu')}>

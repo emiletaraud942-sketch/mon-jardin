@@ -1,13 +1,45 @@
 import { SPECIES_BY_ID } from '../../data/species'
 import { isoDate } from '../../lib/dates'
 import { addPlant, getState, removePlant, updatePlant } from '../../lib/store'
+import { deletePhoto } from '../../lib/photos'
 import { dismissToast, showToast } from '../../lib/toast'
 import { getUi, setUi, type Tab } from '../../lib/ui'
 import { plantName } from '../plants/PlantPanel'
 import { uid } from '../../lib/geo'
-import type { Garden, XY } from '../../types'
+import type { Garden, Plant, XY } from '../../types'
 
 let lastSeriesToast: number | undefined
+
+/** Annule un placement (la plante disparaît) puis propose de le rétablir. */
+function undoPlacement(plant: Plant) {
+  removePlant(plant.id, { keepPhotos: true })
+  if (getUi().selectedPlantId === plant.id) setUi({ selectedPlantId: undefined })
+  showToast({
+    message: `Placement de « ${plantName(plant)} » annulé.`,
+    actionLabel: 'Rétablir',
+    onAction: () => addPlant(plant),
+    // Les photos ne sont effacées que si la plante n'a pas été rétablie.
+    onExpire: () => {
+      if (!getState().plants.some((p) => p.id === plant.id)) plant.photos.forEach((ph) => void deletePhoto(ph))
+    },
+  })
+}
+
+/** Déplacement annulable et rétablissable (glisser, « Déplacer cette plante », visée). */
+export function moveWithUndo(plantId: string, before: XY, next: XY) {
+  const name = () => {
+    const pl = getState().plants.find((x) => x.id === plantId)
+    return pl ? plantName(pl) : 'Plante'
+  }
+  showToast({
+    message: `« ${name()} » déplacée.`,
+    actionLabel: 'Annuler',
+    onAction: () => {
+      updatePlant(plantId, { position: before })
+      showToast({ message: `Déplacement de « ${name()} » annulé.`, actionLabel: 'Rétablir', onAction: () => updatePlant(plantId, { position: next }) })
+    },
+  })
+}
 
 /**
  * Ajoute une plante à la position choisie.
@@ -44,7 +76,8 @@ export function placePlant(
     setUi({ placingSeries: { count }, pendingPhotos: undefined, selectedPlantId: undefined })
     // Un seul message à la fois pour la série : le précédent est remplacé (sa plante reste placée).
     if (lastSeriesToast !== undefined) dismissToast(lastSeriesToast)
-    lastSeriesToast = showToast({ message: `Plante placée : ${name} (${count} de suite).`, actionLabel: 'Annuler', onAction: () => removePlant(id) })
+    const placed = getState().plants.find((p) => p.id === id)
+    lastSeriesToast = showToast({ message: `Plante placée : ${name} (${count} de suite).`, actionLabel: 'Annuler', onAction: () => (placed ? undoPlacement(placed) : removePlant(id)) })
     return id
   }
   setUi({ placingSpeciesId: undefined, placingCustomName: undefined, pendingPhotos: undefined, selectedPlantId: id, ...(opts.tab ? { tab: opts.tab } : {}) })
@@ -54,6 +87,9 @@ export function placePlant(
       actionLabel: 'C’est planté',
       onAction: () => updatePlant(id, { status: 'en-place' }),
     })
+  } else {
+    const placed = getState().plants.find((p) => p.id === id)
+    if (placed) showToast({ message: `« ${name} » placée.`, actionLabel: 'Annuler', onAction: () => undoPlacement(placed) })
   }
   return id
 }

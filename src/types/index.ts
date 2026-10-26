@@ -176,6 +176,14 @@ export interface Plant {
   status: PlantStatus
   notes?: string
   photos: string[] // ids de photos (IndexedDB)
+  /** Mesures saisies (hauteur, envergure en m) : recalent la courbe de croissance. */
+  measurements?: PlantMeasurement[]
+}
+
+export interface PlantMeasurement {
+  at: string // ISO date
+  heightM?: number
+  spreadM?: number
 }
 
 export interface TaskDone {

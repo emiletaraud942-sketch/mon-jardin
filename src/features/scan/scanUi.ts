@@ -6,7 +6,7 @@ import { useSyncExternalStore } from 'react'
 export type ScanScreen = 'menu' | 'recaler' | 'scanner' | 'mesures'
 
 /** Ce que « Placer par mesures » doit faire du point trouvé. */
-export type MeasureTarget = { kind: 'plant'; plantId: string } | { kind: 'new' }
+export type MeasureTarget = { kind: 'plant'; plantId: string } | { kind: 'item'; itemId: string } | { kind: 'new' }
 
 export interface ScanUi {
   screen?: ScanScreen

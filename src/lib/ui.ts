@@ -116,6 +116,8 @@ interface UiState {
   placingSeries?: { count: number }
   /** « Déplacer cette plante » : la prochaine pression sur la carte donne son nouvel emplacement. */
   movingPlantId?: string
+  /** Mode « Viser » : viseur fixe au centre de la carte, la carte bouge sous le doigt. */
+  aim?: boolean
   /** Fiche espèce ouverte dans le catalogue. */
   speciesId?: string
   /** Écran « Planter » : emplacement et catégorie choisis. */

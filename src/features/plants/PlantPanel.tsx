@@ -13,6 +13,7 @@ import { plantAgeYears, plantSizeAt } from '../../engine/growth'
 import { companionReport, legalDistance } from '../../engine/planting'
 import type { Garden, Plant, PlantStatus } from '../../types'
 import { useEffect, useState } from 'react'
+import { MeasureSection } from './MeasureSection'
 import { useTasks } from '../tasks/useTasks'
 
 export function plantName(p: Plant): string {
@@ -190,6 +191,8 @@ export function PlantPanel({ garden, plant, onClose }: { garden: Garden; plant: 
           )}
         </div>
       )}
+
+      {species && <MeasureSection plant={plant} species={species} name={plantName(plant)} />}
 
       <div>
         <h3>Photos</h3>

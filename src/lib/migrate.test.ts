@@ -92,6 +92,26 @@ describe('migrateState', () => {
     expect(r.warnings).toEqual([])
   })
 
+  it('valide les mesures : nombres finis 0-60 m, dates valides, 50 au plus', () => {
+    const mesures = [
+      { at: '2024-05-01', heightM: 1.2, spreadM: 0.8 },
+      { at: '2024-13-45', heightM: 2 },
+      { at: '2024-06-01', heightM: Number.NaN },
+      { at: '2024-06-02', heightM: 61 },
+      { at: '2024-06-03', heightM: -1, spreadM: 3 },
+      { at: '2024-06-04', heightM: '3' },
+      'x',
+    ]
+    const r = ok({ gardens: [garden], plants: [{ ...plant, measurements: mesures }] })
+    expect(r.data.plants[0].measurements).toEqual([{ at: '2024-05-01', heightM: 1.2, spreadM: 0.8 }, { at: '2024-06-03', spreadM: 3 }])
+    expect(r.warnings.join(' ')).toMatch(/mesures invalides/)
+    const beaucoup = Array.from({ length: 80 }, (_, i) => ({ at: '2024-05-01', heightM: 1 + i / 100 }))
+    expect(ok({ gardens: [garden], plants: [{ ...plant, measurements: beaucoup }] }).data.plants[0].measurements).toHaveLength(50)
+    const sans = ok({ gardens: [garden], plants: [{ ...plant, measurements: 'oups' }, { ...plant, id: 'p2' }] })
+    expect(sans.data.plants[0].measurements).toBeUndefined()
+    expect(sans.data.plants[1]).not.toHaveProperty('measurements')
+  })
+
   it('remplace un statut inconnu par en-place', () => {
     const r = ok({ gardens: [garden], plants: [{ ...plant, status: 'zombie' }, { ...plant, id: 'p2', status: undefined }, { ...plant, id: 'p3', status: 'projet' }] })
     expect(r.data.plants.map((p) => p.status)).toEqual(['en-place', 'en-place', 'projet'])
