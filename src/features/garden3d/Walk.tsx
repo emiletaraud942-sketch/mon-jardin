@@ -266,7 +266,7 @@ export function WalkRig({ shared, parcel, bounds, colliders, sample, visuals, se
     // Hauteur des yeux : relief + 1,65 m, légèrement lissée pour gommer les arêtes de la grille d'altitudes.
     const target = eyeHeightAt(smp, p)
     if (Math.abs(target - shared.eyeY) <= EYE_SETTLE_M) shared.eyeY = target
-    else shared.eyeY += (target - shared.eyeY) * (1 - Math.exp(-14 * Math.min(dt, 0.1)))
+    else shared.eyeY += (target - shared.eyeY) * (1 - Math.exp(-14 * Math.min(Math.max(dt, 0), 0.1))) // dt borné : jamais négatif
     cam.position.set(p.x, shared.eyeY, -p.y)
     cam.rotation.set(p.pitch, p.yaw, 0, 'YXZ')
     if (compassRef.current) compassRef.current.style.transform = `rotate(${p.yaw}rad)`
