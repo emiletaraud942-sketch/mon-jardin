@@ -2,7 +2,7 @@
 // Repère : x = est, y = nord (m) ; Three.js : X = est, Y = haut, Z = -nord.
 import { Component, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Canvas, type RootState } from '@react-three/fiber'
-import type { Garden, Plant, Species, XY } from '../../types'
+import type { Garden, Plant, Species, TerrainGrid, XY } from '../../types'
 import { Scene } from './Scene'
 import { dateFromDoy, dayOfYear, daysInYearOf, doyOf, formatInGarden, sunState, zonedParts } from './sun'
 import { ERROR_3D_TEXT, ERROR_3D_TITLE, SEASON_SHORTCUTS, describeSun, formatClock, gardenSummary, walkHelp, yearsLabel } from './labels'
@@ -16,6 +16,7 @@ import { disposeNeighborTrees } from './NeighborTrees'
 import type { DetectedTree } from '../../lib/lidar'
 import { LIDAR_ATTRIBUTION } from '../../lib/lidar'
 import { Joystick, MiniMap, WalkPad } from './WalkUI'
+import { QUALITY_PREFS, TIER_LABEL, useQuality3D } from './quality'
 import './garden3d.css'
 
 export interface Garden3DProps {
@@ -40,6 +41,8 @@ export interface Garden3DProps {
   defaultView?: ViewMode
   /** Arbres des environs mesurés par le LiDAR HD (IGN), déjà filtrés. Vide ou absent : rien n'est affiché. */
   neighborTrees?: DetectedTree[]
+  /** Hauteurs LiDAR HD (MNH) : hauteur et toit des bâtiments. Absent : hauteurs BD TOPO, toits plats. */
+  canopy?: TerrainGrid
 }
 
 const HOUR_MIN = 5
@@ -154,6 +157,7 @@ export function Garden3D({
   halfSizeM: halfSizeProp,
   defaultView = 'perspective',
   neighborTrees,
+  canopy,
 }: Garden3DProps) {
   const today = useMemo(() => new Date(), [])
   const year = zonedParts(today).year
@@ -306,12 +310,14 @@ export function Garden3D({
   // L'heure du curseur est l'heure légale du jardin (Europe/Paris), quel que soit le fuseau de l'appareil.
   const sunDate = useMemo(() => dateFromDoy(year, doy, hour), [year, doy, hour])
   const sun = useMemo(() => sunState(sunDate, garden.center), [sunDate, garden.center])
-  const month = zonedParts(sunDate).month
+  // Âge des plantes : aujourd'hui + N ans. Saison (feuilles, fleurs, fruits) : le jour choisi, N ans plus tard.
   const growthTime = useMemo(() => {
     const d = new Date(today)
     d.setFullYear(d.getFullYear() + yearsAhead)
     return d.getTime()
   }, [today, yearsAhead])
+  const seasonTime = useMemo(() => dateFromDoy(year + yearsAhead, doy, 12).getTime(), [year, yearsAhead, doy])
+  const quality = useQuality3D()
 
   const shortcuts = useMemo(() => SEASON_SHORTCUTS.map((s) => ({ label: s.label, doy: doyOf(year, s.month, s.day) })), [year])
   const daysInYear = daysInYearOf(year)
@@ -380,7 +386,9 @@ export function Garden3D({
             reducedMotion={reducedMotion}
             sun={sun}
             growthTime={growthTime}
-            month={month}
+            seasonTime={seasonTime}
+            tier={quality.tier}
+            canopy={canopy}
             compassRef={compassRef}
             neighborTrees={treesShown ? neighborTrees : undefined}
           />
@@ -603,6 +611,19 @@ export function Garden3D({
                     <span>Arbres des environs (IGN) : {treeCount}</span>
                   </label>
                 )}
+                <div className="g3d-field">
+                  <span className="g3d-field-label">
+                    Qualité 3D <b>{quality.pref === 'auto' ? `Auto (${TIER_LABEL[quality.tier]})` : QUALITY_PREFS.find((q) => q.id === quality.pref)?.label}</b>
+                  </span>
+                  <div className="g3d-shortcuts" role="group" aria-label="Qualité 3D">
+                    {QUALITY_PREFS.map((q) => (
+                      <button key={q.id} type="button" className="g3d-btn g3d-btn--small g3d-quality" aria-pressed={quality.pref === q.id} title={q.title} onClick={() => quality.setPref(q.id)}>
+                        {q.label}
+                      </button>
+                    ))}
+                  </div>
+                  <span className="g3d-help">Simple si votre téléphone ralentit ; Détaillé pour des arbres plus fournis.</span>
+                </div>
                 <div className="g3d-shortcuts" role="group" aria-label="Saisons">
                   {shortcuts.map((s) => (
                     <button

@@ -12,17 +12,29 @@ export interface SunState {
   dir: [number, number, number]
   /** 0 (nuit) → 1 (plein jour). */
   daylight: number
+  /** Couleur du zénith. */
   sky: string
+  /** Couleur de l'horizon (et de la brume) : plus claire et plus chaude que le zénith. */
+  horizon: string
   light: string
 }
 
+// Dégradé adouci : le zénith reste bleu même au lever, c'est l'horizon qui se réchauffe.
 const SKY_STOPS: [number, string][] = [
   [-12, '#0b1426'],
-  [-4, '#25345e'],
-  [1, '#d9946a'],
-  [8, '#b7cfe0'],
-  [25, '#8dbbe6'],
+  [-4, '#1f2d52'],
+  [1, '#5f6c9e'],
+  [8, '#86a8d2'],
+  [25, '#7fb0e2'],
   [50, '#6aa4dc'],
+]
+const HORIZON_STOPS: [number, string][] = [
+  [-12, '#141d34'],
+  [-4, '#3d466f'],
+  [1, '#e8a487'],
+  [8, '#efdcc6'],
+  [25, '#d9e8f3'],
+  [50, '#d0e4f2'],
 ]
 
 function lerpStops(stops: [number, string][], v: number): string {
@@ -59,6 +71,7 @@ export function sunState(date: Date, center: LonLat): SunState {
     dir: [east, up, -north],
     daylight: smoothstep(-2, 14, altitudeDeg),
     sky: lerpStops(SKY_STOPS, altitudeDeg),
+    horizon: lerpStops(HORIZON_STOPS, altitudeDeg),
     light: lerpStops(
       [
         [0, '#ffb070'],

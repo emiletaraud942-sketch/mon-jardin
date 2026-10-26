@@ -1,7 +1,7 @@
 // Pièces instanciées des plantes : types, géométries unitaires partagées (mémoïsées) et coût en triangles.
 // Pur (aucun accès au DOM) : les textures et matériaux vivent dans Plants.tsx.
 import * as THREE from 'three'
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
+import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
 // trunk : fût d'écorce ; branch : branche / tige fine ; blob : masse de feuillage ; clump : petite touffe de feuillage ;
 // cone : étage de conifère ; cyl : disque / butte ; dot : fleur ou fruit ; tuft : touffe de brins ;
@@ -58,7 +58,12 @@ function paint(g: THREE.BufferGeometry, lo: number, hi: number, y0: number, y1: 
 }
 
 function noisyBlob(detail: number, amp: number): THREE.BufferGeometry {
-  const g = new THREE.IcosahedronGeometry(1, detail)
+  // Sommets soudés : les normales sont lissées (aspect de feuillage doux), pas de facettes.
+  const raw = new THREE.IcosahedronGeometry(1, detail)
+  raw.deleteAttribute('normal')
+  raw.deleteAttribute('uv')
+  const g = mergeVertices(raw, 1e-4)
+  raw.dispose()
   const p = g.attributes.position as THREE.BufferAttribute
   for (let i = 0; i < p.count; i++) {
     const x = p.getX(i)

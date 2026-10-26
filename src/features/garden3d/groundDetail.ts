@@ -104,20 +104,21 @@ export function disposeGrassDetailTexture(): void {
 }
 
 export interface GroundDetail {
-  uniforms: { uDetail: { value: THREE.Texture }; uWalk: { value: number } }
+  uniforms: { uDetail: { value: THREE.Texture }; uWalk: { value: number }; uNoise: { value: number } }
   onBeforeCompile: (shader: { uniforms: Record<string, { value: unknown }>; vertexShader: string; fragmentShader: string }) => void
   cacheKey: () => string
 }
 
 /** Uniformes partagés + injection GLSL pour un MeshStandardMaterial. `uWalk` = 1 active le détail. */
 export function createGroundDetail(): GroundDetail {
-  const uniforms = { uDetail: { value: grassDetailTexture() as THREE.Texture }, uWalk: { value: 0 } }
+  const uniforms = { uDetail: { value: grassDetailTexture() as THREE.Texture }, uWalk: { value: 0 }, uNoise: { value: 1 } }
   return {
     uniforms,
-    cacheKey: () => 'g3d-ground-detail-v1',
+    cacheKey: () => 'g3d-ground-detail-v2',
     onBeforeCompile: (shader) => {
       shader.uniforms.uDetail = uniforms.uDetail
       shader.uniforms.uWalk = uniforms.uWalk
+      shader.uniforms.uNoise = uniforms.uNoise
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', '#include <common>\nvarying vec2 vDetailXZ;\nvarying float vDetailDist;')
         .replace(
@@ -125,10 +126,16 @@ export function createGroundDetail(): GroundDetail {
           '#include <project_vertex>\nvDetailXZ = (modelMatrix * vec4(transformed, 1.0)).xz;\nvDetailDist = -mvPosition.z;',
         )
       shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\nuniform sampler2D uDetail;\nuniform float uWalk;\nvarying vec2 vDetailXZ;\nvarying float vDetailDist;')
+        .replace('#include <common>', '#include <common>\nuniform sampler2D uDetail;\nuniform float uWalk;\nuniform float uNoise;\nvarying vec2 vDetailXZ;\nvarying float vDetailDist;\nfloat pjHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }\nfloat pjNoise(vec2 p) { vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(pjHash(i), pjHash(i + vec2(1.0, 0.0)), f.x), mix(pjHash(i + vec2(0.0, 1.0)), pjHash(i + vec2(1.0, 1.0)), f.x), f.y); }')
         .replace(
           '#include <map_fragment>',
           `#include <map_fragment>
+{
+  // Herbe moins uniforme : grandes plaques plus vertes ou plus sèches (bruit procédural, sans texture).
+  float pn = pjNoise(vDetailXZ * 0.05) * 0.6 + pjNoise(vDetailXZ * 0.19 + 7.3) * 0.3 + pjNoise(vDetailXZ * 0.7 + 3.1) * 0.1 - 0.5;
+  vec3 patch = mix(vec3(0.9, 1.0, 0.88), vec3(1.1, 1.05, 0.8), smoothstep(-0.14, 0.14, pn));
+  diffuseColor.rgb *= mix(vec3(1.0), patch, uNoise);
+}
 if (uWalk > 0.5) {
   float far = 1.0 - smoothstep(20.0, 70.0, vDetailDist);
   float near = 1.0 - smoothstep(4.0, 14.0, vDetailDist);

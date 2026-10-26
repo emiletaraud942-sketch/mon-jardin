@@ -178,10 +178,11 @@ export function MapView({ garden }: { garden: Garden }) {
       const items = ruler.map((q) => {
         const mid = { x: (q.from.x + q.to.x) / 2, y: (q.from.y + q.to.y) / 2 }
         const word = q.kind === 'limite' ? 'Limite ' : q.kind === 'batiment' ? 'Maison ' : ''
-        return { mid, text: word + frMeters(q.distM), cls: 'dist-label ' + q.kind + (q.tooClose ? ' warn' : '') }
+        return { mid, text: word + frMeters(q.distM), kind: q.kind, warn: !!q.tooClose }
       })
       while (labelMarkers.current.length < items.length) {
         const el = document.createElement('div')
+        el.classList.add('dist-label')
         const mk = new maplibregl.Marker({ element: el }).setLngLat([0, 0]).addTo(m)
         labelMarkers.current.push(mk)
       }
@@ -195,7 +196,10 @@ export function MapView({ garden }: { garden: Garden }) {
         const [lon, lat] = ll(it.mid)
         mk.setLngLat([lon, lat])
         el.style.display = ''
-        el.className = it.cls
+        // classList : la classe `maplibregl-marker` (position absolue) doit rester.
+        el.classList.remove('limite', 'voisine', 'batiment', 'warn')
+        el.classList.add(it.kind)
+        if (it.warn) el.classList.add('warn')
         el.textContent = it.text
       })
     },
@@ -468,7 +472,8 @@ export function MapView({ garden }: { garden: Garden }) {
       const dot = hit.firstElementChild as HTMLElement
       const tag = hit.lastElementChild as HTMLElement
       const sel = p.id === selectedPlantId
-      hit.className = 'marker-hit' + (sel ? ' selected' : '')
+      hit.classList.add('marker-hit')
+      hit.classList.toggle('selected', sel)
       dot.className = 'map-marker' + (sel ? ' selected' : '') + (p.status === 'projet' ? ' projet' : '')
       dot.style.width = dot.style.height = (sel ? 26 : 18) + 'px'
       dot.style.background = s?.couleurAccent ?? s?.couleur ?? cssVar('--accent-2', '#4f8a4b')
@@ -601,6 +606,15 @@ export function MapView({ garden }: { garden: Garden }) {
   }
   const pendingItem = pendingSel ? liveScan.find((i) => i.id === pendingSel) : undefined
   const pendingNo = pendingItem ? liveScan.indexOf(pendingItem) + 1 : 0
+
+  // La carte « à valider » couvre le bas : on remonte la plante pour que son cercle reste visible.
+  useEffect(() => {
+    const m = map.current
+    const it = pendingSel ? scanQueue.find((x) => x.id === pendingSel) : undefined
+    if (!m || !it) return
+    const ll = toLonLat(gardenRef.current.center, it.position)
+    m.easeTo({ center: [ll.lon, ll.lat], zoom: Math.max(m.getZoom(), 20.3), offset: [0, -110], duration: 400 })
+  }, [pendingSel]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const setNamesPref = (on: boolean) => {
     setNames(on)

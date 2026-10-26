@@ -196,7 +196,7 @@ function broadleaf(c: Ctx, fruit: boolean) {
   } else em.limb('branch', [0, 0, 0], [0, trunkH, 0], tr, c.trunk)
 
   // Charpentières puis rameaux (récursion limitée à 3 niveaux).
-  const n1 = TIERED(tier, 3, 4, 4)
+  const n1 = TIERED(tier, 2, 4, 4)
   const maxL = TIERED(tier, 1, 2, 3)
   const top: V3 = [0, trunkH, 0]
   const rl = rx * TIERED(tier, 0.55, 0.4, 0.33) * (fruit ? 0.9 : 1)
@@ -359,7 +359,7 @@ function tufted(c: Ctx, grass: boolean) {
   const { em, r, H, S, tier } = c
   const n = TIERED(tier, 2, 4, 7)
   const dormant = c.look.dead ? 0.3 : 0.18 + 0.82 * c.lf
-  const tall = H > 0.9 && !grass
+  const tall = c.look.adultH > 0.9 && !grass
   const rad = Math.max(0.04, S / 2)
   const w = rad * (grass ? 0.9 : 1.0) * (n > 3 ? 0.8 : 1)
   const tops: Lump[] = []
@@ -435,7 +435,7 @@ function climber(c: Ctx) {
 
 function veg(c: Ctx) {
   const { em, r, H, S, tier } = c
-  const tall = H > 0.9
+  const tall = c.look.adultH > 0.9
   const len = Math.max(0.45, S * 1.4)
   const wid = Math.max(0.3, Math.min(0.9, S * 1.1))
   em.add('box', 0, -0.02, 0, len, 0.1, wid, SOIL.clone().offsetHSL(0, 0, (c.r() - 0.5) * 0.04), (c.r() - 0.5) * 0.2)

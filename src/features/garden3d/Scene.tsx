@@ -9,6 +9,10 @@ import type { Garden, Plant, Species, XY } from '../../types'
 import { Buildings, Ground, HeatmapLayer, ParcelOutline, type SunHeatmap } from './Ground'
 import { Plants, type PlantPointerHandlers, type PlantsHandle } from './Plants'
 import { buildPlantScene } from './plantModel'
+import { SkyDome } from './SkyDome'
+import { enableOnDemandShadows, markShadowsDirty } from './shadows'
+import { TRIANGLE_CAP, reportFrameInterval, type QualityTier } from './quality'
+import type { TerrainGrid } from '../../types'
 import { makeHeightSampler } from './terrain'
 import type { SunState } from './sun'
 import { fitOrtho, fitPerspective, orthoPixels, viewResetToken, walkResetToken, type Frame, type Insets, type ViewMode } from './framing'
@@ -44,10 +48,16 @@ export interface SceneProps {
   walkShared: WalkShared
   reducedMotion: boolean
   sun: SunState
-  /** Date (ms) utilisée pour la croissance des plantes. */
+  /** Date (ms) utilisée pour la croissance des plantes (âge). */
   growthTime: number
+  /** Date (ms) qui fixe la saison (feuilles, fleurs, fruits, teinte d'automne). */
+  seasonTime: number
+  /** Niveau de détail maximal des plantes (qualité 3D). */
+  tier: QualityTier
+  /** Hauteur de canopée / bâtiments LiDAR (MNH), si disponible : hauteur des bâtiments. */
+  canopy?: TerrainGrid
   /** Mois affiché (1–12) pour les fruits en saison. */
-  month: number
+  month?: number
   compassRef: RefObject<HTMLDivElement>
   /** Arbres des environs (LiDAR HD) à dessiner ; absent ou vide = rien. */
   neighborTrees?: DetectedTree[]
@@ -64,13 +74,21 @@ const COARSE_POINTER = typeof window !== 'undefined' && !!window.matchMedia?.('(
 /** Seuil de glisser d'une plante : 12 px en tactile, 6 px à la souris. */
 const DRAG_THRESHOLD_PX = dragThresholdPx(COARSE_POINTER)
 
-function SunAndSky({ sun, halfSizeM, walking }: { sun: SunState; halfSizeM: number; walking: boolean }) {
+function SunAndSky({ sun, halfSizeM, walking, tier }: { sun: SunState; halfSizeM: number; walking: boolean; tier: QualityTier }) {
   const scene = useThree((s) => s.scene)
+  const gl = useThree((s) => s.gl)
   const invalidate = useThree((s) => s.invalidate)
   const lightRef = useRef<THREE.DirectionalLight>(null)
   const dist = halfSizeM * 3
-  // Ombres limitées : 1024² sur écran tactile, 2048² ailleurs.
-  const shadowSize = COARSE_POINTER ? 1024 : 2048
+  // Ombres limitées : 1024² sur écran tactile ou en qualité simple, 2048² sinon. Calculées à la demande (voir shadows.ts).
+  const shadowSize = COARSE_POINTER || tier === 0 ? 1024 : 2048
+
+  useEffect(() => {
+    enableOnDemandShadows(gl)
+    return () => {
+      gl.shadowMap.autoUpdate = true
+    }
+  }, [gl])
 
   useLayoutEffect(() => {
     const l = lightRef.current
@@ -84,22 +102,24 @@ function SunAndSky({ sun, halfSizeM, walking }: { sun: SunState; halfSizeM: numb
     cam.near = 0.5
     cam.far = dist * 2.2
     cam.updateProjectionMatrix()
-  }, [halfSizeM, dist])
+    markShadowsDirty(gl)
+  }, [halfSizeM, dist, shadowSize, gl])
 
   useEffect(() => {
-    const c = new THREE.Color(sun.sky)
+    // Repli si le dôme ne s'affiche pas : fond et brume à la couleur de l'horizon.
+    const c = new THREE.Color(sun.horizon)
     if (scene.background instanceof THREE.Color) scene.background.copy(c)
     else scene.background = c
-    // À hauteur d'yeux, la brume fond le sol dans le ciel : pas de ligne d'horizon abrupte.
-    const near = walking ? 45 : halfSizeM * 5
-    const far = walking ? Math.min(halfSizeM * 6, 260) : halfSizeM * 12
+    // Brume légère en vue d'ensemble ; à hauteur d'yeux, elle fond le sol dans le ciel (pas de ligne d'horizon abrupte).
+    const near = walking ? 45 : halfSizeM * 3.5
+    const far = walking ? Math.min(halfSizeM * 6, 260) : halfSizeM * 11
     if (scene.fog instanceof THREE.Fog) {
       scene.fog.color.copy(c)
       scene.fog.near = near
       scene.fog.far = far
     } else scene.fog = new THREE.Fog(c, near, far)
     invalidate()
-  }, [scene, sun.sky, halfSizeM, walking, invalidate])
+  }, [scene, sun.horizon, halfSizeM, walking, invalidate])
   useEffect(
     () => () => {
       scene.fog = null
@@ -109,19 +129,27 @@ function SunAndSky({ sun, halfSizeM, walking }: { sun: SunState; halfSizeM: numb
 
   const [dx, dy, dz] = sun.dir
   const y = Math.max(0.03, dy)
+  useEffect(() => {
+    markShadowsDirty(gl)
+    invalidate()
+  }, [dx, dy, dz, gl, invalidate])
   return (
     <>
+      <SkyDome sun={sun} />
       <directionalLight
+        key={shadowSize}
         ref={lightRef}
         castShadow
         position={[dx * dist, y * dist, dz * dist]}
-        intensity={2.8 * sun.daylight}
+        intensity={2.5 * sun.daylight}
         color={sun.light}
         shadow-mapSize={[shadowSize, shadowSize]}
         shadow-bias={-0.0004}
         shadow-normalBias={0.04}
+        shadow-radius={3}
       />
-      <hemisphereLight color={sun.sky} groundColor="#4d5e34" intensity={0.25 + 0.85 * sun.daylight} />
+      {/* Remplissage plus fort : les ombres restent douces, jamais noires. */}
+      <hemisphereLight color={sun.sky} groundColor="#566a3b" intensity={0.35 + 0.85 * sun.daylight} />
       <ambientLight color="#8fa3d9" intensity={0.12 + 0.08 * (1 - sun.daylight)} />
     </>
   )
@@ -300,7 +328,9 @@ export function Scene(props: SceneProps) {
     reducedMotion,
     sun,
     growthTime,
-    month,
+    seasonTime,
+    tier,
+    canopy,
     compassRef,
     neighborTrees,
   } = props
@@ -329,21 +359,33 @@ export function Scene(props: SceneProps) {
   const colliders = useMemo(() => makeColliders(garden.buildings), [garden.buildings])
 
   const builds = useRef(0)
-  const { parts, visuals } = useMemo(
+  const { parts, visuals, triangles, tiers } = useMemo(
     () => {
       builds.current++
       return buildPlantScene({
         plants,
         speciesById,
         at: new Date(growthTime),
-        month,
+        seasonAt: new Date(seasonTime),
         sample,
         lod: walking ? lod : undefined,
+        tier,
+        triangleCap: TRIANGLE_CAP[tier],
       })
     },
     // `rebuild` n'est pas lu : il force un nouveau calcul après un glisser (voir plus haut).
-    [plants, speciesById, growthTime, month, sample, lod, walking, rebuild],
+    [plants, speciesById, growthTime, seasonTime, sample, lod, walking, tier, rebuild],
   )
+  const planStats = useRef({ triangles, tiers })
+  planStats.current = { triangles, tiers }
+
+  // Fréquence d'images mesurée (Auto abaisse le niveau si le téléphone peine) : intervalle entre images consécutives.
+  const lastFrame = useRef(0)
+  useFrame(() => {
+    const now = performance.now()
+    if (lastFrame.current) reportFrameInterval(now - lastFrame.current)
+    lastFrame.current = now
+  })
   const visualsRef = useRef(visuals)
   visualsRef.current = visuals
   // Mesures de développement (?debug=1) : projection d'une plante à l'écran, compteurs de rendu et de reconstruction.
@@ -360,11 +402,25 @@ export function Scene(props: SceneProps) {
         return { x: r.left + ((p.x + 1) / 2) * r.width, y: r.top + ((1 - p.y) / 2) * r.height }
       },
       base: (id: string) => visualsRef.current[id]?.base ?? null,
+      // Cadre une plante de près (recette visuelle) : caméra à `dist` m, légèrement en hauteur, vers le sud-ouest.
+      focus: (id: string, k = 1.1, lift = 0.5) => {
+        const v = visualsRef.current[id]
+        const { camera, controls } = get() as unknown as { camera: THREE.Camera; controls: { target: THREE.Vector3; update: () => void } | null }
+        if (!v || !controls) return false
+        const [x, y, z] = v.base
+        const dist = Math.max(2.2, (v.heightM + v.spreadM) * k)
+        const ty = y + v.heightM * 0.45
+        camera.position.set(x + dist * 0.55, ty + lift + dist * 0.25, z + dist * 0.85)
+        controls.target.set(x, ty, z)
+        controls.update()
+        invalidate()
+        return true
+      },
       camera: () => {
         const c = get().camera as THREE.OrthographicCamera & THREE.PerspectiveCamera
         return { position: c.position.toArray(), zoom: c.zoom, ortho: !!c.isOrthographicCamera }
       },
-      stats: () => ({ builds: builds.current, calls: gl.info.render.calls, triangles: gl.info.render.triangles, frames: gl.info.render.frame, geometries: gl.info.memory.geometries, textures: gl.info.memory.textures }),
+      stats: () => ({ builds: builds.current, plantTriangles: planStats.current.triangles, tiers: planStats.current.tiers, calls: gl.info.render.calls, triangles: gl.info.render.triangles, frames: gl.info.render.frame, geometries: gl.info.memory.geometries, textures: gl.info.memory.textures }),
     }
     return () => {
       delete w.__g3d
@@ -535,7 +591,7 @@ export function Scene(props: SceneProps) {
 
   return (
     <>
-      <SunAndSky sun={sun} halfSizeM={halfSizeM} walking={walking} />
+      <SunAndSky sun={sun} halfSizeM={halfSizeM} walking={walking} tier={tier} />
       {walking ? (
         <WalkRig
           shared={walkShared}
@@ -578,11 +634,11 @@ export function Scene(props: SceneProps) {
       />
       {showHeatmap && sunHeatmap && <HeatmapLayer map={sunHeatmap} sample={sample} />}
       {garden.parcel && garden.parcel.length > 2 && <ParcelOutline ring={garden.parcel} sample={sample} />}
-      {garden.buildings && garden.buildings.length > 0 && <Buildings buildings={garden.buildings} sample={sample} />}
+      {garden.buildings && garden.buildings.length > 0 && <Buildings buildings={garden.buildings} sample={sample} canopy={canopy} />}
 
       {neighborTrees && neighborTrees.length > 0 && <NeighborTrees trees={neighborTrees} sample={sample} />}
 
-      <Plants ref={plantsRef} parts={parts} handlers={handlers} />
+      <Plants ref={plantsRef} parts={parts} handlers={handlers} cardShadows={tier === 2} />
 
       {/* Anneau et étiquette de la plante sélectionnée : un groupe qu'on déplace tel quel pendant un glisser. */}
       {selected && (

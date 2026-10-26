@@ -18,7 +18,7 @@ export function parseQualityPref(raw: string | null | undefined): QualityPref {
 }
 
 /** Plafond de triangles dessinés pour les plantes, selon le niveau. */
-export const TRIANGLE_CAP: Record<QualityTier, number> = { 0: 70000, 1: 110000, 2: 150000 }
+export const TRIANGLE_CAP: Record<QualityTier, number> = { 0: 90000, 1: 120000, 2: 150000 }
 
 export interface HardwareInfo {
   cores?: number

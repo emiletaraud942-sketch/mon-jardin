@@ -1,10 +1,10 @@
 // Sol (relief + orthophoto), contour de parcelle, bâtiments extrudés et carte d'ensoleillement.
 import { forwardRef, useEffect, useMemo, useState } from 'react'
 import * as THREE from 'three'
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { useThree, type ThreeEvent } from '@react-three/fiber'
 import { Line } from '@react-three/drei'
 import type { Building, LonLat, TerrainGrid, XY } from '../../types'
+import { buildBuildingsGeometry } from './roofs'
 import { orthoTextureUrl } from '../../lib/ign'
 import { buildTerrainGeometry, densifyRing, terrainSegments, type HeightSampler } from './terrain'
 import { createGroundDetail } from './groundDetail'
@@ -82,8 +82,10 @@ export const Ground = forwardRef<THREE.Mesh, GroundProps>(function Ground(
   const detail = useMemo(() => createGroundDetail(), [])
   useEffect(() => {
     detail.uniforms.uWalk.value = walking ? 1 : 0
+    // Sans orthophoto, le vert uni reçoit tout le bruit de couleur ; avec la photo, une nuance légère seulement.
+    detail.uniforms.uNoise.value = tex ? 0.3 : 1
     invalidate()
-  }, [detail, walking, invalidate])
+  }, [detail, walking, tex, invalidate])
   const geometry = useMemo(
     () => buildTerrainGeometry(halfSizeM, terrainSegments(terrain, halfSizeM), sample),
     [halfSizeM, terrain, sample],
@@ -120,16 +122,6 @@ export function ParcelOutline({ ring, sample }: { ring: XY[]; sample: HeightSamp
   return <Line points={points} color="#fff3a3" lineWidth={2.5} transparent opacity={0.95} depthTest />
 }
 
-function cleanRing(ring: XY[]): XY[] {
-  const r = ring.slice()
-  if (r.length > 1) {
-    const a = r[0]
-    const b = r[r.length - 1]
-    if (Math.abs(a.x - b.x) < 1e-6 && Math.abs(a.y - b.y) < 1e-6) r.pop()
-  }
-  return r
-}
-
 // Matériau partagé des bâtiments ; libéré au démontage de la vue 3D, recréé à la demande.
 let buildingMaterial: THREE.MeshStandardMaterial | null = null
 export function disposeBuildingMaterial(): void {
@@ -137,33 +129,13 @@ export function disposeBuildingMaterial(): void {
   buildingMaterial = null
 }
 
-/** Tous les bâtiments fusionnés en une seule géométrie (un seul appel de dessin). */
-export function Buildings({ buildings, sample }: { buildings: Building[]; sample: HeightSampler }) {
-  const geometry = useMemo(() => {
-    const geos: THREE.BufferGeometry[] = []
-    for (const b of buildings) {
-      const ring = cleanRing(b.ring)
-      if (ring.length < 3 || !(b.heightM > 0)) continue
-      // Forme dans le plan (x = est, y = nord), extrudée selon +Z, puis basculée : Z → haut, y → -Z.
-      const shape = new THREE.Shape(ring.map((p) => new THREE.Vector2(p.x, p.y)))
-      let base = Infinity
-      for (const p of ring) base = Math.min(base, sample(p.x, p.y))
-      if (!isFinite(base)) base = 0
-      const g = new THREE.ExtrudeGeometry(shape, { depth: b.heightM + 0.3, bevelEnabled: false })
-      g.rotateX(-Math.PI / 2)
-      g.translate(0, base - 0.3, 0)
-      geos.push(g.index ? g.toNonIndexed() : g)
-    }
-    if (!geos.length) return null
-    const merged = mergeGeometries(geos, false)
-    geos.forEach((g) => g.dispose())
-    merged?.computeVertexNormals()
-    merged?.computeBoundingSphere()
-    return merged
-  }, [buildings, sample])
+/** Tous les bâtiments fusionnés en une seule géométrie (un seul appel de dessin). Hauteur LiDAR (MNH) si fournie, sinon BD TOPO. */
+export function Buildings({ buildings, sample, canopy }: { buildings: Building[]; sample: HeightSampler; canopy?: TerrainGrid }) {
+  const built = useMemo(() => buildBuildingsGeometry(buildings, sample, canopy), [buildings, sample, canopy])
+  const geometry = built.geometry
   useEffect(() => () => geometry?.dispose(), [geometry])
   if (!geometry) return null
-  if (!buildingMaterial) buildingMaterial = new THREE.MeshStandardMaterial({ color: '#dcd8cf', roughness: 0.75, metalness: 0 })
+  if (!buildingMaterial) buildingMaterial = new THREE.MeshStandardMaterial({ color: '#ffffff', vertexColors: true, roughness: 0.78, metalness: 0 })
   return <mesh geometry={geometry} material={buildingMaterial} castShadow receiveShadow />
 }
 

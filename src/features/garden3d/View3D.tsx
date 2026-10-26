@@ -8,7 +8,7 @@ import type { Garden, XY } from '../../types'
 import { GardenSide, PlacingBanner, useSheetHead } from '../map/GardenSide'
 import { placePlant } from '../map/placing'
 import { SidePanel } from '../map/SidePanel'
-import { useLidarScene } from '../../lib/useLidar'
+import { useLidar, useLidarScene } from '../../lib/useLidar'
 import { Garden3D } from './Garden3D'
 import { gardenFrame } from './framing'
 
@@ -22,6 +22,8 @@ export default function View3D({ garden }: { garden: Garden }) {
   const head = useSheetHead(garden)
   // LiDAR HD : arbres des environs (ombres + dessin) et relief plus fin, calculés en mémoire (le jardin stocké ne change pas).
   const lidar = useLidarScene(garden, plants)
+  // Même chargement (partagé) : on y lit la hauteur de canopée / bâtiments (MNH) pour les toits.
+  const lidarRaw = useLidar(garden)
   // Sol, orthophoto et carte d'ensoleillement couvrent la même emprise : parcelle + ~25 m de voisinage.
   const hasParcel = !!garden.parcel && garden.parcel.length > 2
   // Avec une parcelle, l'emprise ne dépend pas des plantes : on ne la recalcule pas à chaque déplacement.
@@ -70,6 +72,7 @@ export default function View3D({ garden }: { garden: Garden }) {
           onSunMapRequest={setSunDate}
           halfSizeM={halfSizeM}
           neighborTrees={lidar.trees}
+          canopy={lidarRaw.data?.canopy}
         />
         <PlacingBanner />
       </div>

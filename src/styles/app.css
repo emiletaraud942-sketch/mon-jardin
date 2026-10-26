@@ -1709,7 +1709,7 @@ label.field > span {
   background: transparent;
   cursor: grab;
   border-radius: 50%;
-  position: relative;
+  /* Pas de `position: relative` : elle écraserait `position: absolute` de .maplibregl-marker et empilerait les pastilles. */
 }
 .marker-hit:focus-visible {
   outline: 3px solid #ffd54a;
