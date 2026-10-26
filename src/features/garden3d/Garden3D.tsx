@@ -12,6 +12,9 @@ import { disposePartGeometries } from './plantModel'
 import { disposeGrassDetailTexture } from './groundDetail'
 import { NO_INSETS, gardenFrame, type Insets, type Rect, type ViewMode } from './framing'
 import { createWalkShared } from './walk'
+import { disposeNeighborTrees } from './NeighborTrees'
+import type { DetectedTree } from '../../lib/lidar'
+import { LIDAR_ATTRIBUTION } from '../../lib/lidar'
 import { Joystick, MiniMap, WalkPad } from './WalkUI'
 import './garden3d.css'
 
@@ -35,6 +38,8 @@ export interface Garden3DProps {
   halfSizeM?: number
   /** Mode de vue au démarrage (perspective par défaut). */
   defaultView?: ViewMode
+  /** Arbres des environs mesurés par le LiDAR HD (IGN), déjà filtrés. Vide ou absent : rien n'est affiché. */
+  neighborTrees?: DetectedTree[]
 }
 
 const HOUR_MIN = 5
@@ -48,6 +53,7 @@ function disposeSharedResources() {
   disposePlantMaterials()
   disposeBuildingMaterial()
   disposeGrassDetailTexture()
+  disposeNeighborTrees()
 }
 
 /** Repli si la 3D ne peut pas démarrer (WebGL absent, mémoire insuffisante) : message utile et « Réessayer ». */
@@ -147,6 +153,7 @@ export function Garden3D({
   onSunMapRequest,
   halfSizeM: halfSizeProp,
   defaultView = 'perspective',
+  neighborTrees,
 }: Garden3DProps) {
   const today = useMemo(() => new Date(), [])
   const year = zonedParts(today).year
@@ -253,6 +260,9 @@ export function Garden3D({
     setWalkHelpOpen(true)
   }, [walking, walkShared])
   const [showHeatmap, setShowHeatmap] = useState(false)
+  const [showTrees, setShowTrees] = useState(true)
+  const treeCount = neighborTrees?.length ?? 0
+  const treesShown = showTrees && treeCount > 0
   const [playing, setPlaying] = useState(false)
   // Sur petit écran (ou écran peu haut), le panneau démarre replié : seul le curseur d'heure reste visible
   // et le jardin dispose de plus de place.
@@ -372,6 +382,7 @@ export function Garden3D({
             growthTime={growthTime}
             month={month}
             compassRef={compassRef}
+            neighborTrees={treesShown ? neighborTrees : undefined}
           />
         </Canvas>
       </CanvasErrorBoundary>
@@ -383,6 +394,7 @@ export function Garden3D({
               <strong>{dateLabel}</strong>
               <span className="g3d-sun">{describeSun(hour, sun.altitudeDeg, sun.azimuthDeg)}</span>
               {yearsAhead > 0 && <span className="g3d-sun">Plantes telles qu’elles seront {yearsLabel(yearsAhead).toLowerCase()}</span>}
+              {treesShown && <span className="g3d-sun g3d-attrib">Arbres des environs : {LIDAR_ATTRIBUTION.replace(' (Licence Ouverte)', '')}</span>}
             </div>
           </div>
           <div className="g3d-tools">
@@ -585,6 +597,12 @@ export function Garden3D({
                   />
                   <span className="g3d-help">Glissez pour changer de saison : le soleil et les ombres changent.</span>
                 </label>
+                {treeCount > 0 && (
+                  <label className="g3d-check">
+                    <input type="checkbox" checked={showTrees} onChange={(e) => setShowTrees(e.target.checked)} />
+                    <span>Arbres des environs (IGN) : {treeCount}</span>
+                  </label>
+                )}
                 <div className="g3d-shortcuts" role="group" aria-label="Saisons">
                   {shortcuts.map((s) => (
                     <button

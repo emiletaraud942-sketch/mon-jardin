@@ -4,6 +4,7 @@ import { useIsMobile } from '../../components/useMedia'
 import { SPECIES, SPECIES_BY_ID } from '../../data/species'
 import { CATEGORY_LABEL } from '../../data/labels'
 import { useGardenPlants } from '../../lib/store'
+import { useLidarScene } from '../../lib/useLidar'
 import { openSpecies, setMode, setUi, useUi } from '../../lib/ui'
 import { PlaceAction } from '../../components/PlaceAction'
 import { aspectLabel, slopeAt } from '../../lib/terrain'
@@ -81,15 +82,17 @@ function BestForSpot({ garden }: { garden: Garden }) {
   const [snap, setSnap] = useState<SheetSnap>('mid')
   const setCat = (c: Category | '') => setUi({ planting: { gardenId: garden.id, spot, cat: c } })
 
+  // Arbres des environs (LiDAR HD, s'il est disponible) : leur ombre compte ; sinon comportement habituel.
+  const lidar = useLidarScene(garden, plants)
   const analysis = useMemo(() => {
     if (!spot) return undefined
-    const obstacles = obstaclesFor(garden, plants, SPECIES_BY_ID, new Date())
+    const obstacles = obstaclesFor(garden, plants, SPECIES_BY_ID, new Date(), lidar.trees)
     const sun = seasonalSunHours(spot, garden, obstacles)
-    const slope = garden.terrain ? slopeAt(garden.terrain, spot) : undefined
+    const slope = lidar.terrain ? slopeAt(lidar.terrain, spot) : undefined
     const ctx = { garden, plants, speciesById: SPECIES_BY_ID, spot, sunHours: sun.moyenne, slopePct: slope?.pct }
     const recos = recommendSpecies(SPECIES, ctx, { categories: cat ? [cat] : undefined, limit: 15 })
     return { sun, slope, recos }
-  }, [spot, garden, plants, cat])
+  }, [spot, garden, plants, cat, lidar.trees, lidar.terrain])
 
   return (
     <div className="card">

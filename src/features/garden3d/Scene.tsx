@@ -1,4 +1,6 @@
 // Contenu du canvas : lumière solaire, caméra, sol, bâtiments, plantes et interactions.
+import type { DetectedTree } from '../../lib/lidar'
+import { NeighborTrees } from './NeighborTrees'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentRef, type RefObject } from 'react'
 import * as THREE from 'three'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
@@ -47,6 +49,8 @@ export interface SceneProps {
   /** Mois affiché (1–12) pour les fruits en saison. */
   month: number
   compassRef: RefObject<HTMLDivElement>
+  /** Arbres des environs (LiDAR HD) à dessiner ; absent ou vide = rien. */
+  neighborTrees?: DetectedTree[]
 }
 
 type OrbitControlsImpl = ComponentRef<typeof OrbitControls>
@@ -298,6 +302,7 @@ export function Scene(props: SceneProps) {
     growthTime,
     month,
     compassRef,
+    neighborTrees,
   } = props
   const walking = mode === 'promenade'
   const get = useThree((s) => s.get)
@@ -574,6 +579,8 @@ export function Scene(props: SceneProps) {
       {showHeatmap && sunHeatmap && <HeatmapLayer map={sunHeatmap} sample={sample} />}
       {garden.parcel && garden.parcel.length > 2 && <ParcelOutline ring={garden.parcel} sample={sample} />}
       {garden.buildings && garden.buildings.length > 0 && <Buildings buildings={garden.buildings} sample={sample} />}
+
+      {neighborTrees && neighborTrees.length > 0 && <NeighborTrees trees={neighborTrees} sample={sample} />}
 
       <Plants ref={plantsRef} parts={parts} handlers={handlers} />
 

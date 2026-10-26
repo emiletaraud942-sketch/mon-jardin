@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import type { SyncConflictError } from '../../lib/sync'
 import { ConfirmModal } from '../../components/ConfirmModal'
-import { ErrorNote } from '../../components/ErrorNote'
+import { ErrorNote, TechDetails } from '../../components/ErrorNote'
 import { Icon } from '../../components/Icon'
 import { Segmented } from '../../components/Segmented'
 import { SavedNote, useFlash } from '../../components/useFlash'
@@ -18,6 +18,8 @@ import { getTextSize, setTextSize, TEXT_SIZE_LABEL, TEXT_SIZES, type TextSize } 
 import { showToast } from '../../lib/toast'
 import { setUi, useUi } from '../../lib/ui'
 import { doyToLabel } from '../../lib/weather'
+import { lidarMessage, setLidarEnabled, useLidarScene } from '../../lib/useLidar'
+import { LIDAR_ATTRIBUTION } from '../../lib/lidar'
 import type { Garden, SoilTexture } from '../../types'
 import { GardenCreator } from './GardenCreator'
 import { GardenDataBanner } from './GardenDataBanner'
@@ -162,6 +164,39 @@ function GardenInfo({ garden }: { garden: Garden }) {
             Ce jardin et ses {plants.length} plante{plants.length > 1 ? 's' : ''} seront retirés de cet appareil. Vous aurez 15 secondes pour annuler.
           </p>
         </ConfirmModal>
+      )}
+    </div>
+  )
+}
+
+/** Relief fin et arbres des environs (LiDAR HD de l'IGN) : réglage, actualisation et retour simple. */
+function LidarCard({ garden }: { garden: Garden }) {
+  const plants = useGardenPlants(garden.id)
+  const lidar = useLidarScene(garden, plants)
+  const busy = lidar.status === 'loading'
+  const message = lidar.enabled ? lidarMessage({ status: lidar.status }, lidar.trees.length) : ''
+  return (
+    <div className="card">
+      <h2>Relief et arbres des environs</h2>
+      <label className="check-row">
+        <input type="checkbox" checked={lidar.enabled} onChange={(e) => setLidarEnabled(e.target.checked)} />
+        <span>Utiliser les arbres des environs (données IGN)</span>
+      </label>
+      <p className="small muted" style={{ margin: '6px 0 0' }}>
+        Leur ombre compte dans « Où planter ? » et ils apparaissent dans la vue 3D. Si ces données manquent chez vous, rien ne change.
+      </p>
+      {lidar.enabled && (
+        <div className="stack" style={{ marginTop: 8 }}>
+          <button className="btn" onClick={() => void lidar.refresh()} disabled={busy}>
+            {busy ? <span className="spinner" /> : null} Actualiser le relief et les arbres
+          </button>
+          <p className="small muted" role="status" aria-live="polite" style={{ margin: 0 }}>
+            {message}
+            {lidar.status === 'ok' && lidar.terrainSource === 'lidar' ? ' Relief plus précis utilisé.' : ''}
+          </p>
+          {lidar.status === 'unavailable' && lidar.detail && <TechDetails detail={lidar.detail} />}
+          {lidar.status === 'ok' && <p className="small muted" style={{ margin: 0 }}>{LIDAR_ATTRIBUTION}</p>}
+        </div>
       )}
     </div>
   )
@@ -511,6 +546,7 @@ export function SettingsPage({ garden }: { garden: Garden }) {
         <div className="stack" style={{ gap: 12 }}>
           <Backup />
           <GardenInfo garden={garden} />
+          <LidarCard garden={garden} />
           <ScanCard garden={garden} />
           <div className="card" ref={addRef}>
             <h2>Ajouter un autre jardin</h2>
@@ -534,7 +570,7 @@ export function SettingsPage({ garden }: { garden: Garden }) {
                 <h2 style={{ display: 'inline' }}>Sources et licences</h2>
               </summary>
               <ul className="list small">
-                <li>Photo aérienne, plan, cadastre, maisons voisines et relief : © IGN – Géoplateforme, Licence Ouverte 2.0.</li>
+                <li>Photo aérienne, plan, cadastre, maisons voisines et relief : © IGN – Géoplateforme, Licence Ouverte 2.0. Arbres des environs : © IGN – LiDAR HD, Licence Ouverte 2.0.</li>
                 <li>Météo et historique du climat : Open-Meteo (CC BY 4.0, usage non commercial).</li>
                 <li>Identification des plantes : Pl@ntNet (500 identifications gratuites par jour, partagées entre tous).</li>
                 <li>Fiches des plantes, calendriers et voisinages : base PermaJardin. Ces conseils restent indicatifs.</li>

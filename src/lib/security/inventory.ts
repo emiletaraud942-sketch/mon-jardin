@@ -62,12 +62,12 @@ export const DATA_INVENTORY: readonly DataItem[] = [
   },
   {
     id: 'position',
-    donnee: 'Coordonnées du jardin (parcelle, altitude, bâtiments, orthophoto, tuiles de carte)',
-    stockage: 'Dans le jardin créé ; tuiles IGN dans le cache du service worker (ign-tuiles, ign-ortho-3d)',
+    donnee: 'Coordonnées du jardin (parcelle, altitude, bâtiments, orthophoto, tuiles de carte ; relief fin et arbres des environs LiDAR HD : seule une zone carrée autour du jardin est demandée)',
+    stockage: 'Dans le jardin créé ; tuiles IGN dans le cache du service worker (ign-tuiles, ign-ortho-3d) ; relevé LiDAR dans IndexedDB (clé lidar:…)',
     destinataires: ['Vercel (proxys /ext/geopf, /ext/apicarto)', 'IGN Géoplateforme et API Carto'],
     finalite: 'Afficher la carte, la parcelle, le relief et le bâti',
     base: 'execution',
-    duree: 'Tuiles : 60 jours au plus dans le cache ; orthophoto 3D : 14 jours',
+    duree: 'Tuiles : 60 jours au plus dans le cache ; orthophoto 3D : 14 jours ; relevé LiDAR : 90 jours',
     effacement: 'Effacer toutes mes données (vide aussi les caches de tuiles)',
   },
   {

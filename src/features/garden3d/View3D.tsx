@@ -8,6 +8,7 @@ import type { Garden, XY } from '../../types'
 import { GardenSide, PlacingBanner, useSheetHead } from '../map/GardenSide'
 import { placePlant } from '../map/placing'
 import { SidePanel } from '../map/SidePanel'
+import { useLidarScene } from '../../lib/useLidar'
 import { Garden3D } from './Garden3D'
 import { gardenFrame } from './framing'
 
@@ -19,6 +20,8 @@ export default function View3D({ garden }: { garden: Garden }) {
   const [heatmap, setHeatmap] = useState<{ halfSizeM: number; n: number; values: number[] }>()
   const [computing, setComputing] = useState(false)
   const head = useSheetHead(garden)
+  // LiDAR HD : arbres des environs (ombres + dessin) et relief plus fin, calculés en mémoire (le jardin stocké ne change pas).
+  const lidar = useLidarScene(garden, plants)
   // Sol, orthophoto et carte d'ensoleillement couvrent la même emprise : parcelle + ~25 m de voisinage.
   const hasParcel = !!garden.parcel && garden.parcel.length > 2
   // Avec une parcelle, l'emprise ne dépend pas des plantes : on ne la recalcule pas à chaque déplacement.
@@ -42,19 +45,19 @@ export default function View3D({ garden }: { garden: Garden }) {
     // Laisse le navigateur afficher l'indicateur avant le calcul (bloquant ~1 s).
     const t = setTimeout(() => {
       const date = sunDate
-      const obstacles = obstaclesFor(garden, plants, SPECIES_BY_ID, date)
+      const obstacles = obstaclesFor(garden, plants, SPECIES_BY_ID, date, lidar.trees)
       setHeatmap(sunHoursGrid(garden, obstacles, date, { halfSizeM, n: 40, stepMin: 30 }))
       setComputing(false)
     }, 50)
     return () => clearTimeout(t)
     // `plants` est résumé par plantsKey (positions arrondies) : inutile de recalculer pour un autre objet identique.
-  }, [sunDate, garden, plantsKey, halfSizeM])
+  }, [sunDate, garden, plantsKey, halfSizeM, lidar.trees])
 
   return (
     <div className="workspace">
       <div className="canvas-wrap">
         <Garden3D
-          garden={garden}
+          garden={lidar.gardenView}
           plants={plants}
           speciesById={SPECIES_BY_ID}
           selectedPlantId={selectedPlantId}
@@ -66,6 +69,7 @@ export default function View3D({ garden }: { garden: Garden }) {
           sunComputing={computing}
           onSunMapRequest={setSunDate}
           halfSizeM={halfSizeM}
+          neighborTrees={lidar.trees}
         />
         <PlacingBanner />
       </div>
