@@ -64,13 +64,15 @@ export interface GuideState {
   stepsOpen: boolean
   /** Bandeau « jardin d'exemple » fermé par l'utilisateur. */
   demoHidden: boolean
+  /** Ligne « Installer l'appli » fermée par l'utilisateur. */
+  installHidden: boolean
   /** Date (ms) avant laquelle on ne repropose pas « passer à l'entretien ». */
   nudgeUntil: number
   /** Ids des jardins dont la vue 3D / l'écran Entretien ont déjà été ouverts. */
   opened3d: string[]
   openedEntretien: string[]
 }
-const DEFAULT_GUIDE: GuideState = { progressOpen: false, stepsHidden: true, stepsOpen: true, demoHidden: false, nudgeUntil: 0, opened3d: [], openedEntretien: [] }
+const DEFAULT_GUIDE: GuideState = { progressOpen: false, stepsHidden: true, stepsOpen: true, demoHidden: false, installHidden: false, nudgeUntil: 0, opened3d: [], openedEntretien: [] }
 export const NUDGE_SNOOZE_MS = 7 * 86400000
 
 function readGuide(): GuideState {
@@ -83,6 +85,7 @@ function readGuide(): GuideState {
       stepsHidden: bool(raw.stepsHidden, DEFAULT_GUIDE.stepsHidden),
       stepsOpen: bool(raw.stepsOpen, DEFAULT_GUIDE.stepsOpen),
       demoHidden: bool(raw.demoHidden, DEFAULT_GUIDE.demoHidden),
+      installHidden: bool(raw.installHidden, DEFAULT_GUIDE.installHidden),
       nudgeUntil: typeof raw.nudgeUntil === 'number' && Number.isFinite(raw.nudgeUntil) ? raw.nudgeUntil : 0,
       opened3d: ids(raw.opened3d),
       openedEntretien: ids(raw.openedEntretien),

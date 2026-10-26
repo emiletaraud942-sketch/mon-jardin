@@ -28,6 +28,7 @@ import { badgeAria, badgeLabel } from './lib/neighbors/news'
 import { startPushBridge } from './lib/neighbors/pushBridge'
 import { readRadius } from './features/neighbors/prefs'
 import { useConsents } from './lib/consent'
+import { InstallButton } from './components/InstallButton'
 import { InviteButton } from './components/InviteButton'
 
 const View3D = lazy(() => import('./features/garden3d/View3D'))
@@ -93,6 +94,7 @@ function MoreSheet({ onClose, onNewGarden, newsCount }: { onClose: () => void; o
         >
           <Icon name="plus" /> Nouveau jardin
         </button>
+        <InstallButton className="btn more-item" />
         <InviteButton className="btn more-item" label="Faire connaître l’appli" copyLabel="Copier le lien de l’appli" />
       </div>
     </Modal>

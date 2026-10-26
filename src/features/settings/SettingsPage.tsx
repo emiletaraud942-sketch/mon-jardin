@@ -21,6 +21,7 @@ import { doyToLabel } from '../../lib/weather'
 import type { Garden, SoilTexture } from '../../types'
 import { GardenCreator } from './GardenCreator'
 import { GardenDataBanner } from './GardenDataBanner'
+import { InstallCard } from '../../components/InstallButton'
 import { PrivacyCard } from './PrivacyCard'
 import { hasConsent } from '../../lib/consent'
 import { ConsentDialog } from '../legal/ConsentDialog'
@@ -522,6 +523,7 @@ export function SettingsPage({ garden }: { garden: Garden }) {
         </div>
         <div className="stack" style={{ gap: 12 }}>
           <ReadingCard />
+          <InstallCard />
           <Sync />
           <PrivacyCard />
           <div className="card">

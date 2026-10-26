@@ -1,5 +1,6 @@
 import { NUDGE_SNOOZE_MS, setGuide, setMode, useUi } from '../lib/ui'
 import { suggestedMode } from '../lib/progress'
+import { InstallHint } from './InstallButton'
 import { FirstSteps } from './FirstSteps'
 import { isDemoGarden } from '../features/settings/demo'
 import { Icon } from './Icon'
@@ -39,6 +40,7 @@ export function ProgressCard({ garden }: { garden: Garden }) {
           <Icon name="chevron" size={18} />
         </span>
       </button>
+      <InstallHint />
       {nudge && (
         <div className="nudge" role="status">
           <span className="small">Votre jardin est bien avancé. Passer à l’entretien ?</span>

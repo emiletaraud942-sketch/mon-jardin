@@ -52,6 +52,7 @@ export default defineConfig({
         theme_color: '#f7f2e8',
         background_color: '#f7f2e8',
         display: 'standalone',
+        display_override: ['standalone'],
         orientation: 'any',
         categories: ['lifestyle', 'productivity', 'utilities'],
         start_url: '/',

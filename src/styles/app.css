@@ -3083,3 +3083,28 @@ details > summary {
   font-size: 1.35rem;
   font-weight: 600;
 }
+
+/* ---------- Installer l'appli ---------- */
+.install-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px 4px 10px;
+  border-top: 1px solid var(--border);
+}
+.install-hint > .small {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.install-hint .btn {
+  min-height: 44px;
+}
+.install-hint .install-close {
+  min-width: 44px;
+  padding: 0;
+}
+.install-share {
+  display: inline-flex;
+  vertical-align: middle;
+  color: var(--accent);
+}
