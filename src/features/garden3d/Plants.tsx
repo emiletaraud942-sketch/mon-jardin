@@ -48,7 +48,7 @@ function leafTexture(): THREE.CanvasTexture {
       const x = 32 + Math.cos(a) * d
       const y = 32 + Math.sin(a) * d
       const rot = rnd() * Math.PI
-      const g = 205 + Math.floor(rnd() * 50)
+      const g = 225 + Math.floor(rnd() * 30)
       ctx.save()
       ctx.translate(x, y)
       ctx.rotate(rot)
@@ -178,7 +178,7 @@ function Layer({
     <primitive
       object={mesh}
       castShadow={casts}
-      receiveShadow={!transparent && kind !== 'dot' && kind !== 'tuft' && kind !== 'branch'}
+      receiveShadow={!transparent && kind !== 'dot' && kind !== 'tuft' && kind !== 'branch' && kind !== 'card'}
       renderOrder={transparent ? 2 : 0}
       onPointerDown={(e: ThreeEvent<PointerEvent>) => {
         const id = owner(e)

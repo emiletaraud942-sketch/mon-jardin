@@ -72,4 +72,17 @@ describe('heure simulée dans le fuseau du jardin', () => {
     const wrong = sunState(new Date('2025-06-21T14:00:00-04:00'), PARIS)
     expect(wrong.altitudeDeg).toBeLessThan(20)
   })
+
+  it('ciel : horizon plus clair que le zénith de jour, dégradé continu (pas de saut au lever)', () => {
+    const day = sunState(dateFromDoy(2025, doyOf(2025, 6, 21), 14), PARIS)
+    const lum = (hex: string) => parseInt(hex.slice(1, 3), 16) + parseInt(hex.slice(3, 5), 16) + parseInt(hex.slice(5, 7), 16)
+    expect(lum(day.horizon)).toBeGreaterThan(lum(day.sky))
+    // d'un quart d'heure à l'autre autour du lever, la couleur change peu
+    let prev = sunState(dateFromDoy(2025, doyOf(2025, 6, 21), 4), PARIS).horizon
+    for (let h = 4.25; h <= 8; h += 0.25) {
+      const cur = sunState(dateFromDoy(2025, doyOf(2025, 6, 21), h), PARIS).horizon
+      expect(Math.abs(lum(cur) - lum(prev))).toBeLessThan(130)
+      prev = cur
+    }
+  })
 })

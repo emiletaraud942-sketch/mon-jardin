@@ -289,7 +289,7 @@ function shrub(c: Ctx) {
   const n = TIERED(tier, 2, 5, 8)
   const thick = clamp(H * 0.014, 0.006, 0.04)
   const a0 = r() * 6.283
-  const rl = rx * TIERED(tier, 0.62, 0.5, 0.42)
+  const rl = rx * TIERED(tier, 0.62, 0.42, 0.34)
   const vs = clamp(H / (2 * rx), 0.5, 1.4) * 0.85
   const lumps: Lump[] = []
   const s = c.lf
@@ -302,8 +302,8 @@ function shrub(c: Ctx) {
     r()
   }
   if (s > 0.04) {
-    const cr = rx * 0.78 * s
-    em.add(tier === 0 ? 'clump' : 'blob', 0, H * 0.45, 0, cr, H * 0.42 * s, cr, c.shade(0.1), r() * 6.283)
+    const cr = rx * 0.7 * s
+    em.add(tier === 0 ? 'clump' : 'blob', 0, H * 0.45, 0, cr, H * 0.4 * s, cr, c.shade(0.1), r() * 6.283)
     lumps.push({ x: 0, y: H * 0.45, z: 0, r: Math.max(cr, H * 0.42 * s) * 0.9 })
     const count = TIERED(tier, 2, n, n + 2)
     for (let i = 0; i < count; i++) {
@@ -375,7 +375,7 @@ function tufted(c: Ctx, grass: boolean) {
   const fl = c.look.flower
   const heads = grass ? c.accent ?? STRAW : c.accent
   if (!heads || c.look.dead) return
-  const hs = clamp(S * (grass ? 0.1 : 0.14), 0.02, 0.09)
+  const hs = clamp(S * (grass ? 0.08 : 0.07), 0.015, 0.05)
   const ns = TIERED(tier, 2, 4, 8)
   if (fl > 0.04 || (grass && c.look.fruit > 0.04)) {
     const inten = Math.max(fl, grass ? c.look.fruit : 0)
@@ -388,7 +388,7 @@ function tufted(c: Ctx, grass: boolean) {
       if (tall || grass) em.limb('branch', [x, 0, z], [x, top, z], 0.008 + hs * 0.08, c.shade(0.1).multiplyScalar(0.8))
       const sz = hs * (0.35 + 0.65 * inten)
       if (grass) em.add('dot', x, top, z, sz * 0.7, sz * 2.2, sz * 0.7, heads.clone().offsetHSL(0, 0, (r() - 0.5) * 0.1))
-      else em.add('dot', x, tall ? top : Math.max(0.05, H * 0.8 * dormant), z, sz, sz * 0.6, sz, heads.clone().offsetHSL(0, (r() - 0.5) * 0.08, (r() - 0.5) * 0.12))
+      else em.add('dot', x, tall ? top : Math.max(0.05, H * 0.85 * dormant), z, sz * 0.8, sz * 1.5, sz * 0.8, heads.clone().offsetHSL(0, (r() - 0.5) * 0.08, (r() - 0.5) * 0.12))
     }
   }
 }
@@ -442,7 +442,7 @@ function veg(c: Ctx) {
   const n = tall ? TIERED(tier, 1, 2, 3) : TIERED(tier, 1, 3, 5)
   const s = c.look.dead ? 0.3 : 0.12 + 0.88 * c.lf
   const lumps: Lump[] = []
-  const rad = Math.max(0.03, (S * 0.5) / Math.sqrt(n)) * (n === 1 ? 1 : 1.15)
+  const rad = Math.max(0.03, (S * 0.5) / Math.sqrt(n)) * (n === 1 ? 1.15 : 1.3)
   for (let i = 0; i < n; i++) {
     const x = n === 1 ? 0 : ((i + 0.5) / n - 0.5) * len * 0.85
     const z = (r() - 0.5) * wid * 0.25

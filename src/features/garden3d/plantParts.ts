@@ -122,7 +122,7 @@ function cardGeometry(): THREE.BufferGeometry {
   const g = mergeGeometries([a, b])
   a.dispose()
   b.dispose()
-  return paint(g, 0.7, 1.05, -1, 1)
+  return paint(g, 0.88, 1.1, -1, 1)
 }
 
 let shared: Record<PartKind, THREE.BufferGeometry> | null = null

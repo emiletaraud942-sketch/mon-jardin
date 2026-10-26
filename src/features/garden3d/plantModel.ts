@@ -6,9 +6,9 @@ import { plantStateAt, type PlantState } from '../../engine/growth'
 import type { HeightSampler } from './terrain'
 import type { DetailLevel } from './walk'
 import { archetypeOf, generatePlant, type GenTier, type PlantLook } from './plantGen'
-import { estimateTriangles, type PlantPart } from './plantParts'
+import { disposePartGeometries as disposeGeometries, estimateTriangles, type PlantPart } from './plantParts'
 
-export { PART_KINDS, partGeometries, disposePartGeometries, estimateTriangles, partTriangles, type PartKind, type PlantPart } from './plantParts'
+export { PART_KINDS, partGeometries, estimateTriangles, partTriangles, type PartKind, type PlantPart } from './plantParts'
 export { archetypeOf, type Archetype } from './plantGen'
 
 export type PlantShape = 'tree' | 'shrub' | 'climber' | 'herb' | 'ground' | 'generic'
@@ -102,6 +102,28 @@ export function lookOf(plant: Plant, sp: Species | undefined, st: PlantState): P
   }
 }
 
+// Les pièces d'une plante ne dépendent que de son aspect et du niveau : on les garde d'une reconstruction à l'autre
+// (curseur de date, niveaux de détail de la Promenade). Aucune ressource GPU ici : simple mémoire.
+const CACHE_MAX = 1500
+const cache = new Map<string, PlantPart[]>()
+const f3 = (n: number) => n.toFixed(3)
+function generateCached(look: PlantLook, tier: GenTier, o: [number, number, number]): PlantPart[] {
+  const key = [look.id, tier, look.archetype, f3(look.H), f3(look.S), f3(look.adultH), f3(look.leaf), f3(look.flower), f3(look.fruit), f3(look.tint), f3(look.vigor), look.dead, look.sick, look.ghost, look.root, look.foliage.getHexString(), look.accent?.getHexString() ?? '', f3(o[0]), f3(o[1]), f3(o[2])].join('|')
+  let parts = cache.get(key)
+  if (!parts) {
+    if (cache.size >= CACHE_MAX) cache.clear()
+    parts = generatePlant(look, tier, o)
+    cache.set(key, parts)
+  }
+  return parts
+}
+
+/** Libère les géométries partagées (au démontage de la vue 3D) et la mémoire des pièces ; recréées au prochain besoin. */
+export function disposePartGeometries(): void {
+  cache.clear()
+  disposeGeometries()
+}
+
 export interface BuildArgs {
   plants: Plant[]
   speciesById: Record<string, Species>
@@ -144,11 +166,11 @@ export function buildPlantScene({ plants, speciesById, at, seasonAt, sample, ove
   }
   // 1) tout au niveau simple ; 2) la Promenade monte les plantes proches ; 3) on monte les plus visibles tant que le plafond tient.
   const cur: GenTier[] = looks.map(() => 0)
-  const parts: PlantPart[][] = looks.map((l) => generatePlant(l.look, 0, l.origin))
+  const parts: PlantPart[][] = looks.map((l) => generateCached(l.look, 0, l.origin))
   const tris = parts.map((p) => estimateTriangles(p))
   let total = tris.reduce((a, b) => a + b, 0)
   const upgrade = (i: number, to: GenTier, force: boolean) => {
-    const p = generatePlant(looks[i].look, to, looks[i].origin)
+    const p = generateCached(looks[i].look, to, looks[i].origin)
     const t = estimateTriangles(p)
     if (!force && total - tris[i] + t > triangleCap) return false
     total += t - tris[i]

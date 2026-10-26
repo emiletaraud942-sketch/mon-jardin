@@ -149,8 +149,8 @@ function SunAndSky({ sun, halfSizeM, walking, tier }: { sun: SunState; halfSizeM
         shadow-radius={3}
       />
       {/* Remplissage plus fort : les ombres restent douces, jamais noires. */}
-      <hemisphereLight color={sun.sky} groundColor="#566a3b" intensity={0.35 + 0.85 * sun.daylight} />
-      <ambientLight color="#8fa3d9" intensity={0.12 + 0.08 * (1 - sun.daylight)} />
+      <hemisphereLight color={sun.sky} groundColor="#566a3b" intensity={0.5 + 0.8 * sun.daylight} />
+      <ambientLight color="#aab4d0" intensity={0.12 + 0.08 * (1 - sun.daylight)} />
     </>
   )
 }
