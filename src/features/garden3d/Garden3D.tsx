@@ -354,7 +354,7 @@ export function Garden3D({
           key={canvasKey}
           className="g3d-canvas"
           shadows
-          dpr={[1, 2]}
+          dpr={[1, quality.tier === 0 ? 1.5 : 2]}
           frameloop="demand"
           role="img"
           aria-label={summary}
