@@ -17,6 +17,7 @@ uniform vec3 uHorizon;
 uniform vec3 uSunDir;
 uniform vec3 uSunColor;
 uniform float uGlow;
+uniform float uWarm;
 varying vec3 vDir;
 void main() {
   float h = clamp(vDir.y, 0.0, 1.0);
@@ -24,6 +25,12 @@ void main() {
   vec3 col = mix(uHorizon, uTop, t);
   float s = max(dot(normalize(vDir), uSunDir), 0.0);
   col += uSunColor * (pow(s, 6.0) * 0.18 + pow(s, 48.0) * 0.35) * uGlow;
+  // Couchant : bande chaude à l'horizon, côté soleil, qui s'éteint vers le zénith (dégradé orange -> rose -> bleu).
+  vec2 hd = normalize(vDir.xz + 1e-5);
+  vec2 sd = normalize(uSunDir.xz + 1e-5);
+  float side = pow(max(dot(hd, sd), 0.0), 2.5);
+  float band = (1.0 - smoothstep(0.0, 0.42, h)) * (0.35 + 0.65 * side);
+  col = mix(col, uSunColor * vec3(1.0, 0.78, 0.62), band * uWarm * 0.55);
   gl_FragColor = vec4(col, 1.0);
   #include <colorspace_fragment>
 }`
@@ -47,6 +54,7 @@ export function SkyDome({ sun }: { sun: SunState }) {
           uSunDir: { value: new THREE.Vector3(0, 1, 0) },
           uSunColor: { value: new THREE.Color() },
           uGlow: { value: 1 },
+          uWarm: { value: 0 },
         },
       }),
     [],
@@ -65,6 +73,8 @@ export function SkyDome({ sun }: { sun: SunState }) {
     u.uSunDir.value.set(...sun.dir).normalize()
     u.uSunColor.value.set(sun.light)
     u.uGlow.value = sun.daylight * (sun.altitudeDeg > -2 ? 1 : 0)
+    // Effet de couchant : plein vers 2-6° de hauteur, nul au-delà de 20°.
+    u.uWarm.value = sun.altitudeDeg > -4 ? 1 - Math.min(1, Math.max(0, (sun.altitudeDeg - 6) / 14)) : 0
     invalidate()
   }, [material, sun, invalidate])
   useFrame(({ camera }) => {

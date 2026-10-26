@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ERROR_3D_TITLE, SEASON_SHORTCUTS, describeSun, directionName, formatClock, gardenSummary, walkHelp, yearsLabel } from './labels'
+import { ERROR_3D_TITLE, SEASON_SHORTCUTS, describeSun, describeSunShort, walkHelpShort, directionName, formatClock, gardenSummary, walkHelp, yearsLabel } from './labels'
 
 describe('libellés 3D en langage clair', () => {
   it('direction en toutes lettres', () => {
@@ -32,5 +32,16 @@ describe('libellés 3D en langage clair', () => {
     expect(walkHelp(false)).not.toMatch(/ZQSD/i)
     expect(walkHelp(false)).toContain('Touches fléchées')
     expect(ERROR_3D_TITLE).toBe('La vue 3D ne fonctionne pas sur cet appareil.')
+  })
+})
+
+describe('textes courts de la vue 3D', () => {
+  it('soleil en une ligne', () => {
+    expect(describeSunShort(17.25, 5, 235)).toBe('17:15 · soleil bas, sud-ouest')
+    expect(describeSunShort(22, -5, 0)).toBe('22:00 · soleil couché')
+  })
+  it('aide courte : deux lignes au plus', () => {
+    expect(walkHelpShort(true).length).toBeLessThan(80)
+    expect(walkHelpShort(false)).toContain('Maj')
   })
 })

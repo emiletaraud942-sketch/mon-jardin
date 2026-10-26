@@ -1,22 +1,23 @@
-// Interface de la Promenade : joystick virtuel, bouton « Courir » et mini-carte (canvas 2D).
+// Interface de la Promenade : joystick virtuel, boutons Tourner / Courir et mini-carte (canvas 2D).
 import { useEffect, useRef } from 'react'
 import type { Building, Plant, Species, XY } from '../../types'
 import type { Bounds } from './framing'
-import { forwardOf, type WalkShared } from './walk'
+import { forwardOf, joystickVector, type WalkShared } from './walk'
 
-const STICK_TRAVEL_PX = 38
+const STICK_TRAVEL_PX = 32
 
-/** Joystick virtuel (déplacement). Zone tactile de 132 px, bouton central de 64 px. */
+/** Joystick virtuel (déplacement) : zone tactile de 112 px, bouton central de 48 px. Un seul doigt à la fois ; le regard reste libre pour l'autre main. */
 export function Joystick({ shared }: { shared: WalkShared }) {
   const baseRef = useRef<HTMLDivElement>(null)
   const knobRef = useRef<HTMLDivElement>(null)
   const pointer = useRef<number | null>(null)
 
-  const set = (nx: number, ny: number) => {
-    shared.joy.x = nx
-    shared.joy.y = -ny
+  /** (kx, ky) : position du bouton en px ; (vx, vy) : commande envoyée au promeneur, zone morte comprise. */
+  const set = (kx: number, ky: number, vx = 0, vy = 0) => {
+    shared.joy.x = vx
+    shared.joy.y = vy
     shared.wake?.() // rendu à la demande : réveille la boucle de la Promenade
-    if (knobRef.current) knobRef.current.style.transform = `translate(${nx * STICK_TRAVEL_PX}px, ${ny * STICK_TRAVEL_PX}px)`
+    if (knobRef.current) knobRef.current.style.transform = `translate(${kx}px, ${ky}px)`
   }
   const move = (e: React.PointerEvent) => {
     const base = baseRef.current
@@ -26,7 +27,8 @@ export function Joystick({ shared }: { shared: WalkShared }) {
     const dy = e.clientY - (r.top + r.height / 2)
     const len = Math.hypot(dx, dy)
     const k = len > 0 ? Math.min(1, len / STICK_TRAVEL_PX) / len : 0
-    set(dx * k, dy * k)
+    const v = joystickVector(dx, dy, STICK_TRAVEL_PX)
+    set(dx * k, dy * k, v.x, v.y)
   }
   useEffect(
     () => () => {
@@ -44,6 +46,7 @@ export function Joystick({ shared }: { shared: WalkShared }) {
       aria-label="Joystick de déplacement : glissez pour avancer, reculer ou aller sur le côté"
       onPointerDown={(e) => {
         if (pointer.current != null) return
+        e.preventDefault()
         pointer.current = e.pointerId
         e.currentTarget.setPointerCapture(e.pointerId)
         move(e)
@@ -61,6 +64,12 @@ export function Joystick({ shared }: { shared: WalkShared }) {
         pointer.current = null
         set(0, 0)
       }}
+      onLostPointerCapture={(e) => {
+        if (pointer.current !== e.pointerId) return
+        pointer.current = null
+        set(0, 0)
+      }}
+      onContextMenu={(e) => e.preventDefault()}
     >
       <div ref={knobRef} className="g3d-joy-knob" />
     </div>
@@ -117,36 +126,22 @@ function PadButton({ shared, axis, label, className, children }: { shared: WalkS
   )
 }
 
-/** Croix de boutons ↑ ↓ ← → (marcher, pas de côté) et « Tourner à gauche / droite » : en plus du joystick. */
-export function WalkPad({ shared, running, onToggleRun }: { shared: WalkShared; running: boolean; onToggleRun: () => void }) {
+/** Boutons de la main droite : tourner (maintenir), « Courir » (bascule). Les flèches restent au clavier. */
+export function WalkButtons({ shared, running, onToggleRun }: { shared: WalkShared; running: boolean; onToggleRun: () => void }) {
   return (
-    <div className="g3d-pad" role="group" aria-label="Boutons de déplacement : maintenez pour avancer">
-      <PadButton shared={shared} axis="turnLeft" label="Tourner à gauche" className="g3d-turn">
-        <span aria-hidden="true">↶</span> Tourner à gauche
+    <div className="g3d-pad" role="group" aria-label="Tourner et courir">
+      <PadButton shared={shared} axis="turnLeft" label="Tourner à gauche (maintenir)" className="g3d-turn">
+        <span aria-hidden="true">↺</span>
       </PadButton>
-      <PadButton shared={shared} axis="turnRight" label="Tourner à droite" className="g3d-turn">
-        <span aria-hidden="true">↷</span> Tourner à droite
-      </PadButton>
-      <PadButton shared={shared} axis="left" label="Pas à gauche" className="g3d-pad-left">
-        ←
-      </PadButton>
-      <PadButton shared={shared} axis="forward" label="Avancer" className="g3d-pad-up">
-        ↑
-      </PadButton>
-      <PadButton shared={shared} axis="right" label="Pas à droite" className="g3d-pad-right">
-        →
-      </PadButton>
-      <button type="button" className="g3d-btn g3d-padbtn g3d-pad-run" aria-pressed={running} onClick={onToggleRun}>
+      <button type="button" className="g3d-btn g3d-padbtn g3d-pad-run" aria-pressed={running} onClick={onToggleRun} title="Courir : environ 3 m/s au lieu de 1,4 m/s">
         Courir
       </button>
-      <PadButton shared={shared} axis="back" label="Reculer" className="g3d-pad-down">
-        ↓
+      <PadButton shared={shared} axis="turnRight" label="Tourner à droite (maintenir)" className="g3d-turn">
+        <span aria-hidden="true">↻</span>
       </PadButton>
     </div>
   )
 }
-
-const SIZE = 110
 
 interface MiniMapProps {
   shared: WalkShared
@@ -156,10 +151,12 @@ interface MiniMapProps {
   speciesById: Record<string, Species>
   selectedPlantId?: string
   bounds: Bounds
+  /** Diamètre (px). */
+  size?: number
 }
 
 /** Petit plan rond vu du dessus (nord en haut) : parcelle, bâtiments, plantes, position et direction du promeneur. */
-export function MiniMap({ shared, parcel, buildings, plants, speciesById, selectedPlantId, bounds }: MiniMapProps) {
+export function MiniMap({ shared, parcel, buildings, plants, speciesById, selectedPlantId, bounds, size: SIZE = 84 }: MiniMapProps) {
   const ref = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -244,9 +241,9 @@ export function MiniMap({ shared, parcel, buildings, plants, speciesById, select
     b.stroke()
     // « N » du nord
     b.fillStyle = text
-    b.font = '700 14px system-ui, sans-serif'
+    b.font = `700 ${Math.round(SIZE / 8)}px system-ui, sans-serif`
     b.textAlign = 'center'
-    b.fillText('N', SIZE / 2, 17)
+    b.fillText('N', SIZE / 2, Math.round(SIZE / 8) + 4)
 
     const draw = () => {
       ctx.setTransform(1, 0, 0, 1, 0, 0)
@@ -286,7 +283,7 @@ export function MiniMap({ shared, parcel, buildings, plants, speciesById, select
       if (!document.hidden) draw()
     }, 100)
     return () => window.clearInterval(timer)
-  }, [shared, parcel, buildings, plants, speciesById, selectedPlantId, bounds])
+  }, [shared, parcel, buildings, plants, speciesById, selectedPlantId, bounds, SIZE])
 
   return (
     <canvas
@@ -294,6 +291,7 @@ export function MiniMap({ shared, parcel, buildings, plants, speciesById, select
       className="g3d-minimap"
       width={SIZE}
       height={SIZE}
+      style={{ width: SIZE, height: SIZE }}
       role="img"
       aria-label="Mini-carte du jardin, vue du dessus, nord en haut. Le triangle indique votre position et la direction de votre regard."
     />

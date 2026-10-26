@@ -3466,3 +3466,29 @@ dialog.modal.full .modal-body {
   min-width: 44px;
   flex: none;
 }
+
+/* ---------- Promenade immersive (téléphone) : la scène prend tout l'écran ----------
+   La 3D pose data-immersive sur <html> pendant la Promenade : bandeaux, navigation et feuille « Mon jardin » sont masqués,
+   la page ne défile pas. Un bouton « Quitter » dans la scène ramène à la vue en perspective. */
+html[data-immersive],
+html[data-immersive] body {
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+@media (max-width: 760px), (pointer: coarse) and (max-height: 500px) {
+  html[data-immersive] .app > .main {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+  }
+  html[data-immersive] .workspace .bsheet,
+  html[data-immersive] .workspace .placing-banner {
+    display: none;
+  }
+  html[data-immersive] .workspace .g3d-overlay {
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
+  }
+}

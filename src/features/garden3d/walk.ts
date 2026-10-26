@@ -208,6 +208,24 @@ export function stepWalker(w: Walker, input: WalkInput, dt: number, world: WalkW
   return { x: q.x, y: q.y, yaw, limited }
 }
 
+/**
+ * Joystick virtuel : décalage du doigt (px, écran : y vers le bas) -> commande {x: pas de côté, y: avancer}, chacun dans [-1, 1].
+ * Zone morte au centre (le doigt qui tremble ne bouge pas), puis réponse progressive jusqu'à `travelPx`.
+ */
+export function joystickVector(dxPx: number, dyPx: number, travelPx: number, deadzone = 0.14): XY {
+  const len = Math.hypot(dxPx, dyPx)
+  if (!(len > 0) || !(travelPx > 0)) return { x: 0, y: 0 }
+  const m = Math.min(1, len / travelPx)
+  if (m <= deadzone) return { x: 0, y: 0 }
+  const k = (m - deadzone) / (1 - deadzone) // 0 au bord de la zone morte, 1 en butée
+  return { x: (dxPx / len) * k, y: (-dyPx / len) * k }
+}
+
+/** Regard au doigt / à la souris : glisser vers la droite regarde à droite, vers le haut regarde en haut. Inclinaison bornée. */
+export function lookDelta(yaw: number, pitch: number, dxPx: number, dyPx: number, sens = 0.0042): { yaw: number; pitch: number } {
+  return { yaw: yaw - dxPx * sens, pitch: Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, pitch - dyPx * sens)) }
+}
+
 /** Lacet pour regarder de `from` vers `to`. */
 export function yawToward(from: XY, to: XY): number {
   // forward = (-sin yaw, cos yaw) = direction (dx, dy) normalisée

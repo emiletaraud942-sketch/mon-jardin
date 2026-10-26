@@ -11,7 +11,7 @@ import type { PlantVisual } from './plantModel'
 import { DEBUG_3D } from './debug'
 import {
   EYE_SETTLE_M,
-  PITCH_LIMIT,
+  lookDelta,
   WALK_FOV_DEG,
   createFramePacer,
   entrancePose,
@@ -203,8 +203,9 @@ export function WalkRig({ shared, parcel, bounds, colliders, sample, visuals, se
       const dy = e.clientY - look.current.y
       look.current.x = e.clientX
       look.current.y = e.clientY
-      p.yaw -= dx * LOOK_SENS
-      p.pitch = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, p.pitch - dy * LOOK_SENS))
+      const n = lookDelta(p.yaw, p.pitch, dx, dy, LOOK_SENS)
+      p.yaw = n.yaw
+      p.pitch = n.pitch
       el.style.cursor = 'grabbing'
       invalidate()
     }

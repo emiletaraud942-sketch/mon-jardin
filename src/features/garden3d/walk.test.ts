@@ -15,6 +15,9 @@ import {
   forwardOf,
   isTextEntry,
   isWalkMoving,
+  joystickVector,
+  lookDelta,
+  PITCH_LIMIT,
   lodFor,
   makeColliders,
   pickLabelIds,
@@ -301,5 +304,65 @@ describe('plafond d’images par seconde', () => {
     expect(p.due(5000)).toBe(true)
     p.mark(5000)
     expect(p.due(5005)).toBe(false)
+  })
+})
+
+describe('joystick virtuel', () => {
+  it('zone morte : un doigt qui tremble ne bouge pas', () => {
+    expect(joystickVector(2, -3, 32)).toEqual({ x: 0, y: 0 })
+    expect(joystickVector(0, 0, 32)).toEqual({ x: 0, y: 0 })
+  })
+  it('vers le haut de l’écran = avancer, vers la droite = pas à droite', () => {
+    const up = joystickVector(0, -32, 32)
+    expect(up.y).toBeCloseTo(1)
+    expect(up.x).toBeCloseTo(0)
+    const right = joystickVector(32, 0, 32)
+    expect(right.x).toBeCloseTo(1)
+    expect(joystickVector(0, 32, 32).y).toBeCloseTo(-1)
+  })
+  it('borné à 1 au-delà de la butée, progressif avant', () => {
+    expect(Math.hypot(joystickVector(300, -300, 32).x, joystickVector(300, -300, 32).y)).toBeCloseTo(1)
+    const half = joystickVector(0, -16, 32).y
+    expect(half).toBeGreaterThan(0.3)
+    expect(half).toBeLessThan(0.7)
+  })
+  it('joystick poussé -> le promeneur avance dans la direction du regard à ~1,4 m/s', () => {
+    const w = { x: 0, y: 0, yaw: 0 }
+    const j = joystickVector(0, -40, 32)
+    let cur = w
+    for (let i = 0; i < 60; i++) cur = stepWalker(cur, { forward: j.y, strafe: j.x, turn: 0, run: false }, 1 / 60, { colliders: [], bounds })
+    expect(cur.y).toBeCloseTo(WALK_SPEED, 1)
+    expect(cur.x).toBeCloseTo(0, 5)
+  })
+  it('en courant : ~3 m/s, et la diagonale n’est pas plus rapide', () => {
+    let cur = { x: 0, y: -10, yaw: 0 }
+    for (let i = 0; i < 60; i++) cur = stepWalker(cur, { forward: 1, strafe: 1, turn: 0, run: true }, 1 / 60, { colliders: [], bounds })
+    expect(Math.hypot(cur.x, cur.y + 10)).toBeCloseTo(RUN_SPEED, 1)
+  })
+  it('le promeneur ne traverse pas un bâtiment au joystick', () => {
+    const colliders = makeColliders([{ id: 'b', ring: rect(-3, 2, 6, 4), heightM: 5 }])
+    let cur = { x: 0, y: -1, yaw: 0 }
+    for (let i = 0; i < 600; i++) cur = stepWalker(cur, { forward: 1, strafe: 0, turn: 0, run: true }, 1 / 60, { colliders, bounds })
+    expect(cur.y).toBeLessThan(2 - WALKER_RADIUS_M + 0.01)
+  })
+})
+
+describe('regard au doigt', () => {
+  it('glisser à droite tourne vers la droite (lacet diminue), vers le haut lève la tête', () => {
+    const a = lookDelta(0, 0, 100, 0)
+    expect(a.yaw).toBeLessThan(0)
+    const b = lookDelta(0, 0, 0, -100)
+    expect(b.pitch).toBeGreaterThan(0)
+  })
+  it('l’inclinaison est bornée', () => {
+    expect(lookDelta(0, 0, 0, -1e6).pitch).toBe(PITCH_LIMIT)
+    expect(lookDelta(0, 0, 0, 1e6).pitch).toBe(-PITCH_LIMIT)
+  })
+})
+
+describe('hauteur des yeux', () => {
+  it('1,65 m au-dessus du sol, y compris sur une pente', () => {
+    const sample = (x: number) => 0.1 * x
+    expect(eyeHeightAt(sample, { x: 10, y: 0 })).toBeCloseTo(1 + EYE_HEIGHT_M)
   })
 })

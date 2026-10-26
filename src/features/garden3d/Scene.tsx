@@ -128,6 +128,7 @@ function SunAndSky({ sun, halfSizeM, walking, tier }: { sun: SunState; halfSizeM
   )
 
   const [dx, dy, dz] = sun.dir
+  const lowSun = sun.altitudeDeg < 12 // couchant : ciel de remplissage chaud
   const y = Math.max(0.03, dy)
   useEffect(() => {
     markShadowsDirty(gl)
@@ -149,8 +150,9 @@ function SunAndSky({ sun, halfSizeM, walking, tier }: { sun: SunState; halfSizeM
         shadow-radius={3}
       />
       {/* Remplissage plus fort : les ombres restent douces, jamais noires. */}
-      <hemisphereLight color={sun.sky} groundColor="#566a3b" intensity={0.5 + 0.8 * sun.daylight} />
-      <ambientLight color="#aab4d0" intensity={0.12 + 0.08 * (1 - sun.daylight)} />
+      {/* Soleil bas (fin d'après-midi) : le remplissage reste assez fort pour que l'herbe et les façades restent lisibles. */}
+      <hemisphereLight color={lowSun ? sun.horizon : sun.sky} groundColor="#6a7f48" intensity={0.95 + 0.5 * sun.daylight} />
+      <ambientLight color="#c0b4c8" intensity={0.16 + 0.12 * (1 - sun.daylight)} />
     </>
   )
 }

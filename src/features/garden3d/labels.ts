@@ -26,6 +26,13 @@ export function describeSun(hour: number, altitudeDeg: number, azimuthDeg: numbe
   return `Soleil à ${formatClock(hour)} · ${height}, côté ${directionName(azimuthDeg)}`
 }
 
+/** Version courte, sur une ligne : « 17:15 · soleil bas, sud-ouest » (ou « 21:00 · soleil couché »). */
+export function describeSunShort(hour: number, altitudeDeg: number, azimuthDeg: number): string {
+  if (altitudeDeg <= 0) return `${formatClock(hour)} · soleil couché`
+  const height = altitudeDeg < 15 ? 'soleil bas' : altitudeDeg < 40 ? 'soleil mi-hauteur' : 'soleil haut'
+  return `${formatClock(hour)} · ${height}, ${directionName(azimuthDeg)}`
+}
+
 /** « Aujourd’hui », « Dans 1 an », « Dans 5 ans ». */
 export function yearsLabel(n: number): string {
   if (n <= 0) return 'Aujourd’hui'
@@ -52,6 +59,14 @@ export function walkHelp(touch: boolean): string {
     ? 'Poussez le rond ou touchez les flèches pour avancer. Touchez « Tourner » pour pivoter. Glissez le doigt sur le jardin pour regarder autour. Touchez une plante pour la choisir.'
     : 'Touches fléchées pour avancer (↑ ↓) et tourner (← →). Glissez la souris pour regarder autour. Maj pour courir. Cliquez une plante pour la choisir.'
 }
+
+/** Bulle d'aide de la Promenade : deux lignes, disparaît seule. */
+export function walkHelpShort(touch: boolean): string {
+  return touch ? 'Poussez le rond pour marcher. Glissez sur la scène pour regarder autour.' : 'Flèches ou ZQSD pour marcher, glissez pour regarder. Maj pour courir.'
+}
+
+/** Jardin sans plante : message discret, la scène reste visible. */
+export const EMPTY_GARDEN_TEXT = 'Aucune plante pour l’instant — ajoutez-en depuis la carte'
 
 export const ERROR_3D_TITLE = 'La vue 3D ne fonctionne pas sur cet appareil.'
 export const ERROR_3D_TEXT = 'Vous pouvez continuer avec la carte.'
