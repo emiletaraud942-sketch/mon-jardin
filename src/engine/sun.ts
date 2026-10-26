@@ -4,6 +4,14 @@ import SunCalc from 'suncalc'
 import type { Garden, Plant, Species, XY } from '../types'
 import { plantSizeAt } from './growth'
 
+/** Arbre voisin mesuré (LiDAR) : position locale (m), hauteur et rayon de houppier (m). Voir src/lib/lidar.ts. */
+export interface NeighborTree {
+  x: number
+  y: number
+  heightM: number
+  radiusM: number
+}
+
 const DEG = Math.PI / 180
 /** Hauteur minimale du soleil pour compter de l'ensoleillement direct (°). */
 const MIN_ALTITUDE_DEG = 2
@@ -36,12 +44,32 @@ export function sunDirection(
   return { altitude: alt / DEG, azimuth, vector }
 }
 
-/** Bâtiments (prismes) + plantes en place de plus de 1,5 m (couronnes ellipsoïdales). */
+/** Arbres mesurés par LiDAR → couronnes ellipsoïdales (même modèle que les plantes). Entrées invalides ignorées. */
+export function treeObstacles(trees: NeighborTree[] | undefined): Obstacle[] {
+  const out: Obstacle[] = []
+  for (const t of trees ?? []) {
+    if (![t.x, t.y, t.heightM, t.radiusM].every(Number.isFinite) || t.heightM <= MIN_PLANT_HEIGHT_M || t.radiusM <= 0) continue
+    out.push({
+      kind: 'crown',
+      center: { x: t.x, y: t.y },
+      baseM: t.heightM * 0.35,
+      topM: t.heightM,
+      radiusM: Math.max(0.3, t.radiusM),
+    })
+  }
+  return out
+}
+
+/**
+ * Bâtiments (prismes) + plantes en place de plus de 1,5 m (couronnes ellipsoïdales)
+ * + arbres voisins mesurés par LiDAR (facultatif : sans eux, comportement inchangé).
+ */
 export function obstaclesFor(
   garden: Garden,
   plants: Plant[],
   speciesById: Record<string, Species>,
   at: Date,
+  neighborTrees?: NeighborTree[],
 ): Obstacle[] {
   const out: Obstacle[] = []
   for (const b of garden.buildings ?? []) {
@@ -61,6 +89,7 @@ export function obstaclesFor(
       radiusM: Math.max(0.3, spreadM / 2),
     })
   }
+  out.push(...treeObstacles(neighborTrees))
   return out
 }
 

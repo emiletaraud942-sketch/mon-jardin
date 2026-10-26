@@ -1,5 +1,6 @@
 // Contrat de données partagé par toute l'appli.
 // Mois : 1 = janvier … 12 = décembre.
+import type { Calibration } from '../lib/calibration'
 
 export type Month = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12
 
@@ -146,6 +147,8 @@ export interface Garden {
   /** Date moyenne de dernière gelée (jour de l'année), calculée sur l'historique. */
   lastFrostDoy?: number
   firstFrostDoy?: number
+  /** Recalage GPS (similitude 2D en mètres locaux), appliqué aux positions mesurées. */
+  calibration?: Calibration
   createdAt: string
 }
 

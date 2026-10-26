@@ -2,6 +2,7 @@
 // PROPRIÉTAIRE : dev-backend-supabase. La signature de `migrateState` est le contrat ; ne pas la changer.
 import type { Building, Garden, Plant, PlantStatus, SoilTexture, TaskDone, TerrainGrid, XY } from '../types'
 import { isoDate } from './dates'
+import { isValidCalibration } from './calibration'
 import { uid } from './geo'
 import { LIMITS } from './security/limits'
 import { cleanExtras, clipText, isPhotoId, isSafeId } from './security/sanitize'
@@ -35,7 +36,7 @@ const inRange = (n: number, max: number) => Math.abs(n) <= max
 /** Texte raccourci à `max` caractères (les données importées ne sont pas dignes de confiance). */
 const text = (v: string, max: number = LIMITS.shortText) => clipText(v, max)
 
-const GARDEN_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'address', 'center', 'altitudeM', 'parcel', 'parcelRefs', 'areaM2', 'buildings', 'terrain', 'sol', 'lastFrostDoy', 'firstFrostDoy', 'createdAt'])
+const GARDEN_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'address', 'center', 'altitudeM', 'parcel', 'parcelRefs', 'areaM2', 'buildings', 'terrain', 'sol', 'lastFrostDoy', 'firstFrostDoy', 'calibration', 'createdAt'])
 const PLANT_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'speciesId', 'customName', 'position', 'plantedAt', 'ageAtPlanting', 'status', 'notes', 'photos'])
 const TASK_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'taskKey', 'doneAt'])
 
@@ -151,6 +152,16 @@ function sanitizeGarden(raw: unknown, report: Report): Garden | undefined {
     else {
       delete g.terrain
       report.add('relief', 'Le relief de {n} jardin était invalide : il a été retiré (rechargez-le depuis les réglages).', 'Le relief de {n} jardins était invalide : il a été retiré (rechargez-le depuis les réglages).')
+    }
+  }
+
+  if (raw.calibration !== undefined) {
+    const c = raw.calibration
+    const cal = isRec(c) && isNum(c.a) && isNum(c.b) && isNum(c.tx) && isNum(c.ty) && isNum(c.rmsM) && isNum(c.n) && inRange(c.tx, LIMITS.coordM) && inRange(c.ty, LIMITS.coordM) && c.rmsM >= 0 ? { a: c.a, b: c.b, tx: c.tx, ty: c.ty, rmsM: c.rmsM, n: Math.max(0, Math.round(c.n)) } : undefined
+    if (cal && isValidCalibration(cal)) g.calibration = cal
+    else {
+      delete g.calibration
+      report.add('calibration', 'Le recalage GPS de {n} jardin était invalide : il a été retiré.', 'Le recalage GPS de {n} jardins était invalide : il a été retiré.')
     }
   }
   return g
