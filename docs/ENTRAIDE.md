@@ -292,7 +292,7 @@ Contenu illicite grave ou campagne d'abus : masquer en masse (`update public.pos
 
 Tout est dans `supabase/neighbors/moderation.sql` (à copier dans Supabase › SQL Editor) : la liste des signalements à traiter, puis les requêtes pour masquer, rétablir, bannir et noter la décision dans `moderation_log`. À lire une fois par jour. Délais : contenu illicite évident sous 24 h, signalement ordinaire sous 7 jours, annonce masquée automatiquement relue sous 72 h.
 
-Nettoyage : une tâche `pg_cron` (`neighbors-purge-quotidienne`, 22 h UTC) exécute `neighbors_purge_expired()` chaque jour. Elle ne supprime pas les fichiers photo : lister avec `select * from public.neighbors_orphan_photos();` puis effacer à la main dans Storage › neighbors-photos.
+Nettoyage : **rien ne le lance tout seul dans ce dépôt** (aucun `cron.schedule`). Il faut planifier `neighbors_purge_expired()` chaque jour (extension `pg_cron` de Supabase : Database › Extensions, puis `select cron.schedule('neighbors-purge-quotidienne', '0 22 * * *', 'select public.neighbors_purge_expired()');`). Vérifier avec `select jobname, schedule from cron.job;`. Cette fonction ne supprime pas les fichiers photo : lister avec `select * from public.neighbors_orphan_photos();` puis effacer dans Storage › neighbors-photos (à la main, ou par une fonction Edge avec la clé `service_role`).
 
 
 ## Taille du quartier (v6)

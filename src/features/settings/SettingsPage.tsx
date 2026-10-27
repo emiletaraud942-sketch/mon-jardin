@@ -7,9 +7,8 @@ import { Fold } from '../../components/Fold'
 import { Icon } from '../../components/Icon'
 import { Segmented } from '../../components/Segmented'
 import { SavedNote, useFlash } from '../../components/useFlash'
-import { downloadBlob, exportCurrentState, lastExportAt, markExported, REMIND_EVERY_DAYS } from '../../lib/backup'
-import { buildFullBackup, FULL_EXTENSION, isFullBackup, readFullBackup, restorePhotos, type PhotoToRestore } from '../../lib/backupFull'
-import { isoDate } from '../../lib/dates'
+import { exportCurrentState, lastExportAt, REMIND_EVERY_DAYS } from '../../lib/backup'
+import { downloadFullBackup, estimateFullBackup, formatMo, FULL_EXTENSION, HEAVY_BACKUP_BYTES, isFullBackup, MESSAGE_TOO_HEAVY, readFullBackup, restorePhotos, type PhotoToRestore } from '../../lib/backupFull'
 import { formatDay, frNumber } from '../../lib/format'
 import { friendlyError, type FriendlyError } from '../../lib/http'
 import { deletePhoto } from '../../lib/photos'
@@ -286,14 +285,21 @@ function Backup() {
   }
 
   const [busy, setBusy] = useState(false)
+  const [est, setEst] = useState<{ photos: number; bytes: number; tooHeavy: boolean }>()
+  useEffect(() => {
+    let alive = true
+    estimateFullBackup().then((e) => alive && setEst(e), () => undefined)
+    return () => {
+      alive = false
+    }
+    // Recalculé après chaque reprise ou sauvegarde : les photos de l'appareil ont pu changer.
+  }, [msg?.text, pending])
 
   async function exportFull() {
     setBusy(true)
     setMsg(undefined)
     try {
-      const out = await buildFullBackup()
-      downloadBlob(out.blob, `permajardin-complet-${isoDate()}${FULL_EXTENSION}`)
-      markExported()
+      const out = await downloadFullBackup()
       setLast(Date.now())
       const text = `Sauvegarde complète faite (${out.photos} photo${out.photos > 1 ? 's' : ''}). Le fichier est dans vos téléchargements.${out.missing ? ` ${out.missing} photo${out.missing > 1 ? 's' : ''} introuvable${out.missing > 1 ? 's' : ''} n’${out.missing > 1 ? 'ont' : 'a'} pas pu être ajoutée${out.missing > 1 ? 's' : ''}.` : ''}`
       setMsg({ text })
@@ -343,14 +349,16 @@ function Backup() {
         <button className="btn primary" onClick={exportJson} disabled={busy}>
           <Icon name="download" /> Faire une sauvegarde
         </button>
-        <button className="btn" onClick={() => void exportFull()} disabled={busy}>
-          <Icon name="download" /> Sauvegarde avec photos
+        <button className="btn" onClick={() => void exportFull()} disabled={busy || est?.photos === 0}>
+          <Icon name="download" /> Sauvegarde avec photos{est && est.photos > 0 ? ` (${formatMo(est.bytes)})` : ''}
         </button>
         <label className="btn file-btn">
           <Icon name="upload" /> Reprendre une sauvegarde
           <input className="sr-only" type="file" accept={`application/json,.json,${FULL_EXTENSION}`} onChange={(e) => void importJson(e.target)} />
         </label>
       </div>
+      {est?.tooHeavy && <p className="alert small">{MESSAGE_TOO_HEAVY(Math.round(est.bytes / (1024 * 1024)))}</p>}
+      {est && !est.tooHeavy && est.bytes > HEAVY_BACKUP_BYTES && <p className="small muted">Le fichier avec photos est lourd ({formatMo(est.bytes)}) : faites-le avec du Wi-Fi et de la place libre sur le téléphone.</p>}
       {msg?.error && <ErrorNote error={msg.error} />}
       {msg?.text && (
         <p role="status" style={{ marginTop: 8 }}>

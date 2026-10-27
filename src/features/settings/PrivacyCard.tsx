@@ -5,6 +5,7 @@ import { TechDetails } from '../../components/ErrorNote'
 import { Modal } from '../../components/Modal'
 import { formatDay } from '../../lib/format'
 import { exportCurrentState } from '../../lib/backup'
+import { downloadFullBackup, estimateFullBackup, formatMo, MESSAGE_TOO_HEAVY } from '../../lib/backupFull'
 import { showToast } from '../../lib/toast'
 import { eraseAllData, type EraseReport } from '../../lib/security/erase'
 import { ERASE_LEVELS, availableLevels, canErase, levelToRemote, remoteLeftOnline, type EraseLevel } from '../../lib/security/eraseLevels'
@@ -35,6 +36,30 @@ function EraseDialog({ onClose }: { onClose: () => void }) {
   const [backedUp, setBackedUp] = useState(false)
   const [busy, setBusy] = useState(false)
   const [report, setReport] = useState<EraseReport>()
+  const [photoEst, setPhotoEst] = useState<{ photos: number; bytes: number; tooHeavy: boolean }>()
+  const [backupError, setBackupError] = useState<string>()
+  const [backingUp, setBackingUp] = useState(false)
+  useEffect(() => {
+    let alive = true
+    estimateFullBackup().then((e) => alive && setPhotoEst(e), () => undefined)
+    return () => {
+      alive = false
+    }
+  }, [])
+  const hasPhotos = (photoEst?.photos ?? 0) > 0
+
+  async function backupWithPhotos() {
+    setBackingUp(true)
+    setBackupError(undefined)
+    try {
+      await downloadFullBackup('permajardin-complet-avant-effacement')
+      setBackedUp(true)
+    } catch (e) {
+      setBackupError(e instanceof Error ? e.message : 'La sauvegarde a échoué.')
+    } finally {
+      setBackingUp(false)
+    }
+  }
 
   useEffect(() => {
     let alive = true
@@ -120,7 +145,18 @@ function EraseDialog({ onClose }: { onClose: () => void }) {
         <p style={{ margin: 0 }}>
           Vos jardins, plantes, photos et réglages seront retirés de cet appareil. <strong>Cela ne peut pas être annulé.</strong>
         </p>
-        <p className="alert small" style={{ margin: 0 }}>La sauvegarde simple n’a pas les photos (« Sauvegarde avec photos » dans Réglages).</p>
+        {hasPhotos && (
+          <p className="alert small" style={{ margin: 0 }}>
+            Vous avez {photoEst!.photos} photo{photoEst!.photos > 1 ? 's' : ''} ({formatMo(photoEst!.bytes)}). La sauvegarde simple ne les contient pas : choisissez « avec photos » pour les garder.
+          </p>
+        )}
+        {hasPhotos && (
+          <button className="btn primary" disabled={backingUp || photoEst!.tooHeavy} onClick={() => void backupWithPhotos()}>
+            {backingUp ? <span className="spinner" /> : <Icon name="download" />} Faire d’abord une sauvegarde avec photos
+          </button>
+        )}
+        {photoEst?.tooHeavy && <p className="small" style={{ margin: 0 }}>{MESSAGE_TOO_HEAVY(Math.round(photoEst.bytes / (1024 * 1024)))}</p>}
+        {backupError && <p className="alert error small" role="alert" style={{ margin: 0 }}>{backupError}</p>}
         <button
           className="btn"
           onClick={() => {
@@ -128,7 +164,7 @@ function EraseDialog({ onClose }: { onClose: () => void }) {
             setBackedUp(true)
           }}
         >
-          <Icon name="download" /> Faire d’abord une sauvegarde
+          <Icon name="download" /> {hasPhotos ? 'Sauvegarde simple, sans photos' : 'Faire d’abord une sauvegarde'}
         </button>
         {backedUp && (
           <p className="small" role="status" style={{ margin: 0 }}>

@@ -7,13 +7,20 @@ vi.mock('./photos', () => ({
   getPhoto: async (id: string) => photoDb.get(id),
   restorePhoto: async (id: string, blob: Blob) => void photoDb.set(id, blob),
 }))
+const downloads: { blob: Blob; name: string }[] = []
+let exported = 0
+vi.mock('./backup', () => ({
+  downloadBlob: (blob: Blob, name: string) => void downloads.push({ blob, name }),
+  markExported: () => void exported++,
+}))
 const fixture: { gardens: Garden[]; plants: Plant[]; tasksDone: never[] } = { gardens: [], plants: [], tasksDone: [] }
 vi.mock('./store', () => ({
   getState: () => fixture,
   panoramaPhotoIds: (gardens: Garden[]) => gardens.flatMap((g) => (g.panoramas ?? []).flatMap((p) => p.shots.map((s) => s.photoId))),
 }))
 
-const { buildFullBackup, isFullBackup, readFullBackup, restorePhotos, FULL_MAGIC } = await import('./backupFull')
+const { buildFullBackup, downloadFullBackup, estimateFullBackup, formatMo, isFullBackup, readFullBackup, restorePhotos, FULL_MAGIC, MESSAGE_TOO_HEAVY } = await import('./backupFull')
+const { LIMITS } = await import('./security/limits')
 
 /** Un faux JPEG 16 × 16 : assez d'en-tête pour être reconnu, puis du remplissage. */
 const jpeg = (fill: number, extra = 40) => new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xc0, 0x00, 0x0b, 0x08, 0x00, 0x10, 0x00, 0x10, 0x01, 0x01, 0x11, 0x00, ...Array(extra).fill(fill)])], { type: 'image/jpeg' })
@@ -26,6 +33,8 @@ const garden: Garden = {
 const plant: Plant = { id: 'p1', gardenId: 'g1', speciesId: 'pommier', position: { x: 1, y: 2 }, plantedAt: '2024-03-10', status: 'en-place', photos: ['photo:aaa', 'photo:manquante'] }
 
 beforeEach(() => {
+  downloads.length = 0
+  exported = 0
   photoDb.clear()
   photoDb.set('photo:aaa', jpeg(1))
   photoDb.set('photo:pano1', jpeg(2))
@@ -119,5 +128,38 @@ describe('sauvegarde complète : fichiers hostiles ou abîmés', () => {
     const r = await read([`${FULL_MAGIC}${String(head.length).padStart(10, '0')}\n`, head, j])
     expect(r.ok).toBe(true)
     if (r.ok) expect(r.photos).toEqual([])
+  })
+})
+
+describe('sauvegarde complète : taille', () => {
+  it('estimateFullBackup compte les photos présentes et leur poids sans rien refuser', async () => {
+    const e = await estimateFullBackup()
+    expect(e.photos).toBe(2)
+    expect(e.bytes).toBe(photoDb.get('photo:aaa')!.size + photoDb.get('photo:pano1')!.size)
+    expect(e.tooHeavy).toBe(false)
+  })
+  it('downloadFullBackup télécharge un fichier .permajardin et note la sauvegarde', async () => {
+    const out = await downloadFullBackup('permajardin-complet-avant-effacement')
+    expect(out.photos).toBe(2)
+    expect(downloads).toHaveLength(1)
+    expect(downloads[0].name).toMatch(/^permajardin-complet-avant-effacement-\d{4}-\d{2}-\d{2}\.permajardin$/)
+    expect(exported).toBe(1)
+  })
+  it('refuse de fabriquer un fichier que l’appli ne saurait pas relire', async () => {
+    const old = LIMITS.fullBackupBytes
+    ;(LIMITS as { fullBackupBytes: number }).fullBackupBytes = 100 // plafond minuscule pour le test
+    try {
+      expect((await estimateFullBackup()).tooHeavy).toBe(true)
+      await expect(downloadFullBackup()).rejects.toThrow(/plus que les/)
+      expect(downloads).toHaveLength(0)
+      expect(exported).toBe(0)
+    } finally {
+      ;(LIMITS as { fullBackupBytes: number }).fullBackupBytes = old
+    }
+    expect(MESSAGE_TOO_HEAVY(400)).toMatch(/400 Mo/)
+  })
+  it('formatMo : lisible', () => {
+    expect(formatMo(85 * 1024 * 1024)).toBe('85 Mo')
+    expect(formatMo(0.4 * 1024 * 1024)).toBe('0,4 Mo')
   })
 })

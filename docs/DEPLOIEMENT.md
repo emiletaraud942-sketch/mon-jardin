@@ -48,14 +48,16 @@ Remplacez `<domaine>` par votre adresse.
 
 1. **Page d'accueil** : `https://<domaine>/` affiche l'écran d'accueil ; rien en rouge dans la console du navigateur (F12).
 2. **Proxy IGN** : `https://<domaine>/ext/geopf/geocodage/search?q=nantes&limit=1` renvoie du JSON (`"type":"FeatureCollection"`). Si c'est du HTML, les rewrites de `vercel.json` ne sont pas appliqués.
-3. **Fonction d'identification** (la requête doit venir du même site : les appels « cross-site » sont refusés en 403) :
+3. **Fonction d'identification** (la requête doit venir du même site : un appel sans `Origin`, comme un `curl` nu, ou « cross-site » est refusé en **403**) :
    ```bash
    # Sans clé configurée : 503
-   curl -i -X POST https://<domaine>/api/identify -H 'Content-Type: application/json' -d '{"images":["AAAA"]}'
+   curl -i -X POST https://<domaine>/api/identify -H 'Origin: https://<domaine>' -H 'Content-Type: application/json' -d '{"images":["AAAA"]}'
    # Sans image : 400
+   curl -i -X POST https://<domaine>/api/identify -H 'Origin: https://<domaine>' -H 'Content-Type: application/json' -d '{}'
+   # Sans Origin : 403 (comportement voulu)
    curl -i -X POST https://<domaine>/api/identify -H 'Content-Type: application/json' -d '{}'
    ```
-   Attendu : **503** tant que `PLANTNET_API_KEY` est absente (ordre des contrôles : méthode, origine, limite de débit, clé), **400** si la clé est présente mais qu'aucune photo valide n'est envoyée, **200** avec une vraie photo (testez depuis l'appli : *Plantes > Identifier*).
+   Attendu : **503** tant que `PLANTNET_API_KEY` est absente (ordre des contrôles : méthode, origine, limite de débit, type de contenu, clé), **400** si la clé est présente mais qu'aucune photo valide n'est envoyée, **200** avec une vraie photo (testez depuis l'appli : *Plantes > Identifier*).
 4. **En-têtes de sécurité** : `curl -I https://<domaine>/` montre `Content-Security-Policy`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options`. `curl -I https://<domaine>/sw.js` montre `Cache-Control: no-cache`.
 5. **PWA** : DevTools > Application > *Manifest* (4 icônes, aucune erreur) et *Service Workers* (activé).
 6. Créez un jardin de démonstration : la carte, la 3D et les tâches s'affichent.

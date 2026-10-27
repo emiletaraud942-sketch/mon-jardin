@@ -1,3 +1,5 @@
+import { isoDate } from './dates'
+import { downloadBlob, markExported } from './backup'
 import { getPhoto, restorePhoto } from './photos'
 import { migrateState, serializeState, type StateData } from './migrate'
 import { LIMITS } from './security/limits'
@@ -32,6 +34,28 @@ export interface FullBackup {
   photos: number
   /** Photos référencées mais absentes de l'appareil (non exportées). */
   missing: number
+}
+
+/** Au-delà de cette taille, on conseille le Wi-Fi et de la place libre : le fichier est lourd à écrire et à relire. */
+export const HEAVY_BACKUP_BYTES = 100 * 1024 * 1024
+
+/** Message si la sauvegarde dépasse ce que l'appli accepte de relire : mieux vaut refuser maintenant que créer un fichier inutilisable. */
+export const MESSAGE_TOO_HEAVY = (mo: number) =>
+  `Les photos pèsent ${mo} Mo : c’est plus que les ${Math.round(LIMITS.fullBackupBytes / (1024 * 1024))} Mo qu’un seul fichier peut contenir. Supprimez quelques photos, ou faites la sauvegarde simple (sans photos).`
+
+/** Nombre et poids des photos qui entreraient dans une sauvegarde complète (sans rien lire : on ne regarde que la taille). */
+export async function estimateFullBackup(): Promise<{ photos: number; bytes: number; tooHeavy: boolean }> {
+  const { gardens, plants } = getState()
+  const ids = [...new Set([...plants.flatMap((p) => p.photos), ...panoramaPhotoIds(gardens)])]
+  let photos = 0
+  let bytes = 0
+  for (const id of ids) {
+    const blob = await getPhoto(id)
+    if (!blob) continue
+    photos++
+    bytes += blob.size
+  }
+  return { photos, bytes, tooHeavy: bytes + 2_000_000 > LIMITS.fullBackupBytes } // 2 Mo de marge pour l'en-tête
 }
 
 /** Fabrique la sauvegarde complète de l'état courant. */
@@ -147,4 +171,19 @@ export async function restorePhotos(photos: PhotoToRestore[]): Promise<number> {
     n++
   }
   return n
+}
+
+/** Fabrique la sauvegarde complète et la télécharge. Refuse (message clair) si le fichier dépasserait ce que l'appli sait relire. */
+export async function downloadFullBackup(prefix = 'permajardin-complet'): Promise<FullBackup> {
+  const out = await buildFullBackup()
+  if (out.blob.size > LIMITS.fullBackupBytes) throw new Error(MESSAGE_TOO_HEAVY(Math.round(out.blob.size / (1024 * 1024))))
+  downloadBlob(out.blob, `${prefix}-${isoDate()}${FULL_EXTENSION}`)
+  markExported()
+  return out
+}
+
+/** « 85 Mo » ou « 0,4 Mo » : taille lisible. */
+export function formatMo(bytes: number): string {
+  const mo = bytes / (1024 * 1024)
+  return `${(mo >= 10 ? Math.round(mo) : Math.round(mo * 10) / 10).toLocaleString('fr-FR')} Mo`
 }
