@@ -353,7 +353,7 @@ describe('défauts corrigés (audit)', () => {
   it('getPhotoUrl : télécharge avec la session (pas de lien signé) et rend une URL blob', async () => {
     const createObjectURL = vi.fn(() => 'blob:x')
     vi.stubGlobal('URL', Object.assign(URL, { createObjectURL }))
-    state.download.mockResolvedValueOnce({ data: new Blob([jpegHeader(800, 600)], { type: 'image/jpeg' }), error: null })
+    state.download.mockResolvedValueOnce({ data: new Blob([new Uint8Array(jpegHeader(800, 600))], { type: 'image/jpeg' }), error: null })
     const path = '11111111-1111-4111-8111-111111111111/aaaaaaa1-0000-4000-8000-000000000001.jpg'
     expect(await api.getPhotoUrl(path)).toBe('blob:x')
     expect(state.download).toHaveBeenCalledWith(path)
@@ -367,7 +367,7 @@ describe('défauts corrigés (audit)', () => {
     state.download.mockResolvedValueOnce({ data: new Blob(['<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"/>'], { type: 'image/jpeg' }), error: null })
     expect(await api.getPhotoUrl(path)).toBeNull()
     // En-tête JPEG valide mais 30 000 × 30 000 px (moins de 1 Mo de fichier) : refusé avant tout décodage.
-    state.download.mockResolvedValueOnce({ data: new Blob([jpegHeader(30000, 30000)], { type: 'image/jpeg' }), error: null })
+    state.download.mockResolvedValueOnce({ data: new Blob([new Uint8Array(jpegHeader(30000, 30000))], { type: 'image/jpeg' }), error: null })
     expect(await api.getPhotoUrl(path)).toBeNull()
     // En-tête tronqué (aucune dimension lisible) : refusé.
     state.download.mockResolvedValueOnce({ data: new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' }), error: null })

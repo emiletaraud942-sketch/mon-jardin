@@ -313,7 +313,7 @@ async function handle(req: VercelRequest, res: VercelResponse) {
     if (size.width > MAX_IMAGE_SIDE || size.height > MAX_IMAGE_SIDE || size.width * size.height > MAX_IMAGE_PIXELS) {
       return res.status(400).json({ error: 'Photo trop grande en dimensions (8 000 pixels maximum par côté). Réduisez-la.' })
     }
-    form.append('images', new Blob([bytes], { type: mime }), `photo-${i}.${mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg'}`)
+    form.append('images', new Blob([new Uint8Array(bytes)], { type: mime }), `photo-${i}.${mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg'}`)
     form.append('organs', organ)
   }
 

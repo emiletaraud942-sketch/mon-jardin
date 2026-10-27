@@ -193,7 +193,7 @@ describe('jeton VAPID', () => {
     const claims = JSON.parse(new TextDecoder().decode(b64urlDecode(c)))
     expect(claims).toEqual({ aud: 'https://fcm.googleapis.com', exp: 1_000_000 + 12 * 3600, sub: 'mailto:contact@exemple.fr' })
     expect(claims.exp - 1_000_000).toBeLessThanOrEqual(24 * 3600)
-    const ok = await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, k.verifyKey, b64urlDecode(s), new TextEncoder().encode(`${h}.${c}`))
+    const ok = await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, k.verifyKey, new Uint8Array(b64urlDecode(s)), new Uint8Array(new TextEncoder().encode(`${h}.${c}`)))
     expect(ok).toBe(true)
     expect(b64urlDecode(s)).toHaveLength(64)
   })
