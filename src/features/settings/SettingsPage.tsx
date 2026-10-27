@@ -538,7 +538,6 @@ function GardensCard({ garden, adding, setAdding, addRef }: { garden: Garden; ad
         {gardens.map((g) => (
           <li key={g.id}>
             <button className="btn garden-pick" aria-pressed={g.id === garden.id} onClick={() => g.id !== garden.id && setActiveGarden(g.id)}>
-              <span aria-hidden>{g.id === garden.id ? '✓' : ''}</span>
               <span style={{ flex: 1, textAlign: 'left' }}>{g.name}</span>
               {g.id === garden.id && <span className="muted small">affiché</span>}
             </button>

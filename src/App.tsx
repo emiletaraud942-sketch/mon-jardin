@@ -34,6 +34,8 @@ import { readRadius } from './features/neighbors/prefs'
 import { useConsents } from './lib/consent'
 import { InviteButton } from './components/InviteButton'
 import { useScanUi } from './features/scan/scanUi'
+// En dernier : harmonisation Leafora (surcharge les feuilles de style des écrans ci-dessus).
+import './styles/leafora.css'
 
 const View3D = lazy(() => import('./features/garden3d/View3D'))
 const NeighborsPage = lazy(() => import('./features/neighbors/NeighborsPage').then((m) => ({ default: m.NeighborsPage })))
@@ -46,8 +48,9 @@ const Loading = ({ label }: { label: string }) => (
   </div>
 )
 
-/** Écrans qui, sur téléphone, ont l'en-tête de la maquette (petite phrase, titre en serif) à la place de la barre du haut. */
-const PHEAD_TABS: Tab[] = ['plantes', 'planter', 'catalogue', 'voisins', 'reglages']
+/** Écrans qui, sur téléphone, ont l'en-tête de la maquette (petite phrase, titre en serif, pastille du profil) à la place de la barre du haut.
+ *  La carte et la Vue 3D l'ont en version compacte (même style, 52 px) pour garder leur place. */
+const PHEAD_TABS: Tab[] = ['carte', '3d', 'plantes', 'planter', 'catalogue', 'voisins', 'reglages']
 
 const RAYON_ICON: Record<Rayon, string> = { jardin: 'map', afaire: 'check', planter: 'leaf', voisins: 'users' }
 
@@ -160,11 +163,13 @@ export function App() {
   const taskBadge = `${open} tâche${open > 1 ? 's' : ''} à faire`
   const phead = PHEAD_TABS.includes(tab)
   const pheadTitle: Record<string, string> = {
+    carte: 'Ma carte',
+    '3d': 'Vue 3D',
     plantes: `Mes plantes (${plantCount})`,
     planter: 'Où planter ?',
-    catalogue: `Catalogue des plantes (${Object.keys(SPECIES_BY_ID).length})`,
+    catalogue: `Catalogue (${Object.keys(SPECIES_BY_ID).length})`,
     voisins: 'Voisins',
-    reglages: 'Mon compte et réglages',
+    reglages: 'Réglages',
   }
 
   return (
@@ -201,7 +206,13 @@ export function App() {
       </header>
       {phead && (
         <div className="phead-slot">
-          <PageHead kicker={tab === 'voisins' ? 'Autour de chez vous' : tab === 'reglages' ? undefined : garden.name} title={pheadTitle[tab]} action={tab === 'reglages' ? false : undefined} />
+          <PageHead
+            kicker={tab === 'voisins' ? 'Autour de chez vous' : tab === 'reglages' ? 'Mon compte' : garden.name}
+            title={pheadTitle[tab]}
+            compact={full}
+            onHelp={full ? () => setHelpOpen(true) : undefined}
+            current={tab === 'reglages'}
+          />
         </div>
       )}
       <div className="modebar">

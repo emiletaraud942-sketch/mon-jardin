@@ -33,8 +33,8 @@ function syncThemeColor(theme: Theme) {
 
 export function applyTheme(theme: Theme) {
   const root = document.documentElement
-  if (theme === 'auto') root.removeAttribute('data-theme')
-  else root.setAttribute('data-theme', theme)
+  // « auto » est un attribut à part entière : sans attribut, le CSS reste clair (voir app.css).
+  root.setAttribute('data-theme', theme)
   syncThemeColor(theme)
 }
 

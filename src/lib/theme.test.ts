@@ -31,6 +31,6 @@ describe('thème', () => {
     expect(attrs.get('data-theme')).toBe('dark')
     setTheme('auto')
     expect(getTheme()).toBe('auto')
-    expect(attrs.has('data-theme')).toBe(false)
+    expect(attrs.get('data-theme')).toBe('auto')
   })
 })

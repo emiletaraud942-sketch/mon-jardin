@@ -48,20 +48,22 @@ export function PlantsPage({ garden }: { garden: Garden }) {
 
   return (
     <div className="page plants-ui">
-      <div className="row" style={{ justifyContent: 'space-between' }}>
+      <div className="plants-head">
         <h1>Mes plantes ({plants.length})</h1>
-        <div className="row">
+        <div className="plants-actions">
+          <button className="btn" aria-label="Scanner mon jardin" onClick={() => openScan('menu')}>
+            <span>
+              Scanner<span className="hide-mobile"> mon jardin</span>
+            </span>
+          </button>
           <button className="btn primary" onClick={() => setPicking(true)}>
-            <Icon name="plus" /> Ajouter une plante
+            Ajouter une plante
           </button>
         </div>
       </div>
       <details className="np-details plants-more">
         <summary>Autres façons d’ajouter</summary>
         <div className="row" style={{ marginBottom: 8 }}>
-          <button className="btn" onClick={() => openScan('menu')}>
-            <Icon name="camera" /> Scanner mon jardin
-          </button>
           <button className="btn" onClick={() => setIdentifying(true)}>
             <Icon name="camera" /> Identifier par photo
           </button>
@@ -107,7 +109,9 @@ export function PlantsPage({ garden }: { garden: Garden }) {
                         style={{ width: '100%', justifyContent: 'flex-start', gap: 10, background: p.id === selectedPlantId ? 'var(--accent-soft)' : undefined }}
                         onClick={() => setUi({ selectedPlantId: p.id })}
                       >
-                        {p.photos[0] ? <PhotoThumb id={p.photos[0]} /> : <span className="dot" style={{ width: 16, height: 16, background: s?.couleurAccent ?? s?.couleur ?? 'var(--accent-2)' }} />}
+                        <span className="plant-tile">
+                          {p.photos[0] ? <PhotoThumb id={p.photos[0]} /> : <span className="dot" style={{ width: 16, height: 16, background: s?.couleurAccent ?? s?.couleur ?? 'var(--accent-2)' }} />}
+                        </span>
                         <span style={{ textAlign: 'left', flex: 1 }}>
                           <strong>{plantName(p)}</strong>
                           <span className="muted small" style={{ display: 'block' }}>

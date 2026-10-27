@@ -1,0 +1,260 @@
+/* Harmonisation Leafora (chantier C) : chargé en dernier (App.tsx), il unifie ce que les feuilles précédentes réglaient écran par écran.
+   Un seul langage : fond blanc, cartes blanches à ombre douce et contour 1 px, rayons 26 / 24 / 22, boutons 54 px en pilule,
+   marges de 22 px, titres DM Serif Display, texte DM Sans 16 px. Couleurs : variables de :root uniquement. */
+
+/* L'application occupe la hauteur visible réelle du téléphone (barre d'adresse comprise) : la barre du bas reste collée en bas. */
+.app {
+  height: 100%;
+  height: 100dvh;
+}
+
+/* ---------- En-tête de page : pastilles et version compacte (carte, Vue 3D) ---------- */
+.pagehead-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+.pagehead-help {
+  font-family: var(--font-body);
+  font-size: calc(18 * var(--px));
+  font-weight: var(--fw-strong);
+  line-height: 1;
+}
+.pagehead-btn[aria-current='page'] {
+  background: var(--btn-green);
+  color: var(--on-btn-green);
+}
+
+@media (max-width: 760px) {
+  /* Boutons : 54 px, pilule. Les petits boutons (puces d'action dans une ligne) restent à 44 px de cible. */
+  :root {
+    --btn-h: 54px;
+  }
+  .btn {
+    padding: 6px 22px;
+    font-size: calc(16 * var(--px));
+  }
+  .btn.small {
+    font-size: calc(14 * var(--px));
+  }
+  .plants-ui .btn {
+    min-height: var(--btn-h);
+    font-size: calc(16 * var(--px));
+  }
+  .plants-ui .btn.small,
+  .plants-ui .btn.ghost,
+  .plants-ui .btn.close-btn {
+    min-height: var(--tap);
+  }
+  .plants-ui .btn.small {
+    font-size: calc(14 * var(--px));
+  }
+
+  /* Texte courant des rubriques « Plantes » : 16 px comme partout (il était à 13,8 px). */
+  .plants-ui {
+    font-size: calc(16 * var(--px));
+  }
+  .plants-ui .small,
+  .plants-ui label.field {
+    font-size: calc(14 * var(--px));
+  }
+
+  /* Marges de 22 px : le contenu s'aligne sur l'en-tête et le sélecteur. */
+  .app.has-phead .main .page {
+    padding: 16px 22px 28px;
+  }
+
+  /* En-tête compact de la carte et de la Vue 3D : même style, 52 px de haut. */
+  .phead-slot:has(.pagehead.compact) {
+    padding-top: max(8px, env(safe-area-inset-top));
+  }
+  .pagehead.compact {
+    min-height: 44px;
+    gap: 12px;
+  }
+  .pagehead.compact .pagehead-kicker {
+    font-size: calc(12 * var(--px));
+    line-height: 1.2;
+  }
+  .pagehead.compact h1 {
+    font-size: calc(24 * var(--px));
+    line-height: 1.1;
+  }
+  .pagehead.compact .pagehead-btn {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 22px;
+  }
+  .app:has(.main.full) .modebar {
+    padding: 8px 22px 8px;
+  }
+}
+
+/* ---------- Liste des plantes : une carte par plante, tuile sauge et pastille de couleur ---------- */
+.plants-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.plants-head h1 {
+  margin: 0;
+}
+.plants-actions {
+  display: flex;
+  gap: 12px;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+}
+.plant-tile {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  overflow: hidden;
+}
+.plants-ui .plant-row strong {
+  font-family: var(--font-title);
+  font-weight: var(--fw-text);
+  font-size: calc(18 * var(--px));
+  color: var(--title);
+}
+@media (max-width: 760px) {
+  .plants-actions > .btn {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-inline: 12px;
+    min-height: 46px;
+    font-size: calc(15 * var(--px));
+  }
+  .plants-head {
+    margin-bottom: 4px;
+  }
+  .plants-ui .plants-more {
+    margin: 4px 0 0;
+  }
+  /* Le cadre unique de la liste disparaît : chaque plante est sa propre carte. */
+  .plants-ui .grid > .card:first-child {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+  }
+  .plants-ui .grid > .card:first-child .list > li {
+    margin: 0 0 12px;
+    padding: 0;
+    border: var(--border-w) solid var(--border);
+    border-radius: 22px;
+    background: var(--surface);
+    box-shadow: var(--shadow-soft);
+  }
+  .plants-ui .grid > .card:first-child .list > li:last-child {
+    border-bottom: var(--border-w) solid var(--border);
+  }
+  .plants-ui .list .btn.ghost.plant-row {
+    min-height: 66px;
+    padding: 10px 16px;
+    border-radius: 22px;
+  }
+  .plants-ui .list .btn.ghost.plant-row:hover {
+    background: var(--accent-soft);
+  }
+}
+
+/* ---------- Champs : même rayon et même hauteur partout ---------- */
+.input,
+select.input,
+textarea.input {
+  border-radius: 18px;
+}
+
+/* ---------- Réglages : jardin affiché = pastille sauge, comme la maquette ---------- */
+.garden-pick {
+  border-radius: 22px;
+  min-height: 52px;
+}
+.garden-pick[aria-pressed='true'] {
+  background: var(--track);
+  border-color: transparent;
+  color: var(--title);
+}
+
+/* Téléphone : dans une carte de page, les boutons d'action prennent toute la largeur (maquette Réglages : « Faire une sauvegarde »). */
+@media (max-width: 760px) {
+  .page .card > .btn:not(.small):not(.ghost):not(.icon-btn):not(.close-btn),
+  .page .card > .row > .btn:not(.small):not(.ghost):not(.icon-btn):not(.close-btn),
+  .page .card > div > .btn:not(.small):not(.ghost):not(.icon-btn):not(.close-btn) {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+  .page .card .garden-pick {
+    justify-content: space-between;
+  }
+}
+
+/* Poignée des feuilles : cible de 44 px. */
+.sheet-handle {
+  min-height: 44px;
+}
+@media (max-width: 760px) {
+  /* Un souffle sous l'en-tête : le titre ne touche pas le contenu qui défile dessous. */
+  .app.has-phead .phead-slot {
+    padding-bottom: 6px;
+  }
+  .app.has-phead .modebar {
+    padding-top: 10px;
+  }
+  .app:has(.main.full) .modebar {
+    padding-top: 4px;
+  }
+}
+
+/* Cases à cocher des réglages : interrupteurs de la maquette (texte à gauche, interrupteur à droite), 52 x 32 px, bordure grise pour rester visibles à l'état éteint. */
+.check-row {
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  align-items: center;
+}
+.check-row input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  width: 52px;
+  height: 32px;
+  margin: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  background: var(--track);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.check-row input[type='checkbox']::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: var(--shadow-chip);
+  transition: transform 0.15s;
+}
+.check-row input[type='checkbox']:checked {
+  background: var(--btn-green);
+  border-color: var(--btn-green);
+}
+.check-row input[type='checkbox']:checked::before {
+  transform: translateX(20px);
+}
+
+/* Titre long ou texte très grand : le titre garde un écart avec la pastille du profil. */
+.phead-slot .pagehead {
+  gap: 12px;
+}
