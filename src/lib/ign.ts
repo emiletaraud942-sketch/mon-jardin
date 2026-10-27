@@ -39,6 +39,9 @@ export interface BuildingResult {
 
 const WMTS = '/ext/geopf/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}'
 
+/** Taille des tuiles WMTS demandées (px). Avec 512 MapLibre demanderait un niveau de moins : à garder à 256. */
+export const TILE_SIZE = 256
+
 /** Tuiles XYZ pour MapLibre (raster 256 px). Vérifiées : image/jpeg et image/png renvoyées en z18. */
 export const ORTHO_TILES = `${WMTS}&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&FORMAT=image/jpeg`
 export const PLAN_TILES = `${WMTS}&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&FORMAT=image/png`
@@ -47,9 +50,14 @@ export const IGN_ATTRIBUTION = '© IGN – Géoplateforme'
 
 /**
  * Zoom maximal des tuiles à demander (au-delà MapLibre sur-échantillonne : `maxzoom` de la source).
- * NON VÉRIFIÉS en direct (GetCapabilities inaccessible depuis le conteneur de dev) : valeurs prudentes.
- * Seul z18 est confirmé pour les trois couches ; l'orthophoto existe aussi en z19 (usage courant du Géoportail).
- * À relever après vérification du GetCapabilities (TileMatrixSetLimits de la couche en PM).
+ * ORTHO_MAXZOOM = 19 : VÉRIFIÉ le 27 oct. 2026 sur un point (lon 1,0411 ; lat 49,5328, Normandie) :
+ * ORTHOIMAGERY.ORTHOPHOTOS répond en z17, z18 et z19 (≈ 0,2 m par pixel) puis 404 en z20 et z21.
+ * HR.ORTHOIMAGERY.ORTHOPHOTOS donne la même tuile z19 ; THR.ORTHOIMAGERY.ORTHOPHOTOS répond 404 dès z19 ici.
+ * Aucune photo plus fine n'est donc disponible : on ne change pas de couche. Valeur mesurée sur un seul point
+ * (la couverture peut varier ailleurs) ; le repli de MapLibre étire alors la dernière tuile reçue.
+ * PLAN_MAXZOOM et CADASTRE_MAXZOOM : NON VÉRIFIÉS (GetCapabilities inaccessible depuis le conteneur de dev),
+ * seul z18 est confirmé pour ces deux couches. À relever dans le TileMatrixSetLimits de la couche en PM.
+ * Le zoom de CARTE correspondant à ces niveaux est calculé dans `src/features/map/photoZoom.ts`.
  */
 export const ORTHO_MAXZOOM = 19
 export const PLAN_MAXZOOM = 18
