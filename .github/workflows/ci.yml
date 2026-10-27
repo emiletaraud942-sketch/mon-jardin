@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: actions/setup-node@v4
@@ -39,7 +39,7 @@ jobs:
     timeout-minutes: 10
     # Bloquant : toute alerte high/critical de production échoue, sauf les avis listés (avec raison) dans scripts/audit-prod.mjs (liste vide aujourd'hui).
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: actions/setup-node@v4
