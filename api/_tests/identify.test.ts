@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import handler, { clientIp, createRateLimiter, decodeBase64Image, detectImageMime, imageSize, interpretPlantnet, isAllowedOrigin, MAX_BODY_BYTES, rateKey, scrubError } from '../identify'
+import handler, { clientIp, createRateLimiter, decodeBase64Image, detectImageMime, imageSize, interpretPlantnet, hasBrowserOrigin, isAllowedOrigin, MAX_BODY_BYTES, rateKey, scrubError } from '../identify'
 
 /** JPEG minimal avec un segment SOF0 (dimensions déclarées). */
 const jpeg = (w = 640, h = 480) => Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 4, 0x4a, 0x46, 0xff, 0xc0, 0, 17, 8, h >> 8, h & 255, w >> 8, w & 255, 3, 1, 0x22, 0, 2, 0x11, 1, 3, 0x11, 1, 0xff, 0xd9])
@@ -119,6 +119,17 @@ describe('isAllowedOrigin', () => {
   })
 })
 
+describe('hasBrowserOrigin', () => {
+  it('exige une marque de navigateur', () => {
+    expect(hasBrowserOrigin({ host: 'permajardin.vercel.app' })).toBe(false)
+    expect(hasBrowserOrigin({ 'user-agent': 'curl/8' })).toBe(false)
+    expect(hasBrowserOrigin({ origin: 'https://permajardin.vercel.app' })).toBe(true)
+    expect(hasBrowserOrigin({ referer: 'https://permajardin.vercel.app/' })).toBe(true)
+    expect(hasBrowserOrigin({ 'sec-fetch-site': 'same-origin' })).toBe(true)
+    expect(hasBrowserOrigin({ 'sec-fetch-site': 'none' })).toBe(false)
+  })
+})
+
 describe('clientIp', () => {
   it('préfère les en-têtes posés par Vercel, puis la DERNIÈRE valeur de x-forwarded-for (la première est falsifiable)', () => {
     expect(clientIp({ 'x-vercel-forwarded-for': '9.9.9.9', 'x-real-ip': '8.8.8.8', 'x-forwarded-for': '6.6.6.6' })).toBe('9.9.9.9')
@@ -206,7 +217,7 @@ describe('interpretPlantnet', () => {
 // ---------- Handler ----------
 
 function call(opts: { method?: string; headers?: Record<string, string>; body?: unknown; bodyThrows?: boolean } = {}) {
-  const headers: Record<string, string> = { host: 'permajardin.vercel.app', 'content-type': 'application/json', 'x-vercel-forwarded-for': `10.0.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}`, ...opts.headers }
+  const headers: Record<string, string> = { host: 'permajardin.vercel.app', origin: 'https://permajardin.vercel.app', 'content-type': 'application/json', 'x-vercel-forwarded-for': `10.0.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}`, ...opts.headers }
   const req = { method: opts.method ?? 'POST', headers, socket: { remoteAddress: '127.0.0.1' } } as Record<string, unknown>
   if (opts.bodyThrows) Object.defineProperty(req, 'body', { get: () => { throw new Error('Invalid JSON') } })
   else req.body = opts.body
@@ -245,6 +256,16 @@ describe('handler', () => {
   it('403 pour un appel cross-site', async () => {
     expect((await call({ headers: { 'sec-fetch-site': 'cross-site' }, body: { images: [b64(JPEG)] } })).status).toBe(403)
     expect((await call({ headers: { origin: 'https://evil.example' }, body: { images: [b64(JPEG)] } })).status).toBe(403)
+  })
+
+  it('403 pour un appel sans Origin, Referer ni Sec-Fetch-Site (curl, script)', async () => {
+    expect((await call({ headers: { origin: '' }, body: { images: [b64(JPEG)] } })).status).toBe(403)
+  })
+
+  it('une photo invalide ne consomme pas le plafond global', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{"results":[]}', { status: 200 })))
+    for (let i = 0; i < 200; i++) await call({ body: { images: [Buffer.from('pas une image').toString('base64')] } })
+    expect((await call({ body: { images: [b64(JPEG)] } })).status).toBe(200)
   })
 
   it('503 sans clé', async () => {

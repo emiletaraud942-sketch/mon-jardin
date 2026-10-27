@@ -80,6 +80,7 @@ const QUOTA_TEXT: Record<string, string> = {
   report: LIMIT_TEXT,
   thread: LIMIT_TEXT,
   profile: LIMIT_TEXT,
+  zone: 'Vous avez déjà changé de quartier cette semaine. Réessayez dans quelques jours.',
   post_open: `Vous avez déjà ${L.openPostsMax} annonces ouvertes. Fermez-en une avant d’en publier une autre.`,
   block: LIMIT_TEXT,
   event: `Vous avez atteint la limite de ${L.eventsPerDay} événements par jour. Revenez demain.`,

@@ -140,6 +140,12 @@ export function isAllowedOrigin(h: Headers): boolean {
   return true
 }
 
+/** Vrai si la requête porte une marque de navigateur : `Sec-Fetch-Site` ou `Origin`/`Referer`. Un `fetch` POST du site envoie toujours `Origin` ; curl ou un script, non. */
+export function hasBrowserOrigin(h: Headers): boolean {
+  const site = header(h, 'sec-fetch-site')
+  return site === 'same-origin' || site === 'same-site' || !!header(h, 'origin') || !!header(h, 'referer')
+}
+
 /**
  * IP du client. Sur Vercel, `x-vercel-forwarded-for` et `x-real-ip` sont posés par la plateforme (la valeur envoyée par le client est écrasée).
  * `x-forwarded-for` n'est qu'un repli : on prend sa DERNIÈRE valeur (celle ajoutée par le proxy le plus proche), jamais la première,
@@ -255,12 +261,11 @@ async function handle(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Allow', 'POST')
     return res.status(405).json({ error: 'Méthode non autorisée' })
   }
-  if (!isAllowedOrigin(req.headers)) return res.status(403).json({ error: 'Origine non autorisée.' })
+  if (!isAllowedOrigin(req.headers) || !hasBrowserOrigin(req.headers)) return res.status(403).json({ error: 'Origine non autorisée.' })
 
   const limit = limiter.check(rateKey(clientIp(req.headers, req.socket?.remoteAddress)))
-  const globalLimit = limit.allowed ? globalLimiter.check('tous') : limit
-  if (!limit.allowed || !globalLimit.allowed) {
-    res.setHeader('Retry-After', String(Math.max(limit.retryAfterSec, globalLimit.retryAfterSec)))
+  if (!limit.allowed) {
+    res.setHeader('Retry-After', String(limit.retryAfterSec))
     return res.status(429).json({ error: 'Trop de demandes, réessayez dans quelques minutes.' })
   }
 
@@ -310,6 +315,13 @@ async function handle(req: VercelRequest, res: VercelResponse) {
     }
     form.append('images', new Blob([bytes], { type: mime }), `photo-${i}.${mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg'}`)
     form.append('organs', organ)
+  }
+
+  // Plafond global : compté seulement pour une requête valide qui va réellement consommer le quota Pl@ntNet.
+  const globalLimit = globalLimiter.check('tous')
+  if (!globalLimit.allowed) {
+    res.setHeader('Retry-After', String(globalLimit.retryAfterSec))
+    return res.status(429).json({ error: 'Trop de demandes, réessayez dans quelques minutes.' })
   }
 
   const url = `https://my-api.plantnet.org/v2/identify/all?api-key=${encodeURIComponent(key)}&lang=fr&nb-results=5&include-related-images=false`

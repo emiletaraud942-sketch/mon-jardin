@@ -32,7 +32,8 @@ Guide pas à pas, gratuit (offre Hobby de Vercel + offre gratuite de Supabase). 
 2. **Appliquez les migrations** de `supabase/migrations/` dans l'ordre des noms de fichier :
    - `20261017000000_garden_snapshots.sql` (table et règles RLS),
    - `20261018000000_snapshots_hardening.sql` (droits, idempotente),
-   - `20261019000000_security_hardening.sql` (retire `TRUNCATE` et les droits inutiles, impose un objet JSON, ajoute `delete_my_account()` ; **ne pas l'oublier** : sans elle, le droit à l'effacement du compte n'existe pas côté serveur).
+   - `20261019000000_security_hardening.sql` (retire `TRUNCATE` et les droits inutiles, impose un objet JSON, ajoute `delete_my_account()` ; **ne pas l'oublier** : sans elle, le droit à l'effacement du compte n'existe pas côté serveur),
+   - `20261027000000_snapshots_no_anonymous.sql` (refuse les connexions anonymes Supabase ; rejouable).
 
    Soit dans Supabase > **SQL Editor** (coller chaque fichier, *Run*), soit avec le CLI : `supabase link --project-ref <ref>` puis `supabase db push`.
 3. Supabase > **Authentication > URL Configuration** :

@@ -282,3 +282,20 @@ Migration `supabase/neighbors/migrations/20261025040000_neighbors_v6_cell_size.s
 - La taille de l'organisateur d'un événement n'est pas lisible par les autres membres : le libellé de distance suppose la taille du lecteur.
 - Un membre lit la taille de quartier des profils qu'il voit (pseudo, cellule et taille) : information déjà déductible de la cellule.
 - Les anciennes annonces gardent leur cellule d'origine après un passage en « large ».
+
+## 14. Corrections de l'audit du 27 octobre 2026, lot 1
+
+Vérifié par `api/_tests/identify.test.ts` (49 tests), le banc d'entraide sur Postgres 16 jetable (`supabase/neighbors/tests/run.sh` : **726 PASS, 0 FAIL**, chaque migration rejouée) et `docs/securite-rls-test.sql` rejoué sur les migrations de synchro (cas anonyme compris).
+
+| Constat | Correctif | Preuve |
+| --- | --- | --- |
+| O6 : `/api/identify` acceptait un appel sans `Origin`/`Referer`/`Sec-Fetch-Site` (curl, script) | `hasBrowserOrigin` : 403 sans marque de navigateur (un `fetch` POST du site envoie toujours `Origin`) | `identify.test.ts` |
+| Une photo invalide consommait le plafond global de 150 requêtes | Le plafond global n'est compté qu'après validation, juste avant l'appel à Pl@ntNet | `identify.test.ts` (200 photos invalides, puis une valide passe) |
+| Entraide : 5 changements de zone par jour, donc balayage de toute la France en une dizaine de jours | v7 : une zone par 7 jours (première journée du profil libre) ; colonne `cell_changed_at` sans aucun droit client ; erreur `quota_exceeded:zone` | `scenarios_v7.sql` |
+| Entraide : caractères de contrôle, invisibles et de direction dans les annonces, réponses, messages, signalements, événements | Contraintes `*_text_clean` (`NOT VALID` : lignes existantes non contrôlées) ; saut de ligne et tabulation permis | `scenarios_v7.sql` |
+| Synchro : un compte anonyme Supabase (option activée par erreur) pouvait stocker 5 Mo | Politique RESTRICTIVE « pas de compte anonyme » sur `garden_snapshots` | `docs/securite-rls-test.sql` |
+
+**Non fait, volontairement**
+- *Retirer l'accès direct à `neighbors_is_blocked` / `neighbors_can_contact`* : les politiques RLS appellent ces fonctions avec les droits de la personne connectée, donc un `revoke` casserait l'entraide. Elles ne renvoient que des faits qui concernent l'appelant (un blocage où il figure ; un contact qu'il peut déjà voir).
+- *Conserver un extrait des contenus signalés* : change la promesse de confidentialité (« jamais le contenu signalé » dans `moderation_log`) et les textes légaux. Décision du propriétaire avant toute migration.
+- *Purge à 60 jours programmée* : la fonction SQL ne supprime pas les fichiers du Storage (il faut l'API Storage, donc une Edge Function ou un script avec la clé `service_role`). Reste l'action O4 du propriétaire.

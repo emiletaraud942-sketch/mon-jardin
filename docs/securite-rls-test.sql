@@ -145,4 +145,25 @@ begin
   raise notice 'OK : delete_my_account exige une identité';
 end $$;
 
+-- Compte anonyme Supabase (is_anonymous = true) : ni lecture ni écriture (migration 20261027000000_snapshots_no_anonymous)
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"bbbbbbbb-0000-0000-0000-000000000002","role":"authenticated","is_anonymous":true}', true);
+do $$
+declare n int;
+begin
+  select count(*) into n from public.garden_snapshots;
+  assert n = 0, 'un compte anonyme lit un instantané';
+  begin
+    update public.garden_snapshots set data = '{"x":1}' where user_id = 'bbbbbbbb-0000-0000-0000-000000000002';
+    get diagnostics n = row_count;
+    assert n = 0, 'un compte anonyme modifie un instantané';
+  end;
+  begin
+    insert into public.garden_snapshots (user_id, data) values ('cccccccc-0000-0000-0000-000000000003', '{}');
+    assert false, 'un compte anonyme a inséré';
+  exception when insufficient_privilege or foreign_key_violation then null;
+  end;
+  raise notice 'OK : les comptes anonymes n''ont aucun accès à la sauvegarde';
+end $$;
+
 rollback; -- rien n'est conservé

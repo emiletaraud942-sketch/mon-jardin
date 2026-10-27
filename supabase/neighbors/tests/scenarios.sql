@@ -147,6 +147,9 @@ begin
  for i in 1..5 loop perform t.as(C,'update public.profiles set pseudo=''Carole'||i||''''); end loop;
  perform t.expect('S14 6e changement refusé', t.as(C,'update public.profiles set pseudo=''Carole9'''), 'ERR P0001 quota_exceeded:profile');
  perform t.expect('S14 update sans changement ne coûte rien', t.as(C,'update public.profiles set pseudo=pseudo'), 'OK rows=1');
+ alter table public.profiles disable trigger neighbors_profile_before_update;   -- v7 : une zone par semaine, la date de zone d'E est reculée
+ update public.profiles set cell_changed_at = now() - interval '30 days' where user_id = E;
+ alter table public.profiles enable trigger neighbors_profile_before_update;
  perform t.expect('S14 update cellule arrondie', t.as(E,'update public.profiles set cell_lat=45.123456'), 'OK rows=1');
  perform t.expect('S14 ...', t.as(E,'select cell_lat::text from public.profiles where user_id='''||E||''''), 'OK 45.12');
  -- S13 bannissement
