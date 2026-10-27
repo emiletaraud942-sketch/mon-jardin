@@ -3461,6 +3461,7 @@ html[data-immersive] body {
   color: var(--muted);
 }
 .route-go {
+  line-height: normal;
   min-height: 46px;
   padding: 0 24px;
   border: 0;
@@ -3976,6 +3977,7 @@ html[data-immersive] body {
   margin-top: 6px;
 }
 .tcard-done {
+  line-height: normal;
   position: relative;
   flex: none;
   height: 42px; /* pastille de 42 px comme la maquette ; la zone tactile fait 44 px (::after) */
@@ -4175,6 +4177,7 @@ html[data-immersive] body {
   gap: 10px;
 }
 .fiche-btn {
+  line-height: normal;
   flex: 1;
   min-height: 52px;
   padding: 0 12px;
@@ -4194,6 +4197,7 @@ html[data-immersive] body {
 @media (max-width: 760px) {
   .app:has(.fiche) .topbar,
   .app:has(.fiche) .modebar,
+  .app:has(.fiche) .phead-slot,
   .app:has(.fiche) .sidenav {
     display: none;
   }
@@ -4283,5 +4287,10 @@ html[data-immersive] body {
   }
   .app.has-phead .main .page {
     padding-top: 16px;
+  }
+}
+@media (max-width: 760px) {
+  .app.has-phead:has(.fiche) .phead-slot {
+    display: none;
   }
 }

@@ -38,6 +38,8 @@ Orchestration : agent `chef-de-projet`. Skills : `ajouter-espece`, `deployer`, `
 - Moteurs (`src/engine`) purs et testés ; ils reçoivent `speciesById` en paramètre. Tests présents pour `calendar`, `growth`, `planting`, `sun` et `tasks`.
 - Licences : IGN Licence Ouverte (commercial OK) ; Open-Meteo non commercial ; Pl@ntNet 500 identifications/jour partagées.
 
+- **Fidélité aux planches (vague 10)** : l'accueil, À faire, Bienvenue, l'étape « Mes plantes » et la fiche plante reproduisent la planche sans ajout visible. Ce qui n'y figure pas (conseil, aide, installation, météo détaillée, rappels, historique) vit dans Réglages (« Conseil et aide », Installer) ou sous le premier écran (`.afaire-extra`, `.fiche-top`). La barre du bas a 5 entrées (Accueil en tête) : seul écart voulu avec les planches. Gris exacts de la maquette : `--muted` #6b7468 (sur fonds teintés, `--muted-2` via la liste en fin de `app.css`) et `--tab-off` #9aa396 (onglets, étapes à venir : 2,6:1, choix assumé). Sur téléphone, plantes, Où planter ?, Catalogue, Voisins et Réglages ont l'en-tête `PageHead` (`.phead-slot` dans `App.tsx`). La fiche plante est plein écran depuis la liste, la carte et la 3D (`.fiche-overlay`).
+
 ## Fiabilité des données
 - Le format stocké porte un numéro de version (`STATE_VERSION` dans `src/lib/migrate.ts`). Toute évolution incompatible = `STATE_VERSION + 1` et une étape dans `migrateState`, avec un test.
 - `migrateState` valide et corrige (`sanitize`) toute donnée qui entre : lecture d'IndexedDB au démarrage, import JSON, récupération Supabase. Jardins sans centre, plantes sans position, dates invalides, identifiants en double : écartés ou corrigés, avec avertissements. Un fichier d'une version plus récente est refusé.
