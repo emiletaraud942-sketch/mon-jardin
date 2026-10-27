@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef } from 'react'
 import { notifyDailyTasks } from './lib/notify'
 import { Icon } from './components/Icon'
 import { PageHead } from './components/PageHead'
@@ -12,7 +12,8 @@ import { UpdateBanner } from './components/UpdateBanner'
 import { consumeExportReminder, exportCurrentState } from './lib/backup'
 import { getLoadWarnings, getState, useActiveGarden, useGardenPlants, useStore } from './lib/store'
 import { showToast } from './lib/toast'
-import { RAYON_LABEL, TAB_LABEL, getUi, goRayon, noteVisit, openParcours, rayonOfTab, setGuide, setUi, subTabs, useUi, visibleRayons, type Rayon, type Tab } from './lib/ui'
+import { RAYON_LABEL, TAB_LABEL, getUi, goRayon, noteVisit, openHelp, openParcours, rayonOfTab, setGuide, setHelpOpen, setUi, subTabs, useHelpOpen, useUi, visibleRayons, type Rayon, type Tab } from './lib/ui'
+import { useBanner } from './lib/banners'
 import { deriveOnboarding } from './lib/onboarding'
 import { Parcours } from './features/onboarding/Parcours'
 import { Accueil } from './features/onboarding/Accueil'
@@ -34,8 +35,9 @@ import { readRadius } from './features/neighbors/prefs'
 import { useConsents } from './lib/consent'
 import { InviteButton } from './components/InviteButton'
 import { useScanUi } from './features/scan/scanUi'
-// En dernier : harmonisation Leafora (surcharge les feuilles de style des écrans ci-dessus).
+// En dernier : harmonisation Leafora (surcharge les feuilles de style des écrans ci-dessus), puis la navigation du téléphone (chantier D).
 import './styles/leafora.css'
+import './styles/mobile-nav.css'
 
 const View3D = lazy(() => import('./features/garden3d/View3D'))
 const NeighborsPage = lazy(() => import('./features/neighbors/NeighborsPage').then((m) => ({ default: m.NeighborsPage })))
@@ -48,8 +50,8 @@ const Loading = ({ label }: { label: string }) => (
   </div>
 )
 
-/** Écrans qui, sur téléphone, ont l'en-tête de la maquette (petite phrase, titre en serif, pastille du profil) à la place de la barre du haut.
- *  La carte et la Vue 3D l'ont en version compacte (même style, 52 px) pour garder leur place. */
+/** Écrans qui, sur téléphone, ont l'en-tête minimal (titre en serif et une seule action : le profil, 52 px) à la place de la barre du haut.
+ *  Plus de petite phrase ni de « ? » : l'aide est dans la feuille du jardin, les options de la carte et Réglages. */
 const PHEAD_TABS: Tab[] = ['carte', '3d', 'plantes', 'planter', 'catalogue', 'voisins', 'reglages']
 
 const RAYON_ICON: Record<Rayon, string> = { jardin: 'map', afaire: 'check', planter: 'leaf', voisins: 'users' }
@@ -65,7 +67,7 @@ const NewsBadge = ({ count }: { count: number }) =>
 export function App() {
   const loaded = useStore((s) => s.loaded)
   const garden = useActiveGarden()
-  const { tab, guide, parcours } = useUi()
+  const { tab, guide, parcours, placingSpeciesId, movingPlantId } = useUi()
   const plantCount = useGardenPlants(garden?.id).length
   const { tasks, weather, weatherLoading } = useTasks(garden)
   const { voisins } = useConsents()
@@ -74,11 +76,14 @@ export function App() {
   useEffect(() => (neighborsEnabled && voisins ? startPushBridge() : undefined), [voisins])
   const scanOpen = !!useScanUi().screen
   const onboarding = useOnboarding()
-  const [helpOpen, setHelpOpen] = useState(false)
+  const helpOpen = useHelpOpen()
   const mainRef = useRef<HTMLElement>(null)
   const firstPaint = useRef(true)
   const open = tasks.filter((t) => !t.blockedBy && !t.done).length
   const weatherReady = !weatherLoading && !!weather
+  // Bandeau « jardin d'exemple » : un seul bandeau à la fois (file d'attente), jamais pendant un placement.
+  const demoWants = !!garden && !parcours && isDemoGarden(garden) && !guide.demoHidden && tab !== 'accueil'
+  const demoTurn = useBanner('exemple', demoWants)
   useEffect(() => {
     if (tasks.length) notifyDailyTasks(tasks, { weatherReady }).catch(() => undefined)
   }, [tasks, weatherReady])
@@ -169,11 +174,12 @@ export function App() {
     planter: 'Où planter ?',
     catalogue: `Catalogue (${Object.keys(SPECIES_BY_ID).length})`,
     voisins: 'Voisins',
-    reglages: 'Réglages',
+    reglages: 'Mon compte et réglages',
   }
+  const placing = !!(placingSpeciesId || movingPlantId)
 
   return (
-    <div className={'app' + (tab === 'accueil' || tab === 'entretien' || phead ? ' has-pagehead' : '') + (phead ? ' has-phead' : '') + (tab === 'accueil' && shouldShowRoute(onboarding.state, onboarding.neighbors) ? ' route-open' : '')}>
+    <div className={'app' + (tab === 'accueil' || tab === 'entretien' || phead ? ' has-pagehead' : '') + (phead ? ' has-phead' : '') + (placing ? ' is-placing' : '') + (tab === 'accueil' && shouldShowRoute(onboarding.state, onboarding.neighbors) ? ' route-open' : '')}>
       <a
         className="skip-link"
         href="#main-panel"
@@ -193,7 +199,7 @@ export function App() {
         <span className="garden-name" title={garden.name}>
           {garden.name}
         </span>
-        <button className="btn help-btn" aria-haspopup="dialog" aria-label="Aide" onClick={() => setHelpOpen(true)}>
+        <button className="btn help-btn" aria-haspopup="dialog" aria-label="Aide" onClick={openHelp}>
           <span className="help-mark" aria-hidden>
             ?
           </span>
@@ -206,18 +212,12 @@ export function App() {
       </header>
       {phead && (
         <div className="phead-slot">
-          <PageHead
-            kicker={tab === 'voisins' ? 'Autour de chez vous' : tab === 'reglages' ? 'Mon compte' : garden.name}
-            title={pheadTitle[tab]}
-            compact={full}
-            onHelp={full ? () => setHelpOpen(true) : undefined}
-            current={tab === 'reglages'}
-          />
+          <PageHead title={pheadTitle[tab]} compact home={tab !== 'reglages'} current={tab === 'reglages'} />
         </div>
       )}
       <div className="modebar">
         {tabs.length > 0 && <SubTabs tabs={tabs} current={tab} label={rayon === 'jardin' ? 'Écrans de Mon jardin' : 'Écrans de Planter'} />}
-        {isDemoGarden(garden) && !guide.demoHidden && tab !== 'accueil' && (
+        {demoWants && demoTurn && (
           <div className="alert info demo-banner" role="status">
             <span>
               <strong>Ceci est un jardin d’exemple.</strong>

@@ -6,12 +6,12 @@ import { Icon } from '../../components/Icon'
 import { SpeciesPicker } from '../../components/SpeciesPicker'
 import { UNKNOWN_SPECIES_ID, yourPlant } from '../../lib/customName'
 import { useGardenPlants, useStore } from '../../lib/store'
-import { closePlantSheet, setUi, startPlacing, stopPlacing, useUi } from '../../lib/ui'
+import { closePlantSheet, openHelp, setUi, startPlacing, stopPlacing, useUi } from '../../lib/ui'
 import type { Garden } from '../../types'
 import { PlantPanel, plantName } from '../plants/PlantPanel'
 import { openScan } from '../scan/scanUi'
 import { useIsMobile } from '../../components/useMedia'
-import { placeAtAim } from './aimBridge'
+import { confirmBeforePlacing, placeAtAim } from './aimBridge'
 
 const MAX_LISTED = 60
 
@@ -63,6 +63,9 @@ export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
         </button>
       </details>
       <p className="muted small">{hint}</p>
+      <button className="btn ghost small" aria-haspopup="dialog" onClick={openHelp}>
+        Aide sur cet écran
+      </button>
       {plants.length > 0 && (
         <ul className="list small">
           {plants.slice(0, MAX_LISTED).map((p) => {
@@ -105,9 +108,12 @@ export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
   )
 }
 
-/** Consigne affichée tant qu'une plante est à placer ou à déplacer : grande, sur deux lignes, avec « Annuler ». */
+/**
+ * Consigne affichée tant qu'une plante est à placer ou à déplacer : grande, avec « Valider » et « Annuler » toujours visibles.
+ * Trois gestes : « Ajouter une plante » (2 touchers pour la choisir), toucher la carte (ou viser), « Valider ».
+ */
 export function PlacingBanner() {
-  const { tab, placingSpeciesId, placingCustomName, placingSeries, movingPlantId, aim } = useUi()
+  const { tab, placingSpeciesId, placingCustomName, placingSeries, movingPlantId, aim, placingSpot } = useUi()
   const moving = useStore((s) => (movingPlantId ? s.plants.find((p) => p.id === movingPlantId) : undefined))
   // En Vue 3D, la scène affiche sa propre consigne : une seule bannière.
   if (tab === '3d' || (!placingSpeciesId && !movingPlantId)) return null
@@ -116,26 +122,41 @@ export function PlacingBanner() {
       ? plantName(moving)
       : 'plante'
     : placingCustomName || (placingSpeciesId && placingSpeciesId !== UNKNOWN_SPECIES_ID ? SPECIES_BY_ID[placingSpeciesId]?.nomCommun : undefined) || 'plante'
+  const confirm = aim || confirmBeforePlacing()
+  const ready = aim || !!placingSpot
+  const text = aim
+    ? `Déplacez la carte : la croix doit être sur l’endroit de ${yourPlant(name)}.`
+    : ready
+      ? 'C’est bien là ? Touchez Valider. Pour corriger, touchez un autre endroit.'
+      : movingPlantId
+        ? `Touchez sur la carte le nouvel endroit de ${yourPlant(name)}.`
+        : `Touchez sur la carte l’endroit où se trouve ${yourPlant(name)}.`
   return (
     <div className="floating placing-banner" role="status">
-      <Icon name={movingPlantId ? 'move' : 'pin'} size={24} />
+      <Icon name={movingPlantId ? 'move' : 'pin'} size={28} />
       <span className="placing-text">
-        <strong>{aim ? `Déplacez la carte : le viseur doit être sur l’endroit de ${yourPlant(name)}.` : movingPlantId ? `Touchez sur la carte le nouvel emplacement de ${yourPlant(name)}.` : `Touchez sur la carte l’endroit où se trouve ${yourPlant(name)}.`}</strong>
-        {aim && (
-          <button className="btn primary" style={{ marginTop: 6, marginRight: 8 }} onClick={placeAtAim}>
-            <Icon name="pin" size={18} /> Placer ici
-          </button>
+        <strong>{text}</strong>
+        {placingSeries && placingSeries.count > 0 && (
+          <span className="small muted" style={{ display: 'block' }}>
+            {placingSeries.count} plante{placingSeries.count > 1 ? 's' : ''} placée{placingSeries.count > 1 ? 's' : ''}. Touchez encore pour en ajouter.
+          </span>
         )}
-        {!movingPlantId && !aim && (
-          <button className="btn small" style={{ marginTop: 6 }} onClick={() => openScan('mesures', { kind: 'new' })}>
+        {!movingPlantId && !aim && !ready && (
+          <button className="btn small ghost placing-measure" onClick={() => openScan('mesures', { kind: 'new' })}>
             Placer par mesures
           </button>
         )}
-        {placingSeries && placingSeries.count > 0 && <span className="small muted" style={{ display: 'block' }}>{placingSeries.count} plante{placingSeries.count > 1 ? 's' : ''} placée{placingSeries.count > 1 ? 's' : ''}. Touchez encore pour en ajouter.</span>}
       </span>
-      <button className={'btn' + (placingSeries ? ' primary' : '')} onClick={stopPlacing}>
-        {placingSeries ? 'Terminé' : 'Annuler'}
-      </button>
+      <span className="placing-actions">
+        {confirm && (
+          <button className="btn primary placing-ok" disabled={!ready} onClick={placeAtAim}>
+            <Icon name="check" size={20} /> Valider
+          </button>
+        )}
+        <button className={'btn placing-cancel' + (placingSeries && placingSeries.count > 0 ? ' primary' : '')} onClick={stopPlacing}>
+          {placingSeries && placingSeries.count > 0 ? 'Terminé' : 'Annuler'}
+        </button>
+      </span>
     </div>
   )
 }

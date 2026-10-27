@@ -9,11 +9,11 @@ export type Tab = 'accueil' | 'carte' | '3d' | 'plantes' | 'entretien' | 'plante
 
 /**
  * Les 4 rayons de l'appli (barre du bas). Chacun regroupe des écrans :
- * Mon jardin = carte, plantes, vue 3D ; À faire = entretien, météo, calendrier ; Planter = où planter, catalogue ; Voisins = entraide.
+ * Mon jardin = carte, plantes, vue 3D ; À faire = entretien, météo, calendrier ; Où planter ? = conseils et catalogue ; Voisins = entraide.
  */
 export type Rayon = 'jardin' | 'afaire' | 'planter' | 'voisins'
 export const RAYONS: Rayon[] = ['jardin', 'afaire', 'planter', 'voisins']
-export const RAYON_LABEL: Record<Rayon, string> = { jardin: 'Mon jardin', afaire: 'À faire', planter: 'Planter', voisins: 'Voisins' }
+export const RAYON_LABEL: Record<Rayon, string> = { jardin: 'Mon jardin', afaire: 'À faire', planter: 'Où planter ?', voisins: 'Voisins' }
 export const RAYON_TABS: Record<Rayon, Tab[]> = {
   jardin: ['carte', 'plantes', '3d'],
   afaire: ['entretien'],
@@ -122,6 +122,8 @@ interface UiState {
   placingSeries?: { count: number }
   /** « Déplacer cette plante » : la prochaine pression sur la carte donne son nouvel emplacement. */
   movingPlantId?: string
+  /** Endroit touché sur la carte, en attente de « Valider » (placement ou déplacement). Absent en mode Viser : le viseur fait foi. */
+  placingSpot?: XY
   /** Mode « Viser » : viseur fixe au centre de la carte, la carte bouge sous le doigt. */
   aim?: boolean
   /** Fiche espèce ouverte dans le catalogue. */
@@ -228,7 +230,7 @@ function emit() {
 }
 
 function clearPlacing(u: UiState): UiState {
-  return { ...u, placingSpeciesId: undefined, placingCustomName: undefined, pendingPhotos: undefined, placingSeries: undefined, movingPlantId: undefined }
+  return { ...u, placingSpeciesId: undefined, placingCustomName: undefined, pendingPhotos: undefined, placingSeries: undefined, movingPlantId: undefined, placingSpot: undefined }
 }
 
 /**
@@ -343,6 +345,7 @@ export function startPlacing(speciesId: string, extra: { customName?: string; ph
     placingSeries: extra.series ? { count: 0 } : undefined,
     selectedPlantId: undefined,
     movingPlantId: undefined,
+    placingSpot: undefined,
     tab: ui.tab === '3d' ? '3d' : 'carte',
     parcours: undefined,
   })
@@ -350,12 +353,12 @@ export function startPlacing(speciesId: string, extra: { customName?: string; ph
 
 /** Arrête le placement ou le déplacement (bouton Annuler ou Terminé de la bannière). */
 export function stopPlacing() {
-  setUi({ placingSpeciesId: undefined, placingCustomName: undefined, pendingPhotos: undefined, placingSeries: undefined, movingPlantId: undefined })
+  setUi({ placingSpeciesId: undefined, placingCustomName: undefined, pendingPhotos: undefined, placingSeries: undefined, movingPlantId: undefined, placingSpot: undefined })
 }
 
 /** « Déplacer cette plante » : un appui sur la carte donne le nouvel emplacement (sans glisser). Toujours sur la carte 2D. */
 export function startMoving(plantId: string) {
-  setUi({ movingPlantId: plantId, placingSpeciesId: undefined, placingCustomName: undefined, pendingPhotos: undefined, placingSeries: undefined, tab: 'carte' })
+  setUi({ movingPlantId: plantId, placingSpeciesId: undefined, placingCustomName: undefined, pendingPhotos: undefined, placingSeries: undefined, placingSpot: undefined, tab: 'carte' })
 }
 
 /** Ferme la fiche plante ; si elle a été ouverte par une entrée d'historique propre, revient en arrière (Retour ne la rouvre pas). */
@@ -366,6 +369,26 @@ export function closePlantSheet() {
 
 export function getUi() {
   return ui
+}
+
+// ---------- Aide de l'écran (feuille « ? ») ----------
+// Ouverte depuis l'en-tête de bureau, la feuille du jardin ou Réglages : un seul état, tenu par App.
+let helpOpen = false
+const helpListeners = new Set<() => void>()
+export function setHelpOpen(open: boolean) {
+  if (helpOpen === open) return
+  helpOpen = open
+  helpListeners.forEach((l) => l())
+}
+export const openHelp = () => setHelpOpen(true)
+export function useHelpOpen(): boolean {
+  return useSyncExternalStore(
+    (l) => {
+      helpListeners.add(l)
+      return () => helpListeners.delete(l)
+    },
+    () => helpOpen,
+  )
 }
 
 // ---------- Pages légales (Confidentialité, Mentions légales, CGU) ----------

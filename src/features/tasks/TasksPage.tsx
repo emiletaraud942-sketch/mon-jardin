@@ -276,13 +276,14 @@ export function TasksPage({ garden }: { garden: Garden }) {
     <div className="page afaire">
       <PageHead
         big
+        compact
+        home
         kicker={
           view === "semaine" ? `Semaine du ${mondayLabel()}` : "Mois par mois"
         }
         title={
           view === "semaine" ? "À faire cette semaine" : "Calendrier de l’année"
         }
-        action={false}
       />
       <div className="afaire-top">
         {view === "annee" ? (

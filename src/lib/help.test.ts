@@ -22,7 +22,7 @@ describe('aide contextuelle', () => {
   })
 
   it('explique les 4 rayons et dit que la modélisation est facultative', () => {
-    expect(RAYONS_HELP.rayons.map((m) => m.name)).toEqual(['Mon jardin', 'À faire', 'Planter', 'Voisins'])
+    expect(RAYONS_HELP.rayons.map((m) => m.name)).toEqual(['Mon jardin', 'À faire', 'Où planter ?', 'Voisins'])
     expect(RAYONS_HELP.optional).toMatch(/facultatif/)
   })
 })

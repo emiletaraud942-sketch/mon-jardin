@@ -9,7 +9,8 @@ import { frMeters } from '../../lib/format'
 import { legalDistance } from '../../engine/planting'
 import { PlaceAction } from '../../components/PlaceAction'
 import { updatePlant, useGardenPlants } from '../../lib/store'
-import { setUi, useUi } from '../../lib/ui'
+import { getUi, openHelp, setUi, useUi } from '../../lib/ui'
+import { useBanner } from '../../lib/banners'
 import { plantSizeAt } from '../../engine/growth'
 import type { Garden, LonLat, Plant, XY } from '../../types'
 import { GardenDataBanner } from '../settings/GardenDataBanner'
@@ -18,7 +19,7 @@ import { cssVar } from './colors'
 import { GardenSide, PlacingBanner, useSheetHead } from './GardenSide'
 import { SidePanel } from './SidePanel'
 import { movePlant, moveWithUndo, placePlant } from './placing'
-import { registerAim } from './aimBridge'
+import { confirmBeforePlacing, registerAim } from './aimBridge'
 import { dragThresholdPx, nudgePosition } from './nudge'
 import { loadQueue, useScanQueue } from '../scan/queueStore'
 import { itemName } from '../scan/queue'
@@ -113,13 +114,14 @@ export function MapView({ garden }: { garden: Garden }) {
   const map = useRef<MLMap>()
   const markers = useRef(new Map<string, maplibregl.Marker>())
   const plants = useGardenPlants(garden.id)
-  const { selectedPlantId, placingSpeciesId, movingPlantId, aim } = useUi()
+  const { selectedPlantId, placingSpeciesId, movingPlantId, aim, placingSpot } = useUi()
   const head = useSheetHead(garden)
   const [base, setBase] = useState<'ortho' | 'plan'>('ortho')
   const [cadastre, setCadastre] = useState(true)
   const [adult, setAdult] = useState(false)
   const [ready, setReady] = useState(false)
   const [tileProblem, setTileProblem] = useState(false)
+  const tileNoticeTurn = useBanner('carte', tileProblem)
   const [legendOpen, setLegendOpen] = useState(false)
   const [optionsOpen, setOptionsOpen] = useState(false)
   const [names, setNames] = useState(() => readNames(plants.length))
@@ -325,7 +327,14 @@ export function MapView({ garden }: { garden: Garden }) {
       if (!mv && !sp) return
       const local = toLocal(gardenRef.current.center, { lon: e.lngLat.lng, lat: e.lngLat.lat })
       const a = aidRef.current!
-      a.finish(a.snapAt(local, mv).point)
+      const r = a.snapAt(local, mv)
+      if (confirmBeforePlacing()) {
+        // Téléphone : le toucher choisit l'endroit (on peut corriger en touchant ailleurs), « Valider » le confirme.
+        setUi({ placingSpot: r.point })
+        a.draw(r, mv)
+        return
+      }
+      a.finish(r.point)
     })
     // Souris : aperçu de l'accrochage et des distances sous le curseur.
     m.on('mousemove', (e) => {
@@ -555,10 +564,16 @@ export function MapView({ garden }: { garden: Garden }) {
       registerAim(() => {
         const m = map.current
         if (!m) return
-        const c = m.getCenter()
         const a = aidRef.current!
-        const local = toLocal(gardenRef.current.center, { lon: c.lng, lat: c.lat })
-        a.finish(a.snapAt(local, movingRef.current).point)
+        // Viseur : le centre de la carte. Sinon : l'endroit touché, en attente de « Valider ».
+        if (aimRef.current) {
+          const c = m.getCenter()
+          const local = toLocal(gardenRef.current.center, { lon: c.lng, lat: c.lat })
+          a.finish(a.snapAt(local, movingRef.current).point)
+          return
+        }
+        const spot = getUi().placingSpot
+        if (spot) a.finish(spot)
       }),
     [],
   )
@@ -580,6 +595,25 @@ export function MapView({ garden }: { garden: Garden }) {
     aidRef.current?.grid()
     aidRef.current?.refreshAim()
   }, [placingNow, aim, ready]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Endroit touché, en attente de « Valider » : une épingle bien visible (le doigt la cache moins que la plante).
+  const spotMarker = useRef<maplibregl.Marker>()
+  useEffect(() => {
+    const m = map.current
+    if (!m || !ready) return
+    if (!placingSpot || !placingNow || aim) {
+      spotMarker.current?.remove()
+      spotMarker.current = undefined
+      return
+    }
+    const ll = toLonLat(gardenRef.current.center, placingSpot)
+    if (!spotMarker.current) {
+      const pin = document.createElement('div')
+      pin.className = 'spot-pin'
+      pin.setAttribute('aria-hidden', 'true')
+      spotMarker.current = new maplibregl.Marker({ element: pin }).setLngLat([ll.lon, ll.lat]).addTo(m)
+    } else spotMarker.current.setLngLat([ll.lon, ll.lat])
+  }, [placingSpot, placingNow, aim, ready])
 
   const { focusPlantId } = useUi()
   useEffect(() => {
@@ -631,6 +665,7 @@ export function MapView({ garden }: { garden: Garden }) {
       <div className={'canvas-wrap' + (placingSpeciesId || movingPlantId ? ' placing' : '')}>
         <div ref={el} className="map" />
         <div className="map-top">
+          {!placingNow && (
           <div className="floating row map-toolbar" role="toolbar" aria-label="Réglages de la carte">
             <button className={'btn small' + (base === 'ortho' ? ' primary' : '')} aria-pressed={base === 'ortho'} onClick={() => setBase('ortho')}>
               Vue photo
@@ -642,6 +677,7 @@ export function MapView({ garden }: { garden: Garden }) {
               Options <span aria-hidden>{optionsOpen ? '▴' : '▾'}</span>
             </button>
           </div>
+          )}
           {placingNow && (
             <div className="floating row map-aid" role="toolbar" aria-label="Aides au placement">
               <button className={'btn small' + (snapOn ? ' primary' : '')} aria-pressed={snapOn} onClick={() => setSnapPref(!snapOn)}>
@@ -652,7 +688,7 @@ export function MapView({ garden }: { garden: Garden }) {
               </button>
             </div>
           )}
-          {optionsOpen && (
+          {optionsOpen && !placingNow && (
             <div id="map-options" className="floating stack map-options">
               <button className="btn small" onClick={() => fit()}>
                 <Icon name="pin" size={16} /> Recentrer sur mon terrain
@@ -674,9 +710,12 @@ export function MapView({ garden }: { garden: Garden }) {
               <button className={'btn small' + (legendOpen ? ' on' : '')} aria-pressed={legendOpen} onClick={() => setLegendOpen((o) => !o)}>
                 {legendOpen ? '✓ ' : ''}Légende
               </button>
+              <button className="btn small" aria-haspopup="dialog" onClick={openHelp}>
+                Aide sur cet écran
+              </button>
             </div>
           )}
-          {legendOpen && (
+          {legendOpen && !placingNow && (
             <ul className="floating legend small" aria-label="Légende de la carte">
               <li>
                 <span className="swatch line parcel" aria-hidden /> Trait jaune : limites du terrain
@@ -695,7 +734,7 @@ export function MapView({ garden }: { garden: Garden }) {
               </li>
             </ul>
           )}
-          {tileProblem && (
+          {tileProblem && tileNoticeTurn && (
             <div className="alert small map-notice" role="status">
               Les images de la carte ne s’affichent pas. Elles reviendront dès que la connexion reviendra.
             </div>

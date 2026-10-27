@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Garden, Plant } from '../types'
-import { computeProgress, firstSteps, suggestedMode, type ProgressOpts } from './progress'
+import { computeProgress, firstSteps, nextStep, suggestedMode, type ProgressOpts } from './progress'
 
 const SPECIES: ProgressOpts['speciesById'] = {
   pommier: { strate: 'arbre-bas' },
@@ -122,5 +122,42 @@ describe('suggestedMode', () => {
   it('« planifier » seulement si Entretien a déjà été ouvert', () => {
     expect(suggestedMode(computeProgress(ready, three, opts({ openedEntretien: true })))).toBe('planifier')
     expect(suggestedMode(computeProgress(garden(), three, opts({ openedEntretien: true })))).toBe('jardin')
+  })
+})
+
+describe('nextStep : une seule prochaine étape', () => {
+  const full = (): Garden => garden({ parcel: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }], buildings: [], sol: 'argileux' } as Partial<Garden>)
+  const ctx = { demo: false, openTasks: 0 }
+  const next = (g: Garden, plants: Plant[], c = ctx) => nextStep(computeProgress(g, plants, opts()), c)
+
+  it('jardin d’exemple : créer son vrai jardin, avant tout le reste', () => {
+    expect(next(garden(), [], { demo: true, openTasks: 4 })?.kind).toBe('creer')
+  })
+
+  it('jardin vide : placer le premier arbre (avant les données manquantes)', () => {
+    const n = next(garden(), [])
+    expect(n).toMatchObject({ kind: 'placer', title: 'Placez votre premier arbre', action: 'Ajouter une plante' })
+  })
+
+  it('un arbre placé : compte les plantes qui manquent pour arriver à 5', () => {
+    expect(next(full(), [plant('pommier')])?.title).toBe('Placez 4 plantes de plus')
+    expect(next(full(), [plant('pommier'), plant('tomate'), plant('tomate'), plant('tomate')])?.title).toBe('Placez 1 plante de plus')
+  })
+
+  it('une plante sans arbre : le premier arbre reste proposé', () => {
+    expect(next(full(), [plant('tomate')])?.title).toBe('Placez votre premier arbre')
+  })
+
+  it('5 plantes : le sol, puis les données du terrain, puis les tâches', () => {
+    const five = [plant('pommier'), plant('tomate'), plant('tomate'), plant('tomate'), plant('tomate')]
+    expect(next({ ...full(), sol: undefined }, five)?.kind).toBe('sol')
+    expect(next({ ...full(), parcel: undefined }, five)?.kind).toBe('donnees')
+    expect(next(full(), five, { demo: false, openTasks: 1 })).toMatchObject({ kind: 'taches', title: '1 chose à faire cette semaine' })
+    expect(next(full(), five, { demo: false, openTasks: 3 })?.title).toBe('3 choses à faire cette semaine')
+  })
+
+  it('tout est fait et aucune tâche : rien à proposer', () => {
+    const five = [plant('pommier'), plant('tomate'), plant('tomate'), plant('tomate'), plant('tomate')]
+    expect(next(full(), five)).toBeUndefined()
   })
 })

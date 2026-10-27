@@ -221,6 +221,26 @@ describe('historique', () => {
     expect(ui.getUi().placingSpeciesId).toBe('pommier')
   })
 
+  it('l’endroit touché attend « Valider » : effacé par Annuler, par un autre placement ou en quittant la carte', async () => {
+    const { ui } = await load('#carte')
+    ui.startPlacing('pommier')
+    ui.setUi({ placingSpot: { x: 1, y: 2 } })
+    expect(ui.getUi().placingSpot).toEqual({ x: 1, y: 2 })
+    ui.stopPlacing()
+    expect(ui.getUi().placingSpot).toBeUndefined()
+    ui.startPlacing('pommier')
+    ui.setUi({ placingSpot: { x: 1, y: 2 } })
+    ui.startPlacing('tomate')
+    expect(ui.getUi().placingSpot).toBeUndefined()
+    ui.setUi({ placingSpot: { x: 3, y: 4 } })
+    ui.setUi({ tab: 'plantes' })
+    expect(ui.getUi().placingSpot).toBeUndefined()
+    ui.startMoving('p1')
+    ui.setUi({ placingSpot: { x: 5, y: 6 } })
+    ui.startMoving('p2')
+    expect(ui.getUi().placingSpot).toBeUndefined()
+  })
+
   it('les écrans portent les noms du lexique', async () => {
     const { ui } = await load('#carte')
     expect(ui.TAB_LABEL['3d']).toBe('Vue 3D')
@@ -240,7 +260,7 @@ describe('rayons', () => {
     expect(ui.rayonOfTab('reglages')).toBeUndefined()
     // Aucun écran ne disparaît : tous sont dans un rayon, sauf l’accueil et le compte.
     for (const t of ui.TABS.filter((x) => x !== 'accueil' && x !== 'reglages')) expect(ui.rayonOfTab(t)).toBeDefined()
-    expect(ui.RAYON_LABEL).toEqual({ jardin: 'Mon jardin', afaire: 'À faire', planter: 'Planter', voisins: 'Voisins' })
+    expect(ui.RAYON_LABEL).toEqual({ jardin: 'Mon jardin', afaire: 'À faire', planter: 'Où planter ?', voisins: 'Voisins' })
   })
 
   it('barre du bas : 3 entrées sans l’entraide, 4 avec', async () => {

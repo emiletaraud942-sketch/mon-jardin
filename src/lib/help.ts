@@ -12,7 +12,7 @@ export const HELP: Record<Tab, HelpContent> = {
   accueil: {
     title: 'L’accueil',
     steps: [
-      'Choisissez un rayon : Mon jardin, À faire, Planter ou Voisins. Le bouton Accueil, en bas, ramène ici.',
+      'Choisissez un rayon : Mon jardin, À faire, Où planter ? ou Voisins. Le bouton Accueil, en bas, ramène ici.',
       '« Chez » résume votre jardin : plantes et choses à faire.',
       '« Votre jardin en 5 étapes » vous guide au début. Touchez une étape pour la reprendre.',
       '« Passer et découvrir l’appli » masque ce guide. Vous pouvez le revoir dans Mon compte.',
@@ -22,10 +22,10 @@ export const HELP: Record<Tab, HelpContent> = {
   carte: {
     title: 'La carte',
     steps: [
-      'Touchez « Ajouter une plante au jardin », puis choisissez la plante.',
-      'Touchez la carte à l’endroit où elle pousse.',
+      'Touchez « Ajouter une plante », puis choisissez la plante.',
+      'Touchez la carte à l’endroit où elle pousse (ou « Viser »), puis « Valider ». « Annuler » arrête ; un message permet de défaire après coup.',
       'Touchez une plante pour ouvrir sa fiche : état, photos, soins.',
-      'Pour la déplacer, touchez « Déplacer cette plante », puis le nouvel endroit.',
+      'Pour la déplacer, touchez « Déplacer cette plante », le nouvel endroit, puis « Valider ».',
       'Pour zoomer, pincez avec deux doigts ou touchez + et −.',
       'Le trait jaune montre les limites du terrain. Il est facultatif.',
     ],
@@ -110,7 +110,7 @@ export const RAYONS_HELP = {
   rayons: [
     { name: 'Mon jardin', text: 'La carte, vos plantes et la vue 3D. Touchez Carte, Plantes ou Vue 3D, en haut.' },
     { name: 'À faire', text: 'Quoi faire cette semaine : tailler, désherber, arroser, récolter. Avec la météo et le calendrier.' },
-    { name: 'Planter', text: 'Où planter chaque plante, et le catalogue des 146 plantes.' },
+    { name: 'Où planter ?', text: 'Où planter chaque plante, et le catalogue des 146 plantes.' },
     { name: 'Voisins', text: 'Dons, questions et rendez-vous près de chez vous. Facultatif.' },
   ],
   optional: 'Placer vos plantes est facultatif : vous pouvez aller directement à « À faire ».',

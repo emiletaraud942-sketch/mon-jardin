@@ -1,0 +1,271 @@
+/* Navigation du téléphone (chantier D) : chargé après leafora.css (App.tsx).
+   But : aussi clair que sur ordinateur. En-tête minimal (titre + une action, 52 px), une seule consigne à la fois,
+   « Ajouter une plante » toujours visible, placement en 3 gestes (choisir la plante, toucher ou viser, Valider).
+   Couleurs : variables de :root uniquement (thèmes clair et sombre). */
+
+/* ---------- Prochaine étape (accueil) : carte discrète ---------- */
+.nextstep {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 14px 14px 14px 18px;
+  border: var(--border-w) solid var(--border);
+  border-radius: 22px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+.nextstep-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  color: var(--title);
+}
+.nextstep-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.nextstep-text .pagehead-kicker {
+  margin: 0;
+  font-size: calc(12 * var(--px));
+  line-height: 1.3;
+}
+.nextstep-text h2 {
+  margin: 0;
+  font-family: var(--font-title);
+  font-weight: var(--fw-text);
+  font-size: calc(18 * var(--px));
+  line-height: 1.2;
+  color: var(--title);
+}
+.nextstep-why {
+  margin: 2px 0 0;
+  font-size: calc(13 * var(--px));
+  line-height: 1.35;
+  color: var(--muted);
+}
+.nextstep-btn {
+  flex: none;
+  min-height: var(--tap);
+  white-space: nowrap;
+}
+
+/* ---------- Puce « Il manque : pente » (carte) ---------- */
+.data-chip {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--tap);
+  padding: 4px 14px;
+  border: var(--border-w) solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow-chip);
+  color: var(--text);
+  font-family: inherit;
+  font-size: calc(13 * var(--px));
+  font-weight: var(--fw-strong);
+  cursor: pointer;
+}
+.data-chip > span {
+  color: var(--warn-text);
+}
+
+/* ---------- Endroit touché, en attente de « Valider » ---------- */
+.spot-pin {
+  box-sizing: border-box;
+  width: 34px;
+  height: 34px;
+  border: 5px solid var(--on-cta);
+  border-radius: 50%;
+  background: var(--cta);
+  box-shadow: 0 0 0 2px var(--cta), var(--shadow-float);
+  pointer-events: none;
+}
+
+/* ---------- « Ajouter une plante » : toujours visible au-dessus de la feuille du jardin ---------- */
+.add-fab {
+  position: absolute;
+  left: 50%;
+  bottom: 160px; /* au-dessus de l’échelle, de l’attribution et des commandes de la 3D */
+  z-index: 8;
+  transform: translateX(-50%);
+  min-height: var(--btn-h);
+  padding: 6px 24px;
+  white-space: nowrap;
+  box-shadow: var(--shadow-float);
+}
+
+@media (max-width: 760px) {
+  /* ----- En-tête minimal : titre + une seule action (le profil), 52 px de haut ----- */
+  .app.has-phead .phead-slot {
+    padding: max(8px, env(safe-area-inset-top)) 22px 0;
+  }
+  .phead-slot .pagehead {
+    min-height: 44px;
+    margin: 0;
+  }
+  /* Le titre tient sur une ligne même à 360 px, logo et pastille compris. */
+  .phead-slot .pagehead h1 {
+    margin: 0;
+    font-size: min(calc(24 * var(--px)), 5.8vw);
+    line-height: 1.1;
+  }
+  /* Sélecteur de l'écran (Carte / Plantes / Vue 3D, Où planter ? / Catalogue) : une seule rangée de 52 px sous le titre. */
+  .app.has-phead .modebar,
+  .app:has(.main.full) .modebar {
+    padding: 6px 22px 6px;
+  }
+  .app.has-phead .seg {
+    padding: 3px;
+  }
+  .app.has-phead .seg button {
+    min-height: var(--tap);
+  }
+
+  /* ----- Placement : la carte est libre, seule la consigne reste ----- */
+  .app.is-placing .modebar,
+  .app.is-placing .bsheet,
+  .app.is-placing .add-fab {
+    display: none;
+  }
+  .app.is-placing .placing-banner {
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    flex-wrap: wrap;
+    gap: 10px 12px;
+    padding: 14px 16px 12px;
+  }
+  .placing-banner .placing-text {
+    flex: 1 1 0;
+    font-size: calc(18 * var(--px));
+    line-height: 1.3;
+  }
+  .placing-banner .placing-text strong {
+    font-weight: var(--fw-strong);
+  }
+  .placing-banner .placing-measure {
+    display: block;
+    margin: 4px 0 0 -10px;
+    min-height: var(--tap);
+    padding-inline: 10px;
+  }
+  .placing-banner .placing-actions {
+    flex: 1 1 100%;
+    display: flex;
+    gap: 10px;
+  }
+  .placing-banner .placing-actions .btn {
+    flex: 1 1 0;
+    min-height: var(--btn-h);
+  }
+  .placing-banner .placing-actions .placing-ok:disabled {
+    opacity: 0.45;
+  }
+  /* L'attribution et l'échelle de la carte restent lisibles au-dessus de la consigne. */
+  .app.is-placing .workspace .maplibregl-ctrl-bottom-right,
+  .app.is-placing .workspace .maplibregl-ctrl-bottom-left {
+    margin-bottom: 190px;
+  }
+  .app.is-placing .map-top {
+    right: 68px;
+  }
+}
+
+@media (min-width: 761px) {
+  .nextstep-icon {
+    display: grid;
+  }
+}
+@media (max-width: 760px) {
+  /* Le détail de la prochaine étape reste dit aux lecteurs d'écran ; à l'écran, un titre et un bouton suffisent. */
+  .nextstep-why {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .nextstep {
+    padding: 12px 12px 12px 16px;
+  }
+  .nextstep-icon {
+    display: none;
+  }
+}
+
+/* ---------- Logo-bouton de l'en-tête : revient à l'accueil ---------- */
+.pagehead-lead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.pagehead-logo {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  margin-left: -6px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+.pagehead-logo img {
+  display: block;
+  border-radius: 10px;
+}
+.pagehead-logo:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
+}
+
+@media (max-width: 760px) {
+  /* Accueil et À faire : même en-tête de 52 px que les autres écrans (petite phrase, titre, une pastille). */
+  .page.accueil,
+  .page.afaire {
+    padding-top: max(8px, env(safe-area-inset-top));
+  }
+  .page.accueil > .pagehead h1,
+  .page.afaire > .pagehead h1 {
+    font-size: min(calc(24 * var(--px)), 5.8vw);
+  }
+  .page > .pagehead.compact {
+    min-height: 44px;
+    margin: 0 0 4px;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 760px) {
+  /* Accueil avec la carte « Votre jardin en 5 étapes » : la barre du bas reste là. On peut toujours aller ailleurs, sans « Passer ». */
+  .app.route-open .sidenav {
+    display: flex;
+  }
+  .app.route-open .page.accueil {
+    padding-top: max(54px, env(safe-area-inset-top));
+  }
+  .app.route-open .route {
+    min-height: calc(100dvh - max(54px, env(safe-area-inset-top)) - var(--nav-h) - 36px);
+  }
+}
+
+/* Ordinateur : le logo de la barre du haut suffit. */
+@media (min-width: 761px) {
+  .pagehead-logo {
+    display: none;
+  }
+}

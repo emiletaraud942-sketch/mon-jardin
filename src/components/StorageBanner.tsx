@@ -1,12 +1,16 @@
 import { useState } from 'react'
 import { retryLoadState, resumeSaving, useStorageStatus } from '../lib/store'
 import { exportCurrentState } from '../lib/backup'
+import { useBanner } from '../lib/banners'
 import { ConfirmModal } from './ConfirmModal'
 
 /** Prévient quand les données ne peuvent pas être lues ou enregistrées sur l'appareil. */
 export function StorageBanner() {
   const { readFailed, writeError } = useStorageStatus()
   const [confirming, setConfirming] = useState(false)
+  // Le plus important des bandeaux : il passe toujours en premier (mais jamais sur la carte pendant un placement).
+  const myTurn = useBanner('stockage', readFailed || !!writeError)
+  if (!myTurn) return null
   if (readFailed) {
     return (
       <div className="alert error banner" role="alert">

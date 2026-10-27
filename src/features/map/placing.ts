@@ -73,14 +73,16 @@ export function placePlant(
   if (opts.silent) return id
   if (placingSeries) {
     const count = placingSeries.count + 1
-    setUi({ placingSeries: { count }, pendingPhotos: undefined, selectedPlantId: undefined })
+    setUi({ placingSeries: { count }, pendingPhotos: undefined, selectedPlantId: undefined, placingSpot: undefined })
     // Un seul message à la fois pour la série : le précédent est remplacé (sa plante reste placée).
     if (lastSeriesToast !== undefined) dismissToast(lastSeriesToast)
     const placed = getState().plants.find((p) => p.id === id)
     lastSeriesToast = showToast({ message: `Plante placée : ${name} (${count} de suite).`, actionLabel: 'Annuler', onAction: () => (placed ? undoPlacement(placed) : removePlant(id)) })
     return id
   }
-  setUi({ placingSpeciesId: undefined, placingCustomName: undefined, pendingPhotos: undefined, selectedPlantId: id, ...(opts.tab ? { tab: opts.tab } : {}) })
+  // Téléphone : la fiche en plein écran masquerait la carte. On reste dessus, la plante est placée, « Annuler » reste proposé.
+  const phone = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 760px)').matches
+  setUi({ placingSpeciesId: undefined, placingCustomName: undefined, pendingPhotos: undefined, placingSpot: undefined, selectedPlantId: phone ? undefined : id, ...(opts.tab ? { tab: opts.tab } : {}) })
   if (status === 'projet') {
     showToast({
       message: `« ${name} » est prévue à cet endroit. Quand vous l’aurez plantée, touchez « C’est planté ».`,
@@ -97,7 +99,8 @@ export function placePlant(
 /** « Déplacer cette plante » : la plante prend la position touchée ; un message permet de la remettre où elle était. */
 export function movePlant(plantId: string, position: XY) {
   const before = getState().plants.find((p) => p.id === plantId)?.position
-  setUi({ movingPlantId: undefined, selectedPlantId: plantId })
+  const phone = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 760px)').matches
+  setUi({ movingPlantId: undefined, placingSpot: undefined, selectedPlantId: phone ? undefined : plantId })
   if (!before) return
   const next = { x: Math.round(position.x * 100) / 100, y: Math.round(position.y * 100) / 100 }
   updatePlant(plantId, { position: next })

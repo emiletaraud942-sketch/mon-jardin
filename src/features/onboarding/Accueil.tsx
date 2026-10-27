@@ -1,6 +1,11 @@
 import { Icon } from '../../components/Icon'
 import { PageHead } from '../../components/PageHead'
 import { PlantPot } from '../../components/illustrations'
+import { PlaceAction } from '../../components/PlaceAction'
+import { useProgress } from '../../components/useProgress'
+import { nextStep, type NextStep } from '../../lib/progress'
+import { isDemoGarden } from '../settings/demo'
+import { useRefreshGarden } from '../settings/useRefreshGarden'
 import { badgeAria, badgeLabel } from '../../lib/neighbors/news'
 import { activeSteps, chezTitle, currentStep, settledCount, shouldShowRoute, stepStatus, STEP_HINT, STEP_TITLE, type OnboardingStepId } from '../../lib/onboarding'
 import { useGardenPlants } from '../../lib/store'
@@ -12,7 +17,7 @@ const RAYON_ICON: Record<Rayon, string> = { jardin: 'map', afaire: 'check', plan
 const RAYON_TEXT: Record<Rayon, string> = {
   jardin: 'Carte, vue 3D, mes plantes',
   afaire: 'Entretien et météo',
-  planter: 'Où planter, catalogue',
+  planter: 'Conseils et catalogue',
   voisins: 'Dons, questions, événements',
 }
 
@@ -88,6 +93,46 @@ function RouteCard({ garden }: { garden: Garden }) {
   )
 }
 
+/**
+ * « Prochaine étape » : une seule suggestion, calculée par `nextStep` d'après le jardin (jamais bloquante).
+ * Carte discrète : un titre, une phrase, un bouton. Rien quand il n'y a rien à proposer.
+ */
+function NextStepCard({ garden, openTasks }: { garden: Garden; openTasks: number }) {
+  const progress = useProgress(garden)
+  const refresh = useRefreshGarden(garden)
+  const step: NextStep | undefined = nextStep(progress, { demo: isDemoGarden(garden), openTasks })
+  if (!step) return null
+  const cls = 'btn small primary nextstep-btn'
+  return (
+    <section className="nextstep" aria-label="Prochaine étape">
+      <span className="nextstep-icon" aria-hidden>
+        <Icon name="leaf" size={22} />
+      </span>
+      <div className="nextstep-text">
+        <p className="pagehead-kicker">Prochaine étape</p>
+        <h2>{step.title}</h2>
+        <p className="nextstep-why">{step.text}</p>
+      </div>
+      {step.kind === 'placer' ? (
+        <PlaceAction className={cls}>{step.action}</PlaceAction>
+      ) : (
+        <button
+          className={cls}
+          disabled={step.kind === 'donnees' && refresh.busy}
+          onClick={() => {
+            if (step.kind === 'creer') openParcours('adresse')
+            else if (step.kind === 'sol') setUi({ tab: 'reglages' })
+            else if (step.kind === 'taches') setUi({ tab: 'entretien' })
+            else void refresh.refresh()
+          }}
+        >
+          {step.kind === 'donnees' && refresh.busy ? <span className="spinner" /> : null} {step.action}
+        </button>
+      )}
+    </section>
+  )
+}
+
 /** Écran « Que voulez-vous faire ? » : 4 grosses cartes, le résumé du jardin et, au début, la carte de route. */
 export function Accueil({ garden, openTasks, newsCount }: { garden: Garden; openTasks: number; newsCount: number }) {
   const { state, neighbors } = useOnboarding()
@@ -99,7 +144,7 @@ export function Accueil({ garden, openTasks, newsCount }: { garden: Garden; open
   return (
     <div className="page accueil">
       {route && <RouteCard garden={garden} />}
-      <PageHead kicker={who ? `Bonjour ${who}` : 'Bonjour'} title="Que voulez-vous faire ?" />
+      <PageHead compact kicker={who ? `Bonjour ${who}` : 'Bonjour'} title="Que voulez-vous faire ?" />
       <button className="chez" onClick={() => setUi({ tab: 'carte' })}>
         <span className="chez-title">{chezTitle(garden.name)}</span>
         <span className="chez-sum">
@@ -110,6 +155,7 @@ export function Accueil({ garden, openTasks, newsCount }: { garden: Garden; open
         </span>
         <PlantPot size={150} className="chez-art" />
       </button>
+      {!route && <NextStepCard garden={garden} openTasks={openTasks} />}
       <div className="rayons">
         {visibleRayons().map((r) => (
           <button key={r} className="rayon-card" onClick={() => goRayon(r)}>

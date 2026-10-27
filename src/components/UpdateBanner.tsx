@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
+import { useBanner } from '../lib/banners'
 
 const OFFLINE_KEY = 'permajardin:offline-ready-shown'
 const CHECK_EVERY_MS = 60 * 60 * 1000
@@ -12,7 +13,7 @@ function offlineAlreadyShown(): boolean {
   }
 }
 
-/** Bandeau de mise à jour de l'appli. Ne recharge jamais la page sans l'accord de l'utilisateur. */
+/** Bandeau de mise à jour de l'appli (file d'attente des bandeaux). Ne recharge jamais la page sans l'accord de l'utilisateur. */
 export function UpdateBanner() {
   const {
     needRefresh: [needRefresh, setNeedRefresh],
@@ -26,6 +27,8 @@ export function UpdateBanner() {
   })
 
   const showOffline = offlineReady && !needRefresh && !offlineAlreadyShown()
+  // Un seul bandeau à la fois : celui-ci attend son tour derrière un problème de stockage, et se tait pendant un placement.
+  const myTurn = useBanner('miseajour', needRefresh || showOffline)
 
   useEffect(() => {
     if (!showOffline) return
@@ -38,6 +41,7 @@ export function UpdateBanner() {
     return () => clearTimeout(t)
   }, [showOffline, setOfflineReady])
 
+  if (!myTurn) return null
   if (needRefresh) {
     return (
       <div className="alert info banner" role="status">
