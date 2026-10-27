@@ -22,6 +22,7 @@ import { StepList } from '../settings/GardenCreator'
 import { useRefreshGarden } from '../settings/useRefreshGarden'
 import { TechDetails } from '../../components/ErrorNote'
 import { createDemoGarden, createRealGarden } from './create'
+import { LegalLink } from '../legal/LegalLinks'
 import { useOnboarding } from './useOnboarding'
 import { Welcome } from './Welcome'
 
@@ -147,6 +148,11 @@ function AdresseStep({ garden, next, skip }: StepProps) {
     >
       <AddressSearch onSelect={setPlace} onClear={() => setPlace(undefined)} />
       {!place && <p className="small muted" style={{ margin: 0 }}>Choisissez votre adresse dans la liste pour continuer.</p>}
+      {!garden && (
+        <p className="muted small legal-accept">
+          Gratuit, sans compte. En continuant, vous acceptez les <LegalLink id="cgu" label="conditions d’utilisation" /> et la <LegalLink id="confidentialite" label="politique de confidentialité" />.
+        </p>
+      )}
     </Frame>
   )
 }
@@ -217,7 +223,7 @@ function PlantesStep({ garden, next, skip }: StepProps) {
         title="Quelles plantes avez-vous ?"
         lead="Choisissez une façon d’ajouter vos plantes. Vous pourrez en changer plus tard."
         primary={{ label: 'Continuer', onClick: () => { noteStep('plantes', 'done'); next() } }}
-        secondary={{ label: 'J’en ajouterai plus tard', onClick: skip }}
+        secondary={{ label: 'Passer cette étape', onClick: skip }}
       >
         <div className="choices">
           <button className="choice rec" onClick={() => openScan('menu')}>
@@ -246,8 +252,8 @@ function PlantesStep({ garden, next, skip }: StepProps) {
           </button>
         </div>
         {plants.length > 0 && (
-          <p role="status" style={{ margin: 0 }}>
-            ✓ {plants.length} plante{plants.length > 1 ? 's' : ''} dans votre jardin.
+          <p role="status" className="sr-only">
+            {plants.length} plante{plants.length > 1 ? 's' : ''} dans votre jardin.
           </p>
         )}
       </Frame>
@@ -432,11 +438,6 @@ export function Parcours({ garden }: { garden?: Garden }) {
             'C’est fini'
           )}
         </span>
-        {garden && (
-          <button className="quit-circle" onClick={() => closeParcours()} aria-label="Quitter la visite et revenir à l’accueil">
-            <Icon name="x" size={20} />
-          </button>
-        )}
       </header>
       {screen === 'adresse' && <AdresseStep {...props} />}
       {screen === 'terrain' && <TerrainStep {...props} />}

@@ -43,7 +43,7 @@ export function PlantsPage({ garden }: { garden: Garden }) {
 
   // Téléphone : la fiche prend tout l'écran (maquette) ; le bouton rond ramène à la liste.
   if (selected && mobile) {
-    return <PlantPanel garden={garden} plant={selected} onClose={closePlantSheet} fiche onShowOnMap={() => setUi({ tab: 'carte', focusPlantId: selected.id })} />
+    return <PlantPanel garden={garden} plant={selected} onClose={closePlantSheet} fiche onShowOnMap={() => setUi({ tab: 'carte', focusPlantId: selected.id, selectedPlantId: undefined })} />
   }
 
   return (

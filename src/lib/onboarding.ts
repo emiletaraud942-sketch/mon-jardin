@@ -16,8 +16,8 @@ export const STEP_HINT: Record<OnboardingStepId, string> = {
   adresse: 'Trouvez votre jardin sur la carte.',
   terrain: 'Photo, limites et maisons voisines.',
   plantes: 'Ajoutez-en une ou scannez le jardin.',
-  entretien: 'Recevoir les rappels utiles.',
-  voisins: 'Facultatif : dons et conseils.',
+  entretien: 'Recevoir les rappels utiles',
+  voisins: 'Facultatif : dons et conseils',
 }
 
 export interface OnboardingState {

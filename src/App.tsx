@@ -1,6 +1,8 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { notifyDailyTasks } from './lib/notify'
 import { Icon } from './components/Icon'
+import { PageHead } from './components/PageHead'
+import { SPECIES_BY_ID } from './data/species'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { HelpSheet } from './components/HelpSheet'
 import { SubTabs } from './components/SubTabs'
@@ -10,10 +12,12 @@ import { UpdateBanner } from './components/UpdateBanner'
 import { consumeExportReminder, exportCurrentState } from './lib/backup'
 import { getLoadWarnings, getState, useActiveGarden, useGardenPlants, useStore } from './lib/store'
 import { showToast } from './lib/toast'
-import { RAYON_LABEL, TAB_LABEL, getUi, goRayon, noteVisit, openParcours, rayonOfTab, setGuide, setUi, subTabs, useUi, visibleRayons, type Rayon } from './lib/ui'
+import { RAYON_LABEL, TAB_LABEL, getUi, goRayon, noteVisit, openParcours, rayonOfTab, setGuide, setUi, subTabs, useUi, visibleRayons, type Rayon, type Tab } from './lib/ui'
 import { deriveOnboarding } from './lib/onboarding'
 import { Parcours } from './features/onboarding/Parcours'
 import { Accueil } from './features/onboarding/Accueil'
+import { useOnboarding } from './features/onboarding/useOnboarding'
+import { shouldShowRoute } from './lib/onboarding'
 import { isDemoGarden } from './features/settings/demo'
 import { PlantsPage } from './features/plants/PlantsPage'
 import { TasksPage } from './features/tasks/TasksPage'
@@ -42,6 +46,9 @@ const Loading = ({ label }: { label: string }) => (
   </div>
 )
 
+/** Écrans qui, sur téléphone, ont l'en-tête de la maquette (petite phrase, titre en serif) à la place de la barre du haut. */
+const PHEAD_TABS: Tab[] = ['plantes', 'planter', 'catalogue', 'voisins', 'reglages']
+
 const RAYON_ICON: Record<Rayon, string> = { jardin: 'map', afaire: 'check', planter: 'leaf', voisins: 'users' }
 
 /** Pastille de nouveautés de l'entraide (rien tant qu'il n'y a rien de nouveau). */
@@ -63,6 +70,7 @@ export function App() {
   // Alertes de nouveaux messages : le service worker prévient l'appli ouverte (pastille, clic sur l'alerte).
   useEffect(() => (neighborsEnabled && voisins ? startPushBridge() : undefined), [voisins])
   const scanOpen = !!useScanUi().screen
+  const onboarding = useOnboarding()
   const [helpOpen, setHelpOpen] = useState(false)
   const mainRef = useRef<HTMLElement>(null)
   const firstPaint = useRef(true)
@@ -150,9 +158,17 @@ export function App() {
   const tabs = subTabs(rayon)
   const rayons = visibleRayons(neighborsEnabled)
   const taskBadge = `${open} tâche${open > 1 ? 's' : ''} à faire`
+  const phead = PHEAD_TABS.includes(tab)
+  const pheadTitle: Record<string, string> = {
+    plantes: `Mes plantes (${plantCount})`,
+    planter: 'Où planter ?',
+    catalogue: `Catalogue des plantes (${Object.keys(SPECIES_BY_ID).length})`,
+    voisins: 'Voisins',
+    reglages: 'Mon compte et réglages',
+  }
 
   return (
-    <div className={'app' + (tab === 'accueil' || tab === 'entretien' ? ' has-pagehead' : '')}>
+    <div className={'app' + (tab === 'accueil' || tab === 'entretien' || phead ? ' has-pagehead' : '') + (phead ? ' has-phead' : '') + (tab === 'accueil' && shouldShowRoute(onboarding.state, onboarding.neighbors) ? ' route-open' : '')}>
       <a
         className="skip-link"
         href="#main-panel"
@@ -183,6 +199,11 @@ export function App() {
           <span className="hide-mobile">Mon compte</span>
         </button>
       </header>
+      {phead && (
+        <div className="phead-slot">
+          <PageHead kicker={tab === 'voisins' ? 'Autour de chez vous' : tab === 'reglages' ? undefined : garden.name} title={pheadTitle[tab]} action={tab === 'reglages' ? false : undefined} />
+        </div>
+      )}
       <div className="modebar">
         {tabs.length > 0 && <SubTabs tabs={tabs} current={tab} label={rayon === 'jardin' ? 'Écrans de Mon jardin' : 'Écrans de Planter'} />}
         {isDemoGarden(garden) && !guide.demoHidden && tab !== 'accueil' && (
@@ -200,14 +221,16 @@ export function App() {
         )}
       </div>
       <nav className="sidenav" aria-label="Navigation principale">
+        <button className="navbtn" aria-current={tab === 'accueil' ? 'page' : undefined} onClick={() => setUi({ tab: 'accueil' })}>
+          <Icon name="home" />
+          Accueil
+        </button>
         {rayons.map((r) => (
           <button key={r} className="navbtn" aria-current={rayon === r ? 'page' : undefined} onClick={() => goRayon(r)}>
             <Icon name={RAYON_ICON[r]} />
             {RAYON_LABEL[r]}
             {r === 'afaire' && open > 0 && (
-              <span className="badge count" aria-label={taskBadge}>
-                {open}
-              </span>
+              <span className="sr-only">{`, ${taskBadge}`}</span>
             )}
             {r === 'voisins' && <NewsBadge count={newsCount} />}
           </button>
@@ -218,7 +241,7 @@ export function App() {
       </nav>
       <main id="main-panel" ref={mainRef} tabIndex={-1} aria-label={TAB_LABEL[tab]} className={'main' + (full ? ' full' : '')}>
         <ErrorBoundary inline resetKey={tab}>
-          {tab === 'accueil' && <Accueil garden={garden} openTasks={open} newsCount={newsCount} onHelp={() => setHelpOpen(true)} />}
+          {tab === 'accueil' && <Accueil garden={garden} openTasks={open} newsCount={newsCount} />}
           {tab === 'carte' && (
             <Suspense fallback={<Loading label="Chargement de la carte…" />}>
               <MapView garden={garden} />

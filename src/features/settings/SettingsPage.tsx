@@ -24,6 +24,9 @@ import type { Garden, SoilTexture } from '../../types'
 import { GardenCreator } from './GardenCreator'
 import { GardenDataBanner } from './GardenDataBanner'
 import { InstallCard } from '../../components/InstallButton'
+import { HelpSheet } from '../../components/HelpSheet'
+import { StepButton } from '../../components/StepButton'
+import { useProgress } from '../../components/useProgress'
 import { InviteButton } from '../../components/InviteButton'
 import { PrivacyCard } from './PrivacyCard'
 import { hasConsent } from '../../lib/consent'
@@ -557,6 +560,32 @@ function GardensCard({ garden, adding, setAdding, addRef }: { garden: Garden; ad
   )
 }
 
+/** Prochaine étape conseillée (ex-carte « Conseil » de l'accueil) et aide (ex-lien « Besoin d'aide ? »). */
+function AdviceCard({ garden }: { garden: Garden }) {
+  const progress = useProgress(garden)
+  const [help, setHelp] = useState(false)
+  const tip = progress.next
+  return (
+    <div className="card">
+      <h2>Conseil et aide</h2>
+      <div className="stack">
+        {tip && (
+          <div className="next-step">
+            <span className="small">
+              <span className="muted">Conseil :</span> <strong>{tip.label}</strong>
+            </span>
+            <StepButton step={tip} garden={garden} />
+          </div>
+        )}
+        <button className="btn" aria-haspopup="dialog" onClick={() => setHelp(true)}>
+          Besoin d’aide ?
+        </button>
+      </div>
+      {help && <HelpSheet tab="accueil" onClose={() => setHelp(false)} />}
+    </div>
+  )
+}
+
 /** Visite guidée et partage de l'appli. */
 function TourCard() {
   return (
@@ -598,6 +627,7 @@ export function SettingsPage({ garden }: { garden: Garden }) {
           <ScanCard garden={garden} />
         </div>
         <div className="stack" style={{ gap: 12 }}>
+          <AdviceCard garden={garden} />
           <ReadingCard />
           <TourCard />
           <InstallCard />

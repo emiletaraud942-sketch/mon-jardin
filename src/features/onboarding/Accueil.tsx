@@ -1,16 +1,11 @@
 import { Icon } from '../../components/Icon'
 import { PageHead } from '../../components/PageHead'
 import { PlantPot } from '../../components/illustrations'
-import { InstallHint } from '../../components/InstallButton'
-import { StepButton } from '../../components/StepButton'
-import { useProgress } from '../../components/useProgress'
 import { badgeAria, badgeLabel } from '../../lib/neighbors/news'
-import { activeSteps, chezTitle, currentStep, settledCount, shouldShowRoute, stepStatus, STEP_HINT, STEP_TITLE } from '../../lib/onboarding'
-import { suggestedMode } from '../../lib/progress'
+import { activeSteps, chezTitle, currentStep, settledCount, shouldShowRoute, stepStatus, STEP_HINT, STEP_TITLE, type OnboardingStepId } from '../../lib/onboarding'
 import { useGardenPlants } from '../../lib/store'
 import { goRayon, hideOnboardingRoute, openParcours, setUi, visibleRayons, RAYON_LABEL, type Rayon } from '../../lib/ui'
 import type { Garden } from '../../types'
-import { isDemoGarden } from '../settings/demo'
 import { useOnboarding } from './useOnboarding'
 
 const RAYON_ICON: Record<Rayon, string> = { jardin: 'map', afaire: 'check', planter: 'leaf', voisins: 'users' }
@@ -23,6 +18,16 @@ const RAYON_TEXT: Record<Rayon, string> = {
 
 /** Prénom lu dans « Chez Marie » (rien si le nom du jardin n'a pas cette forme). */
 const firstName = (gardenName: string) => gardenName.trim().match(/^chez\s+(.+)$/i)?.[1]
+
+/** Phrase d'une étape faite : le résultat (« Trouvée : 12 rue des Lilas »), sinon la phrase d'invitation. */
+function doneHint(id: OnboardingStepId, garden: Garden): string {
+  if (id === 'adresse') {
+    const street = garden.address.split(/\s\d{5}\b/)[0].trim()
+    if (street) return `Trouvée : ${street}`
+  }
+  if (id === 'terrain') return 'Photo et limites vérifiées'
+  return STEP_HINT[id]
+}
 
 /** « Votre jardin en 5 étapes » : jauge, fil des étapes, étape en cours dans une carte, reprise à tout moment. */
 function RouteCard({ garden }: { garden: Garden }) {
@@ -67,7 +72,7 @@ function RouteCard({ garden }: { garden: Garden }) {
                 <button className="route-step" onClick={() => openParcours(id)}>
                   <span className="route-text">
                     <strong>{STEP_TITLE[id]}</strong>
-                    <span>{st === 'skipped' ? 'Passée. Touchez pour la faire.' : STEP_HINT[id]}</span>
+                    <span>{st === 'skipped' ? 'Passée. Touchez pour la faire.' : st === 'done' ? doneHint(id, garden) : STEP_HINT[id]}</span>
                   </span>
                   <span className="sr-only">{st === 'done' ? ' : fait' : st === 'skipped' ? ' : passée' : ' : à faire'}</span>
                 </button>
@@ -84,13 +89,10 @@ function RouteCard({ garden }: { garden: Garden }) {
 }
 
 /** Écran « Que voulez-vous faire ? » : 4 grosses cartes, le résumé du jardin et, au début, la carte de route. */
-export function Accueil({ garden, openTasks, newsCount, onHelp }: { garden: Garden; openTasks: number; newsCount: number; onHelp?: () => void }) {
+export function Accueil({ garden, openTasks, newsCount }: { garden: Garden; openTasks: number; newsCount: number }) {
   const { state, neighbors } = useOnboarding()
   const plants = useGardenPlants(garden.id)
-  const progress = useProgress(garden)
   const route = shouldShowRoute(state, neighbors)
-  const advice = suggestedMode(progress) === 'entretenir' && !isDemoGarden(garden)
-  const tip = !route ? progress.next : undefined
   const who = firstName(garden.name)
   const tasksText = openTasks === 0 ? 'rien à faire' : `${openTasks} chose${openTasks > 1 ? 's' : ''} à faire`
 
@@ -118,12 +120,6 @@ export function Accueil({ garden, openTasks, newsCount, onHelp }: { garden: Gard
               <strong>{RAYON_LABEL[r]}</strong>
               <span className="muted">{RAYON_TEXT[r]}</span>
             </span>
-            {r === 'afaire' && openTasks > 0 && (
-              <span className="badge count" aria-label={`${openTasks} tâche${openTasks > 1 ? 's' : ''} à faire`}>
-                {openTasks}
-              </span>
-            )}
-            {r === 'afaire' && advice && <span className="badge green">Conseillé</span>}
             {r === 'voisins' && newsCount > 0 && (
               <span className="badge count" aria-label={badgeAria(newsCount)}>
                 {badgeLabel(newsCount)}
@@ -132,20 +128,6 @@ export function Accueil({ garden, openTasks, newsCount, onHelp }: { garden: Gard
           </button>
         ))}
       </div>
-      {tip && (
-        <div className="card next-step">
-          <span className="small">
-            <span className="muted">Conseil :</span> <strong>{tip.label}</strong>
-          </span>
-          <StepButton step={tip} garden={garden} />
-        </div>
-      )}
-      <InstallHint />
-      {onHelp && (
-        <button className="accueil-help" aria-haspopup="dialog" onClick={onHelp}>
-          Besoin d’aide ?
-        </button>
-      )}
     </div>
   )
 }

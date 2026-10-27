@@ -13,7 +13,7 @@ import { closePlantSheet, openSpecies, setUi, startMoving, startPlacing } from '
 import { plantAgeYears, plantSizeAt } from '../../engine/growth'
 import { companionReport, legalDistance } from '../../engine/planting'
 import type { Garden, Plant, PlantStatus } from '../../types'
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState, type ComponentType, type ReactNode } from 'react'
 import { MeasureSection } from './MeasureSection'
 import { useTasks } from '../tasks/useTasks'
 
@@ -102,6 +102,8 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
   }
 
   const ageYears = plantAgeYears(plant, now)
+  // Fiche : le haut reproduit la maquette (premier écran) ; le reste (champs, photos, actions) vient dessous.
+  const Top = (fiche ? 'div' : Fragment) as ComponentType<{ className?: string; children?: ReactNode }>
 
   const nameField = !species && (
     <label className="field">
@@ -151,9 +153,6 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
           <span>
             {frMeters(size.heightM)} de haut · {frMeters(size.spreadM)} de large · {frNumber(ageYears)} {ageYears >= 2 ? 'ans' : 'an'}
           </span>
-          <span>
-            Adulte : {frMeters(species.hauteurAdulteM)} de haut, {frMeters(species.envergureAdulteM)} de large.
-          </span>
         </>
       ) : (
         <p className="small" style={{ margin: 0 }}>
@@ -180,6 +179,7 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
         </div>
       )}
       <div className={fiche ? 'fiche-sheet stack' : 'stack'} style={fiche ? undefined : { gap: 12 }}>
+      <Top {...(fiche ? { className: 'fiche-top stack' } : {})}>
       {fiche ? (
         <div>
           <h2 className="fiche-name">{plantName(plant)}</h2>
@@ -237,7 +237,13 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
           </button>
         </div>
       )}
+      </Top>
 
+      {fiche && size && species && (
+        <p className="small muted" style={{ margin: 0 }}>
+          Taille adulte : {frMeters(species.hauteurAdulteM)} de haut, {frMeters(species.envergureAdulteM)} de large.
+        </p>
+      )}
       {nameField}
       {fields}
       {!fiche && now_}

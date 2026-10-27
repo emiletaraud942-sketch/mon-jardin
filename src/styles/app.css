@@ -29,7 +29,8 @@
   --border-strong: #7f8a7c; /* contour des champs et boutons : 3,1:1 au moins sur les fonds clairs */
   --focus: #0b57d0; /* anneau de focus clavier : 5,7:1 et plus */
   --text: #1f2a22; /* 13,6:1 sur --bg */
-  --muted: #5e6859; /* proche du gris #6b7468 de la maquette, mais 4,7:1 au moins sur blanc, sauge et fonds discrets */
+  --muted: #6b7468; /* gris exact de la maquette : 4,9:1 sur blanc (sur sauge : utiliser --muted-2) */
+  --tab-off: #9aa396; /* gris exact de la maquette : onglets et étapes « à venir » (2,6:1 sur blanc : choix de fidélité) */
   --muted-2: #4b5b49; /* gris foncé pour les textes posés sur la sauge (5,8:1) */
   --step-off: #dde3d0; /* barre d'étapes, pastille « à venir » */
   --step-line: #d3dac4; /* fil de la carte de route */
@@ -108,6 +109,7 @@
     --focus: #8ab4ff;
     --text: #eeebdd;
     --muted: #aab5a5;
+    --tab-off: #aab5a5;
     --title: #d3eac6;
     --accent: #a8d49a;
     --accent-2: #7dbb80;
@@ -170,6 +172,7 @@
   --focus: #8ab4ff;
   --text: #eeebdd;
   --muted: #aab5a5;
+  --tab-off: #aab5a5;
   --title: #d3eac6;
   --accent: #a8d49a;
   --accent-2: #7dbb80;
@@ -484,16 +487,6 @@ label:focus-within:has(> input.sr-only) {
   background: var(--accent-2);
   border-radius: 999px;
 }
-.next-step {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.next-step {
-  padding: 0 4px;
-}
 .help-steps {
   margin: 0;
   padding-left: 1.4em;
@@ -611,6 +604,10 @@ label:focus-within:has(> input.sr-only) {
   .modebar:empty {
     display: none;
   }
+  /* Carte de route (premier écran de l'accueil) : plein écran sans barre du bas, comme la maquette. */
+  .app.route-open .sidenav {
+    display: none;
+  }
   /* Barre du bas flottante (maquette) : pilule blanche, marges de 16 px, 22 px du bas, pastille ronde verte de 44 px pour l'écran actif. */
   .sidenav {
     grid-row: 4;
@@ -626,6 +623,9 @@ label:focus-within:has(> input.sr-only) {
     height: auto;
     z-index: 25;
   }
+  .sidenav {
+    padding-inline: 4px; /* 5 entrées : « Mon jardin » tient à 360 px */
+  }
   .navbtn {
     position: relative;
     flex-direction: column;
@@ -633,6 +633,7 @@ label:focus-within:has(> input.sr-only) {
     padding: 0;
     font-size: calc(11 * var(--px));
     line-height: normal;
+    white-space: nowrap;
     text-align: center;
     flex: 1;
     align-items: center;
@@ -642,10 +643,14 @@ label:focus-within:has(> input.sr-only) {
     border-radius: 24px;
     background: transparent;
   }
+  .navbtn {
+    color: var(--tab-off);
+  }
   .navbtn:hover,
   .navbtn[aria-current='page'] {
     background: transparent;
     color: var(--title);
+    font-weight: 700;
   }
   .navbtn .badge {
     position: absolute;
@@ -2709,24 +2714,6 @@ details > summary {
 }
 
 /* ---------- Installer l'appli ---------- */
-.install-hint {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 6px 4px 10px;
-  border-top: 1px solid var(--border);
-}
-.install-hint > .small {
-  flex: 1 1 0;
-  min-width: 0;
-}
-.install-hint .btn {
-  min-height: 44px;
-}
-.install-hint .install-close {
-  min-width: 44px;
-  padding: 0;
-}
 .install-share {
   display: inline-flex;
   vertical-align: middle;
@@ -3344,31 +3331,11 @@ html[data-immersive] body {
   line-height: 1.35;
   color: var(--muted-2);
 }
-.accueil > .next-step,
-.accueil > .card {
-  margin-top: 16px;
-}
-.accueil-help {
-  align-self: center;
-  min-height: var(--tap);
-  margin-top: 8px;
-  padding: 0 16px;
-  border: 0;
-  background: none;
-  color: var(--accent);
-  font-weight: 700;
-  font-size: calc(15 * var(--px));
-  cursor: pointer;
-}
-@media (min-width: 761px) {
-  .accueil-help {
-    display: none;
-  }
-}
-
 /* Carte de route : « Votre jardin en 5 étapes » */
 .route {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - max(54px, env(safe-area-inset-top)));
   margin: 0 0 36px;
   padding: 0 2px; /* la maquette de la carte de route a des marges de 24 px (22 px ailleurs) */
 }
@@ -3422,14 +3389,11 @@ html[data-immersive] body {
   background: var(--step-line);
 }
 .route-list li {
-  position: relative;
   display: flex;
   align-items: flex-start;
   gap: 14px;
 }
 .route-num {
-  position: relative;
-  z-index: 1;
   flex: none;
   display: grid;
   place-items: center;
@@ -3437,7 +3401,7 @@ html[data-immersive] body {
   height: 36px;
   border-radius: 18px;
   background: var(--num-off);
-  color: var(--muted);
+  color: var(--tab-off);
   font-weight: 700;
 }
 .route-list li.done .route-num {
@@ -3475,7 +3439,7 @@ html[data-immersive] body {
 }
 .route-list li.todo .route-text strong,
 .route-list li.skipped .route-text strong {
-  color: var(--muted);
+  color: var(--tab-off);
 }
 .route-now {
   flex: 1;
@@ -3510,7 +3474,7 @@ html[data-immersive] body {
 .route-skip {
   display: block;
   min-height: var(--tap);
-  margin: 26px auto 0;
+  margin: auto auto 28px; /* en bas du premier écran, comme la maquette */
   padding: 0 16px;
   border: 0;
   background: none;
@@ -3540,8 +3504,7 @@ html[data-immersive] body {
   gap: 14px;
   padding: max(54px, env(safe-area-inset-top)) 24px 0;
 }
-.parcours-head .back-circle,
-.parcours-head .quit-circle {
+.parcours-head .back-circle {
   flex: none;
   display: grid;
   place-items: center;
@@ -3623,6 +3586,7 @@ html[data-immersive] body {
   background: var(--bg);
 }
 .parcours-foot .btn.big {
+  line-height: normal;
   width: 100%;
   min-height: 54px;
   border-radius: 27px;
@@ -3701,6 +3665,7 @@ html[data-immersive] body {
 }
 .choice > span > .muted {
   margin-top: 2px;
+  font-size: inherit;
 }
 .terrain-photo {
   display: block;
@@ -3802,43 +3767,34 @@ html[data-immersive] body {
   justify-content: center;
   margin-top: 21px;
 }
-.welcome-next {
-  min-height: var(--tap);
-  margin-top: 4px;
-  padding: 0 16px;
-  border: 0;
-  background: none;
-  color: var(--accent);
-  font-weight: 700;
-  font-size: calc(15 * var(--px));
-  cursor: pointer;
-}
 .dot-btn {
+  position: relative;
   display: grid;
   place-items: center;
-  width: 44px;
+  width: 8px;
   height: 44px;
+  margin: 0 4px; /* 8 px visuels entre deux points, comme la maquette */
+  padding: 0;
   border: 0;
   background: transparent;
   cursor: pointer;
 }
+.dot-btn[aria-current='step'] {
+  width: 22px;
+}
+.dot-btn::after {
+  content: ''; /* zone tactile invisible : 44 px de haut, contiguë à celle du point voisin */
+  position: absolute;
+  inset: 0 -4px;
+}
 .dot-btn i {
-  width: 8px;
+  width: 100%;
   height: 8px;
   border-radius: 4px;
   background: var(--dot-off);
-  transition: width 0.15s;
 }
 .dot-btn[aria-current='step'] i {
-  width: 22px;
   background: var(--btn-green);
-}
-.welcome .legal-accept {
-  margin: 0;
-  font-size: calc(13 * var(--px));
-  line-height: 1.5;
-  text-align: center;
-  max-width: 21em;
 }
 .welcome .parcours-foot {
   flex-direction: column;
@@ -3944,7 +3900,10 @@ html[data-immersive] body {
 .wx-day .wx-d {
   font-size: calc(12 * var(--px));
   line-height: normal;
-  color: var(--muted);
+  opacity: 0.7; /* comme la maquette : vert du titre à 70 % (3,9:1 sur blanc : choix de fidélité) */
+}
+.wx-day:nth-child(4n) {
+  margin-right: 14px; /* la 5e tuile n'apparaît pas à moitié : on la découvre en faisant glisser */
 }
 .wx-day strong {
   margin: 2px 0;
@@ -3960,8 +3919,7 @@ html[data-immersive] body {
   color: var(--on-btn-green);
 }
 .wx-day.hot .wx-d {
-  color: inherit;
-  opacity: 0.85;
+  opacity: 0.7;
 }
 .tcards {
   display: flex;
@@ -4018,8 +3976,9 @@ html[data-immersive] body {
   margin-top: 6px;
 }
 .tcard-done {
+  position: relative;
   flex: none;
-  min-height: 44px;
+  height: 42px; /* pastille de 42 px comme la maquette ; la zone tactile fait 44 px (::after) */
   padding: 0 18px;
   border: 0;
   border-radius: 22px;
@@ -4028,6 +3987,11 @@ html[data-immersive] body {
   font-weight: 700;
   font-size: calc(14 * var(--px));
   cursor: pointer;
+}
+.tcard-done::after {
+  content: '';
+  position: absolute;
+  inset: -1px 0;
 }
 .tcard-more {
   flex: 1 1 100%;
@@ -4229,7 +4193,95 @@ html[data-immersive] body {
 }
 @media (max-width: 760px) {
   .app:has(.fiche) .topbar,
-  .app:has(.fiche) .modebar {
+  .app:has(.fiche) .modebar,
+  .app:has(.fiche) .sidenav {
     display: none;
+  }
+}
+.fiche-top {
+  gap: 16px;
+  min-height: calc(100dvh - 366px); /* sous le premier écran : champs, photos, actions */
+}
+/* Fiche ouverte depuis la carte ou la Vue 3D : plein écran au-dessus de tout, comme depuis la liste (téléphone). */
+.fiche-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  overflow: auto;
+  background: var(--bg);
+}
+
+/* Conseil de la prochaine étape (Réglages) */
+.next-step {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* À faire : le haut de page reproduit la maquette ; météo détaillée, historique et rappels viennent dessous (hors du premier écran sur téléphone). */
+.afaire-extra {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  margin-top: 20px;
+}
+.afaire-extra > .wx-more,
+.afaire-extra > .card,
+.afaire-extra > .afaire-notif {
+  align-self: stretch;
+  margin-top: 0;
+}
+@media (max-width: 760px) {
+  .afaire-top {
+    min-height: calc(100dvh - 90px);
+  }
+}
+
+/* Gris de la maquette (--muted : 4,9:1 sur blanc) : sur les fonds teintés (sauge, gris clair), le gris plus foncé garde 4,5:1. */
+.seg,
+.badge,
+.tcard.blocked,
+.tcard.weather-pending,
+.choice:hover,
+.rayon-card:hover,
+.later,
+.plant-now,
+.alert,
+.empty,
+.btn:disabled,
+.garden-pick[aria-pressed='true'] {
+  --muted: var(--muted-2);
+}
+
+/* Écrans sans planche d'origine : même en-tête et même sélecteur que les planches (téléphone). */
+.phead-slot {
+  display: none;
+}
+.subtabs {
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+.subtabs button {
+  font-size: calc(14 * var(--px));
+  font-weight: 700;
+  color: var(--muted);
+}
+@media (max-width: 760px) {
+  .phead-slot {
+    display: block;
+    grid-row: 1;
+    padding: max(54px, env(safe-area-inset-top)) 22px 0;
+  }
+  .app.has-phead .modebar {
+    padding: 16px 22px 0;
+  }
+  .app.has-phead .main .page h1:first-of-type {
+    display: none;
+  }
+  .app.has-phead .main .page {
+    padding-top: 16px;
   }
 }

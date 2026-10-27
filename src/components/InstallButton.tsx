@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { promptInstall, useInstallState } from '../lib/install'
 import { showToast } from '../lib/toast'
-import { setGuide, useUi } from '../lib/ui'
 import { Icon } from './Icon'
 import { Modal } from './Modal'
 
@@ -71,32 +70,6 @@ export function InstallCard() {
         </p>
         <InstallButton />
       </div>
-    </div>
-  )
-}
-
-const phoneQuery = '(max-width: 760px)'
-
-/** Ligne discrète sur téléphone, dans la carte de l’avancement. Fermable ; la fermeture est mémorisée. */
-export function InstallHint() {
-  const state = useInstallState()
-  const { guide } = useUi()
-  const [phone, setPhone] = useState(() => typeof matchMedia === 'function' && matchMedia(phoneQuery).matches)
-  useEffect(() => {
-    if (typeof matchMedia !== 'function') return
-    const m = matchMedia(phoneQuery)
-    const on = () => setPhone(m.matches)
-    m.addEventListener?.('change', on)
-    return () => m.removeEventListener?.('change', on)
-  }, [])
-  if (state === 'installed' || guide.installHidden || !phone) return null
-  return (
-    <div className="install-hint">
-      <span className="small">Gardez l’appli sur votre téléphone.</span>
-      <InstallButton className="btn small primary" label="Installer" />
-      <button className="btn small ghost install-close" aria-label="Fermer cette proposition" onClick={() => setGuide({ installHidden: true })}>
-        <Icon name="x" size={16} />
-      </button>
     </div>
   )
 }

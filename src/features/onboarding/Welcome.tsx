@@ -1,6 +1,5 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Blob, HouseGarden, LeafSprig, PlantPot } from '../../components/illustrations'
-import { LegalLink } from '../legal/LegalLinks'
 import { noteWelcomed, setUi } from '../../lib/ui'
 import { INITIAL_STEPS, type Step } from '../settings/createGarden'
 import { StepList } from '../settings/GardenCreator'
@@ -43,6 +42,14 @@ export function Welcome({ onStart }: { onStart: () => void }) {
   const [i, setI] = useState(0)
   const [steps, setSteps] = useState<Step[]>()
   const slide = SLIDES[i]
+  const touchX = useRef<number>()
+  // Glissement horizontal : écran suivant ou précédent.
+  const swipe = (x: number) => {
+    const from = touchX.current
+    touchX.current = undefined
+    if (from === undefined || Math.abs(x - from) < 40) return
+    setI((k) => Math.max(0, Math.min(SLIDES.length - 1, k + (x < from ? 1 : -1))))
+  }
 
   async function demo() {
     setSteps(INITIAL_STEPS.map((s) => ({ ...s })))
@@ -70,7 +77,7 @@ export function Welcome({ onStart }: { onStart: () => void }) {
 
   return (
     <div className="parcours welcome">
-      <div className="parcours-body welcome-body">
+      <div className="parcours-body welcome-body" onTouchStart={(e) => (touchX.current = e.touches[0].clientX)} onTouchEnd={(e) => swipe(e.changedTouches[0].clientX)}>
         <h1 tabIndex={-1}>{slide.title}</h1>
         <p className="welcome-kicker">{slide.kicker}</p>
         <Art i={i} />
@@ -82,14 +89,6 @@ export function Welcome({ onStart }: { onStart: () => void }) {
             </button>
           ))}
         </div>
-        {i < SLIDES.length - 1 && (
-          <button className="welcome-next" onClick={() => setI(i + 1)}>
-            Suivant
-          </button>
-        )}
-        <p className="muted small legal-accept">
-          Gratuit, sans compte. En continuant, vous acceptez les <LegalLink id="cgu" label="conditions d’utilisation" /> et la <LegalLink id="confidentialite" label="politique de confidentialité" />.
-        </p>
       </div>
       <div className="parcours-foot">
         <button className="btn primary big" onClick={onStart}>

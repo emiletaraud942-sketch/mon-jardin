@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { SPECIES_BY_ID } from '../../data/species'
 import { STATUS_LABEL } from '../../data/labels'
 import { Icon } from '../../components/Icon'
@@ -9,6 +10,7 @@ import { closePlantSheet, setUi, startPlacing, stopPlacing, useUi } from '../../
 import type { Garden } from '../../types'
 import { PlantPanel, plantName } from '../plants/PlantPanel'
 import { openScan } from '../scan/scanUi'
+import { useIsMobile } from '../../components/useMedia'
 import { placeAtAim } from './aimBridge'
 
 const MAX_LISTED = 60
@@ -25,10 +27,21 @@ export function useSheetHead(garden: Garden): { title: string; summary: string }
 /** Panneau latéral partagé par la carte et la 3D. */
 export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
   const plants = useGardenPlants(garden.id)
-  const { selectedPlantId } = useUi()
+  const { selectedPlantId, movingPlantId, placingSpeciesId } = useUi()
   const [picking, setPicking] = useState(false)
+  const mobile = useIsMobile()
   const selected = plants.find((p) => p.id === selectedPlantId)
 
+  // Téléphone : la fiche prend tout l'écran, comme depuis la liste des plantes (maquette). Pendant un déplacement ou un placement, la carte reste visible.
+  if (selected && mobile) {
+    if (movingPlantId || placingSpeciesId) return null
+    return createPortal(
+      <div className="fiche-overlay">
+        <PlantPanel garden={garden} plant={selected} onClose={closePlantSheet} fiche onShowOnMap={() => setUi({ tab: 'carte', focusPlantId: selected.id, selectedPlantId: undefined })} />
+      </div>,
+      document.body,
+    )
+  }
   if (selected) return <PlantPanel garden={garden} plant={selected} onClose={closePlantSheet} />
 
   return (

@@ -46,7 +46,7 @@ export function UpdateBanner() {
         </span>
         <span className="row">
           <button className="btn small primary" onClick={() => void updateServiceWorker(true)}>
-            Installer
+            Mettre à jour
           </button>
           <button className="btn small" onClick={() => setNeedRefresh(false)}>
             Plus tard

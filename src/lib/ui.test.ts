@@ -249,6 +249,14 @@ describe('rayons', () => {
     expect(ui.visibleRayons(false)).toEqual(['jardin', 'afaire', 'planter'])
   })
 
+  it('le bouton Accueil de la barre ouvre l’écran à 4 rayons depuis n’importe quel écran', async () => {
+    const { ui } = await load()
+    ui.setUi({ tab: 'entretien' })
+    ui.setUi({ tab: 'accueil' })
+    expect(ui.getUi().tab).toBe('accueil')
+    expect(ui.rayonOfTab(ui.getUi().tab)).toBeUndefined() // aucun rayon actif : seul « Accueil » l'est
+  })
+
   it('sélecteur segmenté : Carte / Plantes / Vue 3D et Où planter ? / Catalogue seulement', async () => {
     const { ui } = await load()
     expect(ui.subTabs('jardin')).toEqual(['carte', 'plantes', '3d'])
