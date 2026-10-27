@@ -11,7 +11,7 @@ import type { Garden } from '../../types'
 import { PlantPanel, plantName } from '../plants/PlantPanel'
 import { openScan } from '../scan/scanUi'
 import { useIsMobile } from '../../components/useMedia'
-import { confirmBeforePlacing, placeAtAim } from './aimBridge'
+import { confirmBeforePlacing, placeAtAim, usePlacingInfo } from './aimBridge'
 
 const MAX_LISTED = 60
 
@@ -115,6 +115,7 @@ export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
 export function PlacingBanner() {
   const { tab, placingSpeciesId, placingCustomName, placingSeries, movingPlantId, aim, placingSpot } = useUi()
   const moving = useStore((s) => (movingPlantId ? s.plants.find((p) => p.id === movingPlantId) : undefined))
+  const info = usePlacingInfo()
   // En Vue 3D, la scène affiche sa propre consigne : une seule bannière.
   if (tab === '3d' || (!placingSpeciesId && !movingPlantId)) return null
   const name = movingPlantId
@@ -141,11 +142,9 @@ export function PlacingBanner() {
             {placingSeries.count} plante{placingSeries.count > 1 ? 's' : ''} placée{placingSeries.count > 1 ? 's' : ''}. Touchez encore pour en ajouter.
           </span>
         )}
-        {!movingPlantId && !aim && !ready && (
-          <button className="btn small ghost placing-measure" onClick={() => openScan('mesures', { kind: 'new' })}>
-            Placer par mesures
-          </button>
-        )}
+        {info.summary && <span className="small placing-dist">{info.summary}</span>}
+        {info.note && <span className="small placing-note">{info.note}</span>}
+        {confirm && !aim && !ready && !info.note && <span className="small muted placing-hint">Pour viser : maintenez le doigt (loupe) ou touchez Viser.</span>}
       </span>
       <span className="placing-actions">
         {confirm && (

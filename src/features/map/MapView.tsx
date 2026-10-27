@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import maplibregl, { type GeoJSONSource, type Map as MLMap } from 'maplibre-gl'
 import { SPECIES_BY_ID } from '../../data/species'
 import { Icon } from '../../components/Icon'
-import { CADASTRE_MAXZOOM, CADASTRE_TILES, IGN_ATTRIBUTION, ORTHO_MAXZOOM, ORTHO_TILES, PLAN_MAXZOOM, PLAN_TILES } from '../../lib/ign'
+import { CADASTRE_MAXZOOM, CADASTRE_TILES, IGN_ATTRIBUTION, ORTHO_MAXZOOM, ORTHO_TILES, PLAN_MAXZOOM, PLAN_TILES, TILE_SIZE } from '../../lib/ign'
 import { toLocal, toLonLat } from '../../lib/geo'
 import { detectRows, gridLines, measureRuler, snapPoint, thresholdMeters, uncertaintyRadiusM, type SnapResult, type SnapTargets } from '../../lib/snap'
 import { frMeters } from '../../lib/format'
@@ -19,7 +19,12 @@ import { cssVar } from './colors'
 import { GardenSide, PlacingBanner, useSheetHead } from './GardenSide'
 import { SidePanel } from './SidePanel'
 import { movePlant, moveWithUndo, placePlant } from './placing'
-import { confirmBeforePlacing, registerAim } from './aimBridge'
+import { confirmBeforePlacing, registerAim, setPlacingInfo, usePlacingInfo } from './aimBridge'
+import { PHOTO_NOTE_ZOOM, PLAN_FADE_FROM, PLAN_FADE_TO, gridStepM, orthoPaint, photoCapZoom, review } from './photoZoom'
+import { LOUPE_HOLD_MS, LOUPE_SIZE, LOUPE_SLOP_PX, LOUPE_ZOOM, gpsCircleRadiusM, loupeCenter, loupeSource, rulerSummary } from './placeAids'
+import { useGps } from '../scan/useGps'
+import { gpsMessage } from '../scan/gps'
+import { proposePosition } from '../scan/capture'
 import { dragThresholdPx, nudgePosition } from './nudge'
 import { loadQueue, useScanQueue } from '../scan/queueStore'
 import { itemName } from '../scan/queue'
@@ -102,10 +107,18 @@ function readSnap(): boolean {
     return true
   }
 }
-/** Grille d'aide : 5 m dès ce zoom, 1 m dès le suivant. */
-const GRID_5M_ZOOM = 18.5
-const GRID_1M_ZOOM = 20.5
+/** Grille d'aide au placement (1 m ou 5 m selon le zoom, voir gridStepM) : mémorisée, activée par défaut. */
+const GRID_KEY = 'pj.grid'
+function readGrid(): boolean {
+  try {
+    return localStorage.getItem(GRID_KEY) !== '0'
+  } catch {
+    return true
+  }
+}
 const PLACE_ZOOM = 20
+/** Fond schématique (placement) : uni et sombre, pour que les traits blancs et jaunes restent lisibles. */
+const SCHEMA_BG = '#2b3a2f'
 
 const emptyFc = (): GeoJSON.FeatureCollection => ({ type: 'FeatureCollection', features: [] })
 
@@ -116,7 +129,17 @@ export function MapView({ garden }: { garden: Garden }) {
   const plants = useGardenPlants(garden.id)
   const { selectedPlantId, placingSpeciesId, movingPlantId, aim, placingSpot } = useUi()
   const head = useSheetHead(garden)
+  const placingInfo = usePlacingInfo()
+  const rv = review()
   const [base, setBase] = useState<'ortho' | 'plan'>('ortho')
+  const [schema, setSchema] = useState(false)
+  const [gridOn, setGridOn] = useState(readGrid)
+  const gridRef = useRef(gridOn)
+  gridRef.current = gridOn
+  const [beyondPhoto, setBeyondPhoto] = useState(false)
+  const loupeEl = useRef<HTMLDivElement>(null)
+  const loupeCanvas = useRef<HTMLCanvasElement>(null)
+  const gps = useGps(garden.center)
   const [cadastre, setCadastre] = useState(true)
   const [adult, setAdult] = useState(false)
   const [ready, setReady] = useState(false)
@@ -178,6 +201,14 @@ export function MapView({ garden }: { garden: Garden }) {
         features: r.guides.filter((q) => q.from.x !== q.to.x || q.from.y !== q.to.y).map((q) => line(q.from, q.to)),
       })
       ;(m.getSource('ruler') as GeoJSONSource).setData({ type: 'FeatureCollection', features: ruler.map((q) => line(q.from, q.to)) })
+      // Cercle de la plante à sa taille adulte, avec son point central : net, quelle que soit la photo.
+      const ghost = m.getSource('ghost') as GeoJSONSource | undefined
+      if (ghost) {
+        const feats: GeoJSON.Feature[] = [{ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: ll(r.point) } }]
+        if (species) feats.push(circle(g.center, r.point, Math.max(0.15, species.envergureAdulteM / 2), {}))
+        ghost.setData({ type: 'FeatureCollection', features: feats })
+      }
+      setPlacingInfo({ summary: rulerSummary(ruler) })
       const items = ruler.map((q) => {
         const mid = { x: (q.from.x + q.to.x) / 2, y: (q.from.y + q.to.y) / 2 }
         const word = q.kind === 'limite' ? 'Limite ' : q.kind === 'batiment' ? 'Maison ' : ''
@@ -211,7 +242,9 @@ export function MapView({ garden }: { garden: Garden }) {
       if (m?.getSource('guides')) {
         ;(m.getSource('guides') as GeoJSONSource).setData(emptyFc())
         ;(m.getSource('ruler') as GeoJSONSource).setData(emptyFc())
+        ;(m.getSource('ghost') as GeoJSONSource).setData(emptyFc())
       }
+      setPlacingInfo({ summary: '' })
       labelMarkers.current.forEach((mk) => (mk.getElement().style.display = 'none'))
     },
     finish(pos) {
@@ -236,16 +269,15 @@ export function MapView({ garden }: { garden: Garden }) {
       const m = map.current
       const src = m?.getSource('grid') as GeoJSONSource | undefined
       if (!m || !src) return
-      const z = m.getZoom()
-      if (!(placingRef.current || movingRef.current) || z < GRID_5M_ZOOM) {
+      const g = gardenRef.current
+      const step = gridRef.current && (placingRef.current || movingRef.current) ? gridStepM(m.getZoom(), g.center.lat) : null
+      if (!step) {
         src.setData(emptyFc())
         return
       }
-      const g = gardenRef.current
       const b = m.getBounds()
       const sw = toLocal(g.center, { lon: b.getWest(), lat: b.getSouth() })
       const ne = toLocal(g.center, { lon: b.getEast(), lat: b.getNorth() })
-      const step = z >= GRID_1M_ZOOM ? 1 : 5
       const ll = (q: XY): [number, number] => {
         const x = toLonLat(g.center, q)
         return [x.lon, x.lat]
@@ -262,6 +294,118 @@ export function MapView({ garden }: { garden: Garden }) {
     },
   }
 
+  // ----- Loupe : appui prolongé du doigt, zone agrandie au-dessus du doigt avec un réticule -----
+  // La photo peut être floue : on vise sur les traits nets (limites, maisons, cercles), sans que le doigt cache l'endroit.
+  const suppressClick = useRef(0)
+  const attachLoupe = (m: MLMap): (() => void) => {
+    const cont = m.getCanvasContainer()
+    const box = loupeEl.current
+    const lc = loupeCanvas.current
+    const ctx = lc?.getContext('2d')
+    if (!box || !lc || !ctx) return () => {}
+    let timer: number | undefined
+    let down: XY | undefined
+    let active = false
+    let target: XY | undefined
+    let result: SnapResult | undefined
+    const view = () => ({ w: cont.clientWidth, h: cont.clientHeight })
+    const rel = (e: PointerEvent): XY => {
+      const r = cont.getBoundingClientRect()
+      return { x: e.clientX - r.left, y: e.clientY - r.top }
+    }
+    const eligible = () => !!(placingRef.current || movingRef.current) && !aimRef.current
+    const aimAt = (finger: XY) => {
+      const ll = m.unproject([finger.x, finger.y])
+      const a = aidRef.current!
+      const r = a.snapAt(toLocal(gardenRef.current.center, { lon: ll.lng, lat: ll.lat }), movingRef.current)
+      a.draw(r, movingRef.current)
+      const sp = toLonLat(gardenRef.current.center, r.point)
+      const px = m.project([sp.lon, sp.lat])
+      target = { x: px.x, y: px.y }
+      result = r
+      const c = loupeCenter(finger, view())
+      box.style.transform = `translate(${c.x - LOUPE_SIZE / 2}px, ${c.y - LOUPE_SIZE / 2}px)`
+      m.triggerRepaint()
+    }
+    const paint = () => {
+      if (!active || !target) return
+      const cv = m.getCanvas()
+      const ratio = cv.clientWidth ? cv.width / cv.clientWidth : 1
+      if (lc.width !== Math.round(LOUPE_SIZE * ratio)) lc.width = lc.height = Math.round(LOUPE_SIZE * ratio)
+      const src = loupeSource(target, LOUPE_SIZE, LOUPE_ZOOM, ratio)
+      ctx.clearRect(0, 0, lc.width, lc.height)
+      ctx.drawImage(cv, src.sx, src.sy, src.sw, src.sw, 0, 0, lc.width, lc.height)
+    }
+    const stop = (commit: boolean) => {
+      window.clearTimeout(timer)
+      timer = undefined
+      down = undefined
+      if (!active) return
+      active = false
+      box.classList.remove('on')
+      m.dragPan.enable()
+      m.touchZoomRotate.enable()
+      suppressClick.current = performance.now() + 600 // le toucher qui suit ne doit pas déplacer le point
+      const r = result
+      result = undefined
+      if (!commit || !r) return
+      setPlacingInfo({ note: '' })
+      ;(m.getSource('gpsfix') as GeoJSONSource).setData(emptyFc())
+      if (confirmBeforePlacing()) setUi({ placingSpot: r.point })
+      else aidRef.current!.finish(r.point)
+    }
+    const onDown = (e: PointerEvent) => {
+      if (!e.isPrimary) return stop(false)
+      if (e.pointerType === 'mouse' || !eligible()) return
+      if ((e.target as HTMLElement | null)?.closest('.marker-hit, .maplibregl-ctrl')) return
+      down = rel(e)
+      const start = down
+      timer = window.setTimeout(() => {
+        if (!down || !eligible()) return
+        active = true
+        // Le doigt ne doit plus déplacer la carte : seul le point visé bouge.
+        m.dragPan.disable()
+        m.touchZoomRotate.disable()
+        box.classList.add('on')
+        aimAt(start)
+      }, LOUPE_HOLD_MS)
+    }
+    const onMove = (e: PointerEvent) => {
+      if (active) return aimAt(rel(e))
+      if (!down) return
+      const p = rel(e)
+      if (Math.hypot(p.x - down.x, p.y - down.y) > LOUPE_SLOP_PX) {
+        window.clearTimeout(timer)
+        down = undefined
+      }
+    }
+    const onUp = () => stop(true)
+    const onCancel = () => stop(false)
+    const onTouchMove = (e: TouchEvent) => {
+      if (active && e.cancelable) e.preventDefault()
+    }
+    const onMenu = (e: Event) => {
+      if (active || down) e.preventDefault()
+    }
+    cont.addEventListener('pointerdown', onDown)
+    cont.addEventListener('pointermove', onMove)
+    cont.addEventListener('pointerup', onUp)
+    cont.addEventListener('pointercancel', onCancel)
+    cont.addEventListener('touchmove', onTouchMove, { passive: false })
+    cont.addEventListener('contextmenu', onMenu)
+    m.on('render', paint)
+    return () => {
+      window.clearTimeout(timer)
+      cont.removeEventListener('pointerdown', onDown)
+      cont.removeEventListener('pointermove', onMove)
+      cont.removeEventListener('pointerup', onUp)
+      cont.removeEventListener('pointercancel', onCancel)
+      cont.removeEventListener('touchmove', onTouchMove)
+      cont.removeEventListener('contextmenu', onMenu)
+      m.off('render', paint)
+    }
+  }
+
   const fit = (animate = true) =>
     map.current?.fitBounds(gardenBounds(garden, plantsRef.current), {
       padding: fitPadding(),
@@ -276,17 +420,18 @@ export function MapView({ garden }: { garden: Garden }) {
       container: el.current,
       center: [garden.center.lon, garden.center.lat],
       zoom: 19,
-      maxZoom: 22,
+      maxZoom: photoCapZoom(rv),
       attributionControl: false,
       style: {
         version: 8,
         sources: {
-          ortho: { type: 'raster', tiles: [ORTHO_TILES], tileSize: 256, maxzoom: ORTHO_MAXZOOM, attribution: IGN_ATTRIBUTION },
+          ortho: { type: 'raster', tiles: [ORTHO_TILES], tileSize: TILE_SIZE, maxzoom: ORTHO_MAXZOOM, attribution: IGN_ATTRIBUTION },
           plan: { type: 'raster', tiles: [PLAN_TILES], tileSize: 256, maxzoom: PLAN_MAXZOOM, attribution: IGN_ATTRIBUTION },
           cadastre: { type: 'raster', tiles: [CADASTRE_TILES], tileSize: 256, maxzoom: CADASTRE_MAXZOOM },
         },
         layers: [
-          { id: 'ortho', type: 'raster', source: 'ortho' },
+          { id: 'schema', type: 'background', paint: { 'background-color': SCHEMA_BG }, layout: { visibility: 'none' } },
+          { id: 'ortho', type: 'raster', source: 'ortho', paint: orthoPaint(rv.ortho) },
           { id: 'plan', type: 'raster', source: 'plan', layout: { visibility: 'none' } },
           { id: 'cadastre', type: 'raster', source: 'cadastre', paint: { 'raster-opacity': 0.7 } },
         ],
@@ -301,8 +446,10 @@ export function MapView({ garden }: { garden: Garden }) {
       m.addSource('parcel', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       m.addSource('buildings', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       m.addSource('canopy', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-      for (const id of ['grid', 'uncert', 'guides', 'ruler']) m.addSource(id, { type: 'geojson', data: emptyFc() })
+      for (const id of ['grid', 'uncert', 'guides', 'ruler', 'ghost', 'adult', 'gpsfix']) m.addSource(id, { type: 'geojson', data: emptyFc() })
       m.addLayer({ id: 'buildings', type: 'fill', source: 'buildings', paint: { 'fill-color': '#ffffff', 'fill-opacity': 0.18, 'fill-outline-color': '#ffffff' } })
+      // Contour net des maisons voisines (BD TOPO) : il ne dépend pas de la netteté de la photo.
+      m.addLayer({ id: 'buildings-line', type: 'line', source: 'buildings', paint: { 'line-color': '#ffffff', 'line-width': 2, 'line-opacity': 0.95 } })
       m.addLayer({ id: 'parcel', type: 'line', source: 'parcel', paint: { 'line-color': cssVar('--parcel', '#ffe066'), 'line-width': 3 } })
       m.addLayer({
         id: 'canopy',
@@ -311,6 +458,13 @@ export function MapView({ garden }: { garden: Garden }) {
         paint: { 'fill-color': ['get', 'color'], 'fill-opacity': ['case', ['get', 'projet'], 0.2, 0.4] },
       })
       m.addLayer({ id: 'canopy-line', type: 'line', source: 'canopy', paint: { 'line-color': '#ffffff', 'line-width': 1, 'line-opacity': 0.7 } })
+      // Placement : cercles des plantes en place à leur taille adulte, puis cercle de la plante à poser avec son point central.
+      m.addLayer({ id: 'adult-line', type: 'line', source: 'adult', paint: { 'line-color': '#ffffff', 'line-width': 1.25, 'line-opacity': 0.85, 'line-dasharray': [3, 2] } })
+      m.addLayer({ id: 'gpsfix-fill', type: 'fill', source: 'gpsfix', paint: { 'fill-color': cssVar('--cta', '#b8532d'), 'fill-opacity': 0.16 } })
+      m.addLayer({ id: 'gpsfix-line', type: 'line', source: 'gpsfix', paint: { 'line-color': cssVar('--cta', '#b8532d'), 'line-width': 2, 'line-dasharray': [2, 2] } })
+      m.addLayer({ id: 'ghost-fill', type: 'fill', source: 'ghost', filter: ['==', ['geometry-type'], 'Polygon'], paint: { 'fill-color': cssVar('--sun', '#e2a72e'), 'fill-opacity': 0.2 } })
+      m.addLayer({ id: 'ghost-line', type: 'line', source: 'ghost', filter: ['==', ['geometry-type'], 'Polygon'], paint: { 'line-color': cssVar('--sun', '#e2a72e'), 'line-width': 2.5 } })
+      m.addLayer({ id: 'ghost-dot', type: 'circle', source: 'ghost', filter: ['==', ['geometry-type'], 'Point'], paint: { 'circle-radius': 4, 'circle-color': '#ffffff', 'circle-stroke-color': '#000000', 'circle-stroke-width': 1.5 } })
       // Cercle d'incertitude des plantes scannées, grille d'aide, guides d'alignement et règle (au-dessus des disques).
       m.addLayer({ id: 'uncert-fill', type: 'fill', source: 'uncert', paint: { 'fill-color': cssVar('--cta', '#b8532d'), 'fill-opacity': 0.14 } })
       m.addLayer({ id: 'uncert-line', type: 'line', source: 'uncert', paint: { 'line-color': cssVar('--cta', '#b8532d'), 'line-width': 2, 'line-dasharray': [2, 2] } })
@@ -321,6 +475,7 @@ export function MapView({ garden }: { garden: Garden }) {
     })
     const aimNow = () => aimRef.current && (placingRef.current || movingRef.current)
     m.on('click', (e) => {
+      if (performance.now() < suppressClick.current) return // fin d'un appui prolongé (loupe)
       if (aimNow()) return // en mode Viser, on déplace la carte : le bouton « Placer ici » pose la plante
       const mv = movingRef.current
       const sp = placingRef.current
@@ -328,6 +483,8 @@ export function MapView({ garden }: { garden: Garden }) {
       const local = toLocal(gardenRef.current.center, { lon: e.lngLat.lng, lat: e.lngLat.lat })
       const a = aidRef.current!
       const r = a.snapAt(local, mv)
+      setPlacingInfo({ note: '' })
+      ;(m.getSource('gpsfix') as GeoJSONSource).setData(emptyFc())
       if (confirmBeforePlacing()) {
         // Téléphone : le toucher choisit l'endroit (on peut corriger en touchant ailleurs), « Valider » le confirme.
         setUi({ placingSpot: r.point })
@@ -347,6 +504,15 @@ export function MapView({ garden }: { garden: Garden }) {
       if (!aimNow()) aidRef.current?.clear()
     })
     m.on('move', () => aidRef.current?.refreshAim())
+    // Mention discrète quand la photo ne peut plus gagner en précision (variantes de revue).
+    let beyond = false
+    m.on('zoom', () => {
+      const b = m.getZoom() >= PHOTO_NOTE_ZOOM
+      if (b !== beyond) {
+        beyond = b
+        setBeyondPhoto(b)
+      }
+    })
     m.on('moveend', () => aidRef.current?.grid())
     // Tuiles IGN : un message discret après plusieurs échecs de suite, effacé dès qu'une tuile arrive.
     let tileErrors = 0
@@ -362,7 +528,10 @@ export function MapView({ garden }: { garden: Garden }) {
       }
     })
     map.current = m
+    if (rv.debug) (window as unknown as { __pjMap?: MLMap }).__pjMap = m
+    const detachLoupe = attachLoupe(m)
     return () => {
+      detachLoupe()
       markers.current.forEach((mk) => mk.remove())
       markers.current.clear()
       scanMarkers.current.forEach((mk) => mk.remove())
@@ -378,10 +547,19 @@ export function MapView({ garden }: { garden: Garden }) {
   useEffect(() => {
     const m = map.current
     if (!m || !ready) return
-    m.setLayoutProperty('ortho', 'visibility', base === 'ortho' ? 'visible' : 'none')
-    m.setLayoutProperty('plan', 'visibility', base === 'plan' ? 'visible' : 'none')
-    m.setLayoutProperty('cadastre', 'visibility', cadastre ? 'visible' : 'none')
-  }, [base, cadastre, ready])
+    // Fond schématique : uni, sans photo, plan ni cadastre en image ; seuls les traits nets restent.
+    const photo = base === 'ortho' && !schema
+    // Variante de revue « plan » : au-delà du zoom utile de la photo, fondu doux vers le plan IGN.
+    const fade = rv.zoom === 'plan' && photo
+    m.setLayoutProperty('schema', 'visibility', schema ? 'visible' : 'none')
+    m.setLayoutProperty('ortho', 'visibility', photo ? 'visible' : 'none')
+    m.setLayoutProperty('plan', 'visibility', (base === 'plan' && !schema) || fade ? 'visible' : 'none')
+    m.setLayerZoomRange('plan', fade ? PLAN_FADE_FROM - 0.1 : 0, 24)
+    m.setPaintProperty('plan', 'raster-opacity', fade ? ['interpolate', ['linear'], ['zoom'], PLAN_FADE_FROM, 0, PLAN_FADE_TO, 1] : 1)
+    m.setLayoutProperty('cadastre', 'visibility', cadastre && !schema ? 'visible' : 'none')
+    // Variante de revue « repères » : la photo ne se zoome pas au-delà de son zoom utile + 1 niveau.
+    m.setMaxZoom(photo ? photoCapZoom(rv) : 22)
+  }, [base, cadastre, schema, ready]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const m = map.current
@@ -596,6 +774,24 @@ export function MapView({ garden }: { garden: Garden }) {
     aidRef.current?.refreshAim()
   }, [placingNow, aim, ready]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Placement : les plantes en place à leur taille adulte (trait pointillé), pour juger des distances sans voir la photo.
+  useEffect(() => {
+    const m = map.current
+    if (!m || !ready) return
+    const feats = placingNow
+      ? plants.flatMap((p) => {
+          const sp = SPECIES_BY_ID[p.speciesId]
+          return p.id === movingPlantId || !sp ? [] : [circle(garden.center, p.position, Math.max(0.15, sp.envergureAdulteM / 2), {})]
+        })
+      : []
+    ;(m.getSource('adult') as GeoJSONSource).setData({ type: 'FeatureCollection', features: feats })
+    if (!placingNow) {
+      setSchema(false)
+      ;(m.getSource('gpsfix') as GeoJSONSource).setData(emptyFc())
+      setPlacingInfo({ note: '' })
+    }
+  }, [placingNow, plants, movingPlantId, garden.center, ready])
+
   // Endroit touché, en attente de « Valider » : une épingle bien visible (le doigt la cache moins que la plante).
   const spotMarker = useRef<maplibregl.Marker>()
   useEffect(() => {
@@ -630,6 +826,42 @@ export function MapView({ garden }: { garden: Garden }) {
     const c = map.current?.getCanvas()
     if (c) c.style.cursor = placingSpeciesId || movingPlantId ? 'crosshair' : ''
   }, [placingSpeciesId, movingPlantId, ready])
+
+  useEffect(() => {
+    aidRef.current?.grid()
+  }, [gridOn, ready])
+
+  const setGridPref = (on: boolean) => {
+    setGridOn(on)
+    try {
+      localStorage.setItem(GRID_KEY, on ? '1' : '0')
+    } catch {
+      /* mémoire indisponible */
+    }
+  }
+
+  // « Je suis ici » : la plante se place à la position GPS recalée de la personne debout à côté d'elle, avec son cercle d'incertitude.
+  const gpsBusy = gps.state.status === 'mesure'
+  useEffect(() => {
+    if (gps.state.status === 'mesure') setPlacingInfo({ note: `Mesure de votre position : ${Math.round(gps.state.progress * 100)} %. Restez immobile.` })
+    else if (gps.state.status === 'erreur' && gps.state.problem) setPlacingInfo({ note: gpsMessage(gps.state.problem).message })
+  }, [gps.state.status, gps.state.progress, gps.state.problem])
+  async function placeHere() {
+    const m = map.current
+    if (!m || gpsBusy) return
+    setUi({ aim: false, placingSpot: undefined })
+    aidRef.current?.clear()
+    const sample = await gps.start(5000)
+    if (!sample || !map.current) return
+    const prop = proposePosition(sample, gardenRef.current.calibration)
+    const a = aidRef.current!
+    ;(m.getSource('gpsfix') as GeoJSONSource).setData({ type: 'FeatureCollection', features: [circle(gardenRef.current.center, prop.position, gpsCircleRadiusM(prop.accuracyM), {})] })
+    setUi({ placingSpot: prop.position })
+    a.draw({ point: prop.position, guides: [] }, movingRef.current)
+    const ll = toLonLat(gardenRef.current.center, prop.position)
+    m.easeTo({ center: [ll.lon, ll.lat], zoom: Math.max(m.getZoom(), Math.min(PLACE_ZOOM, m.getMaxZoom())), offset: [0, -90], duration: 400 })
+    setPlacingInfo({ note: `Position GPS à ± ${frMeters(Math.max(0.5, prop.accuracyM))} près (cercle sur la carte). ${sample.quality === 'faible' ? 'Signal faible.' : ''}`.trim() })
+  }
 
   const setSnapPref = (on: boolean) => {
     setSnapOn(on)
@@ -679,13 +911,29 @@ export function MapView({ garden }: { garden: Garden }) {
           </div>
           )}
           {placingNow && (
-            <div className="floating row map-aid" role="toolbar" aria-label="Aides au placement">
-              <button className={'btn small' + (snapOn ? ' primary' : '')} aria-pressed={snapOn} onClick={() => setSnapPref(!snapOn)}>
-                {snapOn ? '✓ ' : ''}Aimanter
-              </button>
-              <button className={'btn small' + (aim ? ' primary' : '')} aria-pressed={!!aim} onClick={() => setUi({ aim: !aim })}>
-                {aim ? '✓ ' : ''}Viser
-              </button>
+            <div className="floating map-aid" role="toolbar" aria-label="Aides au placement">
+              <div className="map-aid-row">
+                <button className={'btn small aim-first' + (aim ? ' primary' : '')} aria-pressed={!!aim} onClick={() => setUi({ aim: !aim })}>
+                  {aim ? '✓ ' : ''}Viser
+                </button>
+                <button className="btn small" onClick={() => openScan('mesures', movingPlantId ? { kind: 'plant', plantId: movingPlantId } : { kind: 'new' })}>
+                  Par mesures
+                </button>
+                <button className="btn small" disabled={gpsBusy} onClick={() => void placeHere()}>
+                  Je suis ici
+                </button>
+              </div>
+              <div className="map-aid-row">
+                <button className={'btn small' + (snapOn ? ' primary' : '')} aria-pressed={snapOn} onClick={() => setSnapPref(!snapOn)}>
+                  {snapOn ? '✓ ' : ''}Aimanter
+                </button>
+                <button className={'btn small' + (gridOn ? ' primary' : '')} aria-pressed={gridOn} onClick={() => setGridPref(!gridOn)}>
+                  {gridOn ? '✓ ' : ''}Grille
+                </button>
+                <button className={'btn small' + (schema ? ' primary' : '')} aria-pressed={schema} aria-label="Fond schématique" onClick={() => setSchema((v) => !v)}>
+                  {schema ? '✓ ' : ''}Schéma
+                </button>
+              </div>
             </div>
           )}
           {optionsOpen && !placingNow && (
@@ -739,6 +987,11 @@ export function MapView({ garden }: { garden: Garden }) {
               Les images de la carte ne s’affichent pas. Elles reviendront dès que la connexion reviendra.
             </div>
           )}
+          {rv.zoom && beyondPhoto && base === 'ortho' && !schema && (
+            <p className="map-photo-note small" role="note">
+              La photo n’est pas plus précise de plus près.
+            </p>
+          )}
           <GardenDataBanner garden={garden} compact />
         </div>
         {plants.length === 0 && !placingSpeciesId && !movingPlantId && (
@@ -753,6 +1006,13 @@ export function MapView({ garden }: { garden: Garden }) {
           </div>
         )}
         {placingNow && aim && <div className="aim-cross" aria-hidden />}
+        <div ref={loupeEl} className="loupe" aria-hidden style={{ width: LOUPE_SIZE, height: LOUPE_SIZE }}>
+          <div className="loupe-lens">
+            <canvas ref={loupeCanvas} width={LOUPE_SIZE} height={LOUPE_SIZE} />
+            <span className="loupe-cross" />
+          </div>
+          <span className="loupe-cap">{placingInfo.summary.split(' · ').slice(0, 2).join(' · ')}</span>
+        </div>
         {pendingItem && !placingNow && (
           <div className="floating pending-card" role="status">
             <p style={{ margin: 0 }}>

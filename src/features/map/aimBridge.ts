@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from 'react'
 // Pont entre la bannière de placement (bouton « Valider ») et la carte (viseur au centre, endroit touché).
 let handler: (() => void) | undefined
 
@@ -23,4 +24,31 @@ export function confirmBeforePlacing(): boolean {
   } catch {
     return false
   }
+}
+
+// ---------- Infos de placement affichées dans la bannière : distances et état du GPS ----------
+export interface PlacingInfo {
+  /** « Limite 6 m · Maison 18 m » pour l'endroit visé. */
+  summary: string
+  /** Phrase courte sur l'aide utilisée (mesure GPS en cours, précision). */
+  note: string
+}
+let info: PlacingInfo = { summary: '', note: '' }
+const listeners = new Set<() => void>()
+
+export function setPlacingInfo(p: Partial<PlacingInfo>) {
+  const next = { ...info, ...p }
+  if (next.summary === info.summary && next.note === info.note) return
+  info = next
+  listeners.forEach((l) => l())
+}
+
+export function usePlacingInfo(): PlacingInfo {
+  return useSyncExternalStore(
+    (l) => {
+      listeners.add(l)
+      return () => listeners.delete(l)
+    },
+    () => info,
+  )
 }

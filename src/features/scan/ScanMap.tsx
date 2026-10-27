@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import maplibregl, { type GeoJSONSource, type Map as MLMap } from 'maplibre-gl'
 import { SPECIES_BY_ID } from '../../data/species'
-import { IGN_ATTRIBUTION, ORTHO_MAXZOOM, ORTHO_TILES } from '../../lib/ign'
+import { IGN_ATTRIBUTION, ORTHO_MAXZOOM, ORTHO_TILES, TILE_SIZE } from '../../lib/ign'
 import { toLocal, toLonLat } from '../../lib/geo'
 import type { Garden, Plant, XY } from '../../types'
 import { cssVar } from '../map/colors'
+import { orthoPaint, photoCapZoom, review } from '../map/photoZoom'
 import { dragThresholdPx, nudgePosition } from '../map/nudge'
 
 /** Point fixe avec une étiquette courte (repère, point choisi…). */
@@ -108,12 +109,12 @@ export function ScanMap({ garden, plants, onTap, dots = [], pending = [], onSele
       container: el.current,
       bounds: boundsOf(g, latest.current.plants),
       fitBoundsOptions: { padding: 24, maxZoom: 20 },
-      maxZoom: 22,
+      maxZoom: photoCapZoom(review()), // 22, sauf variante de revue « repères »
       attributionControl: false,
       style: {
         version: 8,
-        sources: { ortho: { type: 'raster', tiles: [ORTHO_TILES], tileSize: 256, maxzoom: ORTHO_MAXZOOM, attribution: IGN_ATTRIBUTION } },
-        layers: [{ id: 'ortho', type: 'raster', source: 'ortho' }],
+        sources: { ortho: { type: 'raster', tiles: [ORTHO_TILES], tileSize: TILE_SIZE, maxzoom: ORTHO_MAXZOOM, attribution: IGN_ATTRIBUTION } },
+        layers: [{ id: 'ortho', type: 'raster', source: 'ortho', paint: orthoPaint(review().ortho) }],
       },
     })
     m.addControl(new maplibregl.AttributionControl({ compact: true }))
