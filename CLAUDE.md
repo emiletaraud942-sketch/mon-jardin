@@ -18,13 +18,14 @@ PWA française pour cartographier son jardin en 3D (données IGN), placer ses pl
 - **PWA** : service worker en mode `prompt` (vite.config.ts) : la nouvelle version attend et l'interface propose « Recharger » (`virtual:pwa-register/react`). Chunk `three` hors précache (mis en cache à la première ouverture de la 3D) ; `maplibre` reste précaché (la carte doit s'ouvrir hors ligne). Jamais de cache pour `/api/*`, `/ext/meteo*` ni le géocodage. `public/push-sw.js` (alertes de messages de l'entraide : gestionnaires `push` et `notificationclick`) est chargé par `workbox.importScripts`, hors précache. Icônes PNG générées depuis `public/icon.svg`.
 - **Typage** : `npm run typecheck` vérifie `src/` (`tsconfig.json`) puis `api/` et `vite.config.ts` (`tsconfig.node.json`).
 - **Règles du moteur (audit 27 oct.)** : une annuelle (`vivace: false`) qui a fini sa saison (fin de la fenêtre de récolte qui suit sa plantation, + 30 jours ; sans récolte : 1 an) ne génère plus aucune tâche (`annualSeasonOver`, `src/engine/tasks.ts`). Art. 671 : usages et règlements locaux d'abord, 2 m / 0,5 m à défaut, exception des espaliers, art. 672 (`legalDistance`). `Garden.minAbsC` (froid le plus fort observé sur 5 ans, posé à la création et à « Actualiser ») prime sur l'estimation par `lastFrostDoy` pour la rusticité ; champ optionnel, sans changement de `STATE_VERSION`.
+- **Fiches espèces** : 146 fiches d'origine + 16 ajouts (`ajouts.ts`). Noms usuels de recherche dans `alias.ts` (la recherche passe par `matchesSpecies`, accents et « œ » ignorés), risques (toxique, envahissante, épineuse, allergène, irritante) dans `avertissements.ts` (champs optionnels `alias` et `avertissements` de `Species`, fusionnés dans `index.ts`). Test : la fenêtre de récolte de la fiche = celle des règles de récolte ; prunier et mirabellier se taillent en été.
 - **Repère** : coordonnées locales en mètres, x = est, y = nord, origine = centre du jardin (`src/lib/geo.ts`). En Three.js, Z = -nord.
 - **Contrat de données** : `src/types/index.ts`. Ne change pas le format stocké sans migration.
 
 ## Qui possède quoi (équipe d'agents dans `.claude/agents/`)
 | Domaine | Fichiers | Agent |
 | --- | --- | --- |
-| Fiches espèces (146) | `src/data/species/*` | agronome-permaculture |
+| Fiches espèces (162) | `src/data/species/*` | agronome-permaculture |
 | IGN, météo, géo | `src/lib/{ign,weather,geo,terrain}.ts` | dev-cartographie-ign |
 | Scène 3D | `src/features/garden3d/*` | dev-3d |
 | Règles métier | `src/engine/*` | dev-moteur-regles |

@@ -3,6 +3,7 @@ import { Icon } from '../../components/Icon'
 import { InstallButton } from '../../components/InstallButton'
 import { Segmented } from '../../components/Segmented'
 import { SpeciesPicker } from '../../components/SpeciesPicker'
+import { SPECIES } from '../../data/species'
 import { orthoTextureUrl, type GeocodeResult } from '../../lib/ign'
 import { frNumber } from '../../lib/format'
 import { UNKNOWN_SPECIES_ID } from '../../lib/customName'
@@ -246,7 +247,7 @@ function PlantesStep({ garden, next, skip }: StepProps) {
             <Icon name="list" size={30} />
             <span>
               <strong>Choisir dans la liste</strong>
-              <span className="muted small">146 plantes, avec une fiche pour chacune.</span>
+              <span className="muted small">{SPECIES.length} plantes, avec une fiche pour chacune.</span>
             </span>
             <Icon name="forward" size={20} />
           </button>

@@ -280,7 +280,7 @@ describe('plantStateAt', () => {
     }
   })
 
-  it('aucun NaN et valeurs bornées sur les 146 fiches × dates et statuts', () => {
+  it('aucun NaN et valeurs bornées sur toutes les fiches × dates et statuts', () => {
     const dates = ['2026-01-01', '2026-02-28', '2028-02-29', '2026-04-15', '2026-06-21', '2026-09-30', '2026-11-15', '2026-12-31']
     const plantings = ['2026-03-01', '2018-05-10', '2030-01-01']
     expect(SPECIES.length).toBeGreaterThan(100)

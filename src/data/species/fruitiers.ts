@@ -266,9 +266,9 @@ export const FRUITIERS: Species[] = [
       plantationRacinesNues,
       {
         type: 'taille',
-        months: [9, 10],
-        condition: 'apres-recolte',
-        howTo: "Après la récolte, par temps sec : éclaircir le centre, supprimer bois mort et branches mal placées, raccourcir les rameaux trop longs. Éviter la taille d'hiver qui favorise le plomb parasite et la gommose ; mastiquer les grosses plaies.",
+        months: [8, 9],
+        condition: 'temps-sec',
+        howTo: "Taille d'été, juste après avoir cueilli vos fruits et par temps sec : éclaircir le centre, supprimer bois mort et branches mal placées, raccourcir les rameaux trop longs. Pas de taille d'automne ni d'hiver, qui favorise le plomb parasite et la gommose ; mastiquer les grosses plaies.",
         tool: 'sécateur',
       },
       {
@@ -328,9 +328,9 @@ export const FRUITIERS: Species[] = [
       plantationRacinesNues,
       {
         type: 'taille',
-        months: [9, 10],
-        condition: 'apres-recolte',
-        howTo: "Taille légère après la récolte, par temps sec : aérer le centre et supprimer bois mort et rameaux qui se croisent. Pas de taille d'hiver (plomb parasite).",
+        months: [8, 9],
+        condition: 'temps-sec',
+        howTo: "Taille d'été légère, juste après avoir cueilli vos fruits et par temps sec : aérer le centre et supprimer bois mort et rameaux qui se croisent. Pas de taille d'automne ni d'hiver (plomb parasite).",
         tool: 'sécateur',
       },
       {

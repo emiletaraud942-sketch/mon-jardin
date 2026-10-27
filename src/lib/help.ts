@@ -1,4 +1,5 @@
 import type { Tab } from './ui'
+import { SPECIES } from '../data/species'
 
 // Textes de l'aide contextuelle (bouton « ? »). Données pures : un contenu par écran.
 
@@ -110,7 +111,7 @@ export const RAYONS_HELP = {
   rayons: [
     { name: 'Mon jardin', text: 'La carte, vos plantes et la vue 3D. Touchez Carte, Plantes ou Vue 3D, en haut.' },
     { name: 'À faire', text: 'Quoi faire cette semaine : tailler, désherber, arroser, récolter. Avec la météo et le calendrier.' },
-    { name: 'Où planter ?', text: 'Où planter chaque plante, et le catalogue des 146 plantes.' },
+    { name: 'Où planter ?', text: `Où planter chaque plante, et le catalogue des ${SPECIES.length} plantes.` },
     { name: 'Voisins', text: 'Dons, questions et rendez-vous près de chez vous. Facultatif.' },
   ],
   optional: 'Placer vos plantes est facultatif : vous pouvez aller directement à « À faire ».',

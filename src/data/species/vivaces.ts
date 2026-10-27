@@ -339,7 +339,7 @@ export const VIVACES: Species[] = [
     compagnons: ['celeri-branche', 'thym', 'sauge', 'romarin', 'capucine'],
     antagonistes: ['fraisier'],
     plantation: [3, 4, 9, 10],
-    recolte: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    recolte: [4, 5, 6, 7, 8, 9, 10, 11],
     taches: [
       {
         type: 'plantation',

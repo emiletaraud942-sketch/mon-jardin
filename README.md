@@ -6,9 +6,9 @@ Votre jardin en 3D à partir de la photo aérienne et du cadastre de l'IGN, avec
 - **Carte** : photo aérienne IGN, cadastre, parcelle et bâtiments voisins ; placement des plantes par glisser-déposer (≈ 20 cm de précision) ; envergure actuelle ou adulte.
 - **3D** : relief RGE ALTI, orthophoto au sol, bâtiments extrudés (BD TOPO), arbres qui grandissent (« dans N ans »), ombres réelles selon la date et l'heure, carte d'ensoleillement.
 - **Plantes** : inventaire avec photos, état, notes ; identification par photo (Pl@ntNet).
-- **Entretien** : tâches de la semaine (taille, désherbage, arrosage, protection gel, récolte…) calculées à partir de 146 fiches espèces et de la météo (gel, pluie, bilan hydrique) ; calendrier de l'année ; rappel quotidien (notification locale, voir « Limites »).
+- **Entretien** : tâches de la semaine (taille, désherbage, arrosage, protection gel, récolte…) calculées à partir de 162 fiches espèces et de la météo (gel, pluie, bilan hydrique) ; calendrier de l'année ; rappel quotidien (notification locale, voir « Limites »).
 - **Planter** : score « quelle plante pour cet endroit » (ensoleillement simulé, pente, sol, bons et mauvais voisins, distance légale art. 671 du Code civil) ; que semer ce mois-ci selon les gelées locales.
-- **Catalogue** : 146 espèces (légumes, aromatiques, fleurs, engrais verts, vivaces, petits fruits, fruitiers, arbres et haies) avec fiche d'entretien.
+- **Catalogue** : 162 espèces (légumes, aromatiques, fleurs, engrais verts, vivaces, petits fruits, fruitiers, arbres et haies) avec fiche d'entretien.
 - **Réglages** : plusieurs jardins, sol, export/import (avec validation du fichier), synchronisation Supabase optionnelle.
 
 ## Démarrer

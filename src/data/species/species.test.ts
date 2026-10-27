@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { TaskRule } from '../../types'
-import { SPECIES, SPECIES_BY_ID } from './index'
+import { SPECIES, SPECIES_BY_ID, matchesSpecies } from './index'
+import { ALIAS } from './alias'
+import { AVERTISSEMENTS } from './avertissements'
+import { AJOUTS } from './ajouts'
 
 describe('base espèces', () => {
-  it('contient au moins 140 espèces aux ids uniques', () => {
-    expect(SPECIES.length).toBeGreaterThanOrEqual(140)
+  it('contient au moins 160 espèces aux ids uniques', () => {
+    expect(SPECIES.length).toBeGreaterThanOrEqual(160)
     expect(new Set(SPECIES.map((s) => s.id)).size).toBe(SPECIES.length)
   })
 
@@ -111,5 +114,108 @@ describe('cohérence des tâches', () => {
     const mauvais: string[] = []
     for (const s of SPECIES) for (const t of s.taches) if (t.maxAgeYears !== undefined && t.minAgeYears !== undefined && t.maxAgeYears <= t.minAgeYears) mauvais.push(s.id)
     expect(mauvais).toEqual([])
+  })
+})
+
+describe('calendriers cohérents (audit du 27 octobre 2026)', () => {
+  it('la fenêtre de récolte de la fiche est celle des règles de récolte', () => {
+    const ecarts: string[] = []
+    for (const s of SPECIES) {
+      const regles = [...new Set(s.taches.filter((t) => t.type === 'recolte').flatMap((t) => t.months))].sort((a, b) => a - b)
+      const fiche = [...new Set(s.recolte ?? [])].sort((a, b) => a - b)
+      if (regles.length && fiche.length && regles.join() !== fiche.join()) ecarts.push(`${s.id} : fiche [${fiche}] règles [${regles}]`)
+    }
+    expect(ecarts).toEqual([])
+  })
+
+  it('les mois de semis et de plantation des règles sont dans la fiche', () => {
+    const hors: string[] = []
+    for (const s of SPECIES) {
+      const semis = [...(s.semisAbri ?? []), ...(s.semisPleineTerre ?? [])]
+      for (const t of s.taches) {
+        if (t.type === 'semis' && semis.length && t.months.some((m) => !semis.includes(m))) hors.push(`${s.id} : semis`)
+        if (t.type === 'plantation' && s.plantation?.length && t.months.some((m) => !s.plantation!.includes(m))) hors.push(`${s.id} : plantation`)
+      }
+    }
+    expect(hors).toEqual([])
+  })
+
+  it('prunier et mirabellier se taillent en été, jamais en automne ni en hiver (plomb parasite, gommose)', () => {
+    for (const id of ['prunier', 'mirabellier']) {
+      for (const t of SPECIES_BY_ID[id].taches.filter((r) => r.type === 'taille')) expect(t.months.every((m) => m >= 5 && m <= 9), `${id} [${t.months}]`).toBe(true)
+    }
+  })
+
+  it('une haie ne se taille jamais du 15 mars au 31 juillet (sauf avant le 15 mars : février)', () => {
+    const fautes: string[] = []
+    for (const s of AJOUTS.filter((x) => x.categorie === 'haie')) {
+      for (const t of s.taches.filter((r) => r.type === 'taille')) if (t.months.some((m) => m >= 3 && m <= 7)) fautes.push(`${s.id} [${t.months}]`)
+    }
+    expect(fautes).toEqual([])
+  })
+})
+
+describe('ajouts', () => {
+  it('apporte au moins 15 espèces nouvelles, dont rosier, hortensia, thuya, laurier-palme et chou rouge', () => {
+    expect(AJOUTS.length).toBeGreaterThanOrEqual(15)
+    for (const id of ['rosier', 'hortensia', 'thuya', 'laurier-palme', 'chou-rouge']) expect(SPECIES_BY_ID[id], id).toBeDefined()
+  })
+  it('chaque ajout a une fiche d’entretien et des couleurs valides', () => {
+    for (const s of AJOUTS) {
+      expect(s.entretien.length, s.id).toBeGreaterThan(80)
+      if (s.couleurAccent) expect(/^#[0-9a-f]{6}$/i.test(s.couleurAccent), s.id).toBe(true)
+    }
+  })
+})
+
+describe('noms usuels (alias)', () => {
+  it('ne vise que des espèces existantes, sans alias vide', () => {
+    for (const [id, noms] of Object.entries(ALIAS)) {
+      expect(SPECIES_BY_ID[id], id).toBeDefined()
+      for (const n of noms) expect(n.trim().length, id).toBeGreaterThan(1)
+    }
+  })
+  it('la recherche trouve « pomme », « fraise », « cerise », « oeillet », « salade », « mure »', () => {
+    const trouve = (q: string) => SPECIES.filter((s) => matchesSpecies(s, q)).map((s) => s.id)
+    expect(trouve('pomme')).toContain('pommier')
+    expect(trouve('Fraise')).toContain('fraisier')
+    expect(trouve('cerise')).toContain('cerisier')
+    expect(trouve('oeillet')).toContain('oeillet-d-inde')
+    expect(trouve('œillet')).toContain('oeillet-d-inde')
+    expect(trouve('salade')).toEqual(expect.arrayContaining(['laitue', 'chicoree', 'mache', 'roquette']))
+    expect(trouve('mûre')).toEqual(expect.arrayContaining(['murier-noir', 'ronce-sans-epines']))
+    expect(trouve('laurier')).toEqual(expect.arrayContaining(['laurier-sauce', 'laurier-palme']))
+    expect(trouve('')).toHaveLength(SPECIES.length)
+    expect(trouve('zzzz')).toEqual([])
+  })
+  it('les alias sont portés par les espèces du catalogue', () => {
+    expect(SPECIES_BY_ID.pommier.alias).toContain('pomme')
+    expect(SPECIES_BY_ID.tomate.alias).toBeDefined()
+  })
+})
+
+describe('avertissements (toxique, envahissante…)', () => {
+  const TYPES = ['toxique', 'envahissante', 'epineuse', 'allergene', 'irritante']
+  it('ne vise que des espèces existantes, avec un type connu et un texte court', () => {
+    for (const [id, liste] of Object.entries(AVERTISSEMENTS)) {
+      expect(SPECIES_BY_ID[id], id).toBeDefined()
+      expect(liste.length, id).toBeGreaterThan(0)
+      for (const a of liste) {
+        expect(TYPES, id).toContain(a.type)
+        expect(a.texte.length, id).toBeGreaterThan(15)
+        expect(a.texte.length, id).toBeLessThanOrEqual(240)
+      }
+    }
+  })
+  it('les plantes à risque connues sont signalées', () => {
+    const a = (id: string) => (SPECIES_BY_ID[id].avertissements ?? []).map((x) => x.type)
+    for (const id of ['rhubarbe', 'tomate', 'pomme-de-terre', 'ail-des-ours', 'sureau-noir', 'laurier-palme', 'thuya', 'hortensia', 'hemerocalle', 'robinier']) expect(a(id), id).toContain('toxique')
+    for (const id of ['menthe', 'topinambour', 'robinier', 'laurier-palme', 'ortie']) expect(a(id), id).toContain('envahissante')
+    expect(a('rosier')).toContain('epineuse')
+    expect(a('bouleau')).toContain('allergene')
+    expect(a('piment')).toContain('irritante')
+  })
+  it('les fiches sans risque connu n’ont pas de champ', () => {
+    expect(SPECIES_BY_ID.laitue.avertissements).toBeUndefined()
   })
 })

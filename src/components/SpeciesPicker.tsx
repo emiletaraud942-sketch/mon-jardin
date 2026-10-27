@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { SPECIES } from '../data/species'
+import { SPECIES, matchesSpecies } from '../data/species'
 import { CATEGORY_LABEL } from '../data/labels'
 import type { Category, Species } from '../types'
 import { cleanCustomName } from '../lib/customName'
@@ -11,10 +11,7 @@ export function normalize(s: string) {
 }
 
 export function searchSpecies(q: string, category?: Category | ''): Species[] {
-  const n = normalize(q.trim())
-  return SPECIES.filter(
-    (s) => (!category || s.categorie === category) && (!n || normalize(s.nomCommun).includes(n) || normalize(s.nomLatin).includes(n)),
-  )
+  return SPECIES.filter((s) => (!category || s.categorie === category) && matchesSpecies(s, q))
 }
 
 /**

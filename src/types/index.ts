@@ -67,9 +67,22 @@ export interface TaskRule {
   tool?: string
 }
 
+/** Risque à connaître avant de planter : toxicité, plante qui s'étend, épines, allergènes, irritation de la peau. */
+export type RisqueType = 'toxique' | 'envahissante' | 'epineuse' | 'allergene' | 'irritante'
+
+export interface Avertissement {
+  type: RisqueType
+  /** Une ou deux phrases, en français simple : ce qui est à risque et le bon réflexe. */
+  texte: string
+}
+
 export interface Species {
   id: string // slug, ex. "pommier"
   nomCommun: string
+  /** Autres noms que l'on tape pour chercher la plante : « pomme » pour le pommier, « fraise » pour le fraisier. */
+  alias?: string[]
+  /** Risques connus (toxique, envahissante…). Absent = rien à signaler. */
+  avertissements?: Avertissement[]
   nomLatin: string
   famille: string
   categorie: Category

@@ -241,7 +241,7 @@ export const AROMATIQUES: Species[] = [
     semisAbri: [2, 3],
     semisPleineTerre: [4, 5],
     plantation: [3, 4, 9, 10],
-    recolte: [3, 4, 5, 6, 7, 8, 9, 10],
+    recolte: [4, 5, 6, 7, 8, 9],
     taches: [
       { type: 'plantation', months: [3, 4, 9, 10], howTo: "Plantez des touffes divisées tous les 25 cm en bordure de planche, dans un sol enrichi de compost.", tool: 'transplantoir' },
       { type: 'recolte', months: [4, 5, 6, 7, 8, 9], frequencyDays: 14, howTo: "Coupez les feuilles aux ciseaux à 3 cm du sol, sans tout prélever d'un coup. Les fleurs mauves se mangent en salade." },
@@ -277,7 +277,7 @@ export const AROMATIQUES: Species[] = [
     antagonistes: [],
     semisAbri: [3, 4],
     plantation: [3, 4, 5, 9, 10],
-    recolte: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    recolte: [5, 6, 7, 8],
     taches: [
       { type: 'plantation', months: [3, 4, 5, 9, 10], howTo: "Plantez en sol drainé, voire caillouteux, en plein soleil. Ajoutez du gravier au fond du trou si la terre est lourde : le thym craint l'humidité stagnante.", tool: 'transplantoir' },
       { type: 'taille', months: [6, 7], condition: 'temps-sec', howTo: "Après la floraison, rabattez d'un tiers les tiges au sécateur ou aux cisailles, sans couper dans le bois nu.", tool: 'cisaille' },
@@ -312,7 +312,7 @@ export const AROMATIQUES: Species[] = [
     compagnons: ['carotte', 'chou-pomme', 'sauge', 'thym', 'lavande', 'brocoli', 'haricot-nain'],
     antagonistes: [],
     plantation: [3, 4, 5, 9, 10],
-    recolte: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    recolte: [5, 6, 7, 8],
     taches: [
       { type: 'plantation', months: [3, 4, 5, 9, 10], howTo: "Plantez au soleil dans un sol très drainant, en butte ou contre un mur chaud en région froide. Arrosez la première année seulement.", tool: 'bêche' },
       { type: 'taille', months: [4, 5, 6], condition: 'temps-sec', howTo: "Après la floraison de printemps, raccourcissez légèrement les rameaux pour garder un port dense. Ne coupez jamais dans le vieux bois, qui ne repart pas.", tool: 'sécateur' },
@@ -348,7 +348,7 @@ export const AROMATIQUES: Species[] = [
     antagonistes: ['concombre', 'cornichon'],
     semisAbri: [3, 4],
     plantation: [3, 4, 5, 9, 10],
-    recolte: [4, 5, 6, 7, 8, 9, 10, 11],
+    recolte: [5, 6, 7, 8, 9],
     taches: [
       { type: 'plantation', months: [3, 4, 5, 9, 10], howTo: "Plantez au soleil dans un sol bien drainé, sans apport d'engrais. Espacez de 50 cm.", tool: 'transplantoir' },
       { type: 'taille', months: [3, 4], condition: 'hors-gel', howTo: "Au printemps, rabattez de moitié les tiges de l'année précédente, au-dessus de jeunes pousses, pour éviter que la souche ne se dégarnisse.", tool: 'sécateur' },
@@ -383,7 +383,7 @@ export const AROMATIQUES: Species[] = [
     compagnons: ['chou-pomme', 'tomate', 'chou-fleur', 'brocoli', 'pois'],
     antagonistes: ['persil'],
     plantation: [3, 4, 5, 9, 10],
-    recolte: [4, 5, 6, 7, 8, 9, 10],
+    recolte: [5, 6, 7, 8, 9],
     taches: [
       { type: 'plantation', months: [3, 4, 5, 9, 10], howTo: "Plantez dans un grand pot sans fond enterré ou dans une bordure isolée : ses rhizomes envahissent tout. Sol frais et riche, à mi-ombre.", tool: 'transplantoir' },
       { type: 'recolte', months: [5, 6, 7, 8, 9], frequencyDays: 14, howTo: "Coupez les tiges de 15 cm au-dessus d'une paire de feuilles, avant la floraison et le matin : la touffe repart plus dense. Utilisez-les fraîches en infusion ou en sauce, ou séchez-les à l'ombre.", tool: 'ciseaux' },
@@ -524,7 +524,7 @@ export const AROMATIQUES: Species[] = [
     antagonistes: [],
     semisAbri: [3, 4],
     plantation: [3, 4, 9, 10],
-    recolte: [4, 5, 6, 7, 8, 9, 10],
+    recolte: [5, 6, 7, 8, 9],
     taches: [
       { type: 'plantation', months: [3, 4, 9, 10], howTo: "Plantez un seul pied, il suffit pour une famille, dans un coin frais et riche du jardin : il atteint près de 2 m.", tool: 'bêche' },
       { type: 'recolte', months: [5, 6, 7, 8, 9], frequencyDays: 30, howTo: "Coupez les jeunes feuilles au goût de céleri au fur et à mesure ; utilisez-les avec modération, elles sont puissantes." },
@@ -559,7 +559,7 @@ export const AROMATIQUES: Species[] = [
     compagnons: ['romarin', 'thym', 'figuier', 'olivier', 'lavande'],
     antagonistes: [],
     plantation: [3, 4, 9, 10],
-    recolte: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    recolte: [8, 9],
     taches: [
       { type: 'plantation', months: [3, 4, 9, 10], howTo: "Plantez dans un sol drainé, à l'abri des vents froids. Arrosez régulièrement les deux premiers étés.", tool: 'bêche' },
       { type: 'taille', months: [8, 9], condition: 'temps-sec', howTo: "Taillez au sécateur (pas au taille-haie qui déchire les feuilles) pour contenir la forme, dès août et avant les premiers froids. Ne taillez pas du 15 mars au 31 juillet : période de nidification.", tool: 'sécateur' },
@@ -594,7 +594,7 @@ export const AROMATIQUES: Species[] = [
     compagnons: ['lavande', 'romarin', 'thym', 'tomate', 'fraisier'],
     antagonistes: [],
     plantation: [5, 6],
-    recolte: [6, 7, 8, 9, 10],
+    recolte: [7, 8, 9],
     taches: [
       { type: 'plantation', months: [5, 6], condition: 'hors-gel', howTo: "Plantez au printemps, en sol drainé, contre un mur exposé au sud en région fraîche.", tool: 'bêche' },
       { type: 'taille', months: [3, 4], condition: 'hors-gel', howTo: "Rabattez toutes les tiges à 20-30 cm à la sortie de l'hiver, une fois les fortes gelées passées : la plante repart sur le bois de l'année.", tool: 'sécateur' },
