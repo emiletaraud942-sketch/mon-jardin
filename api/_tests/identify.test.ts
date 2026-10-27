@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { VercelRequest, VercelResponse } from '@vercel/node'
+import type { VercelRequest, VercelResponse } from '../_vercel-types'
 import handler, { clientIp, createRateLimiter, decodeBase64Image, detectImageMime, imageSize, interpretPlantnet, hasBrowserOrigin, isAllowedOrigin, MAX_BODY_BYTES, rateKey, scrubError } from '../identify'
 
 /** JPEG minimal avec un segment SOF0 (dimensions déclarées). */

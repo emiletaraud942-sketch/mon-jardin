@@ -95,6 +95,7 @@ Projet > **Settings** :
 - [ ] 🔴 **Firewall** (Security > Firewall) : une règle de **limitation de débit** sur `/api/identify` (ex. 10 par minute et par adresse) et une sur `/ext/*`. *À quoi ça sert* : un script pourrait sinon épuiser les 500 identifications gratuites du jour de Pl@ntNet, ou saturer les quotas de l'IGN et d'Open-Meteo pour tout le monde. Le limiteur du code n'est qu'un garde-fou par instance.
 - [ ] 🔴 **Deployment Protection** : activer pour les prévisualisations ; la production reste publique.
 - [ ] 🔴 **Votre compte Vercel** : double authentification.
+- [ ] 🔴 **Après ce déploiement** (Vite 7, vitest 5, `@vercel/node` retiré, TypeScript 5.9) : dans Vercel > Deployments, ouvrir le dernier déploiement de `main` : le build doit être « Ready » et la fonction `api/identify` apparaître dans « Functions » (sans erreur de compilation dans les journaux de build). C'est la seule chose que je n'ai pas pu essayer ; si la fonction manque ou échoue, dites-le-moi.
 - [ ] 🟠 **Après le déploiement**, tester l'identification (`docs/DEPLOIEMENT.md` §5, point 3) : sans en-tête `Origin`, la réponse doit être **403** (voulu) ; avec `Origin`, **503** tant que la clé manque, **400** sans photo valide.
 - [ ] 🟢 Domaine personnalisé : Settings > Domains (HTTPS automatique).
 - [ ] 🟢 Quand les deux projets Supabase existent : remplacer `https://*.supabase.co` par les deux adresses exactes dans `connect-src` de `vercel.json` (et adapter `src/lib/security/vercel-config.test.ts`) : demandez-le-moi.
@@ -144,7 +145,6 @@ Projet > **Settings** :
 
 - [ ] **Garder un extrait des contenus signalés ?** Aujourd'hui, le journal de modération ne garde « jamais le contenu signalé ». En garder un extrait aiderait à traiter un abus après suppression, mais ça change la promesse de confidentialité et les textes légaux. Je n'y ai pas touché.
 - [ ] **Automatiser l'effacement des photos de l'entraide** (fonction Edge + clé `service_role`) ou le faire à la main chaque semaine (§3).
-- [ ] **Alertes `npm audit` hors production** (outils de développement) : ne pas lancer `vite dev` sur une machine exposée au réseau.
 
 ---
 

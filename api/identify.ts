@@ -4,7 +4,7 @@
 // Sécurité : voir docs/SECURITE.md (menace → mesure → fichier). Ce fichier est volontairement AUTONOME : une fonction Vercel
 // ne doit pas importer src/ (modules ES sans extension). Les fonctions d'image sont donc dupliquées de src/lib/security/image.ts
 // (un test compare les deux).
-import type { VercelRequest, VercelResponse } from '@vercel/node'
+import type { VercelRequest, VercelResponse } from './_vercel-types'
 
 export const config = { maxDuration: 30 }
 

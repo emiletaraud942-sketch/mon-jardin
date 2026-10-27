@@ -187,7 +187,7 @@ Périmètre : tout le dépôt sur la branche courante (front, `api/`, `vercel.js
 | O7 | Faible | `connect-src https://*.supabase.co` : n'importe quel projet Supabase | Une fois les deux projets créés, remplacer par leurs deux adresses exactes dans `vercel.json` (et adapter `vercel-config.test.ts`) |
 | O8 | ~~Faible~~ **Sans objet** (27/10) | `camera=(self)` et `geolocation=(self)` sont désormais utilisées (photos du jardin, scan) : la politique est juste. Ancien constat : « ni `getUserMedia` ni la géolocalisation ne sont utilisées » | Tester `camera=()` sur iOS et Android (le sélecteur de fichiers ne dépend pas de cette politique selon les spécifications, non vérifié ici) |
 | O9 | Faible | CI : actions épinglées par étiquette (`@v4`) et non par empreinte ; l'audit des dépendances ne bloque pas | Épingler par SHA (Dependabot suit) |
-| O10 | Faible | 18 alertes `npm audit` hors production : `@vercel/node` (tar, undici, path-to-regexp… utilisés seulement pour les types), `vite` 5 / `esbuild` (serveur de développement), `vitest`, `vite-plugin-pwa`. `three-stdlib` est une dépendance directe jamais importée | Remplacer `@vercel/node` par des types locaux supprimerait 8 alertes ; montée `vite`/`vitest` à planifier. Ne pas lancer `vite dev` sur une machine exposée au réseau |
+| O10 | ~~Faible~~ **Corrigé (28/10)** | 18 alertes `npm audit` hors production (outillage) | `@vercel/node` retiré (il ne servait que pour deux types, désormais dans `api/_vercel-types.ts`), vite 7, vitest 5, vite-plugin-pwa 2, `npm audit fix` : **`npm audit` complet : 0 alerte** |
 | O11 | Info | Historique git : un commit signé `emiletaraud942-sketch <emiletaraud942@gmail.com>` ; `.claude/agents/devops-vercel.md` cite le nom d'équipe Vercel | Si le dépôt devient public : e-mail `noreply` GitHub pour les prochains commits (réécrire l'historique n'est pas nécessaire si l'e-mail est déjà public) |
 | O12 | Faible | Pseudos « confusables » (a latin / a cyrillique) acceptés ; unicité sans casse seulement | Surveiller les signalements d'usurpation ; norme UTS 39 si besoin |
 | O13 | Info | Par conception : n'importe quel membre peut écrire à l'auteur d'une annonce visible (10 conversations/jour) ; trois comptes de plus de 24 h masquent une annonce ; un quartier est déclaratif | Documenté dans `ENTRAIDE.md` ; modération par l'éditeur |
@@ -352,4 +352,20 @@ Changements nécessaires (cassants) : plus d'export par défaut (`import * as ma
 - Ouverture de la carte : 1,1 à 1,2 s avec la 6.16.0 contre 1,1 à 1,4 s avec la 4.7.1 ; mémoire JavaScript 14 à 15 Mo contre 12 à 14 Mo ; profil du processeur pendant un zoom presque identique (le JavaScript est au repos plus de 70 % du temps dans les deux cas).
 - Vitesse de dessin pendant une animation de zoom de 1,5 s, 40 plantes : 29 à 41 rendus par seconde (6.16.0) contre 30 à 38 (4.7.1) ; au maximum 45 par seconde dans les deux versions. **Pas de ralentissement mesurable.** Une première mesure (images comptées pendant des clics de zoom espacés) avait fait croire à un écart de 17 contre 33 ms : c'était un artefact, elle mélangeait les temps de repos.
 - **Vrai changement : MapLibre 6 exige WebGL 2** (la 4.x se contentait de WebGL 1). Sur un appareil sans WebGL 2 (iPhone sous iOS 14 ou moins, très vieux Android, GPU bloqué), la carte faisait planter l'écran (« Cet écran ne s'affiche pas »). Corrigé : `webgl2Supported()` (`src/lib/webgl.ts`) détecte le cas avant de créer la carte et `MapUnsupported` affiche « La carte ne peut pas s'afficher sur cet appareil… Vos jardins et vos plantes sont intacts » à la place de `MapView`, `SpotPicker` et `ScanMap`. Vérifié en forçant le refus de WebGL 2 dans Chromium : l'ancienne version affichait la carte, la nouvelle affiche le message, sans erreur de page. Les écrans qui reposent sur la carte (placement, mesures, scan) y sont inutilisables sur un tel appareil ; la liste des plantes, les tâches, le catalogue et les sauvegardes restent disponibles.
+
+## 19. Mises à jour des dépendances (28 octobre 2026)
+
+Les neuf demandes Dependabot ouvertes ont été traitées une par une (typecheck, 1404 tests, build, puis essai dans Chromium). **`npm audit` : 0 alerte, production comprise** (il y en avait 23 au début de l'audit).
+
+| Mise à jour | Décision |
+| --- | --- |
+| `maplibre-gl` 4.7.1 → 6.16.0 | Faite (voir §18) |
+| `vite` 5 → **7.3**, `@vitejs/plugin-react` 4 → 5, `vite-plugin-pwa` 0.20 → 2, `vitest` 2 → 5 | Faites ensemble : vitest 5 exige Vite ≥ 6.4. `vite.config.ts` importe `defineConfig` de `vitest/config`. Vérifié dans Chromium : service worker actif (32 fichiers précachés), carte et catalogue **hors ligne**, 3D, carte, placement |
+| `three` 0.169 → 0.186.1, `@types/three` | Faite ; 3D vérifiée dans Chromium (parcelle, plantes dont les ajouts, ciel) |
+| `idb-keyval` 6.3, `serialize-javascript` 7.1.4, actions `checkout` et `setup-node` en v7 | Faites |
+| `@vercel/node` | **Retiré** : seuls deux types en venaient ; ses dépendances d'outillage (tar, undici, busboy, esbuild…) faisaient 17 des 23 alertes. Types minimaux dans `api/_vercel-types.ts` (type seulement : rien n'est chargé à l'exécution) |
+| `typescript` 5.6 → **5.9** | **Pas la 7** : la 7 retire l'API JavaScript (`transpileModule`, `sys`, `readConfigFile`…) que `@vercel/node` appelle côté Vercel pour compiler `api/identify.ts` ; le déploiement de l'identification risquerait de casser, et Vercel ne peut pas être essayé d'ici. Le typage des octets (`new Uint8Array(…)`) est compatible 5 et 7. À reprendre quand Vercel documentera la 7 |
+| `@react-three/fiber` 8 → 9 | **Pas maintenant** : exige React 19 (et `drei` 10) ; migration à part |
+
+**Non vérifié** : le déploiement réel sur Vercel avec ces versions (build, fonction `api/identify`), les téléphones, Safari et Firefox.
 
