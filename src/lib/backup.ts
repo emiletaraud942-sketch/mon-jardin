@@ -25,9 +25,9 @@ function write(key: string, value: string) {
   }
 }
 
-/** Télécharge un texte JSON. Le lien est ajouté au DOM (Firefox, Safari) et l'URL révoquée après 10 s. */
-export function downloadJson(text: string, filename: string) {
-  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }))
+/** Télécharge un contenu. Le lien est ajouté au DOM (Firefox, Safari) et l'URL révoquée après 10 s. */
+export function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
   a.download = filename
@@ -38,11 +38,21 @@ export function downloadJson(text: string, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 10_000)
 }
 
+/** Télécharge un texte JSON. */
+export function downloadJson(text: string, filename: string) {
+  downloadBlob(new Blob([text], { type: 'application/json' }), filename)
+}
+
 /** Exporte l'état courant. `name` : préfixe du fichier (par défaut « permajardin »). */
 export function exportCurrentState(name = 'permajardin', remember = true) {
   const { gardens, plants, tasksDone } = getState()
   downloadJson(JSON.stringify(serializeState({ gardens, plants, tasksDone }), null, 2), `${name}-${isoDate()}.json`)
   if (remember) write(LAST_EXPORT_KEY, String(Date.now()))
+}
+
+/** Note qu'une sauvegarde vient d'être faite (rappel mensuel). */
+export function markExported(now = Date.now()) {
+  write(LAST_EXPORT_KEY, String(now))
 }
 
 export function lastExportAt(): number | undefined {

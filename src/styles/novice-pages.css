@@ -297,3 +297,21 @@
     scroll-snap-align: start;
   }
 }
+
+/* Risques d'une plante (toxique, envahissante…) : pastilles et bloc « À savoir ». Couleurs via .badge (variables du thème). */
+.risk-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.risk-notes h3 {
+  margin-bottom: 6px;
+}
+.risk-notes li .badge {
+  margin-right: 6px;
+}
+.catalogue-filters {
+  gap: 12px;
+}

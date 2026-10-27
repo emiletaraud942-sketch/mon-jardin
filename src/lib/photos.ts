@@ -11,6 +11,7 @@ const MAX_SIDE = 1280
 const MIN_SIDE = 480
 const QUALITIES = [0.82, 0.7, 0.58, 0.46]
 const MESSAGE_FORMAT = 'Format de photo non pris en charge. Utilisez une photo JPEG ou PNG.'
+export const MESSAGE_FULL = 'L’espace de cet appareil est plein : la photo n’a pas pu être enregistrée. Libérez de la place (supprimez des photos ou des applis), puis réessayez. Vos autres données sont intactes.'
 const MESSAGE_TOO_BIG = 'Cette photo est trop grande pour être traitée sur cet appareil. Utilisez une photo de plus petite taille.'
 
 /**
@@ -83,6 +84,12 @@ export async function compressToTarget(file: Blob, opts: { maxSide?: number; tar
   }
 }
 
+/** Stockage plein : `QuotaExceededError` (ou son code 22 / 1014 sur Firefox), selon les navigateurs. */
+export function isQuotaError(e: unknown): boolean {
+  const err = e as { name?: string; code?: number } | null
+  return !!err && (err.name === 'QuotaExceededError' || err.name === 'NS_ERROR_DOM_QUOTA_REACHED' || err.code === 22 || err.code === 1014)
+}
+
 /**
  * Réduit une photo (par défaut max 1280 px, < 700 ko ; `opts` pour une autre cible) et la stocke dans IndexedDB. Renvoie son id.
  * Vie privée : la photo est redessinée sur un canvas puis ré-encodée en JPEG, ce qui supprime EXIF, GPS, XMP et miniature
@@ -91,7 +98,11 @@ export async function compressToTarget(file: Blob, opts: { maxSide?: number; tar
 export async function savePhoto(file: Blob, opts?: { maxSide?: number; targetBytes?: number; qualities?: number[] }): Promise<string> {
   const blob = await compressToTarget(file, opts)
   const id = PHOTO_PREFIX + uid()
-  await set(id, blob)
+  try {
+    await set(id, blob)
+  } catch (e) {
+    throw isQuotaError(e) ? new Error(MESSAGE_FULL) : e
+  }
   return id
 }
 
@@ -111,4 +122,14 @@ export async function deletePhoto(id: string) {
 /** Ids de toutes les photos stockées (pour le nettoyage des orphelines). */
 export async function listPhotoIds(): Promise<string[]> {
   return (await keys()).filter((k): k is string => isPhotoId(k))
+}
+
+/** Range une photo venue d'une sauvegarde complète (déjà vérifiée : format, dimensions, taille). Identifiant invalide : sans effet. */
+export async function restorePhoto(id: string, blob: Blob): Promise<void> {
+  if (!isPhotoId(id)) return
+  try {
+    await set(id, blob)
+  } catch (e) {
+    throw isQuotaError(e) ? new Error(MESSAGE_FULL) : e
+  }
 }

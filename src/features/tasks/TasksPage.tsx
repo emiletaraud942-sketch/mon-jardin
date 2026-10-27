@@ -11,6 +11,8 @@ import {
 } from "../../lib/store";
 import { enableNotifications, notificationsSupported } from "../../lib/notify";
 import { showToast } from "../../lib/toast";
+import { downloadBlob } from "../../lib/backup";
+import { buildIcs } from "../../lib/ics";
 import { uid } from "../../lib/geo";
 import { setUi } from "../../lib/ui";
 import { MONTH_NAMES } from "../../engine/calendar";
@@ -217,7 +219,20 @@ function YearPlan({ garden }: { garden: Garden }) {
   const plants = useGardenPlants(garden.id);
   const plan = yearPlan(plants, SPECIES_BY_ID);
   const current = new Date().getMonth() + 1;
+  const hasTasks = plan.some((m) => m.tasks.length > 0);
+  function exportAgenda() {
+    const text = buildIcs(plants, SPECIES_BY_ID, { gardenName: garden.name, year: new Date().getFullYear() });
+    downloadBlob(new Blob([text], { type: "text/calendar;charset=utf-8" }), "calendrier-jardin.ics");
+    showToast({ message: "Calendrier enregistré. Ouvrez le fichier pour l’ajouter à votre agenda." });
+  }
   return (
+    <>
+    <div className="row" style={{ margin: "0 0 12px" }}>
+      <button className="btn" onClick={exportAgenda} disabled={!hasTasks}>
+        <Icon name="download" /> Ajouter à mon agenda (.ics)
+      </button>
+      {!hasTasks && <span className="small muted">Placez d’abord une plante.</span>}
+    </div>
     <div className="grid cols-3">
       {plan.map((m) => (
         <div
@@ -250,6 +265,7 @@ function YearPlan({ garden }: { garden: Garden }) {
         </div>
       ))}
     </div>
+    </>
   );
 }
 

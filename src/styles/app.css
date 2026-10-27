@@ -903,7 +903,7 @@ label.field > span {
   font-size: 0.875rem; /* 14 px */
   font-weight: var(--fw-strong);
   background: var(--surface-2);
-  color: var(--muted);
+  color: var(--muted-2); /* --muted ne fait que 4,2:1 sur ce fond sauge ; --muted-2 : 6:1 et plus */
   white-space: nowrap;
 }
 .badge.green {

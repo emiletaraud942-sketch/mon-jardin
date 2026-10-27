@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { SPECIES, matchesSpecies } from '../data/species'
 import { CATEGORY_LABEL } from '../data/labels'
-import type { Category, Species } from '../types'
+import type { Category, Species, Sun } from '../types'
+import { RiskBadges } from './RiskNotes'
 import { cleanCustomName } from '../lib/customName'
 import { Icon } from './Icon'
 import { Modal } from './Modal'
@@ -10,8 +11,29 @@ export function normalize(s: string) {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 }
 
+export interface SpeciesFilters {
+  category?: Category | ''
+  /** Ne garde que les plantes qui acceptent cette exposition. */
+  sun?: Sun | ''
+  /** Ne garde que les plantes comestibles. */
+  edible?: boolean
+  /** Ne garde que les plantes sans risque connu (ni toxique, ni envahissante, ni épineuse…). */
+  safe?: boolean
+}
+
+export function filterSpecies(q: string, f: SpeciesFilters = {}): Species[] {
+  return SPECIES.filter(
+    (s) =>
+      (!f.category || s.categorie === f.category) &&
+      (!f.sun || s.soleil.includes(f.sun)) &&
+      (!f.edible || s.comestible) &&
+      (!f.safe || !s.avertissements?.length) &&
+      matchesSpecies(s, q),
+  )
+}
+
 export function searchSpecies(q: string, category?: Category | ''): Species[] {
-  return SPECIES.filter((s) => (!category || s.categorie === category) && matchesSpecies(s, q))
+  return filterSpecies(q, { category })
 }
 
 /**
@@ -93,7 +115,7 @@ export function SpeciesPicker({
             <button className="btn ghost" style={{ width: '100%', justifyContent: 'flex-start', gap: 10 }} onClick={() => onPick(s)}>
               <span className="dot" style={{ background: s.couleurAccent ?? s.couleur }} />
               <span style={{ textAlign: 'left' }}>
-                {s.nomCommun} <span className="muted small"><i>{s.nomLatin}</i> · {CATEGORY_LABEL[s.categorie]}</span>
+                {s.nomCommun} <span className="muted small"><i>{s.nomLatin}</i> · {CATEGORY_LABEL[s.categorie]}</span> <RiskBadges species={s} />
               </span>
             </button>
           </li>

@@ -2,6 +2,7 @@ import { SPECIES_BY_ID } from '../../data/species'
 import { CATEGORY_LABEL, STRATE_LABEL, SUN_LABEL, TASK_ICON, TASK_LABEL, WATER_LABEL } from '../../data/labels'
 import { Icon } from '../../components/Icon'
 import { MonthGrid } from '../../components/MonthGrid'
+import { RiskNotes } from '../../components/RiskNotes'
 import { MONTH_NAMES, plantingCalendar } from '../../engine/calendar'
 import { openSpecies, startPlacing } from '../../lib/ui'
 import type { Garden, Species, TaskCondition } from '../../types'
@@ -77,6 +78,8 @@ export function SpeciesSheet({ species: s, garden }: { species: Species; garden:
           )}
         </ul>
       </div>
+
+      <RiskNotes species={s} />
 
       <div>
         <h3>Quand semer, planter, récolter chez vous</h3>

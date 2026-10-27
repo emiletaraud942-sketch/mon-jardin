@@ -43,7 +43,11 @@ export function createSensor(onStatus?: (s: SensorStatus) => void): Sensor {
     onStatus?.(s)
   }
 
+  // Chaque arrêt change de « génération » : un démarrage resté en attente de l'autorisation (iPhone) ne branche rien après un arrêt.
+  let generation = 0
+
   function stop() {
+    generation++
     off?.()
     off = undefined
     clearTimeout(timer)
@@ -53,6 +57,7 @@ export function createSensor(onStatus?: (s: SensorStatus) => void): Sensor {
 
   async function start(): Promise<SensorStatus> {
     if (off) return sensor.status
+    const mine = generation
     if (typeof window === 'undefined' || !('DeviceOrientationEvent' in window)) {
       set('absent')
       return 'absent'
@@ -60,11 +65,14 @@ export function createSensor(onStatus?: (s: SensorStatus) => void): Sensor {
     const D = (window as unknown as { DeviceOrientationEvent: IosOrientation }).DeviceOrientationEvent
     if (typeof D.requestPermission === 'function') {
       try {
-        if ((await D.requestPermission()) !== 'granted') {
+        const answer = await D.requestPermission()
+        if (mine !== generation) return sensor.status // arrêté pendant la demande : on ne branche rien
+        if (answer !== 'granted') {
           set('refuse')
           return 'refuse'
         }
       } catch {
+        if (mine !== generation) return sensor.status
         set('refuse')
         return 'refuse'
       }

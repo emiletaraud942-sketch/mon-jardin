@@ -3,6 +3,7 @@ import { CATEGORY_LABEL, STATUS_LABEL, SUN_LABEL, TASK_ICON, WATER_LABEL } from 
 import { Icon } from '../../components/Icon'
 import { Blob, PlantPot, PlantScene } from '../../components/illustrations'
 import { PhotoThumb } from '../../components/PhotoThumb'
+import { RiskNotes } from '../../components/RiskNotes'
 import { deletePhoto, savePhoto } from '../../lib/photos'
 import { addPlant, getState, removePlant, updatePlant, useGardenPlants } from '../../lib/store'
 import { showToast } from '../../lib/toast'
@@ -244,6 +245,7 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
           Taille adulte : {frMeters(species.hauteurAdulteM)} de haut, {frMeters(species.envergureAdulteM)} de large.
         </p>
       )}
+      {species && <RiskNotes species={species} />}
       {nameField}
       {!fiche && now_}
 

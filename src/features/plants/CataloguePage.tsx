@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { SPECIES_BY_ID } from '../../data/species'
-import { CATEGORY_LABEL } from '../../data/labels'
-import { searchSpecies } from '../../components/SpeciesPicker'
+import { CATEGORY_LABEL, SUN_LABEL } from '../../data/labels'
+import { filterSpecies } from '../../components/SpeciesPicker'
+import { RiskBadges } from '../../components/RiskNotes'
 import { BottomSheet, type SheetSnap } from '../../components/BottomSheet'
 import { useIsMobile } from '../../components/useMedia'
 import { setUi, useUi } from '../../lib/ui'
-import type { Category, Garden } from '../../types'
+import type { Category, Garden, Sun } from '../../types'
 import { SpeciesSheet } from './SpeciesSheet'
 import '../../styles/novice-pages.css'
 
@@ -16,7 +17,10 @@ export function CataloguePage({ garden }: { garden: Garden }) {
   const [cat, setCat] = useState<Category | ''>('')
   const [snap, setSnap] = useState<SheetSnap>(speciesId ? 'min' : 'mid')
   const sheetRef = useRef<HTMLDivElement>(null)
-  const list = useMemo(() => searchSpecies(q, cat), [q, cat])
+  const [sun, setSun] = useState<Sun | ''>('')
+  const [edible, setEdible] = useState(false)
+  const [safe, setSafe] = useState(false)
+  const list = useMemo(() => filterSpecies(q, { category: cat, sun, edible, safe }), [q, cat, sun, edible, safe])
   const selected = speciesId ? SPECIES_BY_ID[speciesId] : undefined
 
   // La fiche s'ouvre sous la liste (ou au-dessus sur mobile) : on la ramène à l'écran.
@@ -43,7 +47,7 @@ export function CataloguePage({ garden }: { garden: Garden }) {
               <span style={{ textAlign: 'left' }}>
                 {s.nomCommun}
                 <span className="muted small" style={{ display: 'block' }}>
-                  {CATEGORY_LABEL[s.categorie]}
+                  {CATEGORY_LABEL[s.categorie]} <RiskBadges species={s} />
                 </span>
               </span>
             </button>
@@ -96,6 +100,22 @@ export function CataloguePage({ garden }: { garden: Garden }) {
             </option>
           ))}
         </select>
+      </div>
+      <div className="row catalogue-filters" role="group" aria-label="Filtres" style={{ margin: '-8px 0 16px', alignItems: 'center' }}>
+        <select className="input" style={{ flex: '1 1 160px' }} value={sun} onChange={(e) => setSun(e.target.value as Sun | '')} aria-label="Exposition">
+          <option value="">Toutes les expositions</option>
+          {Object.entries(SUN_LABEL).map(([k, v]) => (
+            <option key={k} value={k}>
+              {v}
+            </option>
+          ))}
+        </select>
+        <label className="row" style={{ gap: 6, minHeight: 44 }}>
+          <input type="checkbox" checked={edible} onChange={(e) => setEdible(e.target.checked)} /> Comestibles
+        </label>
+        <label className="row" style={{ gap: 6, minHeight: 44 }}>
+          <input type="checkbox" checked={safe} onChange={(e) => setSafe(e.target.checked)} /> Sans risque connu
+        </label>
       </div>
       {mobile ? (
         <>

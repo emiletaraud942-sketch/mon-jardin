@@ -91,7 +91,15 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
     stream.current = undefined
   }
   useWakeLock(step === 'live')
-  useEffect(() => releaseCamera, [])
+  // Écran quitté pendant une demande d'autorisation (caméra, boussole) : rien ne doit rester allumé après la réponse.
+  const alive = useRef(true)
+  useEffect(() => {
+    alive.current = true
+    return () => {
+      alive.current = false
+      releaseCamera()
+    }
+  }, [])
 
   async function startLive() {
     setError(undefined)
@@ -102,12 +110,20 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
     }
     try {
       const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: false })
+      if (!alive.current) {
+        s.getTracks().forEach((t) => t.stop())
+        return
+      }
       stream.current = s
     } catch (e) {
       setError(e instanceof DOMException && e.name === 'NotAllowedError' ? new Error('La caméra est refusée. Autorisez-la dans les réglages du navigateur, ou choisissez une vidéo déjà filmée.') : e)
       return
     }
     await askCompass()
+    if (!alive.current) {
+      releaseCamera()
+      return
+    }
     frames.current = []
     finishing.current = false
     skippedRef.current = { floue: 0, 'sans-plante': 0 }

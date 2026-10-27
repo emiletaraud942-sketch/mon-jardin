@@ -1,4 +1,4 @@
-import type { Category, PlantStatus, Strate, Sun, TaskType, Water } from '../types'
+import type { Category, PlantStatus, RisqueType, Strate, Sun, TaskType, Water } from '../types'
 
 export const CATEGORY_LABEL: Record<Category, string> = {
   legume: 'Légume',
@@ -64,4 +64,12 @@ export const TASK_ICON: Record<TaskType, string> = {
 
 export function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+export const RISQUE_LABEL: Record<RisqueType, string> = {
+  toxique: 'Toxique',
+  envahissante: 'Envahissante',
+  epineuse: 'Épineuse',
+  allergene: 'Allergène',
+  irritante: 'Irritante',
 }

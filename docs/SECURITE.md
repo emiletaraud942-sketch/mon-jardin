@@ -323,3 +323,17 @@ Vérifié par `security.test.ts`, `store.test.ts`, `sync.test.ts` (1344 tests au
 | Documents périmés : capteurs « bloqués » (`CLAUDE.md`), caméra et position « jamais demandées » (ce fichier), inventaire de la fiche photos | Corrigés ; entrée « Écran allumé » ajoutée à l'inventaire | `security.test.ts` |
 
 **Non fait** : épinglage des actions GitHub par empreinte (O9, il faut les empreintes réelles depuis GitHub, Dependabot suit ensuite), analyse de code (CodeQL) et de secrets : ce sont des réglages du dépôt (Settings > Code security : code scanning, secret scanning, push protection, signalement privé), à activer par vous ; CodeQL en workflow échouerait sur un dépôt privé sans l'option payante.
+
+## 17. Corrections de l'audit du 27 octobre 2026, lot 6 (interface)
+
+| Constat | Correctif | Preuve |
+| --- | --- | --- |
+| Caméra, boussole et GPS restaient allumés si l'on quittait l'écran pendant la demande d'autorisation (la réponse « accordée » arrive après le démontage) | `alive` : le flux accordé après la sortie est coupé aussitôt (scan vidéo, prise des photos du jardin) ; le capteur de boussole ignore une réponse arrivée après son arrêt (génération) ; le journal GPS n'est plus lancé après la sortie | `sensors.test.ts` (3 cas) |
+| Aucune sauvegarde des photos | Sauvegarde avec photos : fichier `.permajardin` ; **un fichier hostile ne peut ni saturer la mémoire (photos lues par tranche, 300 Mo au plus, 8 Mo par photo, 2 000 photos), ni écrire une autre clé IndexedDB (identifiant `photo:…` seulement), ni ranger autre chose qu'une image aux dimensions plausibles** ; l'état passe par `migrateState` comme tout import | `backupFull.test.ts` (11 cas : tronqué, octets ajoutés, longueur absurde, version future, fausse image, identifiant visant `permajardin:state:v1`, photo non référencée) |
+| Stockage plein : message technique ou aucun | `isQuotaError` : message en français, rien d'écrit à moitié ; import d'une sauvegarde complète : si le rangement des photos échoue, rien n'est remplacé | `photos.test.ts` |
+| Bandeau de mise à jour : « Plus tard » le supprimait pour toujours ; écran 3D blanc après un déploiement (ancien nom de fichier) | Retour dans 6 h ; recherche au retour dans l'appli ; bandeau « Recharger » sur `vite:preloadError` | essai manuel dans Chromium (pas de test automatique) |
+| Contraste de la pastille neutre (4,2:1) | `--muted-2` (6:1 et plus) ; pastilles de risque : 5,0:1 minimum, clair et sombre | calcul des rapports |
+
+**Vérifié dans Chromium** (vite preview, jardin de test) : filtres du catalogue, recherche « laurier » / « pomme », pastilles et bloc « À savoir avant de planter » (rhubarbe). **Non vérifié** : appareil photo et boussole sur téléphone réel, import d'un gros fichier `.permajardin` sur un vrai téléphone, bandeau de mise à jour après un vrai déploiement.
+
+**Vie privée** : le fichier `.permajardin` contient les photos (EXIF déjà retiré à l'enregistrement) et les positions des points de vue en photos (coordonnées locales, jamais GPS) ; il reste sur l'appareil et n'est jamais envoyé. À garder en lieu sûr comme la sauvegarde simple.

@@ -1,14 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = new Map<string, unknown>()
+let failSet: Error | undefined
 vi.mock('idb-keyval', () => ({
   get: async (k: string) => db.get(k),
-  set: async (k: string, v: unknown) => void db.set(k, v),
+  set: async (k: string, v: unknown) => {
+    if (failSet) throw failSet
+    db.set(k, v)
+  },
   del: async (k: string) => void db.delete(k),
   keys: async () => [...db.keys()],
 }))
 
-import { compressToTarget, deletePhoto, getPhoto, listPhotoIds, savePhoto, TARGET_BYTES } from './photos'
+import { compressToTarget, deletePhoto, getPhoto, isQuotaError, listPhotoIds, MESSAGE_FULL, restorePhoto, savePhoto, TARGET_BYTES } from './photos'
 
 let close: ReturnType<typeof vi.fn>
 let canvas: { width: number; height: number; getContext: () => unknown; toBlob: (cb: (b: Blob | null) => void, type: string, q: number) => void }
@@ -30,6 +34,7 @@ function stub(width = 4000, height = 3000) {
 }
 
 beforeEach(() => {
+  failSet = undefined
   db.clear()
   bytesFor = (w, h, q) => Math.round(w * h * q * 0.3)
   stub()
@@ -93,5 +98,33 @@ describe('stockage', () => {
     expect(await listPhotoIds()).toEqual([id])
     await deletePhoto(id)
     expect(await getPhoto(id)).toBeUndefined()
+  })
+})
+
+describe('stockage plein', () => {
+  const quota = () => Object.assign(new Error('The quota has been exceeded.'), { name: 'QuotaExceededError' })
+  it('isQuotaError reconnaît les variantes des navigateurs', () => {
+    expect(isQuotaError(quota())).toBe(true)
+    expect(isQuotaError({ name: 'NS_ERROR_DOM_QUOTA_REACHED' })).toBe(true)
+    expect(isQuotaError({ code: 22 })).toBe(true)
+    expect(isQuotaError(new Error('autre'))).toBe(false)
+    expect(isQuotaError(null)).toBe(false)
+  })
+  it('savePhoto dit en français que l’espace est plein, et ne laisse rien derrière', async () => {
+    failSet = quota()
+    await expect(savePhoto(new Blob(['x']))).rejects.toThrow(MESSAGE_FULL)
+    expect(await listPhotoIds()).toEqual([])
+  })
+  it('une autre panne d’écriture est relancée telle quelle', async () => {
+    failSet = new Error('disque en panne')
+    await expect(savePhoto(new Blob(['x']))).rejects.toThrow('disque en panne')
+  })
+  it('restorePhoto : même message, et un identifiant invalide est sans effet', async () => {
+    failSet = quota()
+    await expect(restorePhoto('photo:abc', new Blob(['x']))).rejects.toThrow(MESSAGE_FULL)
+    await restorePhoto('permajardin:state:v1', new Blob(['x'])) // ne lève pas, n'écrit rien
+    failSet = undefined
+    await restorePhoto('permajardin:state:v1', new Blob(['x']))
+    expect(db.size).toBe(0)
   })
 })

@@ -61,15 +61,18 @@ export function Capture({ garden, spot, redoId }: { garden: Garden; spot: XY; re
   }, [])
 
   // Sortie sans enregistrer : on libère la caméra, le capteur et les photos déjà stockées.
-  useEffect(
-    () => () => {
+  // `alive` : si l'on quitte pendant la demande d'autorisation de la caméra, le flux accordé ensuite est coupé aussitôt.
+  const alive = useRef(true)
+  useEffect(() => {
+    alive.current = true // le mode strict de React démonte puis remonte aussitôt : on se remet « vivant »
+    return () => {
+      alive.current = false
       stopCamera()
       sensor.current?.stop()
       for (const s of shotsRef.current) URL.revokeObjectURL(s.url)
       if (!saved.current) discardPhotos(shotsRef.current.map((s) => s.photoId))
-    },
-    [stopCamera],
-  )
+    }
+  }, [stopCamera])
 
   // Branche le flux dès que l'écran de prise de vue est affiché.
   useEffect(() => {
@@ -94,7 +97,12 @@ export function Capture({ garden, spot, redoId }: { garden: Garden; spot: XY; re
       return
     }
     try {
-      stream.current = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false })
+      const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false })
+      if (!alive.current) {
+        s.getTracks().forEach((t) => t.stop())
+        return
+      }
+      stream.current = s
       setCam('live')
     } catch (e) {
       setCam('file')

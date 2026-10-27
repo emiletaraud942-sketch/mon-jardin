@@ -4,6 +4,10 @@
 export const LIMITS = {
   /** Taille maximale d'un fichier d'import, vérifiée AVANT de le lire. */
   importBytes: 10 * 1024 * 1024,
+  /** Sauvegarde complète (avec photos) : taille totale du fichier, d'un en-tête JSON, d'une photo, et nombre de photos. */
+  fullBackupBytes: 300 * 1024 * 1024,
+  fullBackupPhotoBytes: 8 * 1024 * 1024,
+  fullBackupPhotos: 2_000,
   /** Taille maximale d'une photo à traiter (avant décodage). */
   photoInputBytes: 40 * 1024 * 1024,
   /** Dimensions maximales d'une photo à décoder (côté, pixels totaux) : protège contre les « bombes de décompression ». */

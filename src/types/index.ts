@@ -164,7 +164,7 @@ export interface Garden {
   minAbsC?: number
   /** Recalage GPS (similitude 2D en mètres locaux), appliqué aux positions mesurées. */
   calibration?: Calibration
-  /** Points de vue en photos (façon Street View). Métadonnées seulement : les photos sont dans IndexedDB (src/lib/photos.ts), jamais exportées ni synchronisées. */
+  /** Points de vue en photos (façon Street View). Métadonnées seulement : les photos sont dans IndexedDB (src/lib/photos.ts), jamais synchronisées ; exportées seulement dans la sauvegarde complète (src/lib/backupFull.ts), fichier que la personne garde. */
   panoramas?: Panorama[]
   createdAt: string
 }

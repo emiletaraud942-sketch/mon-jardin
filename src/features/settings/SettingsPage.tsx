@@ -7,7 +7,9 @@ import { Fold } from '../../components/Fold'
 import { Icon } from '../../components/Icon'
 import { Segmented } from '../../components/Segmented'
 import { SavedNote, useFlash } from '../../components/useFlash'
-import { exportCurrentState, lastExportAt, REMIND_EVERY_DAYS } from '../../lib/backup'
+import { downloadBlob, exportCurrentState, lastExportAt, markExported, REMIND_EVERY_DAYS } from '../../lib/backup'
+import { buildFullBackup, FULL_EXTENSION, isFullBackup, readFullBackup, restorePhotos, type PhotoToRestore } from '../../lib/backupFull'
+import { isoDate } from '../../lib/dates'
 import { formatDay, frNumber } from '../../lib/format'
 import { friendlyError, type FriendlyError } from '../../lib/http'
 import { deletePhoto } from '../../lib/photos'
@@ -209,6 +211,10 @@ interface PendingImport {
   data: StateData
   warnings: string[]
   fileName: string
+  /** Sauvegarde complète : photos à ranger avant de remplacer les données. */
+  photos?: PhotoToRestore[]
+  /** Photos du fichier qui n'étaient pas de vraies images. */
+  skipped?: number
 }
 
 const countOf = (d: Pick<StateData, 'gardens' | 'plants'>) => ({ gardens: d.gardens.length, plants: d.plants.length })
@@ -227,14 +233,28 @@ function ImportDialog({ pending, onClose, onDone }: { pending: PendingImport; on
       onBackup={hasCurrent ? () => exportCurrentState('permajardin-avant-reprise', false) : undefined}
       onCancel={onClose}
       onConfirm={() => {
-        replaceData(pending.data)
-        onDone(`Sauvegarde reprise : ${describeCounts(countOf(pending.data))}.`)
+        void (async () => {
+          let photoNote = ''
+          if (pending.photos?.length) {
+            try {
+              const n = await restorePhotos(pending.photos)
+              photoNote = ` ${n} photo${n > 1 ? 's' : ''} reprise${n > 1 ? 's' : ''}.`
+            } catch {
+              // Espace plein : on garde les données actuelles, rien n'est remplacé.
+              onDone('Les photos n’ont pas pu être rangées : l’espace de cet appareil est plein. Rien n’a été remplacé.')
+              return
+            }
+          }
+          replaceData(pending.data)
+          onDone(`Sauvegarde reprise : ${describeCounts(countOf(pending.data))}.${photoNote}`)
+        })()
       }}
     >
       <p>
         <strong>{importQuestion(countOf(current), countOf(pending.data))}</strong>
       </p>
       <p className="small muted">Fichier : {pending.fileName}</p>
+      {pending.photos && <p className="small muted">Cette sauvegarde contient aussi {pending.photos.length} photo{pending.photos.length > 1 ? 's' : ''}{pending.skipped ? ` (${pending.skipped} illisible${pending.skipped > 1 ? 's ont été écartées' : ' a été écartée'})` : ''}.</p>}
       {pending.warnings.length > 0 && (
         <div className="alert small">
           <strong>Le fichier a été corrigé en le lisant :</strong>
@@ -265,11 +285,42 @@ function Backup() {
     showToast({ message: 'Sauvegarde faite. Le fichier est dans vos téléchargements.' })
   }
 
+  const [busy, setBusy] = useState(false)
+
+  async function exportFull() {
+    setBusy(true)
+    setMsg(undefined)
+    try {
+      const out = await buildFullBackup()
+      downloadBlob(out.blob, `permajardin-complet-${isoDate()}${FULL_EXTENSION}`)
+      markExported()
+      setLast(Date.now())
+      const text = `Sauvegarde complète faite (${out.photos} photo${out.photos > 1 ? 's' : ''}). Le fichier est dans vos téléchargements.${out.missing ? ` ${out.missing} photo${out.missing > 1 ? 's' : ''} introuvable${out.missing > 1 ? 's' : ''} n’${out.missing > 1 ? 'ont' : 'a'} pas pu être ajoutée${out.missing > 1 ? 's' : ''}.` : ''}`
+      setMsg({ text })
+      showToast({ message: 'Sauvegarde complète faite.' })
+    } catch (e) {
+      setMsg({ error: friendlyError(e) })
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function importJson(input: HTMLInputElement) {
     const file = input.files?.[0]
     input.value = '' // permet de reprendre le même fichier
     if (!file) return
     setMsg(undefined)
+    if (await isFullBackup(file)) {
+      setBusy(true)
+      const full = await readFullBackup(file)
+      setBusy(false)
+      if (!full.ok) {
+        setMsg({ error: backupErrorNote(full.error) })
+        return
+      }
+      setPending({ data: full.data, warnings: full.warnings, fileName: file.name, photos: full.photos, skipped: full.skipped })
+      return
+    }
     // Limite de taille, clés dangereuses retirées, plafonds et validation : tout est dans readBackupFile.
     const r = await readBackupFile(file)
     if (!r.ok) {
@@ -289,12 +340,15 @@ function Backup() {
       </p>
       {warnings.length > 0 && <p className="alert small">Certaines données ont été corrigées au démarrage : {warnings.join(' ')}</p>}
       <div className="row">
-        <button className="btn primary" onClick={exportJson}>
+        <button className="btn primary" onClick={exportJson} disabled={busy}>
           <Icon name="download" /> Faire une sauvegarde
+        </button>
+        <button className="btn" onClick={() => void exportFull()} disabled={busy}>
+          <Icon name="download" /> Sauvegarde avec photos
         </button>
         <label className="btn file-btn">
           <Icon name="upload" /> Reprendre une sauvegarde
-          <input className="sr-only" type="file" accept="application/json,.json" onChange={(e) => void importJson(e.target)} />
+          <input className="sr-only" type="file" accept={`application/json,.json,${FULL_EXTENSION}`} onChange={(e) => void importJson(e.target)} />
         </label>
       </div>
       {msg?.error && <ErrorNote error={msg.error} />}
@@ -306,7 +360,7 @@ function Backup() {
       <details className="np-details">
         <summary>Détails</summary>
         <p className="small muted">Gardez-le en lieu sûr : ordinateur, clé USB, ou e-mail à vous-même.</p>
-        <p className="small muted">Les photos ne sont pas dans la sauvegarde. Elles restent sur cet appareil.</p>
+        <p className="small muted">La sauvegarde simple n’a pas les photos : elles restent sur cet appareil. « Sauvegarde avec photos » les met dans le fichier, qui est plus lourd. « Reprendre une sauvegarde » lit les deux.</p>
         {persistent === false && <p className="small muted">Si l’espace manque, cet appareil peut effacer vos données. Une sauvegarde les protège.</p>}
       </details>
       {pending && (
