@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { HELP, HELP_SCREENS, MODES_HELP, helpFor } from './help'
+import { HELP, HELP_SCREENS, RAYONS_HELP, helpFor } from './help'
 
 // Copie volontaire de la liste des onglets : importer `ui` demande un navigateur.
-const TABS = ['carte', '3d', 'plantes', 'entretien', 'planter', 'catalogue', 'reglages', 'voisins']
+const TABS = ['accueil', 'carte', '3d', 'plantes', 'entretien', 'planter', 'catalogue', 'reglages', 'voisins']
 
 describe('aide contextuelle', () => {
   it('chaque écran a un titre et 3 à 6 étapes non vides', () => {
-    expect(HELP_SCREENS.length).toBeGreaterThanOrEqual(8)
+    expect(HELP_SCREENS.length).toBeGreaterThanOrEqual(9)
     for (const t of HELP_SCREENS) {
       const h = helpFor(t)
       expect(h.title.trim()).not.toBe('')
@@ -21,8 +21,8 @@ describe('aide contextuelle', () => {
     expect(Object.keys(HELP)).toHaveLength(TABS.length)
   })
 
-  it('explique les 3 modes et dit que la modélisation est facultative', () => {
-    expect(MODES_HELP.modes.map((m) => m.name)).toEqual(['Mon jardin', 'Entretenir', 'Planifier'])
-    expect(MODES_HELP.optional).toMatch(/facultatif/)
+  it('explique les 4 rayons et dit que la modélisation est facultative', () => {
+    expect(RAYONS_HELP.rayons.map((m) => m.name)).toEqual(['Mon jardin', 'À faire', 'Planter', 'Voisins'])
+    expect(RAYONS_HELP.optional).toMatch(/facultatif/)
   })
 })

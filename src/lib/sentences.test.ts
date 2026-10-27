@@ -1,7 +1,8 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { HELP, MODES_HELP } from './help'
+import { HELP, RAYONS_HELP } from './help'
+import { STEP_HINT, STEP_TITLE } from './onboarding'
 import { computeProgress } from './progress'
 import { CONSENT_TEXT } from './legal'
 import { INVITE_TEXT, inviteMessage } from './invite'
@@ -34,9 +35,12 @@ describe('longueur des phrases', () => {
   it('aide : étapes et modes', () => {
     const texts = [
       ...Object.values(HELP).flatMap((h) => h.steps),
-      MODES_HELP.intro,
-      MODES_HELP.optional,
-      ...MODES_HELP.modes.map((m) => m.text),
+      RAYONS_HELP.intro,
+      RAYONS_HELP.optional,
+      RAYONS_HELP.account,
+      ...RAYONS_HELP.rayons.map((m) => m.text),
+      ...Object.values(STEP_HINT),
+      ...Object.values(STEP_TITLE),
     ]
     expect(texts.flatMap(tooLong)).toEqual([])
   })
@@ -63,7 +67,7 @@ describe('longueur des phrases', () => {
   })
 
   it('écrans : tous les textes visibles des fichiers de l’interface', () => {
-    const dirs = ['components', 'features/map', 'features/settings', 'features/legal', 'features/plants', 'features/neighbors', '.']
+    const dirs = ['components', 'features/map', 'features/settings', 'features/legal', 'features/plants', 'features/neighbors', 'features/onboarding', '.']
     // Icon.tsx : tracés SVG ; les trois autres fichiers appartiennent à l'agent du Catalogue.
     const skip = new Set(['CataloguePage.tsx', 'SpeciesSheet.tsx', 'MonthGrid.tsx', 'Icon.tsx'])
     const files = dirs.flatMap((d) =>

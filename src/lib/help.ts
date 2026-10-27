@@ -9,6 +9,16 @@ export interface HelpContent {
 }
 
 export const HELP: Record<Tab, HelpContent> = {
+  accueil: {
+    title: 'L’accueil',
+    steps: [
+      'Choisissez un rayon : Mon jardin, À faire, Planter ou Voisins.',
+      '« Chez » résume votre jardin : plantes et choses à faire.',
+      '« Votre jardin en 5 étapes » vous guide au début. Touchez une étape pour la reprendre.',
+      '« Passer et découvrir l’appli » masque ce guide. Vous pouvez le revoir dans Mon compte.',
+      'Touchez le nom PermaJardin, en haut, pour revenir ici.',
+    ],
+  },
   carte: {
     title: 'La carte',
     steps: [
@@ -41,7 +51,7 @@ export const HELP: Record<Tab, HelpContent> = {
     ],
   },
   entretien: {
-    title: 'Entretien',
+    title: 'À faire',
     steps: [
       'La liste dit quoi faire cette semaine : tailler, désherber, arroser, récolter.',
       'La météo et la saison sont prises en compte.',
@@ -70,7 +80,7 @@ export const HELP: Record<Tab, HelpContent> = {
     ],
   },
   reglages: {
-    title: 'Réglages',
+    title: 'Mon compte et réglages',
     steps: [
       'Choisissez la nature du sol : nos conseils en tiennent compte.',
       'Faites une sauvegarde de vos données de temps en temps.',
@@ -94,15 +104,17 @@ export const HELP: Record<Tab, HelpContent> = {
 
 export const HELP_SCREENS = Object.keys(HELP) as Tab[]
 
-export const MODES_HELP = {
-  title: 'À quoi servent les 3 modes ?',
-  intro: 'Les trois boutons sous le titre montrent seulement ce qui sert à votre étape. Rien n’est bloqué.',
-  modes: [
-    { name: 'Mon jardin', text: 'Placer vos plantes sur la carte de votre jardin.' },
-    { name: 'Entretenir', text: 'Voir quoi faire cette semaine : tailler, désherber, arroser, récolter.' },
-    { name: 'Planifier', text: 'Choisir quoi planter où, et voir le jardin grandir en 3D.' },
+export const RAYONS_HELP = {
+  title: 'À quoi servent les 4 rayons ?',
+  intro: 'Les boutons du bas rangent l’appli en 4 rayons. Rien n’est bloqué.',
+  rayons: [
+    { name: 'Mon jardin', text: 'La carte, vos plantes et la vue 3D. Touchez Carte, Plantes ou Vue 3D, en haut.' },
+    { name: 'À faire', text: 'Quoi faire cette semaine : tailler, désherber, arroser, récolter. Avec la météo et le calendrier.' },
+    { name: 'Planter', text: 'Où planter chaque plante, et le catalogue des 146 plantes.' },
+    { name: 'Voisins', text: 'Dons, questions et rendez-vous près de chez vous. Facultatif.' },
   ],
-  optional: 'Placer vos plantes est facultatif : vous pouvez aller directement à Entretenir ou Planifier.',
+  optional: 'Placer vos plantes est facultatif : vous pouvez aller directement à « À faire ».',
+  account: 'Sauvegarde, réglages, aide et changement de jardin sont dans l’icône profil, en haut à droite.',
 }
 
 export function helpFor(tab: Tab): HelpContent {

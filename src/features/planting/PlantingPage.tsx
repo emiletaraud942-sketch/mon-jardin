@@ -5,7 +5,7 @@ import { SPECIES, SPECIES_BY_ID } from '../../data/species'
 import { CATEGORY_LABEL } from '../../data/labels'
 import { useGardenPlants } from '../../lib/store'
 import { useLidarScene } from '../../lib/useLidar'
-import { openSpecies, setMode, setUi, useUi } from '../../lib/ui'
+import { openSpecies, setUi, useUi } from '../../lib/ui'
 import { PlaceAction } from '../../components/PlaceAction'
 import { aspectLabel, slopeAt } from '../../lib/terrain'
 import { doyToLabel } from '../../lib/weather'
@@ -323,7 +323,7 @@ function ModelHint({ garden }: { garden: Garden }) {
       </p>
       <div className="row">
         <PlaceAction>Placer une plante</PlaceAction>
-        <button className="btn" onClick={() => setMode('jardin')}>
+        <button className="btn" onClick={() => setUi({ tab: 'carte' })}>
           Voir Mon jardin
         </button>
       </div>

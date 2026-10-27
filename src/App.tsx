@@ -3,17 +3,17 @@ import { notifyDailyTasks } from './lib/notify'
 import { Icon } from './components/Icon'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { HelpSheet } from './components/HelpSheet'
-import { Modal } from './components/Modal'
-import { ModeSwitch } from './components/ModeSwitch'
-import { ProgressCard } from './components/ProgressCard'
+import { SubTabs } from './components/SubTabs'
 import { StorageBanner } from './components/StorageBanner'
 import { ToastHost } from './components/Toast'
 import { UpdateBanner } from './components/UpdateBanner'
 import { consumeExportReminder, exportCurrentState } from './lib/backup'
-import { getLoadWarnings, getState, setActiveGarden, useActiveGarden, useGardenPlants, useStore } from './lib/store'
+import { getLoadWarnings, getState, useActiveGarden, useGardenPlants, useStore } from './lib/store'
 import { showToast } from './lib/toast'
-import { ALWAYS_TABS, MODE_TABS, TAB_LABEL, mobileBarTabs, mobileMenuTabs, setGuide, applyDefaultMode, noteVisit, setUi, useUi, type Mode, type Tab } from './lib/ui'
-import { Onboarding } from './features/settings/Onboarding'
+import { RAYON_LABEL, TAB_LABEL, getUi, goRayon, noteVisit, openParcours, rayonOfTab, setGuide, setUi, subTabs, useUi, visibleRayons, type Rayon } from './lib/ui'
+import { deriveOnboarding } from './lib/onboarding'
+import { Parcours } from './features/onboarding/Parcours'
+import { Accueil } from './features/onboarding/Accueil'
 import { isDemoGarden } from './features/settings/demo'
 import { PlantsPage } from './features/plants/PlantsPage'
 import { TasksPage } from './features/tasks/TasksPage'
@@ -28,9 +28,8 @@ import { badgeAria, badgeLabel } from './lib/neighbors/news'
 import { startPushBridge } from './lib/neighbors/pushBridge'
 import { readRadius } from './features/neighbors/prefs'
 import { useConsents } from './lib/consent'
-import { InstallButton } from './components/InstallButton'
 import { InviteButton } from './components/InviteButton'
-import { openScan, useScanUi } from './features/scan/scanUi'
+import { useScanUi } from './features/scan/scanUi'
 
 const View3D = lazy(() => import('./features/garden3d/View3D'))
 const NeighborsPage = lazy(() => import('./features/neighbors/NeighborsPage').then((m) => ({ default: m.NeighborsPage })))
@@ -43,26 +42,7 @@ const Loading = ({ label }: { label: string }) => (
   </div>
 )
 
-const NAV_ICON: Record<Tab, string> = {
-  carte: 'map',
-  '3d': 'cube',
-  plantes: 'leaf',
-  entretien: 'check',
-  planter: 'sprout',
-  catalogue: 'book',
-  reglages: 'settings',
-  voisins: 'users',
-}
-const NAV: Record<Tab, { label: string; icon: string }> = Object.fromEntries((Object.keys(TAB_LABEL) as Tab[]).map((t) => [t, { label: TAB_LABEL[t], icon: NAV_ICON[t] }])) as Record<Tab, { label: string; icon: string }>
-/** Libellés plus longs du menu. « Sauvegarde et réglages » passe en tête : c'est ce que l'on cherche le plus. */
-const MORE_LABEL: Partial<Record<Tab, string>> = { '3d': 'Vue 3D de mon jardin', catalogue: 'Catalogue des plantes', reglages: 'Sauvegarde et réglages', voisins: 'Entraide entre voisins' }
-const MORE_FIRST: Tab[] = ['reglages']
-
-/** Catalogue et Réglages restent accessibles dans tous les modes : barre du bas si le mode les contient, sinon menu. */
-const extraTabs = (mode: Mode) => ALWAYS_TABS.filter((t) => !MODE_TABS[mode].includes(t) && (t !== 'voisins' || neighborsEnabled))
-const menuTabs = () => [...mobileMenuTabs()].sort((a, b) => Number(MORE_FIRST.includes(b)) - Number(MORE_FIRST.includes(a)))
-
-const NEW_GARDEN = '__new'
+const RAYON_ICON: Record<Rayon, string> = { jardin: 'leaf', afaire: 'check', planter: 'sprout', voisins: 'users' }
 
 /** Pastille de nouveautés de l'entraide (rien tant qu'il n'y a rien de nouveau). */
 const NewsBadge = ({ count }: { count: number }) =>
@@ -72,51 +52,10 @@ const NewsBadge = ({ count }: { count: number }) =>
     </span>
   ) : null
 
-function MoreSheet({ onClose, onNewGarden, newsCount }: { onClose: () => void; onNewGarden: () => void; newsCount: number }) {
-  const { tab } = useUi()
-  const go = (t: Tab) => {
-    onClose()
-    setUi({ tab: t })
-  }
-  return (
-    <Modal title="Menu" sheet onClose={onClose}>
-      <div className="stack more-list">
-        {menuTabs().map((t) => (
-          <button key={t} className="btn more-item" aria-current={tab === t ? 'page' : undefined} onClick={() => go(t)}>
-            <Icon name={NAV[t].icon} /> {MORE_LABEL[t] ?? NAV[t].label}
-            {t === 'voisins' && <NewsBadge count={newsCount} />}
-          </button>
-        ))}
-        <button
-          className="btn more-item"
-          onClick={() => {
-            onClose()
-            openScan('menu')
-          }}
-        >
-          <Icon name="camera" /> Scanner mon jardin
-        </button>
-        <button
-          className="btn more-item"
-          onClick={() => {
-            onClose()
-            onNewGarden()
-          }}
-        >
-          <Icon name="plus" /> Nouveau jardin
-        </button>
-        <InstallButton className="btn more-item" />
-        <InviteButton className="btn more-item" label="Faire connaître l’appli" copyLabel="Copier le lien de l’appli" />
-      </div>
-    </Modal>
-  )
-}
-
 export function App() {
   const loaded = useStore((s) => s.loaded)
-  const gardens = useStore((s) => s.gardens)
   const garden = useActiveGarden()
-  const { tab, mode, placingSpeciesId, guide } = useUi()
+  const { tab, guide, parcours } = useUi()
   const plantCount = useGardenPlants(garden?.id).length
   const { tasks, weather, weatherLoading } = useTasks(garden)
   const { voisins } = useConsents()
@@ -124,7 +63,6 @@ export function App() {
   // Alertes de nouveaux messages : le service worker prévient l'appli ouverte (pastille, clic sur l'alerte).
   useEffect(() => (neighborsEnabled && voisins ? startPushBridge() : undefined), [voisins])
   const scanOpen = !!useScanUi().screen
-  const [moreOpen, setMoreOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const mainRef = useRef<HTMLElement>(null)
   const firstPaint = useRef(true)
@@ -151,13 +89,16 @@ export function App() {
     }
   }, [loaded])
 
-  // Premier lancement sans mode mémorisé : « Mon jardin » s'il y a peu de plantes, sinon « Entretenir ».
+  // Rien d'enregistré pour le parcours d'accueil : on l'initialise d'après les données. Un utilisateur qui a déjà un jardin et des plantes
+  // est marqué « terminé » : aucun accueil forcé. L'état va dans l'état d'interface (localStorage), jamais dans IndexedDB.
   const gardenId = garden?.id
   useEffect(() => {
-    if (loaded && gardenId) applyDefaultMode(plantCount)
+    if (loaded && garden && getUi().guide.onboarding === undefined) {
+      setGuide({ onboarding: deriveOnboarding({ hasGarden: true, demo: isDemoGarden(garden), plantCount }) })
+    }
     // Une seule fois par chargement : plantCount ne doit pas relancer le choix.
   }, [loaded, gardenId]) // eslint-disable-line react-hooks/exhaustive-deps
-  // Mémorise les écrans déjà ouverts (alimente la jauge et le mode conseillé).
+  // Mémorise les écrans déjà ouverts (alimente la jauge de conseil de l'accueil).
   useEffect(() => {
     if (loaded && gardenId) noteVisit(tab, gardenId)
   }, [loaded, gardenId, tab])
@@ -176,7 +117,7 @@ export function App() {
     // Seul le changement d'écran compte.
   }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const startNewGarden = () => setUi({ tab: 'reglages', newGarden: true })
+  const startNewGarden = () => openParcours('adresse')
 
   if (!loaded) {
     return (
@@ -185,20 +126,30 @@ export function App() {
       </div>
     )
   }
-  if (!garden) {
+  // Nouvel utilisateur (aucun jardin) ou parcours d'accueil ouvert : plein écran, sans barre de navigation.
+  if (!garden || parcours) {
     return (
       <>
         <div className="overlay-stack">
           <StorageBanner />
         </div>
-        <Onboarding />
+        <Parcours garden={garden} />
         <ToastHost />
         <LegalModal />
+        {garden && scanOpen && (
+          <Suspense fallback={null}>
+            <ScanHost />
+          </Suspense>
+        )}
       </>
     )
   }
 
   const full = tab === 'carte' || tab === '3d'
+  const rayon = rayonOfTab(tab)
+  const tabs = subTabs(rayon)
+  const rayons = visibleRayons(neighborsEnabled)
+  const taskBadge = `${open} tâche${open > 1 ? 's' : ''} à faire`
 
   return (
     <div className="app">
@@ -213,48 +164,28 @@ export function App() {
         Aller au contenu
       </a>
       <header className="topbar">
-        <div className="brand">
+        <button className="brand brand-btn" aria-label="Accueil : que voulez-vous faire ?" aria-current={tab === 'accueil' ? 'page' : undefined} onClick={() => setUi({ tab: 'accueil' })}>
           <img src="/icon.svg" alt="" />
           <span>PermaJardin</span>
-        </div>
-        <div className="spacer" />
-        {gardens.length > 1 ? (
-          <select
-            className="input garden-select"
-            aria-label="Jardin affiché"
-            value={garden.id}
-            onChange={(e) => (e.target.value === NEW_GARDEN ? startNewGarden() : setActiveGarden(e.target.value))}
-          >
-            {gardens.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name}
-              </option>
-            ))}
-            <option value={NEW_GARDEN}>+ Nouveau jardin…</option>
-          </select>
-        ) : (
-          <span className="garden-name" title={garden.name}>
-            {garden.name}
-          </span>
-        )}
-        <button className="btn small hide-mobile" onClick={startNewGarden}>
-          <Icon name="plus" size={16} /> Nouveau jardin
         </button>
+        <div className="spacer" />
+        <span className="garden-name" title={garden.name}>
+          {garden.name}
+        </span>
         <button className="btn help-btn" aria-haspopup="dialog" onClick={() => setHelpOpen(true)}>
           <span className="help-mark" aria-hidden>
             ?
           </span>{' '}
           Aide
         </button>
+        <button className="btn profile-btn" aria-label="Mon compte et réglages" aria-current={tab === 'reglages' ? 'page' : undefined} onClick={() => setUi({ tab: 'reglages' })}>
+          <Icon name="user" />
+          <span className="hide-mobile">Mon compte</span>
+        </button>
       </header>
       <div className="modebar">
-        <ModeSwitch mode={mode} openTasks={open} />
-        {mode === 'jardin' && MODE_TABS.jardin.includes(tab) && !placingSpeciesId && (
-          <div className="guide">
-            <ProgressCard garden={garden} />
-          </div>
-        )}
-        {isDemoGarden(garden) && !guide.demoHidden && (
+        {tabs.length > 0 && <SubTabs tabs={tabs} current={tab} label={rayon === 'jardin' ? 'Écrans de Mon jardin' : 'Écrans de Planter'} />}
+        {isDemoGarden(garden) && !guide.demoHidden && tab !== 'accueil' && (
           <div className="alert info demo-banner" role="status">
             <span>
               <strong>Ceci est un jardin d’exemple.</strong>
@@ -269,51 +200,25 @@ export function App() {
         )}
       </div>
       <nav className="sidenav" aria-label="Navigation principale">
-        {MODE_TABS[mode].map((t) => (
-          <button key={t} className="navbtn hide-mobile" aria-current={tab === t ? 'page' : undefined} onClick={() => setUi({ tab: t })}>
-            <Icon name={NAV[t].icon} />
-            {NAV[t].label}
-            {t === 'entretien' && open > 0 && (
-              <span className="badge count" aria-label={`${open} tâche${open > 1 ? 's' : ''} à faire`}>
+        {rayons.map((r) => (
+          <button key={r} className="navbtn" aria-current={rayon === r ? 'page' : undefined} onClick={() => goRayon(r)}>
+            <Icon name={RAYON_ICON[r]} />
+            {RAYON_LABEL[r]}
+            {r === 'afaire' && open > 0 && (
+              <span className="badge count" aria-label={taskBadge}>
                 {open}
               </span>
             )}
-          </button>
-        ))}
-        {extraTabs(mode).map((t) => (
-          <button key={t} className="navbtn hide-mobile" aria-current={tab === t ? 'page' : undefined} onClick={() => setUi({ tab: t })}>
-            <Icon name={NAV[t].icon} />
-            {NAV[t].label}
-            {t === 'voisins' && <NewsBadge count={newsCount} />}
+            {r === 'voisins' && <NewsBadge count={newsCount} />}
           </button>
         ))}
         <div className="sidenav-invite hide-mobile">
           <InviteButton className="btn small" label="Faire connaître l’appli" copyLabel="Copier le lien de l’appli" />
         </div>
-        {mobileBarTabs(neighborsEnabled).map((t) => (
-          <button key={t} className="navbtn show-mobile" aria-current={tab === t ? 'page' : undefined} onClick={() => setUi({ tab: t })}>
-            <Icon name={NAV[t].icon} />
-            {NAV[t].label}
-            {t === 'entretien' && open > 0 && (
-              <span className="badge count" aria-label={`${open} tâche${open > 1 ? 's' : ''} à faire`}>
-                {open}
-              </span>
-            )}
-            {t === 'voisins' && <NewsBadge count={newsCount} />}
-          </button>
-        ))}
-        <button
-          className="navbtn show-mobile"
-          aria-haspopup="dialog"
-          aria-current={mobileMenuTabs(neighborsEnabled).includes(tab) ? 'page' : undefined}
-          onClick={() => setMoreOpen(true)}
-        >
-          <Icon name="menu" />
-          Menu
-        </button>
       </nav>
       <main id="main-panel" ref={mainRef} tabIndex={-1} aria-label={TAB_LABEL[tab]} className={'main' + (full ? ' full' : '')}>
         <ErrorBoundary inline resetKey={tab}>
+          {tab === 'accueil' && <Accueil garden={garden} openTasks={open} newsCount={newsCount} />}
           {tab === 'carte' && (
             <Suspense fallback={<Loading label="Chargement de la carte…" />}>
               <MapView garden={garden} />
@@ -350,7 +255,6 @@ export function App() {
         </Suspense>
       )}
       {helpOpen && <HelpSheet tab={tab} onClose={() => setHelpOpen(false)} />}
-      {moreOpen && <MoreSheet onClose={() => setMoreOpen(false)} onNewGarden={startNewGarden} newsCount={newsCount} />}
     </div>
   )
 }

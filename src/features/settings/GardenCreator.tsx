@@ -3,7 +3,7 @@ import { useIsMobile } from '../../components/useMedia'
 import type { GeocodeResult } from '../../lib/ign'
 import { addGarden, addPlant, getState } from '../../lib/store'
 import { uid } from '../../lib/geo'
-import { showFirstSteps } from '../../lib/ui'
+import { setUi } from '../../lib/ui'
 import type { Garden } from '../../types'
 import { AddressSearch } from './AddressSearch'
 import { buildGarden, FAIL_HELP, INITIAL_STEPS, type Step } from './createGarden'
@@ -21,7 +21,7 @@ interface Built {
   name: string
 }
 
-function StepList({ steps, withHelp }: { steps: Step[]; withHelp?: boolean }) {
+export function StepList({ steps, withHelp }: { steps: Step[]; withHelp?: boolean }) {
   return (
     <ul className="steps" aria-live="polite">
       {steps.map((s) => (
@@ -86,8 +86,8 @@ export function GardenCreator({ onDone, allowDemo }: { onDone?: () => void; allo
     if (!built) return
     addGarden(built.garden)
     if (built.demo) for (const pl of demoPlants(built.garden)) addPlant({ ...pl, id: uid() })
-    // Nouveau jardin : on ouvre « Mon jardin » avec la checklist « Premiers pas » (une fois ; la modélisation reste facultative).
-    showFirstSteps({ open: false })
+    // Nouveau jardin : on ouvre la carte de « Mon jardin ».
+    setUi({ tab: 'carte' })
     onDone?.()
     // L'écran de création était peut-être défilé : le nouvel écran repart du haut.
     requestAnimationFrame(() => window.scrollTo(0, 0))

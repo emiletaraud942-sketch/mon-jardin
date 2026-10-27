@@ -11,6 +11,7 @@ import { closePlantSheet, setUi, startPlacing, useUi } from '../../lib/ui'
 import type { Garden, PlantStatus } from '../../types'
 import { PlantPanel, plantName } from './PlantPanel'
 import { IdentifyDialog } from './IdentifyDialog'
+import { openScan } from '../scan/scanUi'
 
 export function PlantsPage({ garden }: { garden: Garden }) {
   const plants = useGardenPlants(garden.id)
@@ -42,6 +43,9 @@ export function PlantsPage({ garden }: { garden: Garden }) {
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <h1>Mes plantes ({plants.length})</h1>
         <div className="row">
+          <button className="btn" onClick={() => openScan('menu')}>
+            <Icon name="camera" /> Scanner mon jardin
+          </button>
           <button className="btn" onClick={() => setIdentifying(true)}>
             <Icon name="camera" /> Identifier par photo
           </button>

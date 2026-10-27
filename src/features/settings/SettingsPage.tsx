@@ -10,13 +10,13 @@ import { exportCurrentState, lastExportAt, REMIND_EVERY_DAYS } from '../../lib/b
 import { formatDay, frNumber } from '../../lib/format'
 import { friendlyError, type FriendlyError } from '../../lib/http'
 import { deletePhoto } from '../../lib/photos'
-import { getLoadWarnings, getState, replaceData, setState, updateGarden, useGardenPlants, useStorageStatus, useStore } from '../../lib/store'
+import { getLoadWarnings, getState, replaceData, setActiveGarden, setState, updateGarden, useGardenPlants, useStorageStatus, useStore } from '../../lib/store'
 import { type StateData } from '../../lib/migrate'
 import { readBackupFile } from '../../lib/security/import'
 import { getTheme, setTheme, THEME_LABEL, type Theme } from '../../lib/theme'
 import { getTextSize, setTextSize, TEXT_SIZE_LABEL, TEXT_SIZES, type TextSize } from '../../lib/textSize'
 import { showToast } from '../../lib/toast'
-import { setUi, useUi } from '../../lib/ui'
+import { restartOnboarding, setUi, useUi } from '../../lib/ui'
 import { doyToLabel } from '../../lib/weather'
 import { lidarMessage, setLidarEnabled, useLidarScene } from '../../lib/useLidar'
 import { LIDAR_ATTRIBUTION } from '../../lib/lidar'
@@ -24,6 +24,7 @@ import type { Garden, SoilTexture } from '../../types'
 import { GardenCreator } from './GardenCreator'
 import { GardenDataBanner } from './GardenDataBanner'
 import { InstallCard } from '../../components/InstallButton'
+import { InviteButton } from '../../components/InviteButton'
 import { PrivacyCard } from './PrivacyCard'
 import { hasConsent } from '../../lib/consent'
 import { ConsentDialog } from '../legal/ConsentDialog'
@@ -526,6 +527,52 @@ function ReadingCard() {
   )
 }
 
+/** Changer de jardin, en créer un autre. */
+function GardensCard({ garden, adding, setAdding, addRef }: { garden: Garden; adding: boolean; setAdding: (v: boolean) => void; addRef: React.RefObject<HTMLDivElement> }) {
+  const gardens = useStore((s) => s.gardens)
+  return (
+    <div className="card" ref={addRef}>
+      <h2>Mes jardins</h2>
+      <ul className="list garden-list">
+        {gardens.map((g) => (
+          <li key={g.id}>
+            <button className="btn garden-pick" aria-pressed={g.id === garden.id} onClick={() => g.id !== garden.id && setActiveGarden(g.id)}>
+              <span aria-hidden>{g.id === garden.id ? '✓' : ''}</span>
+              <span style={{ flex: 1, textAlign: 'left' }}>{g.name}</span>
+              {g.id === garden.id && <span className="muted small">affiché</span>}
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div style={{ marginTop: 10 }}>
+        {adding ? (
+          <GardenCreator onDone={() => setAdding(false)} />
+        ) : (
+          <button className="btn" onClick={() => setAdding(true)}>
+            <Icon name="plus" /> Nouveau jardin
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/** Visite guidée et partage de l'appli. */
+function TourCard() {
+  return (
+    <div className="card">
+      <h2>La visite</h2>
+      <p className="small muted">Le guide en 5 étapes : adresse, terrain, plantes, entretien, voisins.</p>
+      <div className="stack">
+        <button className="btn" onClick={restartOnboarding}>
+          Revoir la visite
+        </button>
+        <InviteButton className="btn" label="Faire connaître l’appli" copyLabel="Copier le lien de l’appli" />
+      </div>
+    </div>
+  )
+}
+
 export function SettingsPage({ garden }: { garden: Garden }) {
   const { newGarden } = useUi()
   const [adding, setAdding] = useState(!!newGarden)
@@ -541,26 +588,18 @@ export function SettingsPage({ garden }: { garden: Garden }) {
 
   return (
     <div className="page">
-      <h1>Réglages et sauvegarde</h1>
+      <h1>Mon compte et réglages</h1>
       <div className="grid cols-2" style={{ alignItems: 'start' }}>
         <div className="stack" style={{ gap: 12 }}>
+          <GardensCard garden={garden} adding={adding} setAdding={setAdding} addRef={addRef} />
           <Backup />
           <GardenInfo garden={garden} />
           <LidarCard garden={garden} />
           <ScanCard garden={garden} />
-          <div className="card" ref={addRef}>
-            <h2>Ajouter un autre jardin</h2>
-            {adding ? (
-              <GardenCreator onDone={() => setAdding(false)} />
-            ) : (
-              <button className="btn" onClick={() => setAdding(true)}>
-                <Icon name="plus" /> Nouveau jardin
-              </button>
-            )}
-          </div>
         </div>
         <div className="stack" style={{ gap: 12 }}>
           <ReadingCard />
+          <TourCard />
           <InstallCard />
           <Sync />
           <PrivacyCard />

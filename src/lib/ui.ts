@@ -2,42 +2,42 @@ import { useSyncExternalStore } from 'react'
 import type { Category, XY } from '../types'
 import type { LegalId } from './legal'
 import { neighborsEnabled } from './neighbors/enabled'
+import { EMPTY_ONBOARDING, hideRoute, markStep, markWelcomed, parseOnboarding, restartTour, type OnboardingState, type OnboardingStepId } from './onboarding'
 
-// État d'interface non persistant, partagé entre la carte, la 3D et les panneaux.
-export type Tab = 'carte' | '3d' | 'plantes' | 'entretien' | 'planter' | 'catalogue' | 'reglages' | 'voisins'
+// État d'interface partagé entre la carte, la 3D et les panneaux. Seuls le dernier rayon et les repères (GuideState) sont mémorisés.
+export type Tab = 'accueil' | 'carte' | '3d' | 'plantes' | 'entretien' | 'planter' | 'catalogue' | 'reglages' | 'voisins'
 
-/** Mode d'affichage selon le stade : modéliser le jardin, l'entretenir, planifier. */
-export type Mode = 'jardin' | 'entretenir' | 'planifier'
-export const MODES: Mode[] = ['jardin', 'entretenir', 'planifier']
-export const MODE_LABEL: Record<Mode, string> = { jardin: 'Mon jardin', entretenir: 'Entretenir', planifier: 'Planifier' }
-/** Onglets de chaque mode (barre du bas sur téléphone : 5 entrées au plus, plus « Plus »). */
-export const MODE_TABS: Record<Mode, Tab[]> = {
-  jardin: ['carte', '3d', 'plantes'],
-  entretenir: ['entretien', 'plantes'],
-  planifier: ['planter', 'catalogue', '3d'],
+/**
+ * Les 4 rayons de l'appli (barre du bas). Chacun regroupe des écrans :
+ * Mon jardin = carte, plantes, vue 3D ; À faire = entretien, météo, calendrier ; Planter = où planter, catalogue ; Voisins = entraide.
+ */
+export type Rayon = 'jardin' | 'afaire' | 'planter' | 'voisins'
+export const RAYONS: Rayon[] = ['jardin', 'afaire', 'planter', 'voisins']
+export const RAYON_LABEL: Record<Rayon, string> = { jardin: 'Mon jardin', afaire: 'À faire', planter: 'Planter', voisins: 'Voisins' }
+export const RAYON_TABS: Record<Rayon, Tab[]> = {
+  jardin: ['carte', 'plantes', '3d'],
+  afaire: ['entretien'],
+  planter: ['planter', 'catalogue'],
+  voisins: ['voisins'],
 }
-/** Toujours accessibles, quel que soit le mode (menu « Plus »). */
-export const ALWAYS_TABS: Tab[] = ['catalogue', 'reglages', 'voisins']
-export const DEFAULT_TAB: Record<Mode, Tab> = { jardin: 'carte', entretenir: 'entretien', planifier: 'planter' }
-/** En dessous de ce nombre de plantes, on ouvre sur « Mon jardin ». */
-export const MIN_PLANTS_FOR_CARE = 3
-
-/** Barre du bas sur téléphone (5 entrées au plus, « Menu » compris) : la même dans tous les modes. Entraide seulement si activée. */
-export const mobileBarTabs = (neighbors: boolean = neighborsEnabled): Tab[] => ['carte', 'plantes', 'entretien', ...(neighbors ? (['voisins'] as Tab[]) : (['planter'] as Tab[]))]
-/** Écrans qui passent par le « Menu » sur téléphone. */
-export const mobileMenuTabs = (neighbors: boolean = neighborsEnabled): Tab[] => TABS.filter((t) => !mobileBarTabs(neighbors).includes(t) && tabAvailable(t))
-
-export const tabInMode = (mode: Mode, tab: Tab) => MODE_TABS[mode].includes(tab) || ALWAYS_TABS.includes(tab)
-/** Mode qui contient l'onglet : le mode courant s'il convient, sinon le premier qui le propose. */
-export function modeForTab(tab: Tab, current: Mode): Mode {
-  if (tabInMode(current, tab)) return current
-  return MODES.find((m) => tabInMode(m, tab)) ?? current
-}
-export const defaultMode = (plantCount: number): Mode => (plantCount < MIN_PLANTS_FOR_CARE ? 'jardin' : 'entretenir')
-export const parseMode = (v: unknown): Mode | undefined => (MODES as unknown[]).includes(v) ? (v as Mode) : undefined
+/** Écran où l'on arrive en ouvrant un rayon. */
+export const DEFAULT_TAB: Record<Rayon, Tab> = { jardin: 'carte', afaire: 'entretien', planter: 'planter', voisins: 'voisins' }
+/** Rayon d'un écran ; « accueil » et « reglages » (compte) n'appartiennent à aucun rayon. */
+export const rayonOfTab = (tab: Tab): Rayon | undefined => RAYONS.find((r) => RAYON_TABS[r].includes(tab))
+export const parseRayon = (v: unknown): Rayon | undefined => ((RAYONS as unknown[]).includes(v) ? (v as Rayon) : undefined)
+/** Voisins n'existe que si l'entraide est configurée (variables NEIGHBORS_*) : sinon la barre a 3 entrées. */
+export const rayonAvailable = (r: Rayon, neighbors: boolean = neighborsEnabled) => r !== 'voisins' || neighbors
+export const visibleRayons = (neighbors: boolean = neighborsEnabled): Rayon[] => RAYONS.filter((r) => rayonAvailable(r, neighbors))
+/** Écrans du sélecteur segmenté d'un rayon (vide : pas de sélecteur). */
+export const subTabs = (r: Rayon | undefined): Tab[] => (r === 'jardin' || r === 'planter' ? RAYON_TABS[r] : [])
+/** Libellés du sélecteur segmenté d'un rayon. */
+export const SUB_LABEL: Partial<Record<Tab, string>> = { carte: 'Carte', plantes: 'Plantes', '3d': 'Vue 3D', planter: 'Où planter ?', catalogue: 'Catalogue' }
+/** Ancien mode mémorisé (avant les rayons) -> rayon. */
+export const MODE_TO_RAYON: Record<string, Rayon> = { jardin: 'jardin', entretenir: 'afaire', planifier: 'planter' }
 
 // ---------- Mémoire locale (localStorage peut être absent ou refuser d'écrire) ----------
-const MODE_KEY = 'pj.mode'
+const MODE_KEY = 'pj.mode' // ancienne clé (3 modes) : lue une fois pour retrouver le rayon
+const RAYON_KEY = 'pj.rayon'
 const GUIDE_KEY = 'pj.guide'
 
 function readPref(key: string): string | undefined {
@@ -71,6 +71,8 @@ export interface GuideState {
   /** Ids des jardins dont la vue 3D / l'écran Entretien ont déjà été ouverts. */
   opened3d: string[]
   openedEntretien: string[]
+  /** Avancement du parcours d'accueil. `undefined` : rien d'enregistré, l'état de départ est déduit des jardins et des plantes. */
+  onboarding?: OnboardingState
 }
 const DEFAULT_GUIDE: GuideState = { progressOpen: false, stepsHidden: true, stepsOpen: true, demoHidden: false, installHidden: false, nudgeUntil: 0, opened3d: [], openedEntretien: [] }
 export const NUDGE_SNOOZE_MS = 7 * 86400000
@@ -89,6 +91,7 @@ function readGuide(): GuideState {
       nudgeUntil: typeof raw.nudgeUntil === 'number' && Number.isFinite(raw.nudgeUntil) ? raw.nudgeUntil : 0,
       opened3d: ids(raw.opened3d),
       openedEntretien: ids(raw.openedEntretien),
+      onboarding: parseOnboarding(raw.onboarding),
     }
   } catch {
     return { ...DEFAULT_GUIDE }
@@ -104,7 +107,10 @@ export interface PlantingState {
 
 interface UiState {
   tab: Tab
-  mode: Mode
+  /** Dernier rayon visité (mémorisé) : sert à rouvrir l'appli où l'on s'était arrêté. */
+  rayon?: Rayon
+  /** Parcours d'accueil ouvert (plein écran). 'auto' : à l'étape en cours. */
+  parcours?: ParcoursScreen
   guide: GuideState
   selectedPlantId?: string
   placingSpeciesId?: string
@@ -130,8 +136,11 @@ interface UiState {
   newGarden?: boolean
 }
 
+export type ParcoursScreen = OnboardingStepId | 'fin' | 'auto'
+
 /** Noms des écrans, tels que l'utilisateur les lit (barre de navigation, titre de la page). */
 export const TAB_LABEL: Record<Tab, string> = {
+  accueil: 'Accueil',
   carte: 'Carte',
   '3d': 'Vue 3D',
   plantes: 'Plantes',
@@ -139,17 +148,23 @@ export const TAB_LABEL: Record<Tab, string> = {
   planter: 'Où planter ?',
   catalogue: 'Catalogue',
   reglages: 'Réglages',
-  voisins: 'Entraide',
+  voisins: 'Voisins',
 }
 
-export const TABS: Tab[] = ['carte', '3d', 'plantes', 'entretien', 'planter', 'catalogue', 'reglages', 'voisins']
+export const TABS: Tab[] = ['accueil', 'carte', '3d', 'plantes', 'entretien', 'planter', 'catalogue', 'reglages', 'voisins']
 /** L'onglet « Voisins » n'existe que si l'entraide est configurée (variables VITE_NEIGHBORS_*). */
 export const tabAvailable = (t: Tab) => t !== 'voisins' || neighborsEnabled
 /** Alias de hash : le retour d'un lien magique de l'entraide arrive sur `#entraide`. */
-const HASH_ALIAS: Record<string, Tab> = { entraide: 'voisins' }
+const HASH_ALIAS: Record<string, Tab> = { entraide: 'voisins', jardin: 'carte', afaire: 'entretien', compte: 'reglages' }
 const MAP_TABS: Tab[] = ['carte', '3d']
 
+/** Hash d'un écran (`#carte`). */
+export const toHash = (tab: Tab) => '#' + tab
+
 /** Onglet désigné par un hash (`#plantes`, `#reglages#access_token=…`). Un hash inconnu (lien magique…) donne `undefined`. */
+export function fromHash(hash: string): Tab | undefined {
+  return parseHash(hash)
+}
 export function parseHash(hash: string): Tab | undefined {
   const m = /^#?([a-z0-9]+)(?:[#&?/]|$)/.exec(hash)
   const t = (HASH_ALIAS[m?.[1] ?? ''] ?? m?.[1]) as Tab | undefined
@@ -175,10 +190,14 @@ const readState = (): HistoryState | undefined => {
   return s && typeof s === 'object' && s.nav ? s : undefined
 }
 
-/** Mode mémorisé d'une session précédente ; sans lui, `applyDefaultMode` choisira selon le nombre de plantes. */
-const storedMode = parseMode(readPref(MODE_KEY))
-/** Aucun onglet désigné au lancement (ni historique, ni hash) : le mode par défaut peut choisir l'écran d'ouverture. */
-let tabImplicit = false
+/** Dernier rayon d'une session précédente (ou converti depuis l'ancien mode à trois boutons). */
+function readStoredRayon(): Rayon | undefined {
+  const r = parseRayon(readPref(RAYON_KEY))
+  if (r) return r
+  const old = readPref(MODE_KEY)
+  return old ? MODE_TO_RAYON[old] : undefined
+}
+const storedRayon = readStoredRayon()
 
 function initialUi(): UiState {
   const stored = readState()?.nav
@@ -188,12 +207,11 @@ function initialUi(): UiState {
     tab = stored.tab
     extra = { selectedPlantId: stored.selectedPlantId, speciesId: stored.speciesId }
   } else {
+    // Ni historique ni hash : le dernier rayon s'il est connu et disponible, sinon « Que voulez-vous faire ? ».
     const fromHash = parseHash(location.hash)
-    tabImplicit = !fromHash
-    // Relance sans écran désigné : on rouvre le mode où l'on s'était arrêté.
-    tab = fromHash ?? (storedMode ? DEFAULT_TAB[storedMode] : 'carte')
+    tab = fromHash ?? (storedRayon && rayonAvailable(storedRayon) ? DEFAULT_TAB[storedRayon] : 'accueil')
   }
-  return { tab, mode: modeForTab(tab, storedMode ?? 'jardin'), guide: readGuide(), ...extra }
+  return { tab, rayon: rayonOfTab(tab) ?? storedRayon, guide: readGuide(), ...extra }
 }
 
 let ui: UiState = initialUi()
@@ -231,9 +249,14 @@ function syncHistory(prev: UiState, next: UiState, forcePush: boolean) {
 export function setUi(patch: Partial<Omit<UiState, 'guide'>>, opts: { push?: boolean } = {}) {
   const prev = ui
   let next: UiState = { ...ui, ...patch }
-  // Un onglet hors du mode courant (lien direct, « Voir sur la carte »…) bascule dans le bon mode.
-  if (patch.tab) next.mode = modeForTab(patch.tab, patch.mode ?? next.mode)
-  if (next.mode !== prev.mode) writePref(MODE_KEY, next.mode)
+  // Changer d'écran ferme le parcours d'accueil (sauf s'il est demandé en même temps).
+  if (patch.tab && !('parcours' in patch)) next.parcours = undefined
+  // Le rayon de l'écran devient le dernier rayon visité (mémorisé pour la prochaine ouverture).
+  const r = patch.tab ? rayonOfTab(patch.tab) : undefined
+  if (r && r !== prev.rayon) {
+    next.rayon = r
+    writePref(RAYON_KEY, r)
+  }
   // Quitter la carte/3D abandonne le placement en cours (sinon il resterait actif, invisible).
   if (patch.tab && patch.tab !== prev.tab && !MAP_TABS.includes(patch.tab) && !patch.placingSpeciesId) next = clearPlacing(next)
   ui = next
@@ -244,36 +267,18 @@ export function setUi(patch: Partial<Omit<UiState, 'guide'>>, opts: { push?: boo
 // Bouton Retour (Android, navigateur) : on restitue l'écran mémorisé dans l'entrée d'historique.
 window.addEventListener('popstate', (e) => {
   const s = (e.state as HistoryState | null)?.nav
-  const tab = s?.tab && TABS.includes(s.tab) && tabAvailable(s.tab) ? s.tab : parseHash(location.hash) ?? 'carte'
-  let next: UiState = { ...ui, tab, mode: modeForTab(tab, ui.mode), selectedPlantId: s?.selectedPlantId, speciesId: s ? s.speciesId : ui.speciesId }
+  const tab = s?.tab && TABS.includes(s.tab) && tabAvailable(s.tab) ? s.tab : parseHash(location.hash) ?? 'accueil'
+  let next: UiState = { ...ui, tab, rayon: rayonOfTab(tab) ?? ui.rayon, parcours: undefined, selectedPlantId: s?.selectedPlantId, speciesId: s ? s.speciesId : ui.speciesId }
   if (!MAP_TABS.includes(tab)) next = clearPlacing(next)
-  if (next.mode !== ui.mode) writePref(MODE_KEY, next.mode)
+  if (next.rayon && next.rayon !== ui.rayon) writePref(RAYON_KEY, next.rayon)
   ui = next
   emit()
 })
 
-/** Change de mode et ouvre son onglet par défaut (une entrée d'historique, comme un changement d'onglet). */
-export function setMode(mode: Mode) {
-  writePref(MODE_KEY, mode) // même sans changement : le choix explicite l'emporte sur le mode par défaut
-  if (ui.mode === mode && MODE_TABS[mode].includes(ui.tab)) return
-  setUi({ mode, tab: DEFAULT_TAB[mode] })
-}
-
-/**
- * Premier lancement avec un jardin et sans mode mémorisé : « Mon jardin » s'il y a moins de 3 plantes, sinon « Entretenir ».
- * Remplace l'entrée d'historique courante (pas d'empilement) et ne change l'écran que s'il n'était pas désigné.
- */
-export function applyDefaultMode(plantCount: number) {
-  if (parseMode(readPref(MODE_KEY))) return
-  const mode = defaultMode(plantCount)
-  const prevTab = ui.tab
-  const tab = tabImplicit && !tabInMode(mode, prevTab) ? DEFAULT_TAB[mode] : prevTab
-  tabImplicit = false
-  ui = { ...ui, mode: modeForTab(tab, mode), tab }
-  writePref(MODE_KEY, ui.mode)
-  // Le hash n'est réécrit que s'il ne contient rien d'autre que l'onglet (jeton de lien magique à préserver).
-  if (tab !== prevTab && (location.hash === '' || location.hash === '#' + prevTab)) history.replaceState({ nav: snap(ui) } satisfies HistoryState, '', '#' + tab)
-  emit()
+/** Ouvre un rayon (barre du bas) : son écran d'arrivée, sauf si l'on y est déjà. */
+export function goRayon(rayon: Rayon) {
+  if (rayonOfTab(ui.tab) === rayon) return
+  setUi({ tab: DEFAULT_TAB[rayon] })
 }
 
 /** Met à jour les repères mémorisés (cartes repliées, « plus tard »…). N'ajoute rien à l'historique. */
@@ -290,13 +295,26 @@ export function noteVisit(tab: Tab, gardenId: string) {
   if (tab === 'entretien' && !ui.guide.openedEntretien.includes(gardenId)) setGuide({ openedEntretien: [...ui.guide.openedEntretien, gardenId] })
 }
 
-/**
- * Réaffiche la checklist « Premiers pas » sur « Mon jardin ». Ouverte par défaut (demande dans l'aide) ;
- * `open: false` la laisse repliée (jardin tout juste créé : on ne couvre pas la carte).
- */
-export function showFirstSteps(opts: { open?: boolean } = {}) {
-  setGuide({ stepsHidden: false, stepsOpen: true, progressOpen: opts.open ?? true })
-  setMode('jardin')
+// ---------- Parcours d'accueil (état enregistré dans GuideState.onboarding) ----------
+/** État courant du parcours ; vide tant que rien n'est enregistré (l'application le déduit des jardins et des plantes). */
+export const getOnboarding = (): OnboardingState => ui.guide.onboarding ?? EMPTY_ONBOARDING
+export function updateOnboarding(fn: (s: OnboardingState) => OnboardingState) {
+  setGuide({ onboarding: fn(getOnboarding()) })
+}
+export const noteStep = (id: OnboardingStepId, kind: 'done' | 'skipped') => updateOnboarding((s) => markStep(s, id, kind))
+export const noteWelcomed = () => updateOnboarding(markWelcomed)
+export const hideOnboardingRoute = () => updateOnboarding(hideRoute)
+/** Ouvre le parcours plein écran à une étape (par défaut : l'étape en cours). */
+export function openParcours(screen: ParcoursScreen = 'auto') {
+  setUi({ parcours: screen })
+}
+export function closeParcours(opts: { to?: Tab } = {}) {
+  setUi({ parcours: undefined, tab: opts.to ?? 'accueil' })
+}
+/** « Revoir la visite » (compte, aide) : repart de la première étape. */
+export function restartOnboarding() {
+  updateOnboarding(restartTour)
+  setUi({ tab: 'accueil', parcours: 'adresse' })
 }
 
 export function useUi(): UiState {
@@ -316,6 +334,8 @@ export function openSpecies(speciesId: string) {
 
 /** Lance le placement d'une plante : bascule sur la carte si on n'est ni sur la carte ni en 3D. */
 export function startPlacing(speciesId: string, extra: { customName?: string; photos?: string[]; series?: boolean } = {}) {
+  // Depuis l'étape « Mes plantes » du parcours d'accueil : choisir une façon d'ajouter une plante valide l'étape.
+  if (ui.parcours === 'plantes') noteStep('plantes', 'done')
   setUi({
     placingSpeciesId: speciesId,
     placingCustomName: extra.customName,
@@ -324,6 +344,7 @@ export function startPlacing(speciesId: string, extra: { customName?: string; ph
     selectedPlantId: undefined,
     movingPlantId: undefined,
     tab: ui.tab === '3d' ? '3d' : 'carte',
+    parcours: undefined,
   })
 }
 

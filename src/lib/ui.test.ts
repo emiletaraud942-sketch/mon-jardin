@@ -81,7 +81,9 @@ describe('onglet Voisins (entraide)', () => {
     expect(ui.tabAvailable('voisins')).toBe(false)
     expect(ui.parseHash('#voisins')).toBeUndefined()
     expect(ui.parseHash('#entraide')).toBeUndefined()
-    expect(ui.getUi().tab).toBe('carte')
+    expect(ui.getUi().tab).toBe('accueil')
+    expect(ui.visibleRayons()).toEqual(['jardin', 'afaire', 'planter'])
+    expect(ui.rayonAvailable('voisins')).toBe(false)
   })
   it('la clé publique peut aussi venir de VITE_NEIGHBORS_SUPABASE_PUBLIC_TOKEN', async () => {
     vi.stubEnv('VITE_NEIGHBORS_SUPABASE_URL', 'https://x.supabase.co')
@@ -99,33 +101,33 @@ describe('onglet Voisins (entraide)', () => {
     const { ui } = await load('#voisins')
     expect(ui.tabAvailable('voisins')).toBe(true)
   })
-  it('présent quand configuré : #voisins et le retour #entraide ouvrent l’onglet, dans « Plus »', async () => {
+  it('présent quand configuré : #voisins et le retour #entraide ouvrent l’onglet, 4e rayon', async () => {
     vi.stubEnv('VITE_NEIGHBORS_SUPABASE_URL', 'https://x.supabase.co')
     vi.stubEnv('VITE_NEIGHBORS_SUPABASE_ANON_KEY', 'cle')
     const { ui } = await load('#entraide')
     expect(ui.parseHash('#voisins')).toBe('voisins')
     expect(ui.parseHash('#entraide')).toBe('voisins')
     expect(ui.getUi().tab).toBe('voisins')
-    expect(ui.ALWAYS_TABS).toContain('voisins')
-    for (const m of ui.MODES) expect(ui.tabInMode(m, 'voisins')).toBe(true)
+    expect(ui.rayonOfTab('voisins')).toBe('voisins')
+    expect(ui.visibleRayons()).toEqual(['jardin', 'afaire', 'planter', 'voisins'])
   })
 })
 
 describe('historique', () => {
-  it('ouvre sur la carte et écrit le hash', async () => {
+  it('ouvre sur l’accueil sans écran mémorisé et écrit le hash', async () => {
     const { b, ui } = await load('')
-    expect(ui.getUi().tab).toBe('carte')
-    expect(b.current().hash).toBe('#carte')
+    expect(ui.getUi().tab).toBe('accueil')
+    expect(b.current().hash).toBe('#accueil')
   })
 
   it('un hash inconnu (lien magique) n’est ni lu ni effacé', async () => {
     const { b, ui } = await load('#access_token=abc&type=magiclink')
-    expect(ui.getUi().tab).toBe('carte')
+    expect(ui.getUi().tab).toBe('accueil')
     expect(b.current().hash).toBe('#access_token=abc&type=magiclink')
   })
 
   it('chaque changement d’onglet ajoute une entrée et Retour revient', async () => {
-    const { b, ui } = await load('')
+    const { b, ui } = await load('#carte')
     ui.setUi({ tab: 'plantes' })
     ui.setUi({ tab: 'entretien' })
     expect(b.length()).toBe(3)
@@ -136,7 +138,7 @@ describe('historique', () => {
   })
 
   it('ouvrir une fiche plante ajoute une entrée ; Retour la ferme', async () => {
-    const { b, ui } = await load('')
+    const { b, ui } = await load('#carte')
     ui.setUi({ selectedPlantId: 'p1' })
     expect(b.length()).toBe(2)
     b.back()
@@ -145,14 +147,14 @@ describe('historique', () => {
   })
 
   it('changer de plante sélectionnée remplace l’entrée (pas d’empilement)', async () => {
-    const { b, ui } = await load('')
+    const { b, ui } = await load('#carte')
     ui.setUi({ selectedPlantId: 'p1' })
     ui.setUi({ selectedPlantId: 'p2' })
     expect(b.length()).toBe(2)
   })
 
   it('closePlantSheet revient en arrière au lieu d’empiler', async () => {
-    const { b, ui } = await load('')
+    const { b, ui } = await load('#carte')
     ui.setUi({ selectedPlantId: 'p1' })
     ui.closePlantSheet()
     expect(ui.getUi().selectedPlantId).toBeUndefined()
@@ -163,7 +165,7 @@ describe('historique', () => {
   })
 
   it('une plante ouverte depuis un autre onglet ne ramène pas à cet onglet quand on la ferme', async () => {
-    const { ui } = await load('')
+    const { ui } = await load('#carte')
     ui.setUi({ tab: 'entretien' })
     ui.setUi({ tab: 'carte', selectedPlantId: 'p1' })
     ui.closePlantSheet()
@@ -172,7 +174,7 @@ describe('historique', () => {
   })
 
   it('openSpecies empile les fiches vues dans le catalogue', async () => {
-    const { b, ui } = await load('')
+    const { b, ui } = await load('#carte')
     ui.openSpecies('pommier')
     ui.openSpecies('poirier')
     expect(b.length()).toBe(3)
@@ -181,7 +183,7 @@ describe('historique', () => {
   })
 
   it('quitter la carte abandonne le placement en cours', async () => {
-    const { ui } = await load('')
+    const { ui } = await load('#carte')
     ui.startPlacing('pommier')
     expect(ui.getUi().placingSpeciesId).toBe('pommier')
     ui.setUi({ tab: 'plantes' })
@@ -189,7 +191,7 @@ describe('historique', () => {
   })
 
   it('le placement en série mémorise un compteur et s’arrête avec stopPlacing', async () => {
-    const { ui } = await load('')
+    const { ui } = await load('#carte')
     ui.startPlacing('pommier', { series: true })
     expect(ui.getUi().placingSeries).toEqual({ count: 0 })
     ui.stopPlacing()
@@ -212,7 +214,7 @@ describe('historique', () => {
   })
 
   it('une nouvelle plante à placer annule un déplacement en cours', async () => {
-    const { ui } = await load('')
+    const { ui } = await load('#carte')
     ui.startMoving('p1')
     ui.startPlacing('pommier')
     expect(ui.getUi().movingPlantId).toBeUndefined()
@@ -220,166 +222,166 @@ describe('historique', () => {
   })
 
   it('les écrans portent les noms du lexique', async () => {
-    const { ui } = await load('')
+    const { ui } = await load('#carte')
     expect(ui.TAB_LABEL['3d']).toBe('Vue 3D')
     expect(ui.TAB_LABEL.planter).toBe('Où planter ?')
-    expect(ui.TAB_LABEL.voisins).toBe('Entraide')
+    expect(ui.TAB_LABEL.voisins).toBe('Voisins')
   })
 })
 
-describe('modes', () => {
-  it('associe chaque mode à ses onglets, Catalogue et Réglages restant accessibles partout', async () => {
+describe('rayons', () => {
+  it('chaque rayon regroupe ses écrans ; accueil et compte n’en font partie d’aucun', async () => {
     const { ui } = await load()
-    expect(ui.MODE_TABS.jardin).toEqual(['carte', '3d', 'plantes'])
-    expect(ui.MODE_TABS.entretenir).toEqual(['entretien', 'plantes'])
-    expect(ui.MODE_TABS.planifier).toEqual(['planter', 'catalogue', '3d'])
-    for (const m of ui.MODES) {
-      expect(ui.tabInMode(m, 'reglages')).toBe(true)
-      expect(ui.tabInMode(m, 'catalogue')).toBe(true)
-      expect(ui.MODE_TABS[m].length).toBeLessThanOrEqual(5)
-    }
-    expect(ui.tabInMode('entretenir', 'carte')).toBe(false)
+    expect(ui.RAYON_TABS.jardin).toEqual(['carte', 'plantes', '3d'])
+    expect(ui.RAYON_TABS.afaire).toEqual(['entretien'])
+    expect(ui.RAYON_TABS.planter).toEqual(['planter', 'catalogue'])
+    expect(ui.RAYON_TABS.voisins).toEqual(['voisins'])
+    expect(ui.rayonOfTab('accueil')).toBeUndefined()
+    expect(ui.rayonOfTab('reglages')).toBeUndefined()
+    // Aucun écran ne disparaît : tous sont dans un rayon, sauf l’accueil et le compte.
+    for (const t of ui.TABS.filter((x) => x !== 'accueil' && x !== 'reglages')) expect(ui.rayonOfTab(t)).toBeDefined()
+    expect(ui.RAYON_LABEL).toEqual({ jardin: 'Mon jardin', afaire: 'À faire', planter: 'Planter', voisins: 'Voisins' })
   })
 
-  it('barre du bas du téléphone : 4 entrées + Menu, Entraide seulement si activée', async () => {
+  it('barre du bas : 3 entrées sans l’entraide, 4 avec', async () => {
     const { ui } = await load()
-    expect(ui.mobileBarTabs(true)).toEqual(['carte', 'plantes', 'entretien', 'voisins'])
-    expect(ui.mobileBarTabs(false)).not.toContain('voisins')
-    expect(ui.mobileBarTabs(true).length + 1).toBeLessThanOrEqual(5)
-    expect(ui.mobileMenuTabs(true)).toEqual(expect.arrayContaining(['3d', 'planter', 'catalogue', 'reglages']))
-    expect(ui.mobileMenuTabs(false)).not.toContain('voisins')
-    for (const t of ui.TABS.filter((x) => ui.tabAvailable(x))) {
-      expect(ui.mobileBarTabs().includes(t) || ui.mobileMenuTabs().includes(t)).toBe(true)
-    }
+    expect(ui.visibleRayons(true)).toEqual(['jardin', 'afaire', 'planter', 'voisins'])
+    expect(ui.visibleRayons(false)).toEqual(['jardin', 'afaire', 'planter'])
   })
 
-  it('mode par défaut : jardin sous 3 plantes, sinon entretenir', async () => {
+  it('sélecteur segmenté : Carte / Plantes / Vue 3D et Où planter ? / Catalogue seulement', async () => {
     const { ui } = await load()
-    expect(ui.defaultMode(0)).toBe('jardin')
-    expect(ui.defaultMode(2)).toBe('jardin')
-    expect(ui.defaultMode(3)).toBe('entretenir')
+    expect(ui.subTabs('jardin')).toEqual(['carte', 'plantes', '3d'])
+    expect(ui.subTabs('planter')).toEqual(['planter', 'catalogue'])
+    expect(ui.subTabs('afaire')).toEqual([])
+    expect(ui.subTabs(undefined)).toEqual([])
   })
 
-  it('ouvre sur « jardin » sans mémoire, même si localStorage est indisponible', async () => {
+  it('ouvre l’accueil sans mémoire, même si localStorage est indisponible', async () => {
     const { ui } = await load('', brokenStorage)
-    expect(ui.getUi().mode).toBe('jardin')
-    ui.setMode('entretenir') // ne doit pas lever
-    expect(ui.getUi().mode).toBe('entretenir')
+    expect(ui.getUi().tab).toBe('accueil')
+    ui.setUi({ tab: 'entretien' }) // ne doit pas lever
+    expect(ui.getUi().rayon).toBe('afaire')
     ui.setGuide({ stepsHidden: false })
     expect(ui.getUi().guide.stepsHidden).toBe(false)
   })
 
-  it('fonctionne sans localStorage du tout', async () => {
-    const { ui } = await load('')
-    ui.setMode('planifier')
-    expect(ui.getUi().tab).toBe('planter')
-  })
-
-  it('changer de mode choisit l’onglet par défaut et ajoute une entrée d’historique', async () => {
-    const { b, ui } = await load('')
-    ui.setMode('entretenir')
-    expect(ui.getUi()).toMatchObject({ mode: 'entretenir', tab: 'entretien' })
-    expect(b.current().hash).toBe('#entretien')
-    expect(b.length()).toBe(2)
-    ui.setMode('planifier')
-    expect(ui.getUi().tab).toBe('planter')
-    b.back()
-    expect(ui.getUi()).toMatchObject({ mode: 'entretenir', tab: 'entretien' })
-    b.back()
-    expect(ui.getUi()).toMatchObject({ mode: 'jardin', tab: 'carte' })
-  })
-
-  it('cliquer le mode déjà actif sur un de ses onglets ne change rien', async () => {
-    const { b, ui } = await load('')
-    ui.setUi({ tab: 'plantes' })
+  it('goRayon ouvre l’écran d’arrivée du rayon, sans rien changer si l’on y est déjà', async () => {
+    const { b, ui } = await load('#plantes')
     const len = b.length()
-    ui.setMode('jardin')
+    ui.goRayon('jardin')
     expect(ui.getUi().tab).toBe('plantes')
     expect(b.length()).toBe(len)
+    ui.goRayon('afaire')
+    expect(ui.getUi()).toMatchObject({ tab: 'entretien', rayon: 'afaire' })
+    ui.goRayon('planter')
+    expect(ui.getUi().tab).toBe('planter')
+    ui.goRayon('jardin')
+    expect(ui.getUi().tab).toBe('carte')
   })
 
-  it('un onglet hors du mode courant bascule dans le bon mode', async () => {
-    const { ui } = await load('')
-    ui.setMode('entretenir')
-    ui.setUi({ tab: 'carte', focusPlantId: 'p1' }) // « Voir sur la carte »
-    expect(ui.getUi().mode).toBe('jardin')
-    ui.setUi({ tab: 'entretien' })
-    expect(ui.getUi().mode).toBe('entretenir')
-    ui.setUi({ tab: 'planter' })
-    expect(ui.getUi().mode).toBe('planifier')
-  })
-
-  it('un onglet commun à deux modes garde le mode courant ; Réglages et Catalogue n’en changent aucun', async () => {
-    const { ui } = await load('')
-    ui.setMode('planifier')
-    ui.setUi({ tab: '3d' })
-    expect(ui.getUi().mode).toBe('planifier')
+  it('le compte et l’accueil gardent le dernier rayon', async () => {
+    const { ui } = await load('#entretien')
     ui.setUi({ tab: 'reglages' })
-    expect(ui.getUi().mode).toBe('planifier')
-    ui.setMode('entretenir')
-    ui.setUi({ tab: 'plantes' })
-    expect(ui.getUi().mode).toBe('entretenir')
-    ui.setUi({ tab: 'catalogue' })
-    expect(ui.getUi().mode).toBe('entretenir')
+    expect(ui.getUi().rayon).toBe('afaire')
+    ui.setUi({ tab: 'accueil' })
+    expect(ui.getUi().rayon).toBe('afaire')
   })
 
-  it('le hash d’un lien direct fixe le mode (#entretien, #planter)', async () => {
-    expect((await load('#entretien')).ui.getUi().mode).toBe('entretenir')
-    expect((await load('#planter')).ui.getUi().mode).toBe('planifier')
-    expect((await load('#reglages')).ui.getUi().mode).toBe('jardin')
-  })
-
-  it('Retour restitue le mode de l’écran retrouvé', async () => {
-    const { b, ui } = await load('')
+  it('Retour restitue l’écran et le rayon', async () => {
+    const { b, ui } = await load('#carte')
     ui.setUi({ tab: 'entretien' })
     ui.setUi({ tab: 'carte' })
-    expect(ui.getUi().mode).toBe('jardin')
     b.back()
-    expect(ui.getUi()).toMatchObject({ tab: 'entretien', mode: 'entretenir' })
+    expect(ui.getUi()).toMatchObject({ tab: 'entretien', rayon: 'afaire' })
   })
 
-  it('mémorise le mode et le relit au lancement suivant', async () => {
+  it('mémorise le dernier rayon et rouvre dessus au lancement suivant', async () => {
     const storage = memoryStorage()
     const first = await load('', storage)
-    first.ui.setMode('planifier')
-    expect(storage.data.get('pj.mode')).toBe('planifier')
+    first.ui.setUi({ tab: 'catalogue' })
+    expect(storage.data.get('pj.rayon')).toBe('planter')
     const second = await load('', storage)
-    expect(second.ui.getUi().mode).toBe('planifier')
+    expect(second.ui.getUi()).toMatchObject({ tab: 'planter', rayon: 'planter' })
   })
 
-  it('ignore un mode mémorisé invalide', async () => {
-    const { ui } = await load('', memoryStorage({ 'pj.mode': 'nimporte', 'pj.guide': '{pas du json' }))
-    expect(ui.getUi().mode).toBe('jardin')
-    expect(ui.getUi().guide.stepsHidden).toBe(true)
+  it('un hash explicite l’emporte sur le dernier rayon', async () => {
+    const storage = memoryStorage({ 'pj.rayon': 'planter' })
+    expect((await load('#plantes', storage)).ui.getUi().tab).toBe('plantes')
+    expect((await load('#accueil', storage)).ui.getUi().tab).toBe('accueil')
   })
 
-  it('applyDefaultMode : sans mémoire, choisit selon les plantes et l’écran d’ouverture', async () => {
-    const few = await load('', memoryStorage())
-    few.ui.applyDefaultMode(1)
-    expect(few.ui.getUi()).toMatchObject({ mode: 'jardin', tab: 'carte' })
+  it('migre l’ancien mode mémorisé (pj.mode) vers un rayon', async () => {
+    expect((await load('', memoryStorage({ 'pj.mode': 'entretenir' }))).ui.getUi()).toMatchObject({ tab: 'entretien', rayon: 'afaire' })
+    expect((await load('', memoryStorage({ 'pj.mode': 'planifier' }))).ui.getUi().tab).toBe('planter')
+    expect((await load('', memoryStorage({ 'pj.mode': 'jardin' }))).ui.getUi().tab).toBe('carte')
+    expect((await load('', memoryStorage({ 'pj.mode': 'nimporte', 'pj.guide': '{pas du json' }))).ui.getUi().tab).toBe('accueil')
+  })
 
+  it('le rayon Voisins mémorisé est ignoré si l’entraide est désactivée', async () => {
+    vi.stubEnv('VITE_NEIGHBORS_SUPABASE_URL', '')
+    vi.stubEnv('VITE_NEIGHBORS_SUPABASE_ANON_KEY', '')
+    const { ui } = await load('', memoryStorage({ 'pj.rayon': 'voisins' }))
+    expect(ui.getUi().tab).toBe('accueil')
+    vi.unstubAllEnvs()
+  })
+
+  it('les anciens liens restent valides (#carte, #plantes, #entretien, #reglages…) et ont des alias', async () => {
+    const { ui } = await load()
+    for (const t of ['carte', '3d', 'plantes', 'entretien', 'planter', 'catalogue', 'reglages', 'accueil'] as const) {
+      expect(ui.fromHash(ui.toHash(t))).toBe(t)
+    }
+    expect(ui.fromHash('#jardin')).toBe('carte')
+    expect(ui.fromHash('#afaire')).toBe('entretien')
+    expect(ui.fromHash('#compte')).toBe('reglages')
+    expect((await load('#entretien')).ui.getUi()).toMatchObject({ tab: 'entretien', rayon: 'afaire' })
+    expect((await load('#reglages')).ui.getUi().rayon).toBeUndefined()
+  })
+})
+
+describe('parcours d’accueil (état d’interface)', () => {
+  it('rien d’enregistré au départ ; l’état est écrit dans localStorage, pas ailleurs', async () => {
     const storage = memoryStorage()
-    const many = await load('', storage)
-    many.ui.applyDefaultMode(8)
-    expect(many.ui.getUi()).toMatchObject({ mode: 'entretenir', tab: 'entretien' })
-    expect(many.b.current().hash).toBe('#entretien')
-    expect(many.b.length()).toBe(1) // remplacement, pas d'empilement
-    expect(storage.data.get('pj.mode')).toBe('entretenir')
+    const { ui } = await load('', storage)
+    expect(ui.getUi().guide.onboarding).toBeUndefined()
+    ui.noteWelcomed()
+    ui.noteStep('adresse', 'done')
+    ui.noteStep('terrain', 'skipped')
+    expect(ui.getUi().guide.onboarding).toMatchObject({ welcomed: true, done: ['adresse'], skipped: ['terrain'] })
+    const again = await load('', storage)
+    expect(again.ui.getUi().guide.onboarding).toMatchObject({ welcomed: true, done: ['adresse'], skipped: ['terrain'] })
   })
 
-  it('applyDefaultMode ne touche pas à un mode mémorisé ni à un hash explicite', async () => {
-    const kept = await load('', memoryStorage({ 'pj.mode': 'jardin' }))
-    kept.ui.applyDefaultMode(20)
-    expect(kept.ui.getUi().mode).toBe('jardin')
-    const explicit = await load('#plantes', memoryStorage())
-    explicit.ui.applyDefaultMode(20)
-    expect(explicit.ui.getUi()).toMatchObject({ mode: 'entretenir', tab: 'plantes' })
+  it('un état enregistré illisible est ignoré', async () => {
+    const { ui } = await load('', memoryStorage({ 'pj.guide': JSON.stringify({ onboarding: 'oui', demoHidden: true }) }))
+    expect(ui.getUi().guide.onboarding).toBeUndefined()
+    expect(ui.getUi().guide.demoHidden).toBe(true)
   })
 
-  it('applyDefaultMode préserve un hash de lien magique', async () => {
-    const b = await load('#access_token=abc&type=magiclink', memoryStorage())
-    b.ui.applyDefaultMode(20)
-    expect(b.b.current().hash).toBe('#access_token=abc&type=magiclink')
+  it('« Passer et découvrir l’appli » masque la carte de route', async () => {
+    const { ui } = await load()
+    ui.hideOnboardingRoute()
+    expect(ui.getUi().guide.onboarding?.hidden).toBe(true)
+  })
+
+  it('ouvrir le parcours, changer d’écran le ferme ; Revoir la visite le rouvre à la première étape', async () => {
+    const { ui } = await load('#accueil')
+    ui.openParcours('terrain')
+    expect(ui.getUi().parcours).toBe('terrain')
+    ui.setUi({ tab: 'carte' })
+    expect(ui.getUi().parcours).toBeUndefined()
+    ui.noteStep('adresse', 'done')
+    ui.restartOnboarding()
+    expect(ui.getUi()).toMatchObject({ tab: 'accueil', parcours: 'adresse' })
+    expect(ui.getUi().guide.onboarding).toMatchObject({ done: [], skipped: [], hidden: false, welcomed: true })
+  })
+
+  it('choisir une plante depuis l’étape « Mes plantes » valide l’étape et quitte le parcours', async () => {
+    const { ui } = await load('#accueil')
+    ui.openParcours('plantes')
+    ui.startPlacing('pommier')
+    expect(ui.getUi()).toMatchObject({ tab: 'carte', placingSpeciesId: 'pommier', parcours: undefined })
+    expect(ui.getUi().guide.onboarding?.done).toContain('plantes')
   })
 })
 
@@ -402,13 +404,5 @@ describe('repères mémorisés (guide)', () => {
     const t0 = Date.now()
     ui.setGuide({ nudgeUntil: t0 + ui.NUDGE_SNOOZE_MS })
     expect(ui.getUi().guide.nudgeUntil - t0).toBe(7 * 86400000)
-  })
-
-  it('showFirstSteps rouvre la checklist sur « Mon jardin »', async () => {
-    const { ui } = await load('')
-    ui.setMode('entretenir')
-    ui.showFirstSteps()
-    expect(ui.getUi().guide).toMatchObject({ stepsHidden: false, stepsOpen: true })
-    expect(ui.getUi()).toMatchObject({ mode: 'jardin', tab: 'carte' })
   })
 })
