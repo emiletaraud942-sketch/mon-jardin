@@ -612,7 +612,7 @@ label:focus-within:has(> input.sr-only) {
   .sidenav {
     grid-row: 4;
     flex-direction: row;
-    margin: 4px 16px calc(22px + env(safe-area-inset-bottom));
+    margin: 4px 16px max(12px, calc(env(safe-area-inset-bottom) - 10px));
     padding: 8px 10px;
     border-radius: 32px;
     background: var(--surface);

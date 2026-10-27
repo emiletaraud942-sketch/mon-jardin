@@ -1,4 +1,4 @@
-// Thème de l'interface : Auto (réglage du système), Clair ou Sombre. Mémorisé sur l'appareil.
+// Thème de l'interface : Clair (par défaut, comme la maquette), Sombre, ou Automatique (réglage du système). Mémorisé sur l'appareil.
 export type Theme = 'auto' | 'light' | 'dark'
 export const THEME_LABEL: Record<Theme, string> = { auto: 'Automatique', light: 'Clair', dark: 'Sombre' }
 
@@ -7,9 +7,9 @@ const KEY = 'permajardin:theme'
 export function getTheme(): Theme {
   try {
     const v = localStorage.getItem(KEY)
-    return v === 'light' || v === 'dark' ? v : 'auto'
+    return v === 'dark' || v === 'auto' ? v : 'light'
   } catch {
-    return 'auto'
+    return 'light'
   }
 }
 
@@ -40,8 +40,7 @@ export function applyTheme(theme: Theme) {
 
 export function setTheme(theme: Theme) {
   try {
-    if (theme === 'auto') localStorage.removeItem(KEY)
-    else localStorage.setItem(KEY, theme)
+    localStorage.setItem(KEY, theme)
   } catch {
     /* mémorisation impossible : le thème vaut pour cette session */
   }
