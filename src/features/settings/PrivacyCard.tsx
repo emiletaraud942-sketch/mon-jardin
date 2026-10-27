@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Fold } from '../../components/Fold'
 import { Icon } from '../../components/Icon'
 import { TechDetails } from '../../components/ErrorNote'
 import { Modal } from '../../components/Modal'
@@ -230,43 +231,43 @@ function Consents() {
 export function PrivacyCard() {
   const [erasing, setErasing] = useState(false)
   return (
-    <div className="card">
-      <h2>Vie privée et données</h2>
-      <p>
-        Vos jardins, plantes et photos restent <strong>sur cet appareil</strong>. Rien n’est envoyé sans votre accord, sauf la carte et la météo. Pas de compte obligatoire, pas de publicité.
-      </p>
-      <p className="small muted">{NETWORK_INFO}</p>
+    <Fold title="Vie privée et données">
+      <p>Vos données restent sur cet appareil. Rien n’est envoyé sans votre accord, sauf la carte et la météo.</p>
       <Consents />
-      <p>
-        Texte complet : <LegalLink id="confidentialite" label="politique de confidentialité" />.
-      </p>
-      <details>
-        <summary>Quelles données, où, pour qui ?</summary>
-        <ul className="list small">
-          {DATA_INVENTORY.map((d) => (
-            <li key={d.id}>
-              <strong>{d.donnee}</strong>
-              <div>
-                Stockée : {d.stockage}.{' '}
-                {d.destinataires.length > 0 ? `Envoyée à : ${d.destinataires.join(', ')}.` : 'Jamais envoyée à un tiers.'}
-              </div>
-              <div className="muted">
-                {d.finalite} Durée : {d.duree}. Effacement : {d.effacement}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </details>
-      <details style={{ marginTop: 8 }}>
-        <summary>Ce que l’appli peut demander à votre appareil</summary>
-        <ul className="list small">
-          {PERMISSIONS.map((p) => (
-            <li key={p.permission}>
-              <strong>{p.permission}</strong> — {p.ou}. {p.pourquoi}
-              <div className="muted">Si vous refusez : {p.siRefusee}</div>
-            </li>
-          ))}
-        </ul>
+      <details className="np-details">
+        <summary>Détails</summary>
+        <p className="small muted">{NETWORK_INFO}</p>
+        <p className="small">
+          Texte complet : <LegalLink id="confidentialite" label="politique de confidentialité" />.
+        </p>
+        <details>
+          <summary>Quelles données, où, pour qui ?</summary>
+          <ul className="list small">
+            {DATA_INVENTORY.map((d) => (
+              <li key={d.id}>
+                <strong>{d.donnee}</strong>
+                <div>
+                  Stockée : {d.stockage}.{' '}
+                  {d.destinataires.length > 0 ? `Envoyée à : ${d.destinataires.join(', ')}.` : 'Jamais envoyée à un tiers.'}
+                </div>
+                <div className="muted">
+                  {d.finalite} Durée : {d.duree}. Effacement : {d.effacement}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </details>
+        <details style={{ marginTop: 8 }}>
+          <summary>Ce que l’appli peut demander à votre appareil</summary>
+          <ul className="list small">
+            {PERMISSIONS.map((p) => (
+              <li key={p.permission}>
+                <strong>{p.permission}</strong> — {p.ou}. {p.pourquoi}
+                <div className="muted">Si vous refusez : {p.siRefusee}</div>
+              </li>
+            ))}
+          </ul>
+        </details>
       </details>
       <div className="danger-zone">
         <button className="btn danger" onClick={() => setErasing(true)}>
@@ -274,6 +275,6 @@ export function PrivacyCard() {
         </button>
       </div>
       {erasing && <EraseDialog onClose={() => setErasing(false)} />}
-    </div>
+    </Fold>
   )
 }

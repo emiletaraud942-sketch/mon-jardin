@@ -177,17 +177,11 @@ function TaskItem({
       >
         Fait
       </button>
-      <div className="tcard-more">
+      <details className="tcard-more np-details">
+        <summary>Détails</summary>
         <div className="small">{task.howTo}</div>
         {task.tool && <div className="small muted">Outil : {task.tool}.</div>}
-        {task.detail && (
-          <details className="np-details">
-            <summary>Détails météo</summary>
-            <p className="small muted" style={{ margin: 0 }}>
-              {task.detail}
-            </p>
-          </details>
-        )}
+        {task.detail && <div className="small muted">{task.detail}</div>}
         {names > 0 && (
           <div className="tcard-plants">
             {task.plantIds.slice(0, 8).map((id) => {
@@ -214,7 +208,7 @@ function TaskItem({
             {names > 8 && <span className="muted small">+ {names - 8}</span>}
           </div>
         )}
-      </div>
+      </details>
     </li>
   );
 }
@@ -326,12 +320,8 @@ export function TasksPage({ garden }: { garden: Garden }) {
                 <PlantScene size={132} />
                 <p>
                   <strong>
-                    Entretenir commence quand vos plantes sont placées.
+                    Placez vos plantes : l’appli dira quand les entretenir.
                   </strong>
-                </p>
-                <p>
-                  L’appli vous dira alors quand tailler, désherber, arroser et
-                  récolter.
                 </p>
                 <PlaceAction>Aller les placer</PlaceAction>
               </div>
@@ -366,9 +356,6 @@ export function TasksPage({ garden }: { garden: Garden }) {
                         {blocked[0].blockedBy}
                       </span>
                     </summary>
-                    <p className="small muted" style={{ margin: "12px 0 0" }}>
-                      Ces tâches attendent le bon moment.
-                    </p>
                     <ul className="tcards">
                       {blocked.map((t) => (
                         <TaskItem

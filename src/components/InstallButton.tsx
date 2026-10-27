@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { promptInstall, useInstallState } from '../lib/install'
 import { showToast } from '../lib/toast'
+import { Fold } from './Fold'
 import { Icon } from './Icon'
 import { Modal } from './Modal'
 
@@ -62,14 +63,13 @@ export function InstallCard() {
   const state = useInstallState()
   if (state === 'installed') return null
   return (
-    <div className="card">
-      <h2>Installer l’appli</h2>
+    <Fold title="Installer l’appli">
       <div className="stack">
         <p className="small muted" style={{ margin: 0 }}>
           Elle s’ouvre comme une appli, depuis votre écran d’accueil.
         </p>
         <InstallButton />
       </div>
-    </div>
+    </Fold>
   )
 }

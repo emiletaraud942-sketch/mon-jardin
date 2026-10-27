@@ -78,13 +78,6 @@ export function SpeciesSheet({ species: s, garden }: { species: Species; garden:
         </ul>
       </div>
 
-      <p className="small" style={{ margin: 0 }}>
-        Adulte : {s.hauteurAdulteM.toLocaleString('fr-FR')} m de haut et {s.envergureAdulteM.toLocaleString('fr-FR')} m de large
-        {s.vivace && s.anneesMaturite > 1 ? `, en ${s.anneesMaturite} ans environ` : ''}. Distance entre deux pieds : {s.espacementCm >= 100 ? `${(s.espacementCm / 100).toLocaleString('fr-FR')} m` : `${s.espacementCm} cm`}.
-        {s.solPrefere?.length ? ` Sol : ${s.solPrefere.join(', ')}` : ''}
-        {s.ph ? ` (pH ${s.ph[0]}–${s.ph[1]})` : ''}.
-      </p>
-
       <div>
         <h3>Quand semer, planter, récolter chez vous</h3>
         <MonthGrid
@@ -97,6 +90,16 @@ export function SpeciesSheet({ species: s, garden }: { species: Species; garden:
         />
         {cal.note && <p className="small muted" style={{ marginTop: 6 }}>{cal.note}</p>}
       </div>
+
+      <details className="np-details">
+        <summary>Détails</summary>
+        <div className="stack" style={{ gap: 14 }}>
+      <p className="small" style={{ margin: 0 }}>
+        Adulte : {s.hauteurAdulteM.toLocaleString('fr-FR')} m de haut et {s.envergureAdulteM.toLocaleString('fr-FR')} m de large
+        {s.vivace && s.anneesMaturite > 1 ? `, en ${s.anneesMaturite} ans environ` : ''}. Distance entre deux pieds : {s.espacementCm >= 100 ? `${(s.espacementCm / 100).toLocaleString('fr-FR')} m` : `${s.espacementCm} cm`}.
+        {s.solPrefere?.length ? ` Sol : ${s.solPrefere.join(', ')}` : ''}
+        {s.ph ? ` (pH ${s.ph[0]}–${s.ph[1]})` : ''}.
+      </p>
 
       <div>
         <h3>Comment l’entretenir</h3>
@@ -136,6 +139,9 @@ export function SpeciesSheet({ species: s, garden }: { species: Species; garden:
           )}
         </div>
       )}
+
+        </div>
+      </details>
 
       <button className="btn primary place-btn" style={{ minHeight: 44 }} onClick={() => startPlacing(s.id)}>
         <Icon name="pin" /> Placer dans mon jardin

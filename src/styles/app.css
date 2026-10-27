@@ -2347,6 +2347,64 @@ details > summary {
   cursor: pointer;
 }
 
+/* Résumé « Détails » des cartes de tâche, de « Où planter ? » et des cartes repliées. */
+.np-details > summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: var(--fw-strong);
+}
+.np-details > summary::-webkit-details-marker {
+  display: none;
+}
+.np-details > summary::after {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin: -3px 0 0 10px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  transition: transform 0.15s;
+}
+.np-details[open] > summary::after {
+  margin-top: 3px;
+  transform: rotate(225deg);
+}
+.np-details > summary:focus-visible {
+  outline: 3px solid var(--accent-2);
+  outline-offset: 2px;
+}
+.fold > details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+}
+.fold > details > summary::-webkit-details-marker {
+  display: none;
+}
+.fold > details > summary h2 {
+  margin: 0;
+}
+.fold-chev {
+  flex: none;
+  display: inline-flex;
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+.fold > details[open] > summary .fold-chev {
+  transform: rotate(180deg);
+}
+.fold-body {
+  margin-top: 8px;
+}
+
 /* ---------- Entraide : nouveautés et invitation ---------- */
 .nb-news-line {
   flex-direction: row;
@@ -4009,9 +4067,9 @@ html[data-immersive] body {
 }
 .tcard-more {
   flex: 1 1 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+}
+.tcard-more > :not(summary) {
+  margin-top: 4px;
 }
 .tcard-plants {
   display: flex;

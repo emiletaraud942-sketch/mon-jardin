@@ -13,18 +13,6 @@
 .np-page li {
   overflow-wrap: anywhere;
 }
-.np-details > summary {
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  color: var(--accent);
-  font-weight: var(--fw-strong);
-}
-.np-details > summary:focus-visible {
-  outline: 3px solid var(--accent-2);
-  outline-offset: 2px;
-}
 /* « Fait » : grand bouton vert pleine largeur dans la carte de tâche. */
 .np-done,
 .btn.primary.np-done {

@@ -68,7 +68,7 @@ export function CataloguePage({ garden }: { garden: Garden }) {
           ‹ Retour à la liste
         </button>
       )}
-      {selected ? <SpeciesSheet species={selected} garden={garden} /> : <p className="muted">Choisissez une plante dans la liste pour voir sa fiche : quand la planter, comment l’entretenir, ses voisines.</p>}
+      {selected ? <SpeciesSheet species={selected} garden={garden} /> : <p className="muted">Choisissez une plante dans la liste.</p>}
     </div>
   )
 

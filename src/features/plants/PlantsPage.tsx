@@ -51,17 +51,22 @@ export function PlantsPage({ garden }: { garden: Garden }) {
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <h1>Mes plantes ({plants.length})</h1>
         <div className="row">
+          <button className="btn primary" onClick={() => setPicking(true)}>
+            <Icon name="plus" /> Ajouter une plante
+          </button>
+        </div>
+      </div>
+      <details className="np-details plants-more">
+        <summary>Autres façons d’ajouter</summary>
+        <div className="row" style={{ marginBottom: 8 }}>
           <button className="btn" onClick={() => openScan('menu')}>
             <Icon name="camera" /> Scanner mon jardin
           </button>
           <button className="btn" onClick={() => setIdentifying(true)}>
             <Icon name="camera" /> Identifier par photo
           </button>
-          <button className="btn primary" onClick={() => setPicking(true)}>
-            <Icon name="plus" /> Ajouter une plante
-          </button>
         </div>
-      </div>
+      </details>
       <div className="row" style={{ margin: '8px 0 16px' }}>
         <input className="input" style={{ flex: '2 1 200px' }} type="search" aria-label="Rechercher une plante" placeholder="Rechercher une plante" value={q} onChange={(e) => setQ(e.target.value)} />
         <select className="input" style={{ flex: '1 1 180px' }} value={status} onChange={(e) => setStatus(e.target.value as PlantStatus | '')} aria-label="Où en sont-elles ?">
@@ -81,14 +86,11 @@ export function PlantsPage({ garden }: { garden: Garden }) {
               <p>
                 <strong>Vous n’avez pas encore ajouté de plante.</strong>
               </p>
-              <p>Ajoutez-les sur la carte, ou reconnaissez une plante grâce à une photo.</p>
+              <p>Ajoutez-les sur la carte.</p>
               <div className="row empty-actions">
                 <PlaceAction>
                   <Icon name="plus" /> Ajouter une plante
                 </PlaceAction>
-                <button className="btn" onClick={() => setIdentifying(true)}>
-                  <Icon name="camera" /> Identifier par photo
-                </button>
               </div>
             </div>
           )}

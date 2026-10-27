@@ -674,7 +674,7 @@ export function Garden3D({
                         Jour <b>{dateLabel}</b>
                       </span>
                       <input type="range" min={1} max={daysInYear} step={1} value={doy} aria-valuetext={dateLabel} onChange={(e) => setDoy(Number(e.target.value))} />
-                      <span className="g3d-help">Glissez pour changer de saison : le soleil et les ombres changent.</span>
+                      <span className="g3d-help">Glissez pour changer de saison.</span>
                     </label>
                     {treeCount > 0 && (
                       <label className="g3d-check">
@@ -693,7 +693,7 @@ export function Garden3D({
                           </button>
                         ))}
                       </div>
-                      <span className="g3d-help">Simple si votre téléphone ralentit ; Détaillé pour des arbres plus fournis.</span>
+                      <span className="g3d-help">« Simple » si votre téléphone ralentit.</span>
                     </div>
                     <div className="g3d-shortcuts" role="group" aria-label="Saisons">
                       {shortcuts.map((s) => (
@@ -716,7 +716,7 @@ export function Garden3D({
                         aria-valuetext={yearsLabel(yearsAhead)}
                         onChange={(e) => setYearsAhead(Number(e.target.value))}
                       />
-                      <span className="g3d-help">Glissez pour voir vos plantes grandir, avec leur ombre.</span>
+                      <span className="g3d-help">Glissez pour voir vos plantes grandir.</span>
                     </label>
                   </>
                 )}

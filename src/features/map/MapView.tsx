@@ -744,7 +744,7 @@ export function MapView({ garden }: { garden: Garden }) {
         <PlacingBanner />
       </div>
       <SidePanel {...head} tall={!!selectedPlantId} collapse={!!(placingSpeciesId || movingPlantId)}>
-        <GardenSide garden={garden} hint="Touchez une plante pour ouvrir sa fiche. Pincez ou touchez deux fois pour zoomer. Les disques montrent la largeur de chaque plante." />
+        <GardenSide garden={garden} hint="Touchez une plante pour ouvrir sa fiche." />
       </SidePanel>
     </div>
   )

@@ -245,7 +245,6 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
         </p>
       )}
       {nameField}
-      {fields}
       {!fiche && now_}
 
       {myTasks.length > 0 && (
@@ -269,6 +268,10 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
           <strong>Distance avec le voisin :</strong> {legal.message}
         </div>
       )}
+      <details className="np-details plant-details">
+        <summary>Détails</summary>
+        <div className="stack" style={{ gap: 12 }}>
+      {fields}
       {(report.amis.length > 0 || report.ennemis.length > 0) && (
         <div className="small stack">
           {report.amis.length > 0 && (
@@ -336,6 +339,8 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
           <Icon name="trash" size={16} /> Supprimer cette plante
         </button>
       </div>
+        </div>
+      </details>
       </div>
     </div>
   )

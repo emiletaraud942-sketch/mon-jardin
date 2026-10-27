@@ -49,16 +49,19 @@ function SowNow({ garden }: { garden: Garden }) {
           ))}
         </select>
       </div>
-      {garden.lastFrostDoy ? (
-        <p className="small muted">
-          Chez vous, dernières gelées vers le {doyToLabel(garden.lastFrostDoy)}
-          {garden.firstFrostDoy ? `, premières gelées vers le ${doyToLabel(garden.firstFrostDoy)}` : ''} (moyenne sur 5 ans). Le calendrier en tient compte.
-        </p>
-      ) : (
-        <p className="small muted">Dates de gel de votre région inconnues : conseils valables pour toute la France.</p>
-      )}
+      <details className="np-details">
+        <summary>Détails</summary>
+        {garden.lastFrostDoy ? (
+          <p className="small muted">
+            Chez vous, dernières gelées vers le {doyToLabel(garden.lastFrostDoy)}
+            {garden.firstFrostDoy ? `, premières vers le ${doyToLabel(garden.firstFrostDoy)}` : ''} (moyenne sur 5 ans).
+          </p>
+        ) : (
+          <p className="small muted">Dates de gel inconnues : conseils valables pour toute la France.</p>
+        )}
+        <p className="small muted">« À l’abri » : dans la maison, une serre ou un châssis.</p>
+      </details>
       <h3>Semer à l’abri</h3>
-      <p className="small muted" style={{ margin: 0 }}>À l’abri : dans la maison, une serre ou un châssis.</p>
       <SpeciesChips list={now.semisAbri} />
       <h3 style={{ marginTop: 12 }}>Semer en pleine terre</h3>
       <SpeciesChips list={now.semisPleineTerre} />
@@ -94,6 +97,90 @@ function BestForSpot({ garden }: { garden: Garden }) {
     return { sun, slope, recos }
   }, [spot, garden, plants, cat, lidar.trees, lidar.terrain])
 
+  const results = analysis && spot && (
+    <>
+      <div className="stack" style={{ gap: 6, margin: '8px 0' }}>
+        <div>
+          ☀ {sunPhrase(analysis.sun.moyenne)}
+        </div>
+        {analysis.slope && (
+          <div>
+            ⛰ {slopePhrase(analysis.slope.pct)}
+            {analysis.slope.pct > 2 ? `, orientée ${aspectLabel(analysis.slope.aspectDeg)}` : ''}
+          </div>
+        )}
+        <details className="np-details">
+          <summary>Détails du soleil</summary>
+          <p className="small muted" style={{ margin: 0 }}>
+            En juin : {analysis.sun.juin.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} h. En mars : {analysis.sun.mars.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} h. En décembre :{' '}
+            {analysis.sun.decembre.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} h. Ombre des maisons voisines et des arbres comprise.
+          </p>
+        </details>
+        <label className="field">
+          <span>Type de plante</span>
+          <select className="input" value={cat} onChange={(e) => setCat(e.target.value as Category | '')}>
+            <option value="">Toutes</option>
+            {Object.entries(CATEGORY_LABEL).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      {analysis.recos.length === 0 && (
+        <p className="alert small" style={{ marginTop: 8 }}>
+          Aucune plante ne convient à cet endroit{cat ? ' dans ce type' : ''}. Essayez un autre endroit{cat ? ' ou « Toutes »' : ''}.
+        </p>
+      )}
+      {analysis.recos.length > 0 && (
+        <ol className="np-steps" start={2} style={{ marginTop: 8 }}>
+          <li>
+            <span className="np-num" aria-hidden>2</span>
+            <strong>Touchez « Prévoir ici » pour garder une plante.</strong>
+          </li>
+        </ol>
+      )}
+      <ul className="list" style={{ marginTop: 8 }}>
+        {analysis.recos.map((r) => {
+          const label = scoreLabel(r.score)
+          const pros = r.factors.filter((f) => f.points > 0).slice(0, 4)
+          const cons = r.factors.filter((f) => f.points < 0).slice(0, 4)
+          return (
+            <li key={r.species.id} className="np-reco">
+              <div className="row" style={{ justifyContent: 'space-between' }}>
+                <button className="btn ghost" style={{ padding: '0 4px' }} onClick={() => openSpecies(r.species.id)}>
+                  <span className="dot" style={{ background: r.species.couleurAccent ?? r.species.couleur }} /> {r.species.nomCommun}
+                </button>
+                <span className={'np-fit ' + (label.tone === 'green' ? 'green' : label.tone === 'danger' ? 'danger' : '')}>
+                  <span aria-hidden>{label.icon}</span> {label.text}
+                </span>
+              </div>
+              {r.warnings.length > 0 && <div className="small warn-text">Attention : {r.warnings.join(' · ')}</div>}
+              <div className="row" style={{ marginTop: 6 }}>
+                <button className="btn" onClick={() => placePlant(garden, r.species.id, spot, 'projet', { tab: 'carte' })}>
+                  Prévoir ici
+                </button>
+              </div>
+              <details className="np-details">
+                <summary>Pourquoi ?</summary>
+                <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>
+                  {pros.map((f) => (
+                    <li key={'p' + f.label}>Pour : {f.label}</li>
+                  ))}
+                  {cons.map((f) => (
+                    <li key={'c' + f.label}>Contre : {f.label}</li>
+                  ))}
+                  {pros.length + cons.length === 0 && <li>Rien de particulier.</li>}
+                </ul>
+              </details>
+            </li>
+          )
+        })}
+      </ul>
+    </>
+  )
+
   return (
     <div className="card">
       <h2>Quelle plante pour cet endroit ?</h2>
@@ -113,193 +200,11 @@ function BestForSpot({ garden }: { garden: Garden }) {
         <>
           <div style={{ height: 96 }} aria-hidden />
           <BottomSheet fixed label="Plantes conseillées" title="Plantes conseillées" summary={`${analysis.recos.length} idée${analysis.recos.length > 1 ? 's' : ''}`} snap={snap} onSnap={setSnap}>
-        <div>
-          <ol className="np-steps" start={2}>
-            <li>
-              <span className="np-num" aria-hidden>2</span>
-              <span>
-                <strong>Voyez ce qui convient ici.</strong>
-              </span>
-            </li>
-          </ol>
-          <div className="stack" style={{ gap: 6, margin: '8px 0' }}>
-            <div>
-              ☀ <strong>{sunPhrase(analysis.sun.moyenne)}</strong>
-            </div>
-            {analysis.slope && (
-              <div>
-                ⛰ <strong>{slopePhrase(analysis.slope.pct)}</strong>
-                {analysis.slope.pct > 2 ? `, orientée ${aspectLabel(analysis.slope.aspectDeg)}` : ''}
-              </div>
-            )}
-            <details className="np-details">
-              <summary>Détails du soleil</summary>
-              <p className="small muted" style={{ margin: 0 }}>
-                En juin : {analysis.sun.juin.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} h. En mars : {analysis.sun.mars.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} h. En décembre :{' '}
-                {analysis.sun.decembre.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} h. Ombre des maisons voisines et des arbres comprise.
-              </p>
-            </details>
-            <label className="field">
-              <span>Type de plante</span>
-              <select className="input" value={cat} onChange={(e) => setCat(e.target.value as Category | '')}>
-                <option value="">Toutes</option>
-                {Object.entries(CATEGORY_LABEL).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          {analysis.recos.length === 0 && (
-            <p className="alert small" style={{ marginTop: 8 }}>
-              Aucune plante ne convient à cet endroit{cat ? ' dans ce type' : ''}. Essayez un autre endroit{cat ? ' ou « Toutes »' : ''}.
-            </p>
-          )}
-          {analysis.recos.length > 0 && (
-            <ol className="np-steps" start={3} style={{ marginTop: 8 }}>
-              <li>
-                <span className="np-num" aria-hidden>3</span>
-                <span>
-                  <strong>Touchez « Prévoir ici » pour garder une plante.</strong>
-                  <span className="small muted" style={{ display: 'block' }}>Quand vous l’aurez plantée, vous la marquerez « Plantée ».</span>
-                </span>
-              </li>
-            </ol>
-          )}
-          <ul className="list" style={{ marginTop: 8 }}>
-            {analysis.recos.map((r) => {
-              const label = scoreLabel(r.score)
-              const pros = r.factors.filter((f) => f.points > 0).slice(0, 4)
-              const cons = r.factors.filter((f) => f.points < 0).slice(0, 4)
-              return (
-                <li key={r.species.id} className="np-reco">
-                  <div className="row" style={{ justifyContent: 'space-between' }}>
-                    <button className="btn ghost" style={{ padding: '0 4px' }} onClick={() => openSpecies(r.species.id)}>
-                      <span className="dot" style={{ background: r.species.couleurAccent ?? r.species.couleur }} /> <strong>{r.species.nomCommun}</strong>
-                    </button>
-                    <span className={'np-fit ' + (label.tone === 'green' ? 'green' : label.tone === 'danger' ? 'danger' : '')}>
-                      <span aria-hidden>{label.icon}</span> {label.text}
-                    </span>
-                  </div>
-                  {r.warnings.length > 0 && <div className="small warn-text">Attention : {r.warnings.join(' · ')}</div>}
-                  <div className="row" style={{ marginTop: 6 }}>
-                    <button className="btn" onClick={() => placePlant(garden, r.species.id, spot, 'projet', { tab: 'carte' })}>
-                      Prévoir ici
-                    </button>
-                  </div>
-                  <details className="np-details">
-                    <summary>Pourquoi ?</summary>
-                    <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>
-                      {pros.map((f) => (
-                        <li key={'p' + f.label}>Pour : {f.label}</li>
-                      ))}
-                      {cons.map((f) => (
-                        <li key={'c' + f.label}>Contre : {f.label}</li>
-                      ))}
-                      {pros.length + cons.length === 0 && <li>Rien de particulier.</li>}
-                    </ul>
-                  </details>
-                </li>
-              )
-            })}
-          </ul>
-        </div>
+            <div>{results}</div>
           </BottomSheet>
         </>
       ) : (
-        <div style={{ marginTop: 12 }}>
-          <ol className="np-steps" start={2}>
-            <li>
-              <span className="np-num" aria-hidden>2</span>
-              <span>
-                <strong>Voyez ce qui convient ici.</strong>
-              </span>
-            </li>
-          </ol>
-          <div className="stack" style={{ gap: 6, margin: '8px 0' }}>
-            <div>
-              ☀ <strong>{sunPhrase(analysis.sun.moyenne)}</strong>
-            </div>
-            {analysis.slope && (
-              <div>
-                ⛰ <strong>{slopePhrase(analysis.slope.pct)}</strong>
-                {analysis.slope.pct > 2 ? `, orientée ${aspectLabel(analysis.slope.aspectDeg)}` : ''}
-              </div>
-            )}
-            <details className="np-details">
-              <summary>Détails du soleil</summary>
-              <p className="small muted" style={{ margin: 0 }}>
-                En juin : {analysis.sun.juin.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} h. En mars : {analysis.sun.mars.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} h. En décembre :{' '}
-                {analysis.sun.decembre.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} h. Ombre des maisons voisines et des arbres comprise.
-              </p>
-            </details>
-            <label className="field">
-              <span>Type de plante</span>
-              <select className="input" value={cat} onChange={(e) => setCat(e.target.value as Category | '')}>
-                <option value="">Toutes</option>
-                {Object.entries(CATEGORY_LABEL).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          {analysis.recos.length === 0 && (
-            <p className="alert small" style={{ marginTop: 8 }}>
-              Aucune plante ne convient à cet endroit{cat ? ' dans ce type' : ''}. Essayez un autre endroit{cat ? ' ou « Toutes »' : ''}.
-            </p>
-          )}
-          {analysis.recos.length > 0 && (
-            <ol className="np-steps" start={3} style={{ marginTop: 8 }}>
-              <li>
-                <span className="np-num" aria-hidden>3</span>
-                <span>
-                  <strong>Touchez « Prévoir ici » pour garder une plante.</strong>
-                  <span className="small muted" style={{ display: 'block' }}>Quand vous l’aurez plantée, vous la marquerez « Plantée ».</span>
-                </span>
-              </li>
-            </ol>
-          )}
-          <ul className="list" style={{ marginTop: 8 }}>
-            {analysis.recos.map((r) => {
-              const label = scoreLabel(r.score)
-              const pros = r.factors.filter((f) => f.points > 0).slice(0, 4)
-              const cons = r.factors.filter((f) => f.points < 0).slice(0, 4)
-              return (
-                <li key={r.species.id} className="np-reco">
-                  <div className="row" style={{ justifyContent: 'space-between' }}>
-                    <button className="btn ghost" style={{ padding: '0 4px' }} onClick={() => openSpecies(r.species.id)}>
-                      <span className="dot" style={{ background: r.species.couleurAccent ?? r.species.couleur }} /> <strong>{r.species.nomCommun}</strong>
-                    </button>
-                    <span className={'np-fit ' + (label.tone === 'green' ? 'green' : label.tone === 'danger' ? 'danger' : '')}>
-                      <span aria-hidden>{label.icon}</span> {label.text}
-                    </span>
-                  </div>
-                  {r.warnings.length > 0 && <div className="small warn-text">Attention : {r.warnings.join(' · ')}</div>}
-                  <div className="row" style={{ marginTop: 6 }}>
-                    <button className="btn" onClick={() => placePlant(garden, r.species.id, spot, 'projet', { tab: 'carte' })}>
-                      Prévoir ici
-                    </button>
-                  </div>
-                  <details className="np-details">
-                    <summary>Pourquoi ?</summary>
-                    <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>
-                      {pros.map((f) => (
-                        <li key={'p' + f.label}>Pour : {f.label}</li>
-                      ))}
-                      {cons.map((f) => (
-                        <li key={'c' + f.label}>Contre : {f.label}</li>
-                      ))}
-                      {pros.length + cons.length === 0 && <li>Rien de particulier.</li>}
-                    </ul>
-                  </details>
-                </li>
-              )
-            })}
-          </ul>
-        </div>
+        <div style={{ marginTop: 12 }}>{results}</div>
       ))}
     </div>
   )
@@ -316,16 +221,16 @@ function ModelHint({ garden }: { garden: Garden }) {
       <p style={{ marginTop: 0 }}>
         <strong>Plus votre jardin est décrit, plus le conseil est précis.</strong>
       </p>
-      <p className="small" style={{ marginBottom: 12 }}>
-        {noParcel ? "Sans le contour du terrain, les distances aux voisins ne sont pas vérifiées. " : ''}
-        {noPlants ? "Sans plantes placées, le soleil ignore l’ombre de vos arbres. " : ''}
-        C’est facultatif : vous pouvez commencer maintenant.
-      </p>
+      <details className="np-details">
+        <summary>Détails</summary>
+        <p className="small" style={{ margin: 0 }}>
+          {noParcel ? 'Sans le contour du terrain, les distances aux voisins ne sont pas vérifiées. ' : ''}
+          {noPlants ? 'Sans plantes placées, le soleil ignore l’ombre de vos arbres. ' : ''}
+          C’est facultatif : vous pouvez commencer maintenant.
+        </p>
+      </details>
       <div className="row">
         <PlaceAction>Placer une plante</PlaceAction>
-        <button className="btn" onClick={() => setUi({ tab: 'carte' })}>
-          Voir Mon jardin
-        </button>
       </div>
     </div>
   )

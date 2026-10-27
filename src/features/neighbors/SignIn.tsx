@@ -58,7 +58,7 @@ export function SignIn({ online }: { online: boolean }) {
       }}
     >
       <h2>Votre adresse e-mail</h2>
-      <p style={{ margin: 0 }}>Pas de mot de passe : vous recevez un lien par e-mail. Les voisins ne voient jamais votre adresse.</p>
+      <p style={{ margin: 0 }}>Pas de mot de passe : un lien arrive par e-mail. Vos voisins ne voient jamais votre adresse.</p>
       <label className="field">
         <span>Adresse e-mail</span>
         <input className="input" type="email" inputMode="email" autoComplete="email" placeholder="votre@email.fr" value={email} onChange={(e) => setEmail(e.target.value)} />

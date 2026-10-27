@@ -3,6 +3,7 @@ import type { User } from '@supabase/supabase-js'
 import type { SyncConflictError } from '../../lib/sync'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { ErrorNote, TechDetails } from '../../components/ErrorNote'
+import { Fold } from '../../components/Fold'
 import { Icon } from '../../components/Icon'
 import { Segmented } from '../../components/Segmented'
 import { SavedNote, useFlash } from '../../components/useFlash'
@@ -32,7 +33,7 @@ import { PrivacyCard } from './PrivacyCard'
 import { hasConsent } from '../../lib/consent'
 import { ConsentDialog } from '../legal/ConsentDialog'
 import { LegalLinks } from '../legal/LegalLinks'
-import { FAIL_HELP } from './createGarden'
+import { FAIL_HELP, missingSources } from './createGarden'
 import { ScanCard } from '../scan/ScanCard'
 import { removeGardenData, photosOf, restoreGardenData } from './gardenDelete'
 import { uniqueGardenName } from './gardenName'
@@ -89,8 +90,7 @@ function GardenInfo({ garden }: { garden: Garden }) {
   const terrain = [garden.areaM2 ? `${frNumber(garden.areaM2, 0)} m²` : '', garden.altitudeM != null ? `altitude ${frNumber(garden.altitudeM, 0)} m` : ''].filter(Boolean).join(' · ')
 
   return (
-    <div className="card">
-      <h2>Mon jardin</h2>
+    <Fold title="Mon jardin" open={missingSources(garden).length > 0}>
       <GardenDataBanner garden={garden} />
       <div className="grid cols-2">
         <label className="field">
@@ -169,7 +169,7 @@ function GardenInfo({ garden }: { garden: Garden }) {
           </p>
         </ConfirmModal>
       )}
-    </div>
+    </Fold>
   )
 }
 
@@ -180,14 +180,13 @@ function LidarCard({ garden }: { garden: Garden }) {
   const busy = lidar.status === 'loading'
   const message = lidar.enabled ? lidarMessage({ status: lidar.status }, lidar.trees.length) : ''
   return (
-    <div className="card">
-      <h2>Relief et arbres des environs</h2>
+    <Fold title="Relief et arbres des environs">
       <label className="check-row">
         <input type="checkbox" checked={lidar.enabled} onChange={(e) => setLidarEnabled(e.target.checked)} />
         <span>Utiliser les arbres des environs (données IGN)</span>
       </label>
       <p className="small muted" style={{ margin: '6px 0 0' }}>
-        Leur ombre compte dans « Où planter ? » et ils apparaissent dans la vue 3D. Si ces données manquent chez vous, rien ne change.
+        Leur ombre compte dans « Où planter ? » et la vue 3D. Sans ces données, rien ne change.
       </p>
       {lidar.enabled && (
         <div className="stack" style={{ marginTop: 8 }}>
@@ -202,7 +201,7 @@ function LidarCard({ garden }: { garden: Garden }) {
           {lidar.status === 'ok' && <p className="small muted" style={{ margin: 0 }}>{LIDAR_ATTRIBUTION}</p>}
         </div>
       )}
-    </div>
+    </Fold>
   )
 }
 
@@ -283,16 +282,11 @@ function Backup() {
   return (
     <div className="card">
       <h2>Sauvegarde de mes données</h2>
-      <p>
-        La sauvegarde est un fichier. Il est enregistré dans les « Téléchargements » de cet appareil. Gardez-le en lieu sûr : sur un ordinateur, une clé USB, ou envoyé à
-        vous-même par e-mail.
-      </p>
-      <p className="small muted">Les photos ne sont pas dans la sauvegarde. Elles restent seulement sur cet appareil.</p>
+      <p>La sauvegarde est un fichier, rangé dans les « Téléchargements » de cet appareil.</p>
       <p className={overdue ? 'warn-text' : 'muted'}>
         {last ? `Dernière sauvegarde : ${formatDay(last, { year: true })}.` : 'Vous n’avez pas encore fait de sauvegarde.'}
         {overdue && ' Pensez à en faire une.'}
       </p>
-      {persistent === false && <p className="small muted">Si l’espace manque, cet appareil peut effacer vos données. Une sauvegarde les protège.</p>}
       {warnings.length > 0 && <p className="alert small">Certaines données ont été corrigées au démarrage : {warnings.join(' ')}</p>}
       <div className="row">
         <button className="btn primary" onClick={exportJson}>
@@ -309,6 +303,12 @@ function Backup() {
           ✓ {msg.text}
         </p>
       )}
+      <details className="np-details">
+        <summary>Détails</summary>
+        <p className="small muted">Gardez-le en lieu sûr : ordinateur, clé USB, ou e-mail à vous-même.</p>
+        <p className="small muted">Les photos ne sont pas dans la sauvegarde. Elles restent sur cet appareil.</p>
+        {persistent === false && <p className="small muted">Si l’espace manque, cet appareil peut effacer vos données. Une sauvegarde les protège.</p>}
+      </details>
       {pending && (
         <ImportDialog
           pending={pending}
@@ -354,10 +354,9 @@ function Sync() {
   if (!syncConfigured) return null
   if (!mod) {
     return (
-      <div className="card">
-        <h2>Retrouver mes jardins sur un autre appareil</h2>
+      <Fold title="Retrouver mes jardins sur un autre appareil">
         {msg?.error ? <ErrorNote error={msg.error} /> : <p className="muted"><span className="spinner" /> Chargement…</p>}
-      </div>
+      </Fold>
     )
   }
 
@@ -393,9 +392,8 @@ function Sync() {
   const hasPhotos = getState().plants.some((p) => p.photos.length > 0)
 
   return (
-    <div className="card">
-      <h2>Retrouver mes jardins sur un autre appareil</h2>
-      <p className="small muted">Vous mettez une copie de vos jardins en ligne, puis vous la reprenez sur un autre téléphone ou ordinateur. Les photos ne sont pas copiées.</p>
+    <Fold title="Retrouver mes jardins sur un autre appareil">
+      <p className="small muted">Mettez une copie en ligne, puis reprenez-la sur un autre appareil. Les photos ne sont pas copiées.</p>
       {user ? (
         <>
           <p>Connecté : {user.email}</p>
@@ -485,7 +483,7 @@ function Sync() {
           onRefuse={() => setAsking(undefined)}
         />
       )}
-    </div>
+    </Fold>
   )
 }
 
@@ -589,8 +587,7 @@ function AdviceCard({ garden }: { garden: Garden }) {
 /** Visite guidée et partage de l'appli. */
 function TourCard() {
   return (
-    <div className="card">
-      <h2>La visite</h2>
+    <Fold title="La visite">
       <p className="small muted">Le guide en 5 étapes : adresse, terrain, plantes, entretien, voisins.</p>
       <div className="stack">
         <button className="btn" onClick={restartOnboarding}>
@@ -598,7 +595,7 @@ function TourCard() {
         </button>
         <InviteButton className="btn" label="Faire connaître l’appli" copyLabel="Copier le lien de l’appli" />
       </div>
-    </div>
+    </Fold>
   )
 }
 
@@ -633,11 +630,7 @@ export function SettingsPage({ garden }: { garden: Garden }) {
           <InstallCard />
           <Sync />
           <PrivacyCard />
-          <div className="card">
-            <details>
-              <summary>
-                <h2 style={{ display: 'inline' }}>Sources et licences</h2>
-              </summary>
+          <Fold title="Sources et licences">
               <ul className="list small">
                 <li>Photo aérienne, plan, cadastre, maisons voisines et relief : © IGN – Géoplateforme, Licence Ouverte 2.0. Arbres des environs : © IGN – LiDAR HD, Licence Ouverte 2.0.</li>
                 <li>Météo et historique du climat : Open-Meteo (CC BY 4.0, usage non commercial).</li>
@@ -645,8 +638,7 @@ export function SettingsPage({ garden }: { garden: Garden }) {
                 <li>Fiches des plantes, calendriers et voisinages : base PermaJardin. Ces conseils restent indicatifs.</li>
                 <li>Distances de plantation : article 671 du Code civil. Des règles locales peuvent s’appliquer.</li>
               </ul>
-            </details>
-          </div>
+          </Fold>
         </div>
       </div>
       <footer className="legal-footer">

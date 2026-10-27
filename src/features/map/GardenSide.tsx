@@ -56,9 +56,12 @@ export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
       <button className="btn primary" onClick={() => setPicking(true)}>
         <Icon name="plus" /> Ajouter une plante au jardin
       </button>
-      <button className="btn" onClick={() => openScan('menu')}>
-        <Icon name="camera" /> Scanner mon jardin
-      </button>
+      <details className="np-details">
+        <summary>Autres façons d’ajouter</summary>
+        <button className="btn" onClick={() => openScan('menu')}>
+          <Icon name="camera" /> Scanner mon jardin
+        </button>
+      </details>
       <p className="muted small">{hint}</p>
       {plants.length > 0 && (
         <ul className="list small">

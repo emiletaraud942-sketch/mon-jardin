@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Fold } from '../../components/Fold'
 import { Tabs, TabPanel } from '../../components/Tabs'
 import { getMyOrganizer, getProfile, getSession, onSessionChange, resyncPushDevice } from '../../lib/neighbors/api'
 import { notifyNewsChanged, writeVisit, type NewsTarget } from '../../lib/neighbors/news'
@@ -65,15 +66,15 @@ export function NeighborsPage({ garden }: { garden: Garden }) {
       <header className="nb-head">
         <h1>Entraide entre voisins</h1>
         <p className="muted" style={{ margin: 0 }}>
-          Donnez, échangez, prêtez, cherchez ou posez une question à des jardiniers près de chez vous. Retrouvez aussi les événements du coin. C’est gratuit.
+          Donnez, prêtez ou posez une question à des jardiniers près de chez vous. C’est gratuit.
         </p>
       </header>
       {voisins ? (
         <Connected garden={garden} />
       ) : (
         <>
-          <section className="card stack" aria-label="Exemples d’annonces">
-            <h2>Voici à quoi ça ressemble</h2>
+          <Fold title="Voici à quoi ça ressemble">
+            <div className="stack">
             <p className="small muted" style={{ margin: 0 }}>Ce sont des exemples, pas de vraies annonces.</p>
             {EXAMPLES.map((e) => (
               <div key={e.title} className="np-example">
@@ -95,20 +96,27 @@ export function NeighborsPage({ garden }: { garden: Garden }) {
               </span>
               <span className="small muted">Boutons : « Je suis intéressé(e) », « S’inscrire », « Signaler ».</span>
             </div>
-          </section>
+            </div>
+          </Fold>
           <section className="card stack" aria-label="Avant de commencer">
             <h2>Avant de commencer</h2>
             <ul className="nb-rules">
               <li>Il faut une adresse e-mail et un pseudo. Pas de mot de passe.</li>
               <li>Les voisins voient votre pseudo et votre quartier, jamais votre adresse.</li>
-              <li>Votre quartier est une zone d’environ 2 km. Vous pouvez choisir plus large, environ 5 km.</li>
-              <li>Vos annonces et messages sont gardés sur un serveur en Europe. Les annonces disparaissent après 60 jours.</li>
-              <li>Les événements sont publiés par des organisateurs vérifiés. Un lien d’inscription mène vers un autre site.</li>
-              <li>Vous pouvez tout supprimer, ou retirer votre autorisation, à tout moment.</li>
+              <li>Vous pouvez tout supprimer, à tout moment.</li>
             </ul>
-            <p className="small" style={{ margin: 0 }}>
-              Détails : <LegalLink id="confidentialite" label="politique de confidentialité" />.
-            </p>
+            <details className="np-details">
+              <summary>Détails</summary>
+              <ul className="nb-rules">
+                <li>Votre quartier est une zone d’environ 2 km. Vous pouvez choisir plus large, environ 5 km.</li>
+                <li>Vos annonces et messages sont gardés sur un serveur en Europe. Les annonces disparaissent après 60 jours.</li>
+                <li>Les événements sont publiés par des organisateurs vérifiés. Un lien d’inscription mène vers un autre site.</li>
+                <li>Vous pouvez aussi retirer votre autorisation à tout moment.</li>
+              </ul>
+              <p className="small" style={{ margin: 0 }}>
+                Texte complet : <LegalLink id="confidentialite" label="politique de confidentialité" />.
+              </p>
+            </details>
             <p style={{ margin: 0 }}>
               <strong>Rien n’est envoyé avant votre accord.</strong>
             </p>
