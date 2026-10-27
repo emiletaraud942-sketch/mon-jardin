@@ -1,43 +1,43 @@
 /* Polices autohébergées (CSP : font-src 'self'). Sous-ensemble latin seulement : français complet (accents, œ, « », ’). */
 @font-face {
-  font-family: 'Fraunces';
+  font-family: 'DM Serif Display';
   font-style: normal;
-  font-weight: 100 900;
+  font-weight: 400;
   font-display: swap;
-  src: url('../assets/fonts/fraunces-latin-wght-normal.woff2') format('woff2-variations');
+  src: url('../assets/fonts/dm-serif-display-latin-400-normal.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
-  font-family: 'Nunito';
+  font-family: 'DM Sans';
   font-style: normal;
-  font-weight: 200 1000;
+  font-weight: 100 1000;
   font-display: swap;
-  src: url('../assets/fonts/nunito-latin-wght-normal.woff2') format('woff2-variations');
+  src: url('../assets/fonts/dm-sans-latin-wght-normal.woff2') format('woff2-variations');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-/* Direction « Nature chaleureuse » : crème, vert forêt, terre cuite, sauge, blé.
+/* Direction « Leafora » : crème, cartes blanches, vert profond, sauge. Les plantes sont les héroïnes.
    Toutes les couleurs de l'interface passent par ces variables (clair puis sombre). */
 :root {
-  --font-title: 'Fraunces', 'Iowan Old Style', Georgia, serif;
-  --font-body: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --bg: #f7f2e8; /* crème */
-  --surface: #fffdf8; /* cartes, barres, champs */
-  --surface-2: #efe9d8; /* fonds discrets, zones inactives */
-  --track: #e9e2d0; /* rail des onglets, jauges */
-  --border: #ddd5bf; /* contour doux des cartes */
-  --border-strong: #857f6b; /* contour des champs et boutons : au moins 3,3:1 sur les fonds clairs */
+  --font-title: 'DM Serif Display', 'Iowan Old Style', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --bg: #f6f5ef; /* crème */
+  --surface: #ffffff; /* cartes, barres, champs */
+  --surface-2: #eef0e3; /* fonds discrets, zones inactives */
+  --track: #e4e8d6; /* sauge : rail des onglets, jauges */
+  --border: #e2e6d5; /* contour très doux des cartes */
+  --border-strong: #7f8a7c; /* contour des champs et boutons : 3,1:1 au moins sur les fonds clairs */
   --focus: #0b57d0; /* anneau de focus clavier : 5,7:1 et plus */
-  --text: #2b2a22; /* 13:1 sur --bg */
-  --muted: #5c5c4a; /* 6:1 sur --bg */
-  --title: #24432c; /* titres */
-  --accent: #2f5d3a; /* vert forêt */
-  --accent-2: #4f8a4b;
-  --accent-soft: #dde8cb; /* sauge : zones actives */
-  --btn-green: #2f5d3a; /* bouton « Fait », onglet actif */
-  --btn-green-shadow: #1f4128;
+  --text: #1f2a22; /* 13,6:1 sur --bg */
+  --muted: #5b6659; /* 5,2:1 au moins sur les fonds clairs et la sauge */
+  --title: #2f5233; /* titres : vert profond */
+  --accent: #2f5233; /* vert profond : liens, contours de boutons */
+  --accent-2: #3f7a45; /* vert feuille : remplissages, repères */
+  --accent-soft: #e4e8d6; /* sauge : zones actives, pastilles */
+  --btn-green: #2f5233; /* bouton principal, onglet actif */
+  --btn-green-shadow: #1f3a23;
   --on-btn-green: #ffffff;
-  --cta: #b8532d; /* terre cuite : action principale (4,9:1 avec du blanc) */
+  --cta: #b8532d; /* terre cuite : repères d'attention (pastilles de nouveautés, incertitude) */
   --cta-shadow: #8e3e20;
   --on-cta: #ffffff;
   --wheat: #e9c46a; /* blé : repères */
@@ -51,64 +51,63 @@
   --cal-abri: #4a86bd; /* semis abrité : 3,8:1 sur --surface */
   --cal-harvest: #b06f00; /* récolte : 4,0:1 sur --surface */
   /* Étiquettes et tuiles colorées */
-  --dry-bg: #e4ebd6;
-  --dry-text: #24432c;
+  --dry-bg: #e4e8d6;
+  --dry-text: #2f5233;
   --frost-bg: #e8e4f2;
   --frost-text: #3b3680;
   --water-bg: #dce6ef;
   --water-text: #1f4b70;
   --give-bg: #f4ddc9;
   --give-text: #8e3e20;
-  /* Illustration d'accueil */
-  --ill-grass: #9db87a;
-  --ill-fence: rgb(255 255 255 / 75%);
-  --ill-house: #efe6d2;
-  --ill-house-edge: #cdbf9f;
-  --ill-tree: #4f8a55;
-  --ill-tree-shade: #3d7044;
-  --ill-bush: #6fa46b;
-  --ill-bush-shade: #4f8a55;
-  --ill-fruit: #d98a5b;
-  --ill-fruit-shade: #b8532d;
-  --ill-wheat: #e9c46a;
-  --ill-wheat-shade: #cfa43c;
-  --ill-blob-1: #e4ebd6;
-  --ill-blob-2: #f0e3cc;
-  --radius: 14px;
-  --radius-card: 16px;
-  --radius-btn: 12px;
-  --radius-btn-lg: 14px;
+  /* Illustrations (src/components/illustrations) */
+  --il-blob: #e4e8d6;
+  --il-leaf-a: #2f5233;
+  --il-leaf-b: #3f7a45;
+  --il-leaf-c: #5b9a5e;
+  --il-vein: rgb(255 255 255 / 35%);
+  --il-pot: #dde3d0;
+  --il-rim: #c9d2b8;
+  --il-house: #efe9d6;
+  --il-roof: #b8532d;
+  --il-fence: #b9c3a6;
+  --radius: 18px;
+  --radius-card: 24px;
+  --radius-btn: 999px; /* boutons en pilule */
+  --radius-btn-lg: 18px; /* bandeaux, tuiles */
   --radius-chip: 999px;
   --border-w: 1px;
-  --shadow: none;
-  --shadow-float: 0 2px 8px rgb(43 42 34 / 14%);
-  --scrim: rgb(36 40 28 / 50%);
+  --shadow: 0 6px 20px rgb(40 60 40 / 9%);
+  --shadow-float: 0 8px 28px rgb(40 60 40 / 16%);
+  --shadow-up: 0 -8px 30px rgb(40 60 40 / 12%);
+  --scrim: rgb(31 42 34 / 50%);
   --nav-h: 72px;
   --tap: 44px; /* taille minimale d'une cible tactile */
   --btn-h: 52px;
   color-scheme: light;
 }
 
-/* Sombre : fonds vert très foncé, mêmes accents éclaircis. Texte au moins 4,5:1. */
+/* Sombre : fond vert-noir, cartes un cran plus claires, mêmes accents éclaircis. Texte au moins 4,5:1. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #121a14;
-    --surface: #1a251c;
+    --bg: #131a14;
+    --surface: #1b241c;
     --surface-2: #243026;
     --track: #2a372c;
-    --border: #3a4a3c;
-    --border-strong: #7d8a78;
+    --border: #2d3b2f;
+    --border-strong: #7e8c7a;
     --focus: #8ab4ff;
-    --text: #ece7d9;
-    --muted: #b4bda9;
-    --title: #cfe6be;
-    --accent: #9fcd8d;
-    --accent-2: #8bbf7c;
-    --accent-soft: #2b432e;
-    --btn-green: #3b7149;
-    --btn-green-shadow: #244a2e;
-    --cta: #b8532d;
+    --text: #eeebdd;
+    --muted: #aab5a5;
+    --title: #d3eac6;
+    --accent: #a8d49a;
+    --accent-2: #7dbb80;
+    --accent-soft: #263829;
+    --btn-green: #a8d49a;
+    --btn-green-shadow: #7fb272;
+    --on-btn-green: #12200f;
+    --cta: #d9774f;
     --cta-shadow: #7c3519;
+    --on-cta: #1a0d06;
     --wheat: #e9c46a;
     --warn: #e7a35c;
     --warn-soft: #3a2c1c;
@@ -125,41 +124,43 @@
     --water-text: #c6dff3;
     --give-bg: #4a2d1d;
     --give-text: #f5cdb2;
-    --ill-grass: #2f4a31;
-    --ill-house: #c9bfa6;
-    --ill-house-edge: #8f866f;
-    --ill-tree: #4f8a55;
-    --ill-tree-shade: #3d7044;
-    --ill-bush: #5f9a62;
-    --ill-bush-shade: #477b4c;
-    --ill-fruit: #d98a5b;
-    --ill-fruit-shade: #b8532d;
-    --ill-blob-1: #1c2b1f;
-    --ill-blob-2: #2a2a1e;
-    --shadow: none;
-    --shadow-float: 0 2px 8px rgb(0 0 0 / 40%);
+    --il-blob: #223025;
+    --il-leaf-a: #5b9a5e;
+    --il-leaf-b: #4a8a50;
+    --il-leaf-c: #7dbb80;
+    --il-vein: rgb(255 255 255 / 25%);
+    --il-pot: #3a4a3c;
+    --il-rim: #4a5c4c;
+    --il-house: #c9bfa6;
+    --il-roof: #d9774f;
+    --il-fence: #4f6152;
+    --shadow: 0 6px 20px rgb(0 0 0 / 35%);
+    --shadow-float: 0 8px 28px rgb(0 0 0 / 55%);
+    --shadow-up: 0 -8px 30px rgb(0 0 0 / 45%);
     --scrim: rgb(0 0 0 / 60%);
     color-scheme: dark;
   }
 }
 :root[data-theme='dark'] {
-  --bg: #121a14;
-  --surface: #1a251c;
+  --bg: #131a14;
+  --surface: #1b241c;
   --surface-2: #243026;
   --track: #2a372c;
-  --border: #3a4a3c;
-  --border-strong: #7d8a78;
+  --border: #2d3b2f;
+  --border-strong: #7e8c7a;
   --focus: #8ab4ff;
-  --text: #ece7d9;
-  --muted: #b4bda9;
-  --title: #cfe6be;
-  --accent: #9fcd8d;
-  --accent-2: #8bbf7c;
-  --accent-soft: #2b432e;
-  --btn-green: #3b7149;
-  --btn-green-shadow: #244a2e;
-  --cta: #b8532d;
+  --text: #eeebdd;
+  --muted: #aab5a5;
+  --title: #d3eac6;
+  --accent: #a8d49a;
+  --accent-2: #7dbb80;
+  --accent-soft: #263829;
+  --btn-green: #a8d49a;
+  --btn-green-shadow: #7fb272;
+  --on-btn-green: #12200f;
+  --cta: #d9774f;
   --cta-shadow: #7c3519;
+  --on-cta: #1a0d06;
   --wheat: #e9c46a;
   --warn: #e7a35c;
   --warn-soft: #3a2c1c;
@@ -176,19 +177,19 @@
   --water-text: #c6dff3;
   --give-bg: #4a2d1d;
   --give-text: #f5cdb2;
-  --ill-grass: #2f4a31;
-  --ill-house: #c9bfa6;
-  --ill-house-edge: #8f866f;
-  --ill-tree: #4f8a55;
-  --ill-tree-shade: #3d7044;
-  --ill-bush: #5f9a62;
-  --ill-bush-shade: #477b4c;
-  --ill-fruit: #d98a5b;
-  --ill-fruit-shade: #b8532d;
-  --ill-blob-1: #1c2b1f;
-  --ill-blob-2: #2a2a1e;
-  --shadow: none;
-  --shadow-float: 0 2px 8px rgb(0 0 0 / 40%);
+  --il-blob: #223025;
+  --il-leaf-a: #5b9a5e;
+  --il-leaf-b: #4a8a50;
+  --il-leaf-c: #7dbb80;
+  --il-vein: rgb(255 255 255 / 25%);
+  --il-pot: #3a4a3c;
+  --il-rim: #4a5c4c;
+  --il-house: #c9bfa6;
+  --il-roof: #d9774f;
+  --il-fence: #4f6152;
+  --shadow: 0 6px 20px rgb(0 0 0 / 35%);
+  --shadow-float: 0 8px 28px rgb(0 0 0 / 55%);
+  --shadow-up: 0 -8px 30px rgb(0 0 0 / 45%);
   --scrim: rgb(0 0 0 / 60%);
   color-scheme: dark;
 }
@@ -217,6 +218,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font: 400 1.0625rem/1.5 var(--font-body);
+  font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
 }
 h1,
@@ -225,17 +227,18 @@ h3 {
   line-height: 1.2;
   margin: 0 0 0.5em;
   font-family: var(--font-title);
-  font-weight: 700;
+  font-weight: 400; /* DM Serif Display n'existe qu'en graisse normale */
+  letter-spacing: 0.005em;
   color: var(--title);
 }
 h1 {
-  font-size: 1.75rem;
+  font-size: 1.9rem;
 }
 h2 {
-  font-size: 1.3rem;
+  font-size: 1.4rem;
 }
 h3 {
-  font-size: 1.15rem;
+  font-size: 1.2rem;
 }
 p {
   margin: 0 0 0.75em;
@@ -284,7 +287,7 @@ textarea {
   top: -80px;
   z-index: 100;
   padding: 12px 16px;
-  border-radius: 14px;
+  border-radius: 18px;
   background: var(--btn-green);
   color: var(--on-btn-green);
   font-weight: 700;
@@ -325,7 +328,7 @@ label:focus-within:has(> input.sr-only) {
   align-items: center;
   flex-wrap: wrap;
   gap: 8px 12px;
-  padding: 10px 16px 6px;
+  padding: 12px 20px 6px;
   background: var(--bg);
 }
 .brand {
@@ -333,42 +336,42 @@ label:focus-within:has(> input.sr-only) {
   align-items: center;
   gap: 10px;
   font-family: var(--font-title);
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--accent);
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: var(--title);
   white-space: nowrap;
 }
 .brand img {
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 18px;
 }
 .topbar .spacer {
   flex: 1;
 }
-/* Sous l'en-tête : sélecteur de mode, jauge et Premiers pas. */
+/* Sous l'en-tête : sélecteur segmenté du rayon et bandeau d'exemple. */
 .modebar {
   grid-column: 1 / -1;
   position: relative;
-  z-index: 30; /* les panneaux de la jauge passent par-dessus la carte et ses volets */
+  z-index: 30;
   background: var(--bg);
-  padding: 4px 16px 10px;
+  padding: 4px 20px 12px;
   min-width: 0;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 8px 12px;
 }
-.modeswitch {
+.seg {
   flex: 0 1 520px;
   display: flex;
   flex-wrap: wrap; /* texte très grand : les boutons passent sur plusieurs lignes */
-  gap: 6px;
-  padding: 5px;
-  border-radius: var(--radius-btn-lg);
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
   background: var(--track);
 }
-.modeswitch button {
+.seg button {
   flex: 1 1 auto;
   min-width: 0;
   min-height: 46px;
@@ -376,41 +379,44 @@ label:focus-within:has(> input.sr-only) {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 4px 8px;
+  padding: 4px 14px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 999px;
   background: transparent;
   color: var(--muted);
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
   text-align: center;
 }
-.modeswitch button:hover {
+.seg button:hover {
   color: var(--text);
 }
-.modeswitch button[aria-selected='true'] {
+.seg button[aria-selected='true'] {
   background: var(--btn-green);
   color: var(--on-btn-green);
+  font-weight: 700;
 }
-.modeswitch button:focus-visible {
+.seg button:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 1px;
 }
-.help-btn {
+.btn.help-btn {
   min-height: var(--tap);
   font-weight: 700;
-  padding: 4px 14px;
-  border-radius: 14px;
-  border-color: var(--border-strong);
+  padding: 4px 16px 4px 6px;
+  border-color: transparent;
+  background: var(--surface);
+  color: var(--title);
+  box-shadow: var(--shadow);
 }
 .help-mark {
   display: inline-grid;
   place-items: center;
-  width: 1.6em;
-  height: 1.6em;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: var(--btn-green);
-  color: var(--on-btn-green);
+  background: var(--accent-soft);
+  color: var(--title);
   font-weight: 700;
 }
 .topbar .btn {
@@ -421,7 +427,8 @@ label:focus-within:has(> input.sr-only) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 600;
+  font-weight: 500;
+  color: var(--muted);
 }
 .demo-banner {
   flex: 1 1 auto;
@@ -433,89 +440,23 @@ label:focus-within:has(> input.sr-only) {
   gap: 8px;
   padding: 6px 12px;
 }
-.guide {
-  flex: 1 1 280px;
-  max-width: 640px;
-  min-width: 0;
-}
-.progresscard {
-  position: relative;
-  border: var(--border-w) solid var(--border);
-  border-radius: var(--radius-btn-lg);
-  background: var(--surface);
-}
-.guide-toggle {
-  width: 100%;
-  min-width: 0;
-  min-height: var(--tap);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 2px 8px;
-  padding: 4px 10px;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
-  border-radius: var(--radius-btn-lg);
-  font-weight: 700;
-}
-.guide-toggle:focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: -2px;
-}
-.guide-toggle .chev {
-  margin-left: auto;
-  display: inline-flex;
-  color: var(--muted);
-  transition: transform 0.15s;
-}
-.guide-toggle .chev.up {
-  transform: rotate(180deg);
-}
-.gauge-label {
-  flex: 1 1 auto;
-}
 .gauge {
   order: 3;
   flex: 1 1 100%;
   min-width: 40px;
-  height: 10px;
+  height: 8px;
   margin-bottom: 6px;
   border-radius: 999px;
   background: var(--track);
-  border: 1px solid var(--border-strong);
   overflow: hidden;
-}
-.guide-toggle .chev {
-  order: 2;
 }
 .gauge > span {
   display: block;
   height: 100%;
-  background: var(--accent);
+  background: var(--accent-2);
   border-radius: 999px;
 }
-
-/* Détails dépliés : par-dessus la carte, sans la redimensionner. */
-.progress-body {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  right: 0;
-  max-height: calc(100dvh - 190px);
-  overflow-y: auto;
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  background: var(--surface);
-  border: var(--border-w) solid var(--border);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-float);
-}
-.next-step,
-.nudge {
+.next-step {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -524,59 +465,6 @@ label:focus-within:has(> input.sr-only) {
 }
 .next-step {
   padding: 0 4px;
-}
-.nudge {
-  padding: 6px 10px 8px;
-  border-top: 1px solid var(--border);
-}
-.firststeps {
-  border: var(--border-w) solid var(--border);
-  border-radius: var(--radius-btn-lg);
-  background: var(--surface);
-}
-.steps-list {
-  list-style: none;
-  margin: 0;
-  padding: 0 10px;
-}
-.steps-list li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: var(--tap);
-  padding: 4px 0;
-  border-top: 1px solid var(--border);
-}
-.steps-list .check {
-  flex: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 8px;
-  border: 1px solid var(--border-strong);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  font-weight: 700;
-  line-height: 1;
-}
-.steps-list li.done .check {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--surface);
-}
-.steps-list li.done .steps-label {
-  color: var(--muted);
-}
-.steps-text {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-.guide-foot {
-  padding: 4px 10px 8px;
-  border-top: 1px solid var(--border);
 }
 .help-steps {
   margin: 0;
@@ -590,9 +478,6 @@ label:focus-within:has(> input.sr-only) {
   padding-left: 1.2em;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-.help-links {
   gap: 8px;
 }
 .empty-actions {
@@ -615,28 +500,20 @@ label:focus-within:has(> input.sr-only) {
     align-items: stretch;
     gap: 6px;
   }
-  .modeswitch {
+  .seg {
     flex: none;
   }
-  .modeswitch button {
+  .seg button {
     padding: 4px 4px;
     font-size: 0.9375rem;
   }
-  .guide {
-    flex: none;
-    max-width: none;
-  }
-  .progress-body {
-    max-height: calc(100dvh - 230px);
-  }
 }
 .sidenav {
-  background: var(--surface);
-  border-right: var(--border-w) solid var(--border);
-  padding: 12px 10px;
+  background: transparent;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 .navbtn {
   display: flex;
@@ -645,12 +522,12 @@ label:focus-within:has(> input.sr-only) {
   min-height: var(--tap);
   border: 0;
   background: transparent;
-  padding: 10px 12px;
-  border-radius: 14px;
+  padding: 10px 16px;
+  border-radius: 999px;
   cursor: pointer;
   text-align: left;
   color: var(--muted);
-  font-weight: 700;
+  font-weight: 500;
 }
 .navbtn svg {
   width: 24px;
@@ -658,17 +535,13 @@ label:focus-within:has(> input.sr-only) {
   flex: none;
 }
 .navbtn:hover {
-  background: var(--surface-2);
+  background: var(--track);
   color: var(--text);
 }
 .navbtn[aria-current='page'] {
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-@media (max-width: 760px) {
-  .navbtn[aria-current='page'] {
-    background: transparent;
-  }
+  background: var(--btn-green);
+  color: var(--on-btn-green);
+  font-weight: 700;
 }
 .navbtn .badge {
   margin-left: auto;
@@ -684,70 +557,80 @@ label:focus-within:has(> input.sr-only) {
 .page {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 20px 18px 40px;
+  padding: 20px 20px 40px;
 }
 .page > h1 {
-  font-size: 1.85rem;
+  font-size: 2rem;
 }
 
 @media (max-width: 760px) {
   .app {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(52px, auto) auto minmax(0, 1fr) minmax(var(--nav-h), auto);
+    grid-template-rows: minmax(52px, auto) auto minmax(0, 1fr) auto;
   }
+  /* Barre du bas flottante : pilule blanche, marges de 16 px, pastille ronde verte pour l'écran actif. */
   .sidenav {
     grid-row: 4;
     flex-direction: row;
-    border-right: 0;
-    border-top: var(--border-w) solid var(--border);
-    padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
+    margin: 4px 16px calc(10px + env(safe-area-inset-bottom));
+    padding: 6px 8px;
+    border-radius: 32px;
+    background: var(--surface);
+    border: var(--border-w) solid var(--border);
+    box-shadow: var(--shadow-float);
     justify-content: space-around;
+    gap: 2px;
     height: auto;
+    z-index: 25;
   }
   .navbtn {
+    position: relative;
     flex-direction: column;
-    gap: 3px;
+    gap: 2px;
     padding: 0 2px;
-    font-size: 0.8125rem; /* 13 px */
+    font-size: 0.75rem;
     line-height: 1.2;
     text-align: center;
     flex: 1;
     align-items: center;
+    justify-content: flex-start;
     min-width: 0;
+    min-height: 56px;
+    border-radius: 24px;
+    background: transparent;
+  }
+  .navbtn:hover,
+  .navbtn[aria-current='page'] {
+    background: transparent;
+    color: var(--title);
   }
   .navbtn .badge {
     position: absolute;
-    top: -4px;
-    left: calc(50% + 10px);
+    top: -2px;
+    left: calc(50% + 8px);
     margin: 0;
-    font-size: 0.8125rem;
-    min-width: 22px;
+    font-size: 0.75rem;
+    min-width: 20px;
     justify-content: center;
   }
-  .navbtn {
-    position: relative;
-    background: transparent;
-  }
-  .navbtn:hover {
-    background: transparent;
-  }
-  /* Pastille derrière l'icône : sauge pour l'onglet actif (dessinée sur le <svg>, sans rien changer au balisage). */
+  /* Pastille ronde derrière l'icône : verte pour l'écran actif (dessinée sur le <svg>, sans rien changer au balisage). */
   .navbtn svg {
     box-sizing: border-box;
-    width: 56px;
-    height: 34px;
-    padding: 5px 16px;
-    border-radius: 17px;
+    width: 42px;
+    height: 42px;
+    padding: 10px;
+    border-radius: 50%;
   }
   .navbtn[aria-current='page'] svg {
-    background: var(--accent-soft);
+    background: var(--btn-green);
+    color: var(--on-btn-green);
   }
   .brand img {
     width: 36px;
     height: 36px;
   }
   .topbar {
-    padding: 8px 12px 4px;
+    padding: 8px 16px 4px;
     gap: 6px 8px;
   }
   .garden-name {
@@ -755,10 +638,15 @@ label:focus-within:has(> input.sr-only) {
     min-width: 5rem;
     max-width: none;
   }
-  .help-btn {
+  .btn.help-btn {
     flex: none;
-    padding: 4px 12px;
-    gap: 6px;
+    padding: 0;
+    gap: 0;
+    width: 44px;
+    border-radius: 50%;
+  }
+  .help-btn .help-label {
+    display: none;
   }
   .topbar .spacer {
     flex: 0 0 0;
@@ -767,25 +655,6 @@ label:focus-within:has(> input.sr-only) {
   .hide-mobile {
     display: none !important;
   }
-  .show-mobile {
-    display: flex !important;
-  }
-  .navbtn {
-    min-height: 56px;
-    justify-content: flex-start;
-  }
-  .garden-select {
-    max-width: 50vw;
-  }
-}
-.show-mobile {
-  display: none;
-}
-.garden-select,
-select.garden-select {
-  /* `select.input` (plus spécifique) imposait width: 100 % et étirait le sélecteur sur tout l'en-tête */
-  width: auto;
-  max-width: 220px;
 }
 
 /* ---------- Composants ---------- */
@@ -793,7 +662,7 @@ select.garden-select {
   background: var(--surface);
   border: var(--border-w) solid var(--border);
   border-radius: var(--radius-card);
-  padding: 18px;
+  padding: 20px;
   box-shadow: var(--shadow);
 }
 .card + .card {
@@ -832,40 +701,26 @@ select.garden-select {
   justify-content: center;
   gap: 6px;
   min-height: var(--btn-h);
-  padding: 8px 18px;
+  padding: 8px 24px;
   border-radius: var(--radius-btn);
-  border: var(--border-w) solid var(--border);
+  border: 1.5px solid var(--accent);
   background: var(--surface);
   cursor: pointer;
   font-weight: 700;
   text-decoration: none;
-  color: var(--text);
+  color: var(--accent);
 }
 .btn:hover {
-  background: var(--surface-2);
+  background: var(--accent-soft);
 }
 .btn.primary {
-  background: var(--cta);
-  border-color: var(--cta);
-  color: var(--on-cta);
-}
-.btn.primary:hover {
-  background: var(--cta);
-  filter: brightness(1.06);
-}
-.btn.primary:active {
-}
-/* « Fait » : vert, avec sa tranche. */
-.btn.done-btn {
   background: var(--btn-green);
   border-color: var(--btn-green);
   color: var(--on-btn-green);
 }
-.btn.done-btn:hover {
+.btn.primary:hover {
   background: var(--btn-green);
-  filter: brightness(1.08);
-}
-.btn.done-btn:active {
+  filter: brightness(1.12);
 }
 .btn.danger {
   color: var(--danger);
@@ -884,11 +739,11 @@ select.garden-select {
   filter: brightness(1.1);
 }
 .btn.big {
-  min-height: 58px;
+  min-height: 54px;
   width: 100%;
-  font-size: 1.1875rem;
+  font-size: 1.125rem;
   font-weight: 700;
-  border-radius: var(--radius-btn-lg);
+  border-radius: var(--radius-btn);
 }
 /* Bouton secondaire en grand : contour vert forêt sur fond de carte. */
 .btn.big:not(.primary):not(.danger):not(.danger-solid):not(:disabled) {
@@ -907,11 +762,9 @@ select.garden-select {
 }
 .btn.small {
   min-height: var(--tap);
-  padding: 4px 14px;
+  padding: 4px 18px;
   font-size: 0.9375rem;
-  border-radius: 14px;
-}
-.btn.small.primary {
+  border-radius: var(--radius-btn);
 }
 .btn.small.tall {
   min-height: var(--tap);
@@ -934,6 +787,7 @@ select.garden-select {
   padding: 0 2px;
   min-height: var(--tap);
   color: var(--accent);
+  font-weight: 700;
   text-decoration: underline;
 }
 /* Bouton inactif : fond neutre et texte lisible (5:1), jamais « fantôme ». La raison est écrite à côté. */
@@ -956,9 +810,9 @@ select.garden-select {
 select.input,
 textarea.input {
   width: 100%;
-  min-height: 48px;
-  padding: 8px 14px;
-  border-radius: 14px;
+  min-height: 50px;
+  padding: 8px 16px;
+  border-radius: 16px;
   border: var(--border-w) solid var(--border-strong);
   background: var(--surface);
 }
@@ -982,8 +836,8 @@ label.field > span {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 10px;
-  border-radius: 12px;
+  padding: 3px 12px;
+  border-radius: 999px;
   font-size: 0.875rem; /* 14 px */
   font-weight: 700;
   background: var(--surface-2);
@@ -1006,7 +860,7 @@ label.field > span {
   background: var(--cta);
   color: var(--on-cta);
   min-width: 22px;
-  border-radius: 12px;
+  border-radius: 999px;
   justify-content: center;
 }
 .badge.frost {
@@ -1022,8 +876,8 @@ label.field > span {
   color: var(--give-text);
 }
 .alert {
-  padding: 12px 16px;
-  border-radius: var(--radius-btn-lg);
+  padding: 14px 18px;
+  border-radius: 20px;
   background: var(--warn-soft);
   color: var(--warn-text);
   line-height: 1.4;
@@ -1127,21 +981,6 @@ label.field > span {
 .custom-form {
   gap: 12px;
 }
-.onboarding {
-  padding: 24px;
-}
-.onboarding h1 {
-  margin: 8px 0 8px;
-}
-.brand-row {
-  gap: 10px;
-}
-.brand-name {
-  font-family: var(--font-title);
-  font-weight: 700;
-  color: var(--accent);
-  font-size: 1.5rem;
-}
 .choose-start .btn.big {
   flex: none;
 }
@@ -1175,25 +1014,28 @@ label.field > span {
 }
 .tabs {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   margin-bottom: 16px;
-  padding: 2px;
+  padding: 4px;
   flex-wrap: wrap;
+  border-radius: 28px;
+  background: var(--track);
 }
 .tabs button {
   border: 0;
-  background: var(--track);
+  background: transparent;
   min-height: var(--tap);
-  padding: 8px 16px;
+  padding: 8px 18px;
   border-radius: var(--radius-chip);
   cursor: pointer;
   color: var(--muted);
-  font-weight: 700;
+  font-weight: 500;
   white-space: nowrap;
 }
 .tabs button[aria-selected='true'] {
   background: var(--btn-green);
   color: var(--on-btn-green);
+  font-weight: 700;
 }
 .months {
   display: grid;
@@ -1311,7 +1153,7 @@ label.field > span {
   width: 72px;
   height: 72px;
   object-fit: cover;
-  border-radius: 14px;
+  border-radius: 18px;
   border: var(--border-w) solid var(--border-strong);
   background: var(--surface-2);
   flex: none;
@@ -1324,7 +1166,7 @@ label.field > span {
   border: 0;
   background: none;
   cursor: zoom-in;
-  border-radius: 14px;
+  border-radius: 18px;
   line-height: 0;
 }
 .photo-large {
@@ -1332,7 +1174,7 @@ label.field > span {
   max-width: 100%;
   max-height: 70vh;
   margin: 0 auto;
-  border-radius: 14px;
+  border-radius: 18px;
 }
 .photo-row {
   gap: 12px;
@@ -1367,23 +1209,6 @@ label.field > span {
   border-radius: 50%;
   border: 1px solid var(--border-strong);
   background: var(--surface);
-}
-.scorebar {
-  height: 10px;
-  border-radius: 6px;
-  background: var(--track);
-  overflow: hidden;
-  min-width: 80px;
-}
-.scorebar > div {
-  height: 100%;
-  background: var(--accent-2);
-}
-.scorebar.neutral > div {
-  background: var(--warn);
-}
-.scorebar.danger > div {
-  background: var(--danger);
 }
 .warn-text {
   color: var(--warn-text);
@@ -1431,21 +1256,21 @@ label.field > span {
     flex-direction: column;
   }
 }
-/* Feuille du bas (BottomSheet) : trois hauteurs, 90 px, 50 %, 85 %. */
+/* Feuille du bas (BottomSheet) : trois hauteurs, 96 px, 50 %, 85 %. */
 .bsheet {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 12;
-  height: 90px;
+  height: 96px;
   display: flex;
   flex-direction: column;
   background: var(--surface);
   border: 1px solid var(--border);
   border-bottom: 0;
-  border-radius: 18px 18px 0 0;
-  box-shadow: var(--shadow-float);
+  border-radius: 30px 30px 0 0;
+  box-shadow: var(--shadow-up);
   transition: height 0.2s ease;
   min-height: 0;
 }
@@ -1476,24 +1301,25 @@ label.field > span {
   justify-content: center;
   align-items: center;
   width: 100%;
-  min-height: 24px;
+  min-height: 40px;
   padding: 0;
   border: 0;
   background: transparent;
   cursor: pointer;
 }
 .sheet-handle span {
-  width: 40px;
-  height: 4px;
-  border-radius: 2px;
+  width: 44px;
+  height: 5px;
+  border-radius: 3px;
   background: var(--border-strong);
 }
 .sheet-title {
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 0 4px 0 14px;
+  padding: 0 6px 0 20px;
   min-height: 44px;
+  margin-top: -8px;
 }
 .sheet-title-text {
   flex: 1;
@@ -1522,7 +1348,7 @@ label.field > span {
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
-  padding: 4px 14px 16px;
+  padding: 4px 20px 18px;
 }
 .bsheet .gs-head {
   display: none;
@@ -1555,7 +1381,7 @@ label.field > span {
   z-index: 5;
   background: var(--surface);
   border: var(--border-w) solid var(--border);
-  border-radius: var(--radius-card);
+  border-radius: 22px;
   box-shadow: var(--shadow-float);
   padding: 8px;
 }
@@ -1567,9 +1393,9 @@ label.field > span {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid var(--accent);
-  border-radius: var(--radius-card);
+  padding: 12px 16px;
+  border: 1.5px solid var(--accent-2);
+  border-radius: 24px;
   white-space: normal;
 }
 .placing-banner > svg {
@@ -1661,7 +1487,7 @@ label.field > span {
   height: var(--tap);
 }
 .maplibregl-ctrl-group {
-  border-radius: 14px !important;
+  border-radius: 22px !important;
   overflow: hidden;
   box-shadow: var(--shadow-float) !important;
 }
@@ -1765,13 +1591,13 @@ label.field > span {
   background: var(--surface);
   color: var(--text);
   font-family: var(--font-body);
-  border-radius: 14px !important;
+  border-radius: 20px !important;
 }
 
 /* ---------- Dialogue ---------- */
 dialog.modal {
   border: var(--border-w) solid var(--border);
-  border-radius: 18px;
+  border-radius: 28px;
   padding: 0;
   width: min(560px, calc(100vw - 32px));
   max-height: calc(100vh - 48px);
@@ -1788,14 +1614,14 @@ dialog.modal::backdrop {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 10px 12px 10px 18px;
+  padding: 12px 14px 10px 24px;
   border-bottom: var(--border-w) solid var(--border);
 }
 .modal-head h2 {
   margin: 0;
 }
 .modal-body {
-  padding: 16px;
+  padding: 18px 24px 22px;
   overflow: auto;
   max-height: calc(100vh - 160px);
   max-height: calc(100dvh - 160px);
@@ -1805,7 +1631,7 @@ dialog.modal::backdrop {
     margin: auto 0 0;
     width: 100%;
     max-width: 100%;
-    border-radius: 18px 18px 0 0;
+    border-radius: 30px 30px 0 0;
     border-bottom: 0;
     padding-bottom: env(safe-area-inset-bottom);
   }
@@ -1831,120 +1657,12 @@ dialog.modal::backdrop {
 .hero .card {
   width: min(640px, 100%);
 }
-.hero .onboarding .btn.big {
-  width: 100%;
-}
-/* Accueil (A1) : sur le fond crème, deux grands disques de couleur, illustration, titre, deux gros boutons. */
-.onboarding-hero {
-  position: relative;
-  overflow: hidden auto;
-  align-items: start;
-  justify-items: center;
-  padding: 0;
-}
-.onboarding-hero::before,
-.onboarding-hero::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-}
-.onboarding-hero::before {
-  left: -90px;
-  top: -110px;
-  width: 380px;
-  height: 380px;
-  background: var(--ill-blob-1);
-}
-.onboarding-hero::after {
-  right: -120px;
-  top: 120px;
-  width: 300px;
-  height: 300px;
-  background: var(--ill-blob-2);
-}
-.hero .card.onboarding {
-  position: relative;
-  z-index: 1;
-  width: min(520px, 100%);
-  padding: 28px 28px 24px;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.onboarding h1 {
-  margin: 22px 0 8px;
-  font-size: 2.375rem;
-  line-height: 1.1;
-}
-.onboarding p {
-  font-size: 1.125rem;
-  line-height: 1.5;
-}
-.onboarding .legal-accept {
-  font-size: 0.9375rem;
-  margin-top: 24px;
-}
-.ill {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 330 / 180;
-  margin-top: 16px;
-  border-radius: 20px;
-  overflow: hidden;
-}
-.ill-grass {
-  fill: var(--ill-grass);
-}
-.ill-house-edge {
-  fill: var(--ill-house-edge);
-}
-.ill-house {
-  fill: var(--ill-house);
-}
-.ill-roof {
-  fill: var(--cta);
-}
-.ill-tree {
-  fill: var(--ill-tree);
-}
-.ill-tree-shade {
-  fill: var(--ill-tree-shade);
-}
-.ill-bush {
-  fill: var(--ill-bush);
-}
-.ill-bush-shade {
-  fill: var(--ill-bush-shade);
-}
-.ill-fruit {
-  fill: var(--ill-fruit);
-}
-.ill-fruit-shade {
-  fill: var(--ill-fruit-shade);
-}
-.ill-wheat {
-  fill: var(--wheat);
-}
-.ill-wheat-shade {
-  fill: var(--ill-wheat-shade);
-}
-.ill-fence {
-  fill: none;
-  stroke: var(--ill-fence);
-  stroke-width: 3;
-  stroke-dasharray: 9 7;
-}
 .suggestions {
   list-style: none;
   margin: 4px 0 0;
   padding: 0;
   border: var(--border-w) solid var(--border-strong);
-  border-radius: 14px;
+  border-radius: 18px;
   overflow: hidden;
 }
 .suggestions[hidden] {
@@ -1991,40 +1709,6 @@ dialog.modal::backdrop {
   flex: none;
   font-weight: 700;
 }
-.weather-strip {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 4px;
-}
-@media (max-width: 480px) {
-  .weather-day {
-    font-size: 0.8125rem;
-    padding: 6px 2px;
-  }
-  .weather-day strong {
-    font-size: 0.9375rem;
-  }
-}
-.weather-day {
-  text-align: center;
-  padding: 10px 4px;
-  border-radius: var(--radius-btn-lg);
-  background: var(--dry-bg);
-  color: var(--dry-text);
-  font-size: 0.875rem;
-}
-.weather-day.frost {
-  background: var(--frost-bg);
-  color: var(--frost-text);
-}
-.weather-day.frost .muted {
-  color: inherit;
-  opacity: 0.85;
-}
-.weather-day strong {
-  display: block;
-  font-size: 0.95rem;
-}
 .task {
   padding-right: 0;
 }
@@ -2043,20 +1727,14 @@ dialog.modal::backdrop {
   accent-color: var(--accent);
   flex: none;
 }
-.task-plants {
-  gap: 4px;
-  margin: 2px 0 0 46px;
-}
 .task.done .task-title {
   text-decoration: line-through;
   color: var(--muted);
 }
-.task.blocked,
+/* Tâche en attente (gel, météo) : fond neutre et bord pointillé, jamais de texte atténué par la transparence (contraste). */
 .task.weather-pending {
-  opacity: 0.75;
-}
-.task.weather-pending {
-  opacity: 0.55;
+  background: var(--surface-2);
+  border-style: dashed;
 }
 .check {
   width: 24px;
@@ -2142,8 +1820,8 @@ dialog.modal::backdrop {
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 8px;
-  padding: 8px 8px 8px 16px;
-  border-radius: var(--radius-btn-lg);
+  padding: 8px 8px 8px 20px;
+  border-radius: 28px;
   background: var(--text);
   color: var(--bg);
   font-weight: 700;
@@ -2158,6 +1836,7 @@ dialog.modal::backdrop {
   min-width: 0;
 }
 .toast .btn {
+  min-height: var(--tap);
   color: inherit;
   background: transparent;
   border-color: currentcolor;
@@ -2366,7 +2045,7 @@ select.nb-cat {
   top: 16px;
   width: 56px;
   height: 56px;
-  border-radius: 14px;
+  border-radius: 18px;
   display: grid;
   place-items: center;
   font-size: 1.6rem;
@@ -2509,7 +2188,7 @@ select.nb-cat {
   align-self: flex-start;
   max-width: 85%;
   padding: 10px 14px;
-  border-radius: 14px;
+  border-radius: 18px;
   background: var(--surface-2);
 }
 .nb-msg.mine {
@@ -2663,7 +2342,7 @@ details > summary {
     display: none;
   }
   .alert.demo-banner {
-    padding: 6px 10px;
+    padding: 6px 12px;
   }
   .alert.demo-banner > span {
     flex: 1 1 9rem;
@@ -2671,23 +2350,6 @@ details > summary {
   }
   .alert.demo-banner .btn {
     flex: none;
-  }
-  .nudge {
-    padding: 4px 10px 6px;
-    gap: 4px 8px;
-  }
-  .nudge .small {
-    flex: 1 1 9rem;
-    font-size: 0.875rem;
-    line-height: 1.3;
-  }
-  .nudge .row {
-    flex-wrap: nowrap;
-    gap: 4px;
-  }
-  .guide-toggle {
-    padding-top: 2px;
-    padding-bottom: 2px;
   }
 }
 
@@ -2701,9 +2363,8 @@ details > summary {
 /* ---------- Téléphone : échelle compacte (≥ 761 px : tailles inchangées) ---------- */
 @media (max-width: 760px) {
   :root {
-    --btn-h: 44px;
-    --nav-h: 60px;
-    --radius-btn-lg: 14px;
+    --btn-h: 48px;
+    --nav-h: 80px; /* barre flottante : pilule (≈ 66 px) + marges */
   }
   /* 15 px de base : le corps de texte passe à ≈ 16 px, les titres et petits textes suivent (tout est en rem). */
   html {
@@ -2717,13 +2378,13 @@ details > summary {
   }
   h1,
   .page > h1 {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
   }
   h2 {
-    font-size: 1.2rem;
+    font-size: 1.35rem;
   }
   h3 {
-    font-size: 1.05rem;
+    font-size: 1.15rem;
   }
   .small,
   label.field {
@@ -2734,13 +2395,13 @@ details > summary {
     padding: 2px 8px;
   }
   .brand {
-    font-size: 1.15rem;
+    font-size: 1.3rem;
   }
   .page {
-    padding: 14px 14px 28px;
+    padding: 14px 16px 28px;
   }
   .card {
-    padding: 14px;
+    padding: 16px;
   }
   .card + .card {
     margin-top: 10px;
@@ -2752,10 +2413,10 @@ details > summary {
     padding: 9px 0;
   }
   .btn {
-    padding: 6px 14px;
+    padding: 6px 20px;
   }
   .btn.big {
-    min-height: 48px;
+    min-height: 52px;
     font-size: 1.05rem;
   }
   .np-done,
@@ -2775,47 +2436,29 @@ details > summary {
   textarea {
     font-size: max(16px, 1rem);
   }
-  .modeswitch button {
+  .seg button {
     min-height: 42px;
   }
   .topbar {
-    padding: 6px 12px 2px;
+    padding: 6px 16px 2px;
   }
   .modebar {
-    padding: 2px 12px 6px;
-  }
-  .sidenav {
-    height: calc(var(--nav-h) + env(safe-area-inset-bottom));
-    padding: 4px 4px env(safe-area-inset-bottom);
-  }
-  .navbtn {
-    min-height: 48px;
-    font-size: 0.75rem;
-    gap: 1px;
-  }
-  .navbtn svg {
-    width: 48px;
-    height: 28px;
-    padding: 4px 14px;
-    border-radius: 14px;
-  }
-  .navbtn .badge {
-    font-size: 0.75rem;
+    padding: 2px 16px 6px;
   }
   .placing-banner,
   .map-empty {
-    bottom: 102px;
+    bottom: 108px;
   }
   .placing-banner .placing-text {
     font-size: 1rem;
   }
   /* Commandes de la 3D : elles restent au-dessus de la feuille réduite. */
   .workspace .g3d-overlay {
-    padding-bottom: 96px;
+    padding-bottom: 102px;
   }
   .workspace .maplibregl-ctrl-bottom-right,
   .workspace .maplibregl-ctrl-bottom-left {
-    margin-bottom: 90px;
+    margin-bottom: 96px;
   }
 }
 .bsheet[data-snap='min'] .sheet-body {
@@ -2825,101 +2468,63 @@ details > summary {
 /* ---------- Téléphone : bandeau du haut compact (en-tête, modes, jauge, bandeaux sur ≈ 130 px) ---------- */
 @media (max-width: 760px) {
   .app {
-    grid-template-rows: auto auto minmax(0, 1fr) minmax(var(--nav-h), auto);
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
   }
   .topbar {
     flex-wrap: nowrap;
-    padding: 4px 12px 0;
+    padding: 6px 16px 0;
     min-height: 0;
   }
   .brand img {
-    width: 32px;
-    height: 32px;
-    border-radius: 10px;
-  }
-  .topbar .btn,
-  .help-btn {
-    min-height: 40px;
-    padding: 2px 12px;
-  }
-  .modebar {
-    padding: 4px 12px 4px;
-    gap: 4px;
-  }
-  .modeswitch {
-    flex-wrap: nowrap;
-    gap: 2px;
-    padding: 2px;
-  }
-  .modeswitch button {
-    min-height: 40px;
-    padding: 2px 4px;
-    font-weight: 600;
-    font-size: 0.875rem;
+    width: 36px;
+    height: 36px;
     border-radius: 12px;
   }
-  .progresscard {
-    border: 0;
-    background: transparent;
+  .topbar .btn {
+    min-height: var(--tap);
+    padding: 2px 12px;
   }
-  .guide-toggle {
+  .topbar .btn.help-btn,
+  .topbar .btn.profile-btn {
+    width: var(--tap);
+    padding: 0;
+    border-radius: 50%;
+  }
+  .topbar .btn.profile-btn svg {
+    width: 22px;
+    height: 22px;
+  }
+  .modebar {
+    padding: 4px 16px 6px;
+    gap: 6px;
+  }
+  .seg {
     flex-wrap: nowrap;
-    min-height: 40px;
-    padding: 0 4px;
-    gap: 8px;
-    font-weight: 400;
-    font-size: 0.8125rem;
+    gap: 2px;
+    padding: 3px;
   }
-  .guide-toggle .gauge-label {
-    flex: 0 1 auto;
-    white-space: nowrap;
-    color: var(--muted);
-  }
-  .guide-toggle .gauge-label strong {
-    font-weight: 600;
-    color: var(--text);
-  }
-  .guide-toggle .gauge {
-    order: 0;
-    flex: 1 1 40px;
-    height: 6px;
-    margin: 0;
-  }
-  .guide-toggle .chev {
-    margin-left: 0;
-  }
-  .nudge {
-    flex-wrap: nowrap;
-    padding: 0 4px;
-    border-top: 0;
-    min-height: 40px;
-  }
-  .nudge .small {
-    flex: 1 1 auto;
-    font-size: 0.8125rem;
-  }
-  .nudge .row .btn {
-    min-height: 40px;
+  .seg button {
+    min-height: 44px;
+    padding: 2px 6px;
+    font-size: 0.9375rem;
   }
   .alert.demo-banner {
     flex-wrap: nowrap;
-    padding: 0 4px 0 10px;
-    min-height: 40px;
+    padding: 2px 4px 2px 16px;
+    min-height: 48px;
     font-size: 0.8125rem;
     gap: 4px;
+    border-radius: 24px;
   }
   .alert.demo-banner > span {
     flex: 1 1 auto;
   }
   .alert.demo-banner .btn {
-    min-height: 40px;
+    min-height: var(--tap);
   }
   .alert.demo-banner .demo-close {
-    min-width: 40px;
+    min-width: var(--tap);
     padding: 0;
-  }
-  .progress-body {
-    max-height: calc(100dvh - 200px);
   }
 }
 .demo-close {
@@ -2939,12 +2544,12 @@ details > summary {
   line-height: 1.45;
 }
 .plants-ui h1 {
-  font-size: 1.35rem;
-  font-weight: 600;
+  font-size: 1.6rem;
+  font-weight: 400;
 }
 .plants-ui h2 {
-  font-size: 1.12rem; /* ≈ 17-18 px */
-  font-weight: 600;
+  font-size: 1.3rem;
+  font-weight: 400;
 }
 .plants-ui h3 {
   font-family: var(--font-body);
@@ -2981,7 +2586,7 @@ details > summary {
 .plants-ui .danger-zone .btn,
 .plants-ui .btn.close-btn {
   background: transparent;
-  border-color: var(--border-strong);
+  border-color: var(--accent);
   font-weight: 500;
 }
 .plants-ui .btn.danger {
@@ -2993,8 +2598,8 @@ details > summary {
 .plants-ui .badge {
   font-size: 0.72rem;
   font-weight: 500;
-  padding: 1px 7px;
-  border-radius: 10px;
+  padding: 1px 9px;
+  border-radius: 999px;
 }
 .plants-ui .list > li {
   padding: 6px 0;
@@ -3032,13 +2637,8 @@ details > summary {
     padding: 1px 7px;
   }
   .plants-ui h1 {
-    font-size: 1.3rem;
+    font-size: 1.5rem;
   }
-}
-
-/* Téléphone : bandeaux d'info sur une ligne, fermables. */
-.later-x {
-  display: none;
 }
 @media (max-width: 760px) {
   .app {
@@ -3051,37 +2651,17 @@ details > summary {
     min-width: 0;
     font-size: 0.9375rem;
   }
-  .modeswitch {
-    padding: 0;
-  }
-  .guide-toggle {
-    min-height: 36px;
-  }
-  .alert.demo-banner,
-  .nudge {
+  .alert.demo-banner {
     background: var(--surface);
     border: var(--border-w) solid var(--border);
-    border-radius: var(--radius-btn-lg);
-    padding: 0 2px 0 10px;
+    border-radius: 24px;
+    padding: 0 2px 0 16px;
     margin: 0;
-  }
-  .nudge .row {
-    flex: none;
-  }
-  .later-text {
-    display: none;
-  }
-  .later-x {
-    display: inline-flex;
-  }
-  .nudge .nudge-later {
-    min-width: 40px;
-    padding: 0;
   }
 }
 .plants-ui.page > h1 {
-  font-size: 1.35rem;
-  font-weight: 600;
+  font-size: 1.7rem;
+  font-weight: 400;
 }
 
 /* ---------- Installer l'appli ---------- */
@@ -3452,7 +3032,7 @@ dialog.modal.full .modal-body {
 }
 @media (max-width: 760px) {
   .pending-card {
-    bottom: 102px;
+    bottom: 108px;
   }
 }
 .measure-box .input {
@@ -3493,39 +3073,79 @@ html[data-immersive] body {
   }
 }
 
-/* ---------- Rayons, accueil et parcours d'accueil (vague 8) ---------- */
+/* ---------- Rayons, accueil et parcours d'accueil (Leafora) ---------- */
 .modebar:empty {
   display: none;
 }
 .brand-btn {
   min-height: var(--tap);
-  padding: 0 4px;
+  padding: 0 6px 0 0;
   border: 0;
-  border-radius: 14px;
+  border-radius: 999px;
   background: transparent;
   cursor: pointer;
   text-align: left;
 }
 .brand-btn:hover {
-  background: var(--surface-2);
+  background: var(--track);
 }
-.profile-btn {
+.btn.profile-btn {
   flex: none;
   min-width: var(--tap);
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: 14px;
-  border-color: var(--border-strong);
+  gap: 8px;
+  padding: 4px 18px 4px 14px;
+  border-color: transparent;
+  background: var(--surface);
+  color: var(--title);
+  box-shadow: var(--shadow);
   font-weight: 700;
 }
-.profile-btn[aria-current='page'] {
-  background: var(--accent-soft);
-  color: var(--accent);
+.btn.profile-btn[aria-current='page'] {
+  background: var(--btn-green);
+  color: var(--on-btn-green);
 }
-@media (max-width: 760px) {
-  .profile-btn {
-    padding: 4px 10px;
-  }
+
+/* Illustrations (src/components/illustrations) : couleurs par variables */
+.il {
+  display: block;
+  flex: none;
+}
+.il-blob {
+  fill: var(--il-blob);
+}
+.il-leaf-a {
+  fill: var(--il-leaf-a);
+}
+.il-leaf-b {
+  fill: var(--il-leaf-b);
+}
+.il-leaf-c {
+  fill: var(--il-leaf-c);
+}
+.il-vein {
+  fill: none;
+  stroke: var(--il-vein);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.il-pot {
+  fill: var(--il-pot);
+}
+.il-rim {
+  fill: var(--il-rim);
+}
+.il-house {
+  fill: var(--il-house);
+}
+.il-roof {
+  fill: var(--il-roof);
+}
+.il-fence {
+  fill: none;
+  stroke: var(--il-fence);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 2 9;
 }
 
 /* Accueil : « Que voulez-vous faire ? » */
@@ -3533,31 +3153,33 @@ html[data-immersive] body {
   max-width: 760px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 .accueil h1 {
   margin: 4px 0 0;
 }
 .rayons {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
 }
-@media (min-width: 600px) {
-  .rayons {
-    grid-template-columns: 1fr 1fr;
+@media (max-width: 460px) {
+  html[data-text-size='tres-grand'] .rayons {
+    grid-template-columns: 1fr;
   }
 }
 .rayon-card {
   position: relative;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  justify-content: space-between;
   gap: 14px;
-  min-height: 96px;
-  padding: 14px 16px;
-  border: var(--border-w) solid var(--border);
-  border-radius: var(--radius-card);
+  min-height: 150px;
+  padding: 16px;
+  border: 0;
+  border-radius: 26px;
   background: var(--surface);
+  box-shadow: var(--shadow);
   color: var(--text);
   text-align: left;
   cursor: pointer;
@@ -3569,39 +3191,60 @@ html[data-immersive] body {
   flex: none;
   display: grid;
   place-items: center;
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   border-radius: 16px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--title);
 }
 .rayon-text {
-  flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  font-size: 0.8125rem;
+  line-height: 1.3;
 }
 .rayon-text strong {
-  font-size: 1.1875rem;
+  font-family: var(--font-title);
+  font-weight: 400;
+  font-size: 1.4rem;
+  line-height: 1.15;
+  color: var(--title);
 }
 .rayon-card .badge {
-  flex: none;
+  position: absolute;
+  top: 14px;
+  right: 14px;
 }
 .chez {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  justify-content: center;
+  gap: 4px;
   width: 100%;
-  min-height: var(--tap);
+  min-height: 130px;
+  padding: 18px 150px 18px 22px;
+  border: 0;
+  border-radius: 28px;
+  background: var(--accent-soft);
+  box-shadow: none;
+  overflow: hidden;
   text-align: left;
   cursor: pointer;
   color: var(--text);
 }
+.chez .chez-art {
+  position: absolute;
+  right: -4px;
+  bottom: -10px;
+}
 .chez-title {
   font-family: var(--font-title);
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1.15;
   color: var(--title);
 }
 .chez-sum {
@@ -3610,7 +3253,7 @@ html[data-immersive] body {
 .route {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 .route h2 {
   margin: 0;
@@ -3619,58 +3262,93 @@ html[data-immersive] body {
   margin: 0;
   color: var(--muted);
 }
-.route-gauge {
-  display: block;
+.gauge.route-gauge {
+  display: flex;
+  gap: 6px;
   order: 0;
   flex: none;
+  height: 6px;
   margin: 0;
+  background: none;
+  border: 0;
+  overflow: visible;
+}
+.route-gauge i {
+  flex: 1;
+  border-radius: 3px;
+  background: var(--track);
+}
+.route-gauge i.on {
+  background: var(--btn-green);
 }
 .route-list {
   list-style: none;
   margin: 0;
   padding: 0;
+  position: relative;
 }
 .route-list li {
-  border-top: 1px solid var(--border);
+  position: relative;
+  border-radius: 22px;
+}
+.route-list li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 29px;
+  top: 50px;
+  bottom: -10px;
+  width: 2px;
+  background: var(--track);
+}
+.route-list li.current {
+  background: var(--accent-soft);
 }
 .route-step {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: flex-start;
+  gap: 14px;
   width: 100%;
-  min-height: 52px;
-  padding: 6px 2px;
+  min-height: 56px;
+  padding: 8px 10px;
   border: 0;
+  border-radius: 22px;
   background: transparent;
   color: var(--text);
   text-align: left;
   cursor: pointer;
 }
 .route-num {
+  position: relative;
+  z-index: 1;
   flex: none;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  border: 1px solid var(--border-strong);
+  background: var(--track);
+  color: var(--muted);
   font-weight: 700;
 }
 .route-list li.done .route-num {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--surface);
+  background: var(--btn-green);
+  color: var(--on-btn-green);
 }
 .route-list li.current .route-num {
-  background: var(--btn-green);
-  border-color: var(--btn-green);
-  color: var(--on-btn-green);
+  background: var(--surface);
+  border: 3px solid var(--btn-green);
+  color: var(--title);
 }
 .route-text {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  padding-top: 2px;
+  line-height: 1.3;
+}
+.route-text strong {
+  color: var(--title);
 }
 .route-list li.done .route-text strong {
   color: var(--muted);
@@ -3691,105 +3369,143 @@ html[data-immersive] body {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 8px 8px 0;
+  padding: 12px 16px 0;
 }
 .parcours-head .btn {
   min-height: var(--tap);
+  padding: 4px 14px 4px 10px;
+  gap: 4px;
+}
+.parcours-head .btn:first-child {
+  background: var(--surface);
+  border-color: transparent;
+  box-shadow: var(--shadow);
 }
 .parcours-count {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  white-space: nowrap;
+  font-size: 0.9375rem;
   font-weight: 700;
   color: var(--muted);
 }
 .parcours-spacer {
-  width: 90px;
+  width: 88px;
 }
 .stepbar {
   display: flex;
   gap: 6px;
   list-style: none;
-  margin: 8px 16px 0;
+  margin: 16px 20px 0;
   padding: 0;
 }
 .stepbar li {
   flex: 1;
-  height: 10px;
-  border-radius: 999px;
+  height: 6px;
+  border-radius: 3px;
   background: var(--track);
-  border: 1px solid var(--border-strong);
 }
 .stepbar li i {
   display: none;
 }
-.stepbar li.done {
-  background: var(--accent);
-  border-color: var(--accent);
-}
-.stepbar li.skipped {
-  background: var(--surface-2);
-  border-style: dashed;
-}
+.stepbar li.done,
 .stepbar li.current {
   background: var(--btn-green);
-  border-color: var(--btn-green);
+}
+.stepbar li.skipped {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--border-strong);
 }
 .parcours-body {
   flex: 1 0 auto;
-  padding: 18px 16px 12px;
+  padding: 22px 20px 12px;
 }
 .parcours-title {
   margin: 0;
-  font-size: 1.75rem;
-  line-height: 1.15;
+  font-size: 2rem;
+  line-height: 1.1;
 }
 .parcours-title:focus {
   outline: none;
 }
 .parcours-lead {
   margin: 0;
-  font-size: 1.125rem;
+  font-size: 1.0625rem;
   line-height: 1.45;
+  color: var(--muted);
 }
 .parcours-foot {
   position: sticky;
   bottom: 0;
-  gap: 8px;
-  padding: 10px 16px calc(14px + env(safe-area-inset-bottom));
+  gap: 4px;
+  padding: 10px 24px calc(18px + env(safe-area-inset-bottom));
   background: var(--bg);
 }
 .parcours-foot .btn.big {
   width: 100%;
   min-height: 54px;
 }
+.parcours-foot .btn.ghost {
+  color: var(--accent);
+}
 .choices {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
 }
 .choice {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   width: 100%;
-  min-height: 76px;
-  padding: 12px 14px;
-  border: var(--border-w) solid var(--border-strong);
-  border-radius: var(--radius-card);
+  min-height: 92px;
+  padding: 14px 44px 14px 16px;
+  border: 0;
+  border-radius: 24px;
   background: var(--surface);
+  box-shadow: var(--shadow);
   color: var(--text);
   text-align: left;
   cursor: pointer;
+}
+.choice::after {
+  content: '';
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  border-top: 2px solid var(--muted);
+  border-right: 2px solid var(--muted);
+  transform: translateY(-50%) rotate(45deg);
 }
 .choice:hover {
   background: var(--surface-2);
 }
 .choice > svg {
+  box-sizing: border-box;
   flex: none;
-  color: var(--accent);
+  width: 62px;
+  height: 62px;
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--accent-soft);
+  color: var(--title);
 }
 .choice > span {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  line-height: 1.3;
+}
+.choice > span > strong {
+  font-family: var(--font-title);
+  font-weight: 400;
+  font-size: 1.3rem;
+  color: var(--title);
+  line-height: 1.15;
 }
 .terrain-photo {
   display: block;
@@ -3819,34 +3535,58 @@ html[data-immersive] body {
   border-color: var(--accent);
 }
 
-/* Bienvenue */
+/* Bienvenue : blob sauge, plantes, titre en serif */
 .welcome-body {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   gap: 8px;
-  padding-top: 28px;
-}
-.welcome-logo {
-  border-radius: 16px;
+  padding-top: 36px;
 }
 .welcome-art {
-  width: min(280px, 80%);
+  position: relative;
+  width: min(300px, 82%);
+  aspect-ratio: 300 / 250;
+  margin: 0 auto 8px;
+}
+.welcome-art > .il-blob-wrap,
+.welcome-art > .welcome-blob {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.welcome-art .il-plant {
+  position: absolute;
   height: auto;
-  margin: 6px 0;
+}
+.welcome-art .il-main {
+  left: 8%;
+  bottom: 2%;
+  width: 62%;
+}
+.welcome-art .il-second {
+  right: 4%;
+  bottom: 4%;
+  width: 44%;
+}
+.welcome-art .il-wide {
+  left: 6%;
+  bottom: 14%;
+  width: 88%;
 }
 .welcome-kicker {
   margin: 0;
   font-size: 0.8125rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--muted);
 }
 .welcome-body h1 {
   margin: 0;
-  font-size: 2.125rem;
+  font-size: 2.4rem;
   line-height: 1.1;
 }
 .welcome-body h1:focus {
@@ -3854,7 +3594,7 @@ html[data-immersive] body {
 }
 .welcome-text {
   margin: 0;
-  font-size: 1.125rem;
+  font-size: 1.0625rem;
   line-height: 1.5;
   color: var(--muted);
   max-width: 24em;
@@ -3873,17 +3613,69 @@ html[data-immersive] body {
   cursor: pointer;
 }
 .dot-btn i {
-  width: 10px;
-  height: 10px;
-  border-radius: 5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
   background: var(--border-strong);
   transition: width 0.15s;
 }
 .dot-btn[aria-current='step'] i {
-  width: 24px;
+  width: 22px;
   background: var(--btn-green);
 }
 .welcome .legal-accept {
   margin: 4px 0 0;
   text-align: center;
+}
+
+/* Scènes d'illustration (états vides, en-têtes) */
+.il-scene {
+  position: relative;
+  flex: none;
+  margin: 0 auto 12px;
+}
+.il-scene-blob {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.il-scene-art {
+  position: absolute;
+}
+.il-scene-pot {
+  left: 20%;
+  bottom: -6%;
+}
+.il-scene-house {
+  left: 5%;
+  bottom: 8%;
+}
+.il-scene-leaf {
+  left: 25%;
+  top: 22%;
+}
+.map-empty-art {
+  margin: 0 auto 4px;
+}
+.nb-empty .il-scene {
+  margin-bottom: 4px;
+}
+.plant-head {
+  gap: 12px;
+}
+.plant-head .plant-head-art {
+  margin: 0;
+}
+.plant-head h2 {
+  font-size: 1.6rem;
+}
+.plant-now {
+  padding: 12px 16px;
+  border-radius: 20px;
+  background: var(--accent-soft);
+  color: var(--text);
+}
+.plant-now .muted {
+  color: var(--muted);
 }

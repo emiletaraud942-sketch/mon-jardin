@@ -5,6 +5,7 @@ import { CATEGORY_FILTERS, KIND_FILTERS, RADII, categoryOption, emptyFeedText, f
 import type { Post, PostKind } from '../../lib/neighbors/types'
 import { CategoryBadge, ErrorBox, KindBadge, Spinner } from './common'
 import { useLoad } from './hooks'
+import { PlantScene } from '../../components/illustrations'
 
 export function PostCard({ post, onOpen }: { post: Post; onOpen: (p: Post) => void }) {
   const species = post.speciesId ? SPECIES_BY_ID[post.speciesId] : undefined
@@ -104,6 +105,7 @@ export function Feed({
       )}
       {data && posts.length === 0 && !error && (
         <div className="card nb-empty">
+          <PlantScene size={104} variant="house" />
           <h2>{empty.title}</h2>
           <p style={{ margin: 0 }}>{empty.hint}</p>
           {kind === 'all' && category === 'all' && (

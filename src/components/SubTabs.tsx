@@ -16,7 +16,7 @@ export function SubTabs({ tabs, current, label }: { tabs: Tab[]; current: Tab; l
     refs.current[j]?.focus()
   }
   return (
-    <div className="modeswitch subtabs" role="tablist" aria-label={label}>
+    <div className="seg subtabs" role="tablist" aria-label={label}>
       {tabs.map((t, i) => (
         <button
           key={t}

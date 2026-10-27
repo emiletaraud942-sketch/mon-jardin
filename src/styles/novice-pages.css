@@ -13,11 +13,6 @@
 .np-page li {
   overflow-wrap: anywhere;
 }
-.np-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
 .np-details > summary {
   min-height: 44px;
   display: flex;
@@ -37,6 +32,7 @@
   min-height: 52px;
   font-weight: 700;
   font-size: 1.125rem;
+  border-radius: 999px;
   background: var(--btn-green);
   border-color: var(--btn-green);
   color: var(--on-btn-green);
@@ -51,17 +47,19 @@
 /* Cartes de tâches */
 .np-page .list > li.task {
   margin: 0 0 12px;
-  padding: 16px;
+  padding: 18px;
   border: var(--border-w) solid var(--border);
   border-radius: var(--radius-card);
   background: var(--surface);
+  box-shadow: var(--shadow);
 }
 .np-page .list > li.task:last-child {
   margin-bottom: 0;
 }
 .task .task-title {
   font-family: var(--font-title);
-  font-size: 1.25rem;
+  font-weight: 400;
+  font-size: 1.3rem;
   line-height: 1.2;
   color: var(--title);
 }
@@ -83,8 +81,8 @@
 }
 .np-weather .d {
   text-align: center;
-  padding: 10px 4px;
-  border-radius: var(--radius-btn-lg);
+  padding: 12px 4px;
+  border-radius: 20px;
   background: var(--dry-bg);
   color: var(--dry-text);
   font-size: 0.9375rem;
@@ -130,7 +128,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-title);
+  font-family: var(--font-body);
   font-weight: 700;
 }
 .np-reco {
@@ -140,7 +138,7 @@
 .np-fit {
   font-weight: 700;
   padding: 3px 10px;
-  border-radius: 12px;
+  border-radius: 999px;
   background: var(--surface-2);
 }
 .np-fit.green {
@@ -227,12 +225,6 @@
   margin: 0;
   font-weight: 600;
 }
-.np-term {
-  display: block;
-  color: var(--muted);
-  font-size: 0.9rem;
-  font-weight: 400;
-}
 /* Entraide */
 .np-example {
   display: flex;
@@ -294,7 +286,7 @@
   height: 44px;
   display: grid;
   place-items: center;
-  border-radius: 14px;
+  border-radius: 18px;
   background: var(--give-bg);
   font-size: 1.4rem;
 }

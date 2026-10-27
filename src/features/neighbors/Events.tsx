@@ -4,6 +4,7 @@ import { RADII, capacityText, emptyEventsText, eventEnded, eventStatusInfo, form
 import type { EventItem, OrganizerInfo } from '../../lib/neighbors/types'
 import { ErrorBox, ExternalLinkButton, ReportDialog, Spinner } from './common'
 import { errorText, useLoad, type Loaded } from './hooks'
+import { PlantScene } from '../../components/illustrations'
 
 /** « Je suis intéressé(e) » : un simple compteur. Cela n'inscrit à rien et ne dit pas votre nom à l'organisateur. */
 export function InterestButton({ event, online, onChange }: { event: EventItem; online: boolean; onChange: (e: EventItem) => void }) {
@@ -169,6 +170,7 @@ export function EventsTab({
       )}
       {data && events.length === 0 && !error && (
         <div className="card nb-empty">
+          <PlantScene size={104} variant="house" />
           <h2>{empty.title}</h2>
           <p style={{ margin: 0 }}>{empty.hint}</p>
           {radius < RADII[RADII.length - 1] && (

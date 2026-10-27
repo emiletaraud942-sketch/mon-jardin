@@ -172,11 +172,11 @@ export function App() {
         <span className="garden-name" title={garden.name}>
           {garden.name}
         </span>
-        <button className="btn help-btn" aria-haspopup="dialog" onClick={() => setHelpOpen(true)}>
+        <button className="btn help-btn" aria-haspopup="dialog" aria-label="Aide" onClick={() => setHelpOpen(true)}>
           <span className="help-mark" aria-hidden>
             ?
-          </span>{' '}
-          Aide
+          </span>
+          <span className="help-label">Aide</span>
         </button>
         <button className="btn profile-btn" aria-label="Mon compte et réglages" aria-current={tab === 'reglages' ? 'page' : undefined} onClick={() => setUi({ tab: 'reglages' })}>
           <Icon name="user" />

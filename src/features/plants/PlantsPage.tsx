@@ -12,6 +12,7 @@ import type { Garden, PlantStatus } from '../../types'
 import { PlantPanel, plantName } from './PlantPanel'
 import { IdentifyDialog } from './IdentifyDialog'
 import { openScan } from '../scan/scanUi'
+import { PlantScene } from '../../components/illustrations'
 
 export function PlantsPage({ garden }: { garden: Garden }) {
   const plants = useGardenPlants(garden.id)
@@ -69,6 +70,7 @@ export function PlantsPage({ garden }: { garden: Garden }) {
         <div className="card">
           {plants.length === 0 && (
             <div className="empty">
+              <PlantScene size={132} />
               <p>
                 <strong>Vous n’avez pas encore ajouté de plante.</strong>
               </p>

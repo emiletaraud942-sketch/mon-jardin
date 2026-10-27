@@ -6,6 +6,7 @@ import { notifyNewsChanged } from '../../lib/neighbors/news'
 import { showToast } from '../../lib/toast'
 import { Confirm, ErrorBox, ReportDialog, Spinner } from './common'
 import { errorText, useLoad, usePolling } from './hooks'
+import { PlantScene } from '../../components/illustrations'
 
 export const POLL_MS = 30_000
 
@@ -29,6 +30,7 @@ export function ThreadList({ online, unread, onOpen }: { online: boolean; unread
       {loading && !data && <Spinner label="Chargement des conversations…" />}
       {data && threads.length === 0 && !error && (
         <div className="card nb-empty">
+          <PlantScene size={104} variant="house" />
           <h2>Aucune conversation</h2>
           <p style={{ margin: 0 }}>Ouvrez une annonce et touchez « Écrire en privé » pour demander ou proposer quelque chose. Vos échanges restent privés.</p>
         </div>

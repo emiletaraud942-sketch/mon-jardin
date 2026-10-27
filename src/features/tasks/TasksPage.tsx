@@ -15,6 +15,7 @@ import { useTasks } from './useTasks'
 import { doneOnLabel, doneTaskLabel } from './taskLabel'
 import { rainWord, weatherSentences } from './weatherText'
 import '../../styles/novice-pages.css'
+import { PlantScene } from '../../components/illustrations'
 
 /** Types de tâches dont la faisabilité dépend de la météo : grisés tant qu'elle n'est pas chargée. */
 const WEATHER_TYPES = new Set<TaskType>(['arrosage', 'desherbage', 'taille', 'traitement', 'protection'])
@@ -193,6 +194,7 @@ export function TasksPage({ garden }: { garden: Garden }) {
           {weatherError && <div className="alert small">La météo n’est pas disponible. Les tâches ne tiennent pas compte du temps.</div>}
           {plants.length === 0 ? (
             <div className="card empty">
+              <PlantScene size={132} />
               <p>
                 <strong>Entretenir commence quand vos plantes sont placées.</strong>
               </p>

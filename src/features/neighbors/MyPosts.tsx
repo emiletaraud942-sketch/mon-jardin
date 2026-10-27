@@ -5,6 +5,7 @@ import type { Post } from '../../lib/neighbors/types'
 import { showToast } from '../../lib/toast'
 import { CategoryBadge, Confirm, ErrorBox, KindBadge, Spinner } from './common'
 import { errorText, useLoad } from './hooks'
+import { PlantScene } from '../../components/illustrations'
 
 export function MyPosts({ online, onOpen, onNew }: { online: boolean; onOpen: (p: Post) => void; onNew: () => void }) {
   const { data, error, loading, reload } = useLoad(listMyPosts, 'mine')
@@ -34,6 +35,7 @@ export function MyPosts({ online, onOpen, onNew }: { online: boolean; onOpen: (p
       {loading && !data && <Spinner label="Chargement de vos annonces…" />}
       {data && posts.length === 0 && !error && (
         <div className="card nb-empty">
+          <PlantScene size={104} variant="house" />
           <h2>Vous n’avez pas d’annonce</h2>
           <p style={{ margin: 0 }}>Donnez un surplus, prêtez un outil, cherchez quelque chose ou posez une question.</p>
           <div className="row">

@@ -14,7 +14,7 @@ export function getTheme(): Theme {
 }
 
 /** Couleurs de la barre du navigateur (mêmes valeurs que les deux balises `theme-color` d'index.html). */
-const THEME_COLOR: Record<'light' | 'dark', string> = { light: '#f7f2e8', dark: '#121a14' }
+const THEME_COLOR: Record<'light' | 'dark', string> = { light: '#f6f5ef', dark: '#131a14' }
 const FORCED_META = 'data-forced-theme-color'
 
 /** Thème forcé : une balise `theme-color` sans `media` l'emporte sur les deux balises d'index.html. Auto : on la retire. */

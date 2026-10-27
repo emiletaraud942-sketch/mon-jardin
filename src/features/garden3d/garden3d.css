@@ -5,7 +5,7 @@
   --g3d-muted: var(--muted, #66705f);
   --g3d-accent: var(--accent, #2f5d3a);
   --g3d-border: var(--border, #ddd5c3);
-  --g3d-radius: var(--radius, 12px);
+  --g3d-radius: var(--radius, 18px);
   --g3d-north: var(--danger, #a33a2c);
   --g3d-sky: #9cc3e4;
   position: relative;
@@ -203,7 +203,7 @@
   min-height: 44px;
   min-width: 44px;
   padding: 0 12px;
-  border-radius: var(--g3d-radius);
+  border-radius: 999px;
   border: 1px solid var(--g3d-border);
   background: color-mix(in srgb, var(--g3d-surface) 92%, transparent);
   color: var(--g3d-text);

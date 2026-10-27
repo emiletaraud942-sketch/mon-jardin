@@ -24,6 +24,7 @@ import { loadQueue, useScanQueue } from '../scan/queueStore'
 import { itemName } from '../scan/queue'
 import { forGarden } from '../scan/queue'
 import { openScan } from '../scan/scanUi'
+import { PlantScene } from '../../components/illustrations'
 
 type Feature = GeoJSON.Feature<GeoJSON.Polygon, Record<string, unknown>>
 
@@ -703,6 +704,7 @@ export function MapView({ garden }: { garden: Garden }) {
         </div>
         {plants.length === 0 && !placingSpeciesId && !movingPlantId && (
           <div className="floating map-empty">
+            <PlantScene size={72} className="map-empty-art" />
             <p>
               <strong>Votre jardin est vide.</strong> Ajoutez votre première plante, puis touchez la carte là où elle pousse.
             </p>

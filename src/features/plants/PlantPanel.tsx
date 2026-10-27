@@ -1,6 +1,7 @@
 import { SPECIES_BY_ID } from '../../data/species'
 import { CATEGORY_LABEL, STATUS_LABEL, TASK_ICON } from '../../data/labels'
 import { Icon } from '../../components/Icon'
+import { PlantScene } from '../../components/illustrations'
 import { PhotoThumb } from '../../components/PhotoThumb'
 import { deletePhoto, savePhoto } from '../../lib/photos'
 import { addPlant, getState, removePlant, updatePlant, useGardenPlants } from '../../lib/store'
@@ -92,8 +93,9 @@ export function PlantPanel({ garden, plant, onClose }: { garden: Garden; plant: 
 
   return (
     <div className="stack plants-ui" style={{ gap: 12 }}>
-      <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'nowrap' }}>
-        <div style={{ minWidth: 0 }}>
+      <div className="row plant-head" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'nowrap' }}>
+        <PlantScene size={76} className="plant-head-art" />
+        <div style={{ minWidth: 0, flex: 1 }}>
           <h2 style={{ marginBottom: 2 }}>{plantName(plant)}</h2>
           {species && (
             <div className="muted small">
@@ -148,7 +150,7 @@ export function PlantPanel({ garden, plant, onClose }: { garden: Garden; plant: 
         )}
       </div>
       {size && species && (
-        <p className="small" style={{ margin: 0 }}>
+        <p className="small plant-now" style={{ margin: 0 }}>
           <strong>Aujourd’hui :</strong> {frMeters(size.heightM)} de haut, {frMeters(size.spreadM)} de large ({frNumber(ageYears)} {ageYears >= 2 ? 'ans' : 'an'}).
           <span className="muted" style={{ display: 'block' }}>
             Adulte : {frMeters(species.hauteurAdulteM)} de haut, {frMeters(species.envergureAdulteM)} de large.

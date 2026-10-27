@@ -49,8 +49,8 @@ export default defineConfig({
         description: 'Cartographier son jardin en 3D, choisir quoi planter où et savoir quand entretenir.',
         lang: 'fr',
         dir: 'ltr',
-        theme_color: '#f7f2e8',
-        background_color: '#f7f2e8',
+        theme_color: '#f6f5ef',
+        background_color: '#f6f5ef',
         display: 'standalone',
         display_override: ['standalone'],
         orientation: 'any',
@@ -75,7 +75,7 @@ export default defineConfig({
         // MapLibre reste dans le précache : la carte est l'écran d'accueil et doit s'ouvrir hors ligne
         // dès la première installation (son nom ne change qu'avec la bibliothèque, il n'est donc
         // retéléchargé qu'à une mise à jour de MapLibre).
-        // Polices autohébergées (2 fichiers woff2 latin, ~76 ko) : précachées pour que le texte s'affiche pareil hors ligne.
+        // Polices autohébergées (DM Serif Display + DM Sans, 2 fichiers woff2 latin, ~60 ko) : précachées pour que le texte s'affiche pareil hors ligne.
         globPatterns: ['**/*.{js,css,html,woff2}'],
         globIgnores: ['assets/three-*.js', 'push-sw.js'],
         // Alertes de nouveaux messages : deux gestionnaires (push, notificationclick) dans public/push-sw.js, chargés par le

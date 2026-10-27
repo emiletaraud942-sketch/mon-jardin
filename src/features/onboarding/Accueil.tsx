@@ -1,9 +1,10 @@
 import { Icon } from '../../components/Icon'
+import { PlantPot } from '../../components/illustrations'
 import { InstallHint } from '../../components/InstallButton'
 import { StepButton } from '../../components/StepButton'
 import { useProgress } from '../../components/useProgress'
 import { badgeAria, badgeLabel } from '../../lib/neighbors/news'
-import { activeSteps, chezTitle, currentStep, percentDone, settledCount, shouldShowRoute, stepStatus, STEP_HINT, STEP_TITLE } from '../../lib/onboarding'
+import { activeSteps, chezTitle, currentStep, settledCount, shouldShowRoute, stepStatus, STEP_HINT, STEP_TITLE } from '../../lib/onboarding'
 import { suggestedMode } from '../../lib/progress'
 import { useGardenPlants } from '../../lib/store'
 import { goRayon, hideOnboardingRoute, openParcours, setUi, visibleRayons, RAYON_LABEL, type Rayon } from '../../lib/ui'
@@ -32,7 +33,9 @@ function RouteCard() {
         {done} étape{done > 1 ? 's' : ''} faite{done > 1 ? 's' : ''} sur {steps.length}
       </p>
       <span className="gauge route-gauge" role="progressbar" aria-label="Étapes faites" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={done}>
-        <span style={{ width: `${percentDone(state, neighbors)}%` }} />
+        {steps.map((id, k) => (
+          <i key={id} className={k < done ? 'on' : undefined} />
+        ))}
       </span>
       <ol className="route-list">
         {steps.map((id, k) => {
@@ -79,11 +82,12 @@ export function Accueil({ garden, openTasks, newsCount }: { garden: Garden; open
     <div className="page accueil">
       {route && <RouteCard />}
       <h1>Que voulez-vous faire ?</h1>
-      <button className="card chez" onClick={() => setUi({ tab: 'carte' })}>
+      <button className="chez" onClick={() => setUi({ tab: 'carte' })}>
         <span className="chez-title">{chezTitle(garden.name)}</span>
         <span className="chez-sum">
           {plants.length} plante{plants.length > 1 ? 's' : ''} · {tasksText}
         </span>
+        <PlantPot size={130} className="chez-art" />
       </button>
       <div className="rayons">
         {visibleRayons().map((r) => (

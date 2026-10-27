@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Blob, HouseGarden, LeafSprig, PlantPot } from '../../components/illustrations'
 import { LegalLink } from '../legal/LegalLinks'
 import { noteWelcomed, setUi } from '../../lib/ui'
 import { INITIAL_STEPS, type Step } from '../settings/createGarden'
@@ -11,18 +12,25 @@ const SLIDES = [
   { title: 'Un rappel chaque semaine', kicker: 'Tailler, arroser, récolter', text: 'L’appli suit la météo et la saison. Elle vous dit quoi faire.' },
 ]
 
-/** Jardin stylisé : décor seulement. */
-function Leaves() {
+/** Décor de bienvenue : grande forme sauge et plantes en pot (change à chaque écran). */
+function Art({ i }: { i: number }) {
   return (
-    <svg className="welcome-art" viewBox="0 0 200 160" aria-hidden="true" focusable="false">
-      <circle className="ill-tree-shade" cx="100" cy="86" r="62" />
-      <g transform="translate(100 130)">
-        {[-38, -14, 14, 38].map((a) => (
-          <path key={a} className="ill-tree" transform={`rotate(${a})`} d="M0 0C-26-34-24-76 0-118C24-76 26-34 0 0Z" />
-        ))}
-      </g>
-      <rect className="ill-house" x="64" y="124" width="72" height="22" rx="10" />
-    </svg>
+    <div className="welcome-art" aria-hidden="true">
+      <Blob size={300} className="welcome-blob" />
+      {i === 1 ? (
+        <HouseGarden size={260} className="il-plant il-wide" />
+      ) : i === 2 ? (
+        <>
+          <PlantPot size={170} tilts={[-44, -20, 0, 20, 44]} className="il-plant il-main" style={{ left: '22%' }} />
+          <LeafSprig size={56} className="il-plant" style={{ right: '10%', top: '12%', width: '18%' }} />
+        </>
+      ) : (
+        <>
+          <PlantPot size={200} className="il-plant il-main" />
+          <PlantPot size={140} tilts={[-30, -8, 12, 34]} className="il-plant il-second" />
+        </>
+      )}
+    </div>
   )
 }
 
@@ -59,8 +67,7 @@ export function Welcome({ onStart }: { onStart: () => void }) {
   return (
     <div className="parcours welcome">
       <div className="parcours-body welcome-body">
-        <img src="/icon.svg" alt="" width={56} height={56} className="welcome-logo" />
-        <Leaves />
+        <Art i={i} />
         <p className="welcome-kicker">{slide.kicker}</p>
         <h1 tabIndex={-1}>{slide.title}</h1>
         <p className="welcome-text">{slide.text}</p>
