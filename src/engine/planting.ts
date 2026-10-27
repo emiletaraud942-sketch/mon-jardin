@@ -84,11 +84,13 @@ export function legalDistance(
 ): { requiredM: number; actualM?: number; ok: boolean; message: string } {
   const tall = species.hauteurAdulteM > 2
   const requiredM = tall ? 2 : 0.5
+  // Art. 671 : les règlements particuliers et les usages locaux passent d'abord ; 2 m et 0,5 m ne valent qu'à défaut.
   const rule = tall
-    ? `Art. 671 du Code civil : une plantation de plus de 2 m de haut doit être à au moins 2 m de la limite séparative`
-    : `Art. 671 du Code civil : une plantation de moins de 2 m doit être à au moins 0,5 m de la limite séparative`
+    ? `Art. 671 du Code civil : à défaut de règlement ou d’usage local, une plantation de plus de 2 m de haut doit être à au moins 2 m de la limite séparative`
+    : `Art. 671 du Code civil : à défaut de règlement ou d’usage local, une plantation de moins de 2 m doit être à au moins 0,5 m de la limite séparative`
   const local =
-    'Des usages locaux, le PLU ou un règlement de lotissement peuvent imposer d’autres distances. Une limite en bordure de voirie n’est pas une limite séparative : l’art. 671 ne s’y applique pas.'
+    'Des règlements particuliers (PLU, lotissement) ou des usages locaux constants et reconnus priment sur ces distances : renseignez-vous en mairie. Une limite en bordure de voirie n’est pas une limite séparative : l’art. 671 ne s’y applique pas.'
+  const espalier = 'En espalier contre un mur séparatif, aucune distance n’est exigée, mais la plante ne doit pas dépasser la crête du mur. Art. 672 : le voisin peut exiger l’arrachage ou la réduction d’une plantation trop proche, sauf si elle a plus de 30 ans.'
   if (!parcel || parcel.length < 3) {
     return { requiredM, ok: true, message: `${rule} (limite de parcelle inconnue). ${local}` }
   }
@@ -100,7 +102,7 @@ export function legalDistance(
   const prune = tall && !ok ? ' (ou la maintenir sous 2 m par la taille)' : ''
   const message = ok
     ? `Distance à la limite : ${fmt(actualM)} m, conforme à l’art. 671 du Code civil (minimum ${fmt(requiredM)} m). ${local}`
-    : `${rule}${prune} : ici ${fmt(actualM)} m seulement. ${local}`
+    : `${rule}${prune} : ici ${fmt(actualM)} m seulement. ${local} ${espalier}`
   return { requiredM, actualM, ok, message }
 }
 
@@ -195,11 +197,13 @@ export function scoreSpecies(
   }
 
   // 4. Rusticité (seulement si on connaît les gelées locales, et pour les vivaces)
-  if (garden.lastFrostDoy != null && species.vivace) {
-    const tMin = estimatedWinterMinC(garden.lastFrostDoy)
+  if ((garden.minAbsC != null || garden.lastFrostDoy != null) && species.vivace) {
+    // Froid observé sur 5 ans si on l'a ; sinon estimation d'après la date des dernières gelées.
+    const observed = garden.minAbsC != null
+    const tMin = observed ? garden.minAbsC! : estimatedWinterMinC(garden.lastFrostDoy!)
     const margin = species.rusticiteC - tMin
     if (margin > 0) {
-      factors.push({ label: `Rusticité limite (${species.rusticiteC} °C, hivers ≈ ${Math.round(tMin)} °C estimés)`, points: margin > 5 ? -20 : -10 })
+      factors.push({ label: `Rusticité limite (${species.rusticiteC} °C, ${observed ? `hiver le plus froid observé ${Math.round(tMin)} °C` : `hivers ≈ ${Math.round(tMin)} °C estimés`})`, points: margin > 5 ? -20 : -10 })
       warnings.push(`${species.nomCommun} supporte ${species.rusticiteC} °C : prévoir une protection hivernale ou un pot rentré.`)
     } else if (margin <= -3) {
       factors.push({ label: 'Rustique dans votre climat', points: 5 })

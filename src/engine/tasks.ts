@@ -14,7 +14,7 @@ import type {
   WeatherBundle,
 } from '../types'
 import { isoDate } from '../lib/dates'
-import { plantAgeYears } from './growth'
+import { localDate, plantAgeYears } from './growth'
 import { MONTH_NAMES, formatDoy, frostGate, plantingCalendar } from './calendar'
 
 export interface TaskContext {
@@ -323,6 +323,33 @@ interface Group {
 }
 
 const isActive = (p: Plant) => p.status === 'en-place' || p.status === 'malade'
+
+/** Mois de grâce après la fin de la récolte d'une annuelle (arrachage, nettoyage) avant qu'elle ne génère plus rien. */
+const ANNUAL_GRACE_DAYS = 30
+
+/**
+ * Une annuelle a fini sa saison : la fenêtre de récolte qui suit sa plantation est terminée depuis plus de 30 jours
+ * (sans récolte connue : un an après la plantation). Elle ne génère alors plus de tâche (ni arrosage, ni désherbage,
+ * ni alerte de gel) : à l'utilisateur de la retirer ou de la marquer « mort ». Les vivaces ne sont jamais concernées.
+ */
+export function annualSeasonOver(p: Plant, sp: Species, today: Date): boolean {
+  if (sp.vivace || sp.anneesMaturite > 2 || !isActive(p)) return false
+  const planted = localDate(p.plantedAt)
+  if (!Number.isFinite(planted.getTime())) return false
+  const harvest = new Set(sp.recolte ?? [])
+  let end: Date | undefined
+  if (harvest.size > 0 && harvest.size < 12) {
+    // Premier mois, à partir de la plantation, qui est le dernier d'une fenêtre de récolte.
+    for (let i = 0; i < 24 && !end; i++) {
+      const d = new Date(planted.getFullYear(), planted.getMonth() + i, 1)
+      const m = (d.getMonth() + 1) as Month
+      const next = ((m % 12) + 1) as Month
+      if (harvest.has(m) && !harvest.has(next)) end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59)
+    }
+  }
+  end ??= new Date(planted.getFullYear() + 1, planted.getMonth(), planted.getDate())
+  return today.getTime() > end.getTime() + ANNUAL_GRACE_DAYS * DAY_MS
+}
 const isSowing = (t: TaskType) => t === 'semis' || t === 'plantation'
 
 const HOWTO_SEMIS = 'Semer en place dans un sol ameubli et désherbé, recouvrir de terre fine puis arroser en pluie fine.'
@@ -470,7 +497,7 @@ export function generateTasks(ctx: TaskContext): GeneratedTask[] {
     const base = 'jardin:arrosage:meteo'
     const thirsty = plants.filter((p) => {
       const sp = speciesById[p.speciesId]
-      if (!sp || !isActive(p) || !meteoEligible(p)) return false
+      if (!sp || !isActive(p) || !meteoEligible(p) || annualSeasonOver(p, sp, today)) return false
       const planted = new Date(p.plantedAt).getTime()
       const young = Number.isFinite(planted) && today.getTime() - planted < 365.25 * DAY_MS
       return sp.eau === 'moyen' || sp.eau === 'eleve' || young
@@ -506,7 +533,7 @@ export function generateTasks(ctx: TaskContext): GeneratedTask[] {
     if (frostDays.length) {
       const first = frostDays[0]
       const coldest = frostDays.reduce((c, d) => (d.tMin < c.tMin ? d : c), first)
-      const atRisk = plants.filter((p) => isActive(p) && speciesById[p.speciesId] && speciesById[p.speciesId].rusticiteC > coldest.tMin)
+      const atRisk = plants.filter((p) => isActive(p) && speciesById[p.speciesId] && speciesById[p.speciesId].rusticiteC > coldest.tMin && !annualSeasonOver(p, speciesById[p.speciesId], today))
       const key = `${first.date}:jardin:protection:gel`
       if (atRisk.length && !doneKeys.has(key)) {
         const spNames = [...new Set(atRisk.map((p) => lowerFirst(speciesById[p.speciesId].nomCommun)))]
@@ -532,7 +559,7 @@ export function generateTasks(ctx: TaskContext): GeneratedTask[] {
   const explicitCache = new Map<string, RuleEntry[]>()
   for (const p of plants) {
     const sp = speciesById[p.speciesId]
-    if (!sp || p.status === 'mort') continue
+    if (!sp || p.status === 'mort' || annualSeasonOver(p, sp, today)) continue
     let explicit = explicitCache.get(sp.id)
     if (!explicit) explicitCache.set(sp.id, (explicit = explicitRules(sp, garden)))
     const rules: RuleEntry[] = [

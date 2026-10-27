@@ -107,6 +107,20 @@ describe('sunCategory', () => {
   })
 })
 
+describe('legalDistance (art. 671) : ordre des règles', () => {
+  it('les usages locaux passent d’abord, 2 m et 0,5 m seulement à défaut', () => {
+    const r = legalDistance(pommier, { x: 9, y: 0 }, parcel)
+    expect(r.message).toMatch(/à défaut de règlement ou d’usage local/)
+    expect(r.message.indexOf('à défaut')).toBeLessThan(r.message.indexOf('2 m de la limite'))
+  })
+  it('non conforme : rappelle l’exception des espaliers et l’art. 672', () => {
+    const r = legalDistance(pommier, { x: 9, y: 0 }, parcel)
+    expect(r.message).toMatch(/espalier/)
+    expect(r.message).toMatch(/crête du mur/)
+    expect(r.message).toContain('672')
+  })
+})
+
 describe('legalDistance (art. 671)', () => {
   it('arbre de plus de 2 m à 1 m de la limite : non conforme', () => {
     const r = legalDistance(pommier, { x: 9, y: 0 }, parcel)
@@ -197,6 +211,13 @@ describe('scoreSpecies', () => {
     expect(pointsOf(scoreSpecies(citronnier, ctx()).factors, /Rusticité/)).toBe(0)
     expect(pointsOf(scoreSpecies(citronnier, ctx({ garden: garden({ lastFrostDoy: 115 }) })).factors, /Rusticité/)).toBeLessThan(0)
     expect(pointsOf(scoreSpecies(pommier, ctx({ garden: garden({ lastFrostDoy: 115 }) })).factors, /Rustique/)).toBeGreaterThan(0)
+    // Froid réellement observé (minAbsC) : prioritaire sur l'estimation par les dernières gelées.
+    const froid = scoreSpecies(citronnier, ctx({ garden: garden({ lastFrostDoy: 60, minAbsC: -14 }) }))
+    expect(pointsOf(froid.factors, /Rusticité/)).toBeLessThan(0)
+    expect(froid.factors.map((f) => f.label).join(' ')).toMatch(/hiver le plus froid observé -14 °C/)
+    const doux = scoreSpecies(citronnier, ctx({ garden: garden({ lastFrostDoy: 115, minAbsC: 2 }) }))
+    expect(pointsOf(doux.factors, /Rusticité/)).toBe(0) // gelées tardives estimées, mais aucun froid observé : l'observation l'emporte
+    expect(pointsOf(scoreSpecies(citronnier, ctx({ garden: garden({ minAbsC: -14 }) })).factors, /Rusticité/)).toBeLessThan(0) // sans date de gelée aussi
     // Saison : plantation de tomates en mai.
     expect(pointsOf(scoreSpecies(tomate, ctx({ today: new Date(2026, 4, 10) })).factors, /moment/)).toBeGreaterThan(0)
     expect(pointsOf(scoreSpecies(tomate, ctx({ today: new Date(2026, 10, 10) })).factors, /moment/)).toBe(0)

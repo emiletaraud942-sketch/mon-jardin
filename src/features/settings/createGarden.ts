@@ -102,6 +102,7 @@ export async function buildGarden(
         const c = await fetchClimate(center)
         garden.lastFrostDoy = c.lastFrostDoy ?? undefined
         garden.firstFrostDoy = c.firstFrostDoy ?? undefined
+        garden.minAbsC = c.minAbsC
         onStep('climat', 'ok', `${frNumber(c.rainMmPerYear, 0)} mm de pluie par an · ${c.zone}`)
       } catch (e) {
         onStep('climat', 'echec', (e as Error).message)

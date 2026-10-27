@@ -20,6 +20,12 @@ describe('migrateState', () => {
     expect(r.warnings).toEqual([])
   })
 
+  it('garde le froid observé du jardin (minAbsC) et écarte une valeur absurde', () => {
+    expect(ok({ gardens: [{ ...garden, minAbsC: -14.2 }], plants: [] }).data.gardens[0].minAbsC).toBe(-14.2)
+    expect(ok({ gardens: [{ ...garden, minAbsC: -500 }], plants: [] }).data.gardens[0].minAbsC).toBeUndefined()
+    expect(ok({ gardens: [{ ...garden, minAbsC: '-14' }], plants: [] }).data.gardens[0].minAbsC).toBeUndefined()
+  })
+
   it('accepte un export version 1 explicite', () => {
     expect(ok({ version: 1, exportedAt: 'x', gardens: [garden], plants: [plant], tasksDone: [] }).data.plants).toHaveLength(1)
   })

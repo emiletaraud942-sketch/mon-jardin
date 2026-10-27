@@ -36,7 +36,7 @@ const inRange = (n: number, max: number) => Math.abs(n) <= max
 /** Texte raccourci à `max` caractères (les données importées ne sont pas dignes de confiance). */
 const text = (v: string, max: number = LIMITS.shortText) => clipText(v, max)
 
-const GARDEN_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'address', 'center', 'altitudeM', 'parcel', 'parcelRefs', 'areaM2', 'buildings', 'terrain', 'sol', 'lastFrostDoy', 'firstFrostDoy', 'calibration', 'panoramas', 'createdAt'])
+const GARDEN_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'address', 'center', 'altitudeM', 'parcel', 'parcelRefs', 'areaM2', 'buildings', 'terrain', 'sol', 'lastFrostDoy', 'firstFrostDoy', 'minAbsC', 'calibration', 'panoramas', 'createdAt'])
 const PLANT_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'speciesId', 'customName', 'position', 'plantedAt', 'ageAtPlanting', 'status', 'notes', 'photos', 'measurements'])
 const TASK_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'taskKey', 'doneAt'])
 
@@ -113,6 +113,7 @@ function sanitizeGarden(raw: unknown, report: Report): Garden | undefined {
   if (isNum(raw.areaM2) && raw.areaM2 >= 0 && raw.areaM2 <= 1e10) g.areaM2 = raw.areaM2
   if (isNum(raw.lastFrostDoy)) g.lastFrostDoy = raw.lastFrostDoy
   if (isNum(raw.firstFrostDoy)) g.firstFrostDoy = raw.firstFrostDoy
+  if (isNum(raw.minAbsC) && raw.minAbsC >= -80 && raw.minAbsC <= 50) g.minAbsC = raw.minAbsC
   if (typeof raw.sol === 'string' && SOILS.has(raw.sol)) g.sol = raw.sol as SoilTexture
   if (Array.isArray(raw.parcelRefs)) {
     g.parcelRefs = raw.parcelRefs

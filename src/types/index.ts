@@ -147,6 +147,8 @@ export interface Garden {
   /** Date moyenne de dernière gelée (jour de l'année), calculée sur l'historique. */
   lastFrostDoy?: number
   firstFrostDoy?: number
+  /** Température la plus basse observée sur 5 ans d'historique (°C), pour juger la rusticité des vivaces. */
+  minAbsC?: number
   /** Recalage GPS (similitude 2D en mètres locaux), appliqué aux positions mesurées. */
   calibration?: Calibration
   /** Points de vue en photos (façon Street View). Métadonnées seulement : les photos sont dans IndexedDB (src/lib/photos.ts), jamais exportées ni synchronisées. */

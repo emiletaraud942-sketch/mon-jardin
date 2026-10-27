@@ -50,7 +50,7 @@ function rawSizeForAge(species: Species, age: number): { heightM: number; spread
 }
 
 /** « 2025-03-10 » -> minuit en heure locale ; sinon Date standard. NaN si invalide. */
-function localDate(s: string): Date {
+export function localDate(s: string): Date {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s)
   return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(s)
 }

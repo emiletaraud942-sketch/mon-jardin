@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, afterEach, describe, expect, it, vi } from 'vitest'
 import type { DailyWeather, Garden, Plant, Species, TaskDone, WeatherBundle } from '../types'
 import { SPECIES_BY_ID } from '../data/species'
-import { generateTasks, harvestMinAgeYears, pluralFr, purgeTasksDone, waterBalance, weekKey, yearPlan, type TaskContext } from './tasks'
+import { annualSeasonOver, generateTasks, harvestMinAgeYears, pluralFr, purgeTasksDone, waterBalance, weekKey, yearPlan, type TaskContext } from './tasks'
 
 const garden: Garden = { id: 'g1', name: 'Test', address: '', center: { lat: 48.85, lon: 2.35 }, createdAt: '2026-01-01' }
 
@@ -439,7 +439,7 @@ describe('récolte : données réelles (pas de règle implicite en doublon)', ()
     const real = SPECIES_BY_ID
     for (const [id, today] of [['tomate', new Date(2026, 7, 10, 9)], ['pommier', new Date(2026, 8, 10, 9)]] as const) {
       const tasks = generateTasks({
-        garden, speciesById: real, today, tasksDone: [], plants: [plant(id, { plantedAt: '2015-03-01' })],
+        garden, speciesById: real, today, tasksDone: [], plants: [plant(id, { plantedAt: id === 'tomate' ? '2026-05-10' : '2015-03-01' })], // une annuelle plantée en 2015 aurait fini sa saison
       }).filter((t) => t.type === 'recolte')
       expect(tasks).toHaveLength(1)
       expect(tasks[0].key).not.toContain('cal-recolte')
@@ -486,9 +486,9 @@ describe('récolte implicite depuis le calendrier (L3)', () => {
 
   it('la récolte implicite suit les premières gelées locales pour les espèces gélives', () => {
     const g = { ...garden, firstFrostDoy: 290 } // 17 octobre
-    const sept = run({ garden: g, plants: [plant('basilic')], today: new Date(2026, 8, 25, 9) }).filter((x) => x.type === 'recolte')
+    const sept = run({ garden: g, plants: [plant('basilic', { plantedAt: '2026-05-10' })], today: new Date(2026, 8, 25, 9) }).filter((x) => x.type === 'recolte')
     expect(sept).toHaveLength(1)
-    const oct2 = run({ garden: g, plants: [plant('basilic')], today: oct }).filter((x) => x.type === 'recolte')
+    const oct2 = run({ garden: g, plants: [plant('basilic', { plantedAt: '2026-05-10' })], today: oct }).filter((x) => x.type === 'recolte')
     expect(oct2).toEqual([])
   })
 })
@@ -861,5 +861,43 @@ describe('generateTasks : langage clair', () => {
       expect(t.reason).not.toMatch(/Fenêtre|Déficit|évaporation|\bmm\b/)
       expect(t.blockedBy ?? '').not.toMatch(/\bmm\b|°C/)
     }
+  })
+})
+
+// ---------- Annuelles : fin de saison ----------
+
+describe('annuelles hors saison', () => {
+  // basilic : récolte juin à septembre. Planté le 10 mai 2026 : saison finie fin septembre, +30 jours de grâce.
+  const basilicEnPlace = (extra: Partial<Plant> = {}) => plant('basilic', { plantedAt: '2026-05-10', ...extra })
+  it('annualSeasonOver : fenêtre de récolte finie depuis plus de 30 jours', () => {
+    expect(annualSeasonOver(basilicEnPlace(), basilic, new Date(2026, 7, 1))).toBe(false)
+    expect(annualSeasonOver(basilicEnPlace(), basilic, new Date(2026, 9, 25))).toBe(false) // 25 octobre : dans la grâce
+    expect(annualSeasonOver(basilicEnPlace(), basilic, new Date(2026, 10, 5))).toBe(true)
+  })
+  it('une plantation de fin de saison attend la fenêtre suivante, pas celle déjà passée', () => {
+    // plantée en octobre : la première fenêtre de récolte qui suit est l'été d'après
+    expect(annualSeasonOver(basilicEnPlace({ plantedAt: '2026-10-15' }), basilic, new Date(2027, 2, 1))).toBe(false)
+  })
+  it('jamais pour une vivace, ni pour un projet, ni pour une plante morte', () => {
+    expect(annualSeasonOver(plant('menthe', { plantedAt: '2015-05-10' }), menthe, new Date(2026, 9, 1))).toBe(false)
+    expect(annualSeasonOver(basilicEnPlace({ status: 'projet' }), basilic, new Date(2027, 5, 1))).toBe(false)
+  })
+  it('sans récolte connue : fin un an après la plantation (+ grâce)', () => {
+    const sp: Species = { ...base, id: 'fleur', nomCommun: 'Fleur', vivace: false, anneesMaturite: 1 }
+    const p = plant('fleur', { plantedAt: '2026-05-10' })
+    expect(annualSeasonOver(p, sp, new Date(2027, 5, 1))).toBe(false)
+    expect(annualSeasonOver(p, sp, new Date(2027, 6, 15))).toBe(true)
+  })
+  it('une annuelle hors saison ne génère plus ni arrosage ni désherbage ni alerte de gel', () => {
+    const today = new Date(2027, 6, 15, 9) // juillet suivant : la tomate d'il y a un an est finie
+    const vieille = plant('tomate', { plantedAt: '2026-05-10' })
+    const neuve = plant('tomate', { plantedAt: '2027-05-10' })
+    const chaud = weather(today, Array.from({ length: 7 }, () => ({ et0Mm: 4, rainMm: 0 })), [{ tMin: -1 }])
+    const annuelle = { speciesById: { ...speciesById, tomate: { ...tomate, anneesMaturite: 1 } } }
+    const sans = run({ ...annuelle, plants: [vieille], today, weather: chaud })
+    expect(sans).toEqual([])
+    const avec = run({ ...annuelle, plants: [vieille, neuve], today, weather: chaud })
+    for (const t of avec) expect(t.plantIds).not.toContain(vieille.id)
+    expect(avec.some((t) => t.plantIds.includes(neuve.id))).toBe(true)
   })
 })
