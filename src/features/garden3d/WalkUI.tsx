@@ -241,7 +241,7 @@ export function MiniMap({ shared, parcel, buildings, plants, speciesById, select
     b.stroke()
     // « N » du nord
     b.fillStyle = text
-    b.font = `700 ${Math.round(SIZE / 8)}px system-ui, sans-serif`
+    b.font = `600 ${Math.round(SIZE / 8)}px system-ui, sans-serif`
     b.textAlign = 'center'
     b.fillText('N', SIZE / 2, Math.round(SIZE / 8) + 4)
 

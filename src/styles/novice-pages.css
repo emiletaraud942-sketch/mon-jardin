@@ -19,7 +19,7 @@
   align-items: center;
   cursor: pointer;
   color: var(--accent);
-  font-weight: 600;
+  font-weight: var(--fw-strong);
 }
 .np-details > summary:focus-visible {
   outline: 3px solid var(--accent-2);
@@ -30,7 +30,7 @@
 .btn.primary.np-done {
   flex: 1 1 100%;
   min-height: 52px;
-  font-weight: 700;
+  font-weight: var(--fw-strong);
   font-size: 1.125rem;
   border-radius: 999px;
   background: var(--btn-green);
@@ -58,7 +58,7 @@
 }
 .task .task-title {
   font-family: var(--font-title);
-  font-weight: 400;
+  font-weight: var(--fw-text);
   font-size: 1.3rem;
   line-height: 1.2;
   color: var(--title);
@@ -94,7 +94,7 @@
 .np-weather .d strong {
   display: block;
   font-size: 1.25rem;
-  font-weight: 700;
+  font-weight: var(--fw-key);
 }
 .np-weather .d.rain {
   background: var(--water-bg);
@@ -103,7 +103,7 @@
 .np-weather .d.frost {
   background: var(--frost-bg);
   color: var(--frost-text);
-  font-weight: 700;
+  font-weight: var(--fw-strong);
 }
 .np-steps {
   list-style: none;
@@ -129,14 +129,14 @@
   align-items: center;
   justify-content: center;
   font-family: var(--font-body);
-  font-weight: 700;
+  font-weight: var(--fw-key);
 }
 .np-reco {
   padding: 10px 0;
   border-bottom: 1px solid var(--border);
 }
 .np-fit {
-  font-weight: 700;
+  font-weight: var(--fw-strong);
   padding: 3px 10px;
   border-radius: 999px;
   background: var(--surface-2);
@@ -167,7 +167,7 @@
 }
 .mg-table thead th {
   color: var(--muted);
-  font-weight: 600;
+  font-weight: var(--fw-strong);
 }
 .mg-table thead th.now {
   color: var(--text);
@@ -175,7 +175,7 @@
 }
 .mg-table .mg-title {
   text-align: left;
-  font-weight: 600;
+  font-weight: var(--fw-strong);
   font-size: 0.9rem;
   padding-top: 6px;
 }
@@ -183,7 +183,7 @@
   height: 28px;
   background: var(--surface-2);
   border-radius: 4px;
-  font-weight: 700;
+  font-weight: var(--fw-strong);
   line-height: 28px;
 }
 .mg-table td.now {
@@ -203,7 +203,7 @@
   color: var(--cal-harvest);
 }
 .mg-sym {
-  font-weight: 700;
+  font-weight: var(--fw-strong);
 }
 .mg-summary {
   margin: 8px 0 0;
@@ -223,7 +223,7 @@
 }
 .np-facts dd {
   margin: 0;
-  font-weight: 600;
+  font-weight: var(--fw-strong);
 }
 /* Entraide */
 .np-example {
