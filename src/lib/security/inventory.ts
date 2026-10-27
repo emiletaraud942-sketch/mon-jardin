@@ -199,7 +199,7 @@ export const PERMISSIONS: readonly PermissionInfo[] = [
   },
   {
     permission: 'Photos (choix d’un fichier ou prise de vue)',
-    ou: 'Fiche d’une plante > Ajouter une photo ; Identifier une plante (sélecteur de fichier du système, pas d’accès direct à la caméra)',
+    ou: 'Fiche d’une plante > Ajouter une photo ; Identifier une plante (sélecteur de fichier du système)',
     pourquoi: 'Choisir une photo vous-même. Le navigateur ne donne accès qu’aux fichiers que vous sélectionnez.',
     siRefusee: 'Pas de photo ; la plante se place quand même.',
   },
@@ -226,6 +226,12 @@ export const PERMISSIONS: readonly PermissionInfo[] = [
     ou: 'Photos du jardin, seulement après un appui',
     pourquoi: 'Connaître la direction vers laquelle vous regardez pour ranger les photos. Rien n’est enregistré en dehors du cap de chaque photo.',
     siRefusee: 'Vous indiquez la direction de départ à la main.',
+  },
+  {
+    permission: 'Écran allumé',
+    ou: 'Prise des photos du jardin et scan, tant que l’écran de prise de vue est ouvert (aucune demande à l’écran)',
+    pourquoi: 'Éviter que l’écran s’éteigne et coupe la caméra en pleine prise.',
+    siRefusee: 'L’écran suit les réglages du téléphone ; reprenez la photo si la caméra s’est arrêtée.',
   },
 ]
 

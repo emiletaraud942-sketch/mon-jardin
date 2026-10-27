@@ -37,10 +37,8 @@ jobs:
     name: Audit des dépendances de production
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Non bloquant pour l'instant : maplibre-gl 4.x est signalé (GHSA-jrc7-96c5-q579, XSS dans l'attribution de carte).
-    # L'appli désactive le contrôle d'attribution et n'injecte que des textes fixes : non exploitable ici, mais la mise à jour
-    # vers maplibre-gl >= 6.4.1 est à planifier. Retirer `continue-on-error` une fois la mise à jour faite.
-    continue-on-error: true
+    # Bloquant : toute alerte high/critical de production échoue, sauf les avis listés (avec raison) dans scripts/audit-prod.mjs.
+    # maplibre-gl 4.x (GHSA-jrc7-96c5-q579) y est toléré : non exploitable ici. Retirer l'entrée à la montée vers maplibre-gl >= 6.4.1.
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,4 +48,4 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --ignore-scripts
-      - run: npm audit --omit=dev --audit-level=high
+      - run: node scripts/audit-prod.mjs

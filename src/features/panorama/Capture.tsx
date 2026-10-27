@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useWakeLock } from '../../lib/wakeLock'
 import { Icon } from '../../components/Icon'
 import { uid } from '../../lib/geo'
 import { getPhoto, savePhoto } from '../../lib/photos'
@@ -51,6 +52,8 @@ export function Capture({ garden, spot, redoId }: { garden: Garden; spot: XY; re
   startRef.current = startDeg
   const northRef = useRef(true)
   northRef.current = northKnown
+
+  useWakeLock(phase === 'live')
 
   const stopCamera = useCallback(() => {
     stream.current?.getTracks().forEach((t) => t.stop())

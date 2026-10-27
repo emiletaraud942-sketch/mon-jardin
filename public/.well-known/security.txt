@@ -1,0 +1,5 @@
+# Signalement de vulnérabilité (RFC 9116). Détails : SECURITY.md à la racine du dépôt.
+Contact: https://github.com/emiletaraud942-sketch/mon-jardin/security/advisories/new
+Expires: 2027-10-27T00:00:00.000Z
+Preferred-Languages: fr, en
+Policy: https://github.com/emiletaraud942-sketch/mon-jardin/blob/main/SECURITY.md

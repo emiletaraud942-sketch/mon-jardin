@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useWakeLock } from '../../lib/wakeLock'
 import { ErrorNote } from '../../components/ErrorNote'
 import { Icon } from '../../components/Icon'
 import { Modal } from '../../components/Modal'
@@ -89,6 +90,7 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
     stream.current?.getTracks().forEach((t) => t.stop())
     stream.current = undefined
   }
+  useWakeLock(step === 'live')
   useEffect(() => releaseCamera, [])
 
   async function startLive() {

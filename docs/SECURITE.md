@@ -61,10 +61,12 @@ Principes : moindre privilège, aucune donnée personnelle superflue, aucun secr
 | Permission | Où demandée | Pourquoi | Si refusée |
 | --- | --- | --- | --- |
 | Notifications | Tâches > « Activer les rappels », sur clic uniquement (jamais au chargement) | Un rappel local par jour au plus | Aucun rappel, le reste fonctionne |
-| Photos | `<input type=file accept=image/*>` (fiche plante, identification) : sélecteur du système, **pas** de `getUserMedia` | Choisir une photo | Pas de photo |
+| Photos | `<input type=file accept=image/*>` (fiche plante, identification) : sélecteur du système | Choisir une photo | Pas de photo |
 | Stockage persistant | Au chargement (`navigator.storage.persist`) | Éviter l'effacement par le navigateur | Données conservées mais effaçables : message de sauvegarde |
-| Géolocalisation | **Jamais demandée** (aucun appel à `navigator.geolocation`) ; `geolocation=(self)` seulement dans la Permissions-Policy | — | Sans objet |
-| Caméra, micro | **Jamais demandés** ; `camera=(self)` laisse le sélecteur de fichiers proposer l'appareil photo | — | Sans objet |
+| Géolocalisation | Scan du jardin, « Je suis ici » et photos du jardin, **seulement après un appui** (`src/features/scan/gps.ts`) ; la position reste sur l'appareil | Placer une plante ou un point à votre position | Placement à la main sur la carte |
+| Caméra | `getUserMedia` (photos du jardin, scan), seulement après un appui ; micro jamais (`audio: false`, `microphone=()`) | Prendre les photos ; elles restent sur l'appareil | Choix d'une photo dans les fichiers |
+| Capteurs de mouvement | `deviceorientation` (boussole des photos du jardin), après un appui ; `accelerometer/gyroscope/magnetometer=(self)` | Ranger les photos par direction | Direction de départ saisie à la main |
+| Écran allumé | Wake Lock pendant la prise de photos et le scan (`src/lib/wakeLock.ts`), sans demande | Éviter que l'écran coupe la caméra | L'écran suit les réglages du téléphone |
 
 Service worker : portée `/`, `navigateFallbackDenylist` pour `/api/` et `/ext/`. Mis en cache : le code (précache), le chunk 3D, les tuiles IGN (`ign-tuiles`, `ign-ortho-3d`). Jamais en cache : `/api/*`, `/ext/meteo*`, le géocodage, aucun jeton. Les caches de tuiles révèlent les lieux consultés : ils sont vidés par `eraseAllData()`.
 
@@ -183,7 +185,7 @@ Périmètre : tout le dépôt sur la branche courante (front, `api/`, `vercel.js
 | O5 | ~~Moyenne~~ **Atténué (v6)** | Quartier = cellule de 0,01° (~1 km) : en zone rurale une cellule pouvait ne contenir qu'un foyer | Cellule de 2 km par défaut (pas 0,02° x 0,03°), « large » de 5 km au choix (0,05° x 0,07°), arrondi refait par la base (§13). Reste vrai : en très faible densité, même 5 km peut ne contenir qu'un foyer ; le pseudo et les photos de jardin restent à la charge de la personne |
 | O6 | Faible | `/api/identify` : un appel sans `Origin`/`Sec-Fetch-Site` (curl, script) est accepté, le limiteur est par instance | Règle de limitation du pare-feu Vercel (voir §6) ; CAPTCHA si l'appli devient publique |
 | O7 | Faible | `connect-src https://*.supabase.co` : n'importe quel projet Supabase | Une fois les deux projets créés, remplacer par leurs deux adresses exactes dans `vercel.json` (et adapter `vercel-config.test.ts`) |
-| O8 | Faible | `Permissions-Policy` : `camera=(self)` et `geolocation=(self)` alors que ni `getUserMedia` ni la géolocalisation ne sont utilisées | Tester `camera=()` sur iOS et Android (le sélecteur de fichiers ne dépend pas de cette politique selon les spécifications, non vérifié ici) |
+| O8 | ~~Faible~~ **Sans objet** (27/10) | `camera=(self)` et `geolocation=(self)` sont désormais utilisées (photos du jardin, scan) : la politique est juste. Ancien constat : « ni `getUserMedia` ni la géolocalisation ne sont utilisées » | Tester `camera=()` sur iOS et Android (le sélecteur de fichiers ne dépend pas de cette politique selon les spécifications, non vérifié ici) |
 | O9 | Faible | CI : actions épinglées par étiquette (`@v4`) et non par empreinte ; l'audit des dépendances ne bloque pas | Épingler par SHA (Dependabot suit) |
 | O10 | Faible | 18 alertes `npm audit` hors production : `@vercel/node` (tar, undici, path-to-regexp… utilisés seulement pour les types), `vite` 5 / `esbuild` (serveur de développement), `vitest`, `vite-plugin-pwa`. `three-stdlib` est une dépendance directe jamais importée | Remplacer `@vercel/node` par des types locaux supprimerait 8 alertes ; montée `vite`/`vitest` à planifier. Ne pas lancer `vite dev` sur une machine exposée au réseau |
 | O11 | Info | Historique git : un commit signé `emiletaraud942-sketch <emiletaraud942@gmail.com>` ; `.claude/agents/devops-vercel.md` cite le nom d'équipe Vercel | Si le dépôt devient public : e-mail `noreply` GitHub pour les prochains commits (réécrire l'historique n'est pas nécessaire si l'e-mail est déjà public) |
@@ -309,3 +311,15 @@ Vérifié par `security.test.ts`, `store.test.ts`, `sync.test.ts` (1344 tests au
 | « Effacer toutes mes données » laissait les clés `pj.…` (guide, qui contient des identifiants de jardin, LiDAR, grille, mode, qualité 3D, quota de scan…) : l'expression ne couvrait que `pj-` | `ERASABLE_LOCAL_KEY = /^(permajardin:\|pj[-.]\|sb-)/` ; le test qui parcourt le code source cherche maintenant aussi les clés `pj.xxx` (il ne voyait que `pj-xxx:`, d'où l'oubli) | `security.test.ts` |
 | « Repartir de zéro » (lecture impossible : version plus récente ou format inconnu) remplaçait les données au prochain enregistrement sans copie | `resumeSaving()` copie d'abord les données sous `permajardin:state:v1:illisible` ; si la copie échoue, rien n'est remplacé. Si le stockage est totalement illisible, il n'y a rien à copier et on reprend | `store.test.ts` (2 cas) |
 | Plafond de 5 Mo de la synchro compté en caractères (`length`) alors que la base compte des octets : un jardin plein d'accents ou d'emojis passait le contrôle client puis était refusé par la base (23514) | `jsonBytes` : octets UTF-8 | `sync.test.ts` |
+
+## 16. Corrections de l'audit du 27 octobre 2026, lot 3 (en-têtes, CI, documents)
+
+| Constat | Correctif | Preuve |
+| --- | --- | --- |
+| Écran qui s'éteint pendant la prise de photos | `useWakeLock` (aucune demande à l'écran) ; `screen-wake-lock=(self)` dans la Permissions-Policy | `vercel-config.test.ts` |
+| CI : audit de production non bloquant (`continue-on-error`) | `scripts/audit-prod.mjs` : échec sur toute alerte high/critical hors liste courte et commentée (seul `GHSA-jrc7-96c5-q579`, maplibre-gl, toléré) ; essayé : sans l'entrée, le script sort en code 1 | CI, job « Audit des dépendances de production » |
+| Pas de `security.txt` | `public/.well-known/security.txt` (RFC 9116, contact = signalement privé GitHub, expiration 27/10/2027 : **à renouveler**) ; exclu du repli du service worker | `vite.config.ts` |
+| Textes de consentement : « Supabase, UE » alors que la région n'est pas confirmée | Retiré des textes de consentement ; la politique de confidentialité dit toujours « à confirmer » | `legal*.test.ts` |
+| Documents périmés : capteurs « bloqués » (`CLAUDE.md`), caméra et position « jamais demandées » (ce fichier), inventaire de la fiche photos | Corrigés ; entrée « Écran allumé » ajoutée à l'inventaire | `security.test.ts` |
+
+**Non fait** : épinglage des actions GitHub par empreinte (O9, il faut les empreintes réelles depuis GitHub, Dependabot suit ensuite), analyse de code (CodeQL) et de secrets : ce sont des réglages du dépôt (Settings > Code security : code scanning, secret scanning, push protection, signalement privé), à activer par vous ; CodeQL en workflow échouerait sur un dépôt privé sans l'option payante.

@@ -106,12 +106,12 @@ describe('en-têtes de sécurité', () => {
     expect(globalHeaders['Content-Security-Policy']).not.toMatch(/unsafe-eval|http:|\*\s|;\s*\*/)
   })
 
-  it('Permissions-Policy minimale : seuls caméra, géolocalisation et capteurs de mouvement (boussole des photos du jardin) sont autorisés, pour notre origine', () => {
+  it('Permissions-Policy minimale : seuls caméra, géolocalisation, capteurs de mouvement (boussole) et écran allumé (prise de photos) sont autorisés, pour notre origine', () => {
     const pp = Object.fromEntries(globalHeaders['Permissions-Policy'].split(',').map((x) => x.trim().split('=')))
     expect(pp.camera).toBe('(self)')
     expect(pp.geolocation).toBe('(self)')
-    for (const f of ['gyroscope', 'accelerometer', 'magnetometer']) expect(pp[f], f).toBe('(self)')
-    for (const f of ['microphone', 'payment', 'usb', 'serial', 'hid', 'midi', 'display-capture', 'screen-wake-lock']) expect(pp[f], f).toBe('()')
-    for (const [k, v] of Object.entries(pp)) if (v !== '()') expect(['camera', 'geolocation', 'gyroscope', 'accelerometer', 'magnetometer'], k).toContain(k)
+    for (const f of ['gyroscope', 'accelerometer', 'magnetometer', 'screen-wake-lock']) expect(pp[f], f).toBe('(self)')
+    for (const f of ['microphone', 'payment', 'usb', 'serial', 'hid', 'midi', 'display-capture']) expect(pp[f], f).toBe('()')
+    for (const [k, v] of Object.entries(pp)) if (v !== '()') expect(['camera', 'geolocation', 'gyroscope', 'accelerometer', 'magnetometer', 'screen-wake-lock'], k).toContain(k)
   })
 })
