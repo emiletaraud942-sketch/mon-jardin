@@ -1,4 +1,4 @@
-import type { AppState } from '../../lib/store'
+import { panoramaPhotoIds, type AppState } from '../../lib/store'
 import type { Garden, Plant, TaskDone } from '../../types'
 
 /** Ce qui part avec un jardin : le jardin, sa place dans la liste, ses plantes et ses tâches faites. */
@@ -12,8 +12,8 @@ export interface GardenSnapshot {
 
 type Data = Pick<AppState, 'gardens' | 'plants' | 'tasksDone' | 'activeGardenId'>
 
-/** Photos qui ne servent plus à personne une fois le jardin parti. */
-export const photosOf = (snap: GardenSnapshot): string[] => snap.plants.flatMap((p) => p.photos)
+/** Photos qui ne servent plus à personne une fois le jardin parti (plantes et points de vue en photos). */
+export const photosOf = (snap: GardenSnapshot): string[] => [...snap.plants.flatMap((p) => p.photos), ...panoramaPhotoIds([snap.garden])]
 
 /** Retire un jardin (sans toucher aux photos : on peut encore annuler). */
 export function removeGardenData(s: Data, id: string): { next: Pick<Data, 'gardens' | 'plants' | 'tasksDone' | 'activeGardenId'>; snapshot?: GardenSnapshot } {

@@ -149,7 +149,29 @@ export interface Garden {
   firstFrostDoy?: number
   /** Recalage GPS (similitude 2D en mètres locaux), appliqué aux positions mesurées. */
   calibration?: Calibration
+  /** Points de vue en photos (façon Street View). Métadonnées seulement : les photos sont dans IndexedDB (src/lib/photos.ts), jamais exportées ni synchronisées. */
+  panoramas?: Panorama[]
   createdAt: string
+}
+
+/** Une photo d'un point de vue : son cap (0 = nord, sens horaire) et sa largeur de champ (degrés). */
+export interface PanoramaShot {
+  photoId: string
+  headingDeg: number
+  fovDeg: number
+}
+
+export interface Panorama {
+  id: string
+  /** Position du point (coordonnées locales, m). */
+  x: number
+  y: number
+  takenAt: string // ISO
+  shots: PanoramaShot[]
+  /** 'guide' : photos prises tour à tour. 'import' : une seule photo large (mode Panorama du téléphone). */
+  kind: 'guide' | 'import'
+  /** Faux si la boussole n'était pas fiable : les caps sont relatifs, les noms de plantes ne sont pas affichés. */
+  northOk?: boolean
 }
 
 export interface TerrainGrid {

@@ -10,6 +10,7 @@ import { closePlantSheet, openHelp, setUi, startPlacing, stopPlacing, useUi } fr
 import type { Garden } from '../../types'
 import { PlantPanel, plantName } from '../plants/PlantPanel'
 import { openScan } from '../scan/scanUi'
+import { openPanorama } from '../panorama/panoUi'
 import { useIsMobile } from '../../components/useMedia'
 import { confirmBeforePlacing, placeAtAim, usePlacingInfo } from './aimBridge'
 
@@ -55,6 +56,9 @@ export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
       </div>
       <button className="btn primary" onClick={() => setPicking(true)}>
         <Icon name="plus" /> Ajouter une plante au jardin
+      </button>
+      <button className="btn" aria-haspopup="dialog" onClick={() => openPanorama('home')}>
+        <Icon name="camera" /> Photos du jardin{(garden.panoramas?.length ?? 0) > 0 ? ` (${garden.panoramas!.length})` : ''}
       </button>
       <details className="np-details">
         <summary>Autres façons d’ajouter</summary>

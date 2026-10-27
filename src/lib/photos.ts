@@ -9,6 +9,7 @@ export const PHOTO_PREFIX = 'photo:'
 export const TARGET_BYTES = 700 * 1024
 const MAX_SIDE = 1280
 const MIN_SIDE = 480
+const QUALITIES = [0.82, 0.7, 0.58, 0.46]
 const MESSAGE_FORMAT = 'Format de photo non pris en charge. Utilisez une photo JPEG ou PNG.'
 const MESSAGE_TOO_BIG = 'Cette photo est trop grande pour être traitée sur cet appareil. Utilisez une photo de plus petite taille.'
 
@@ -54,8 +55,8 @@ async function decode(file: Blob): Promise<ImageBitmap> {
  * Encode une image en JPEG en visant `targetBytes` : qualité décroissante, puis réduction des dimensions.
  * Renvoie le meilleur résultat obtenu même si la cible n'est pas atteinte (plancher de qualité et de taille).
  */
-export async function compressToTarget(file: Blob, opts: { maxSide?: number; targetBytes?: number } = {}): Promise<Blob> {
-  const { maxSide = MAX_SIDE, targetBytes = TARGET_BYTES } = opts
+export async function compressToTarget(file: Blob, opts: { maxSide?: number; targetBytes?: number; qualities?: number[] } = {}): Promise<Blob> {
+  const { maxSide = MAX_SIDE, targetBytes = TARGET_BYTES, qualities = QUALITIES } = opts
   const bitmap = await decode(file)
   try {
     let side = Math.min(maxSide, Math.max(bitmap.width, bitmap.height))
@@ -68,7 +69,7 @@ export async function compressToTarget(file: Blob, opts: { maxSide?: number; tar
       canvas.width = Math.max(1, Math.round(bitmap.width * scale))
       canvas.height = Math.max(1, Math.round(bitmap.height * scale))
       ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
-      for (const q of [0.82, 0.7, 0.58, 0.46]) {
+      for (const q of qualities) {
         const blob = await toBlob(canvas, 'image/jpeg', q)
         if (!best || blob.size < best.size) best = blob
         if (blob.size <= targetBytes) return blob
@@ -83,12 +84,12 @@ export async function compressToTarget(file: Blob, opts: { maxSide?: number; tar
 }
 
 /**
- * Réduit une photo (max 1280 px, < 700 ko) et la stocke dans IndexedDB. Renvoie son id.
+ * Réduit une photo (par défaut max 1280 px, < 700 ko ; `opts` pour une autre cible) et la stocke dans IndexedDB. Renvoie son id.
  * Vie privée : la photo est redessinée sur un canvas puis ré-encodée en JPEG, ce qui supprime EXIF, GPS, XMP et miniature
  * (prouvé par un test navigateur, voir docs/SECURITE.md). C'est toujours cette copie qui est stockée et envoyée à Pl@ntNet.
  */
-export async function savePhoto(file: Blob): Promise<string> {
-  const blob = await compressToTarget(file)
+export async function savePhoto(file: Blob, opts?: { maxSide?: number; targetBytes?: number; qualities?: number[] }): Promise<string> {
+  const blob = await compressToTarget(file, opts)
   const id = PHOTO_PREFIX + uid()
   await set(id, blob)
   return id

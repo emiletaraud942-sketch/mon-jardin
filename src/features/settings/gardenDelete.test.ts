@@ -22,6 +22,13 @@ describe('suppression d’un jardin avec annulation', () => {
     expect(photosOf(snapshot!)).toEqual(['ph2'])
   })
 
+  it('les photos des points de vue partent aussi avec le jardin', () => {
+    const st = state()
+    st.gardens[1] = { ...st.gardens[1], panoramas: [{ id: 'pv', x: 0, y: 0, takenAt: '2026-05-03', kind: 'guide', shots: [{ photoId: 'photo:v1', headingDeg: 0, fovDeg: 60 }] }] }
+    const { snapshot } = removeGardenData(st, 'b')
+    expect(photosOf(snapshot!)).toEqual(['ph2', 'photo:v1'])
+  })
+
   it('annuler remet tout à sa place', () => {
     const before = state()
     const { next, snapshot } = removeGardenData(before, 'b')

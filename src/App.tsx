@@ -35,13 +35,16 @@ import { readRadius } from './features/neighbors/prefs'
 import { useConsents } from './lib/consent'
 import { InviteButton } from './components/InviteButton'
 import { useScanUi } from './features/scan/scanUi'
+import { usePanoUi } from './features/panorama/panoUi'
 // En dernier : harmonisation Leafora (surcharge les feuilles de style des écrans ci-dessus), puis la navigation du téléphone (chantier D).
 import './styles/leafora.css'
 import './styles/mobile-nav.css'
+import './styles/panorama.css'
 
 const View3D = lazy(() => import('./features/garden3d/View3D'))
 const NeighborsPage = lazy(() => import('./features/neighbors/NeighborsPage').then((m) => ({ default: m.NeighborsPage })))
 const ScanHost = lazy(() => import('./features/scan/ScanHost'))
+const PanoHost = lazy(() => import('./features/panorama/PanoHost'))
 const MapView = lazy(() => import('./features/map/MapView').then((m) => ({ default: m.MapView })))
 
 const Loading = ({ label }: { label: string }) => (
@@ -75,6 +78,7 @@ export function App() {
   // Alertes de nouveaux messages : le service worker prévient l'appli ouverte (pastille, clic sur l'alerte).
   useEffect(() => (neighborsEnabled && voisins ? startPushBridge() : undefined), [voisins])
   const scanOpen = !!useScanUi().screen
+  const panoOpen = !!usePanoUi().screen
   const onboarding = useOnboarding()
   const helpOpen = useHelpOpen()
   const mainRef = useRef<HTMLElement>(null)
@@ -286,6 +290,11 @@ export function App() {
       {scanOpen && (
         <Suspense fallback={null}>
           <ScanHost />
+        </Suspense>
+      )}
+      {panoOpen && (
+        <Suspense fallback={null}>
+          <PanoHost />
         </Suspense>
       )}
       {helpOpen && <HelpSheet tab={tab} onClose={() => setHelpOpen(false)} />}

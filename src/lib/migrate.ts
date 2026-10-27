@@ -1,6 +1,6 @@
 // Validation et migration des données (stockage local, import JSON, synchronisation).
 // PROPRIÉTAIRE : dev-backend-supabase. La signature de `migrateState` est le contrat ; ne pas la changer.
-import type { Building, Garden, Plant, PlantMeasurement, PlantStatus, SoilTexture, TaskDone, TerrainGrid, XY } from '../types'
+import type { Building, Garden, Panorama, PanoramaShot, Plant, PlantMeasurement, PlantStatus, SoilTexture, TaskDone, TerrainGrid, XY } from '../types'
 import { isoDate } from './dates'
 import { isValidCalibration } from './calibration'
 import { uid } from './geo'
@@ -36,7 +36,7 @@ const inRange = (n: number, max: number) => Math.abs(n) <= max
 /** Texte raccourci à `max` caractères (les données importées ne sont pas dignes de confiance). */
 const text = (v: string, max: number = LIMITS.shortText) => clipText(v, max)
 
-const GARDEN_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'address', 'center', 'altitudeM', 'parcel', 'parcelRefs', 'areaM2', 'buildings', 'terrain', 'sol', 'lastFrostDoy', 'firstFrostDoy', 'calibration', 'createdAt'])
+const GARDEN_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'address', 'center', 'altitudeM', 'parcel', 'parcelRefs', 'areaM2', 'buildings', 'terrain', 'sol', 'lastFrostDoy', 'firstFrostDoy', 'calibration', 'panoramas', 'createdAt'])
 const PLANT_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'speciesId', 'customName', 'position', 'plantedAt', 'ageAtPlanting', 'status', 'notes', 'photos', 'measurements'])
 const TASK_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'taskKey', 'doneAt'])
 
@@ -164,7 +164,56 @@ function sanitizeGarden(raw: unknown, report: Report): Garden | undefined {
       report.add('calibration', 'Le recalage GPS de {n} jardin était invalide : il a été retiré.', 'Le recalage GPS de {n} jardins était invalide : il a été retiré.')
     }
   }
+  if (raw.panoramas !== undefined) {
+    const list = sanitizePanoramas(raw.panoramas, report)
+    if (list.length > 0) g.panoramas = list
+    else delete g.panoramas
+  }
   return g
+}
+
+/**
+ * Points de vue en photos : un point sans position, sans date ou sans aucune photo valide est écarté ;
+ * une photo à l'identifiant invalide ou au cap absurde est retirée. 6 points au plus, 12 photos par point.
+ * Un identifiant de photo ne sert qu'une fois (sinon supprimer un point effacerait la photo d'un autre).
+ */
+export function sanitizePanoramas(raw: unknown, report: { add(id: string, one: string, many: string, n?: number): void }): Panorama[] {
+  if (!Array.isArray(raw)) {
+    report.add('pano', '{n} point de vue en photos invalide a été retiré.', '{n} points de vue en photos invalides ont été retirés.')
+    return []
+  }
+  const out: Panorama[] = []
+  const ids = new Set<string>()
+  const photoIds = new Set<string>()
+  for (const r of raw) {
+    if (out.length >= LIMITS.panoramasPerGarden) {
+      report.add('pano-max', '{n} point de vue en photos en trop a été ignoré.', '{n} points de vue en photos en trop ont été ignorés.')
+      continue
+    }
+    if (!isRec(r) || !isId(r.id) || ids.has(r.id) || !isNum(r.x) || !isNum(r.y) || !inRange(r.x, LIMITS.coordM) || !inRange(r.y, LIMITS.coordM) || !isValidDate(r.takenAt) || (r.kind !== 'guide' && r.kind !== 'import') || !Array.isArray(r.shots)) {
+      report.add('pano', '{n} point de vue en photos invalide a été retiré.', '{n} points de vue en photos invalides ont été retirés.')
+      continue
+    }
+    const shots: PanoramaShot[] = []
+    const cap = r.kind === 'import' ? 1 : LIMITS.shotsPerPanorama
+    for (const sh of r.shots) {
+      if (!isRec(sh) || !isPhotoId(sh.photoId) || photoIds.has(sh.photoId) || !isNum(sh.headingDeg) || !isNum(sh.fovDeg) || sh.fovDeg < 5 || sh.fovDeg > 360 || shots.length >= cap) {
+        report.add('pano-photo', '{n} photo de point de vue invalide a été retirée.', '{n} photos de points de vue invalides ont été retirées.')
+        continue
+      }
+      photoIds.add(sh.photoId)
+      shots.push({ photoId: sh.photoId, headingDeg: ((sh.headingDeg % 360) + 360) % 360, fovDeg: sh.fovDeg })
+    }
+    if (shots.length === 0) {
+      report.add('pano', '{n} point de vue en photos invalide a été retiré.', '{n} points de vue en photos invalides ont été retirés.')
+      continue
+    }
+    ids.add(r.id)
+    const p: Panorama = { id: r.id, x: r.x, y: r.y, takenAt: r.takenAt, shots, kind: r.kind }
+    if (r.northOk === false) p.northOk = false
+    out.push(p)
+  }
+  return out
 }
 
 const MAX_MEASUREMENTS = 50
@@ -311,7 +360,9 @@ export function migrateState(raw: unknown): MigrateResult {
 
 /** Format d'export JSON et de synchronisation. */
 export function serializeState(data: StateData): SerializedState {
-  return { version: STATE_VERSION, exportedAt: new Date().toISOString(), gardens: data.gardens, plants: data.plants, tasksDone: data.tasksDone }
+  // Les points de vue en photos restent sur l'appareil (comme les photos des plantes) : ni export, ni synchronisation.
+  const gardens = data.gardens.some((g) => g.panoramas) ? data.gardens.map(({ panoramas: _p, ...g }) => g) : data.gardens
+  return { version: STATE_VERSION, exportedAt: new Date().toISOString(), gardens, plants: data.plants, tasksDone: data.tasksDone }
 }
 
 const baseOf = (key: string) => key.slice(key.indexOf(':') + 1)

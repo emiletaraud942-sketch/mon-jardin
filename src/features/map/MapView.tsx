@@ -31,6 +31,8 @@ import { itemName } from '../scan/queue'
 import { forGarden } from '../scan/queue'
 import { openScan } from '../scan/scanUi'
 import { PlantScene } from '../../components/illustrations'
+import { usePanoramaMarkers } from '../panorama/markers'
+import { openPanorama } from '../panorama/panoUi'
 
 type Feature = GeoJSON.Feature<GeoJSON.Polygon, Record<string, unknown>>
 
@@ -752,6 +754,8 @@ export function MapView({ garden }: { garden: Garden }) {
 
   // Début de placement : zoom assez fort pour viser au mètre ; la grille et le viseur suivent.
   const placingNow = !!(placingSpeciesId || movingPlantId)
+  // Pastilles « photo » des points de vue (masquées pendant un placement : elles gêneraient le toucher).
+  usePanoramaMarkers(map, ready, garden, placingNow)
   useEffect(() => {
     const m = map.current
     if (!m || !ready) return
@@ -950,6 +954,9 @@ export function MapView({ garden }: { garden: Garden }) {
                   Ajouter un repère pour améliorer la précision
                 </button>
               )}
+              <button className="btn small" aria-haspopup="dialog" onClick={() => openPanorama('home')}>
+                <Icon name="camera" size={16} /> Photos du jardin
+              </button>
               <button className={'btn small' + (legendOpen ? ' on' : '')} aria-pressed={legendOpen} onClick={() => setLegendOpen((o) => !o)}>
                 {legendOpen ? '✓ ' : ''}Légende
               </button>

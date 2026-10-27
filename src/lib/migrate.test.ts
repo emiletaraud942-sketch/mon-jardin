@@ -264,3 +264,89 @@ describe('compactTasksDone', () => {
     expect(compactTasksDone([t('1', 'a:b', 'nope')], now)).toHaveLength(1)
   })
 })
+
+describe('points de vue en photos (panoramas)', () => {
+  const shot = (n: string, h = 0) => ({ photoId: 'photo:' + n, headingDeg: h, fovDeg: 60 })
+  const pano = (id: string, extra: Record<string, unknown> = {}) => ({ id, x: 1, y: 2, takenAt: '2026-05-03T10:00:00.000Z', kind: 'guide', shots: [shot('a' + id), shot('b' + id, 45)], ...extra })
+  const withPanos = (panoramas: unknown) => ok({ gardens: [{ ...garden, panoramas }], plants: [] }).data.gardens[0].panoramas
+
+  it('garde un point valide tel quel (champ optionnel : STATE_VERSION inchangé)', () => {
+    expect(STATE_VERSION).toBe(2)
+    expect(withPanos([pano('p1')])).toEqual([pano('p1')])
+  })
+
+  it('un jardin sans panoramas reste sans panoramas', () => {
+    expect(ok({ gardens: [garden], plants: [] }).data.gardens[0]).not.toHaveProperty('panoramas')
+  })
+
+  it('écarte les points invalides (position, date, type, photos) et le dit', () => {
+    const r = ok({
+      gardens: [
+        {
+          ...garden,
+          panoramas: [pano('ok'), pano('sans-x', { x: 'a' }), pano('loin', { x: 5e7 }), pano('date', { takenAt: '2026-13-45' }), pano('type', { kind: 'sphere' }), pano('vide', { shots: [] }), 'texte', null],
+        },
+      ],
+      plants: [],
+    })
+    expect(r.data.gardens[0].panoramas!.map((p) => p.id)).toEqual(['ok'])
+    expect(r.warnings.join(' ')).toMatch(/points? de vue/)
+  })
+
+  it('retire les photos invalides d’un point mais garde le point', () => {
+    const r = ok({
+      gardens: [
+        {
+          ...garden,
+          panoramas: [
+            pano('p1', {
+              shots: [shot('bonne'), { photoId: 'plant:x', headingDeg: 0, fovDeg: 60 }, { photoId: 'photo:../x', headingDeg: 0, fovDeg: 60 }, { photoId: 'photo:cap', headingDeg: NaN, fovDeg: 60 }, { photoId: 'photo:fov', headingDeg: 0, fovDeg: 0 }, { photoId: 'photo:fov2', headingDeg: 0, fovDeg: 999 }],
+            }),
+          ],
+        },
+      ],
+      plants: [],
+    })
+    expect(r.data.gardens[0].panoramas![0].shots.map((s) => s.photoId)).toEqual(['photo:bonne'])
+    expect(r.warnings.join(' ')).toMatch(/photo/)
+  })
+
+  it('ramène les caps dans [0, 360[', () => {
+    const p = withPanos([pano('p1', { shots: [shot('a', -90), shot('b', 725)] })])!
+    expect(p[0].shots.map((s) => s.headingDeg)).toEqual([270, 5])
+  })
+
+  it('6 points au plus, 12 photos par point, une seule photo pour un import', () => {
+    const seven = Array.from({ length: 7 }, (_, i) => pano('p' + i, { shots: Array.from({ length: 15 }, (_, k) => shot(`x${i}k${k}`)) }))
+    const r = withPanos(seven)!
+    expect(r).toHaveLength(6)
+    expect(r[0].shots).toHaveLength(12)
+    const imp = withPanos([pano('i', { kind: 'import', shots: [shot('un'), shot('deux')] })])!
+    expect(imp[0].shots).toHaveLength(1)
+  })
+
+  it('un identifiant de photo ou de point ne sert qu’une fois', () => {
+    const r = withPanos([pano('p1', { shots: [shot('a'), shot('a')] }), pano('p1'), pano('p2', { shots: [shot('a')] })])!
+    expect(r.map((p) => p.id)).toEqual(['p1'])
+    expect(r[0].shots).toHaveLength(1)
+  })
+
+  it('northOk ne survit que sous la forme « faux »', () => {
+    expect(withPanos([pano('p1', { northOk: false })])![0].northOk).toBe(false)
+    expect(withPanos([pano('p1', { northOk: true })])![0]).not.toHaveProperty('northOk')
+  })
+
+  it('un champ panoramas qui n’est pas une liste est retiré', () => {
+    const r = ok({ gardens: [{ ...garden, panoramas: { a: 1 } }], plants: [] })
+    expect(r.data.gardens[0]).not.toHaveProperty('panoramas')
+    expect(r.warnings.length).toBeGreaterThan(0)
+  })
+
+  it('l’export JSON et la synchronisation n’emportent pas les points de vue', () => {
+    const g = { ...garden, panoramas: [pano('p1')] } as never
+    const out = serializeState({ gardens: [g], plants: [], tasksDone: [] })
+    expect(out.gardens[0]).not.toHaveProperty('panoramas')
+    expect(JSON.stringify(out)).not.toContain('photo:')
+    expect(g).toHaveProperty('panoramas')
+  })
+})

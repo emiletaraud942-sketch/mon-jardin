@@ -257,12 +257,13 @@ export function resumeSaving() {
 export async function purgeOrphanPhotos(): Promise<number> {
   if (!state.loaded || status.readFailed) return 0
   try {
-    const refs = new Set(state.plants.flatMap((p) => p.photos))
+    const refs = new Set([...state.plants.flatMap((p) => p.photos), ...panoramaPhotoIds(state.gardens)])
     // Références déjà enregistrées (autre onglet qui vient d'écrire).
-    const stored = (await get(KEY)) as { plants?: { photos?: unknown }[] } | undefined
+    const stored = (await get(KEY)) as { plants?: { photos?: unknown }[]; gardens?: Garden[] } | undefined
     for (const p of Array.isArray(stored?.plants) ? stored.plants : []) {
       if (Array.isArray(p?.photos)) for (const id of p.photos) if (typeof id === 'string') refs.add(id)
     }
+    if (Array.isArray(stored?.gardens)) for (const id of panoramaPhotoIds(stored.gardens)) refs.add(id)
     // Photos du scan des plantes encore en attente de revue : à garder.
     const queued = await get(SCAN_QUEUE_KEY)
     if (Array.isArray(queued)) for (const i of queued) if (typeof i?.photoId === 'string') refs.add(i.photoId)
@@ -279,11 +280,16 @@ export async function purgeOrphanPhotos(): Promise<number> {
   }
 }
 
-function dropPhotos(plants: Plant[], stillUsedBy: Plant[]) {
-  const keep = new Set(stillUsedBy.flatMap((p) => p.photos))
-  for (const id of new Set(plants.flatMap((p) => p.photos))) {
+function dropPhotos(plants: Plant[], stillUsedBy: Plant[], gone: Garden[] = [], keptGardens: Garden[] = []) {
+  const keep = new Set([...stillUsedBy.flatMap((p) => p.photos), ...panoramaPhotoIds(keptGardens)])
+  for (const id of new Set([...plants.flatMap((p) => p.photos), ...panoramaPhotoIds(gone)])) {
     if (!keep.has(id)) deletePhoto(id).catch(() => undefined)
   }
+}
+
+/** Identifiants des photos des points de vue (façon Street View) de ces jardins. */
+export function panoramaPhotoIds(gardens: Garden[]): string[] {
+  return gardens.flatMap((g) => (Array.isArray(g?.panoramas) ? g.panoramas.flatMap((p) => (Array.isArray(p?.shots) ? p.shots.map((s) => s?.photoId).filter((id): id is string => typeof id === 'string') : [])) : []))
 }
 
 // ---------- Accès à l'état ----------
@@ -335,6 +341,7 @@ export function updateGarden(id: string, patch: Partial<Garden>) {
 
 export function removeGarden(id: string) {
   const removed = state.plants.filter((p) => p.gardenId === id)
+  const removedGardens = state.gardens.filter((g) => g.id === id)
   setState((s) => {
     const gardens = s.gardens.filter((g) => g.id !== id)
     return {
@@ -344,7 +351,7 @@ export function removeGarden(id: string) {
       activeGardenId: s.activeGardenId === id ? gardens[0]?.id : s.activeGardenId,
     }
   })
-  dropPhotos(removed, state.plants)
+  dropPhotos(removed, state.plants, removedGardens, state.gardens)
 }
 
 export function setActiveGarden(id: string) {
@@ -380,9 +387,16 @@ export function unmarkTask(gardenId: string, taskKey: string) {
  */
 export function replaceData(data: Pick<AppState, 'gardens' | 'plants' | 'tasksDone'>) {
   const previous = state.plants
+  const previousGardens = state.gardens
+  // Les points de vue en photos ne voyagent ni dans les sauvegardes ni dans la synchro : on garde ceux de cet appareil.
+  const gardens = data.gardens.map((g) => {
+    const mine = previousGardens.find((x) => x.id === g.id)?.panoramas
+    return mine && !g.panoramas ? { ...g, panoramas: mine } : g
+  })
+  data = { ...data, gardens }
   state = { ...state, ...data, tasksDone: compactTasksDone(data.tasksDone), activeGardenId: data.gardens[0]?.id }
   setStatus({ readFailed: false })
   emit()
   persist()
-  dropPhotos(previous, state.plants)
+  dropPhotos(previous, state.plants, previousGardens, state.gardens)
 }

@@ -395,3 +395,56 @@ describe('photos orphelines', () => {
     expect(db.has('autre')).toBe(true)
   })
 })
+
+describe('photos des points de vue (panoramas)', () => {
+  const panoGarden = { ...garden, panoramas: [{ id: 'pv1', x: 1, y: 2, takenAt: '2026-05-03T10:00:00.000Z', kind: 'guide', shots: [{ photoId: 'photo:v1', headingDeg: 0, fovDeg: 60 }, { photoId: 'photo:v2', headingDeg: 45, fovDeg: 60 }] }] }
+
+  it('purgeOrphanPhotos garde les photos des points de vue et supprime les autres', async () => {
+    db.set(KEY, { gardens: [panoGarden], plants: [], tasksDone: [] })
+    db.set('photo:v1', new Blob(['x']))
+    db.set('photo:v2', new Blob(['x']))
+    db.set('photo:orpheline', new Blob(['x']))
+    const s = await freshStore()
+    await s.loadState()
+    await vi.advanceTimersByTimeAsync(10)
+    expect(db.has('photo:v1')).toBe(true)
+    expect(db.has('photo:v2')).toBe(true)
+    expect(db.has('photo:orpheline')).toBe(false)
+  })
+
+  it('removeGarden supprime les photos de ses points de vue', async () => {
+    db.set(KEY, { gardens: [panoGarden, { ...garden, id: 'g2' }], plants: [], tasksDone: [] })
+    db.set('photo:v1', new Blob(['x']))
+    db.set('photo:v2', new Blob(['x']))
+    const s = await freshStore()
+    await s.loadState()
+    s.removeGarden('g1')
+    await vi.advanceTimersByTimeAsync(10)
+    expect(db.has('photo:v1')).toBe(false)
+    expect(db.has('photo:v2')).toBe(false)
+  })
+
+  it('replaceData (import, synchro) garde les points de vue de cet appareil', async () => {
+    db.set(KEY, { gardens: [panoGarden], plants: [], tasksDone: [] })
+    db.set('photo:v1', new Blob(['x']))
+    db.set('photo:v2', new Blob(['x']))
+    const s = await freshStore()
+    await s.loadState()
+    s.replaceData({ gardens: [{ ...garden, name: 'Importé' }], plants: [], tasksDone: [] })
+    await vi.advanceTimersByTimeAsync(10)
+    expect(s.getState().gardens[0].name).toBe('Importé')
+    expect(s.getState().gardens[0].panoramas).toHaveLength(1)
+    expect(db.has('photo:v1')).toBe(true)
+  })
+
+  it('replaceData supprime les photos des points d’un jardin qui disparaît', async () => {
+    db.set(KEY, { gardens: [panoGarden], plants: [], tasksDone: [] })
+    db.set('photo:v1', new Blob(['x']))
+    const s = await freshStore()
+    await s.loadState()
+    s.replaceData({ gardens: [{ ...garden, id: 'autre' }], plants: [], tasksDone: [] })
+    await vi.advanceTimersByTimeAsync(10)
+    expect(db.has('photo:v1')).toBe(false)
+  })
+})
+
