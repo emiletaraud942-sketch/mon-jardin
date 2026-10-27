@@ -117,6 +117,8 @@ Projet > **Settings** :
 
 *Mes essais ont eu lieu sur ordinateur (Chromium). Le téléphone peut se comporter autrement.*
 
+- [ ] 🔴 **La carte** (montée en MapLibre 6) : ouvrir « Mon jardin », vérifier que la photo aérienne s'affiche (tuiles IGN réelles), que la parcelle jaune est dessinée, placer une plante, déplacer un marqueur, zoomer au doigt, puis couper le réseau et rouvrir l'appli : la carte doit encore s'ouvrir.
+
 - [ ] 🟠 **Installer l'appli** sur l'écran d'accueil (Android Chrome, iPhone Safari), la rouvrir hors connexion.
 - [ ] 🟠 **Photos du jardin** : prise guidée, boussole (l'iPhone demande une autorisation après un toucher), caméra refusée puis acceptée, **quitter l'écran pendant la demande d'autorisation** (la caméra doit s'éteindre).
 - [ ] 🟠 **Scan vidéo** et GPS à l'extérieur.
@@ -142,7 +144,6 @@ Projet > **Settings** :
 
 - [ ] **Garder un extrait des contenus signalés ?** Aujourd'hui, le journal de modération ne garde « jamais le contenu signalé ». En garder un extrait aiderait à traiter un abus après suppression, mais ça change la promesse de confidentialité et les textes légaux. Je n'y ai pas touché.
 - [ ] **Automatiser l'effacement des photos de l'entraide** (fonction Edge + clé `service_role`) ou le faire à la main chaque semaine (§3).
-- [ ] **Monter `maplibre-gl` en version 6** (la CI tolère l'alerte actuelle, non exploitable chez nous) : chantier à planifier.
 - [ ] **Alertes `npm audit` hors production** (outils de développement) : ne pas lancer `vite dev` sur une machine exposée au réseau.
 
 ---

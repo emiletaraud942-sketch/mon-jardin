@@ -2,12 +2,8 @@
 // `npm audit` seul ne sait pas ignorer un avis précis ; cette liste, courte et commentée, remplace `continue-on-error`.
 import { execFileSync } from 'node:child_process'
 
-/** Avis connus et jugés non exploitables ici. Chaque entrée dit pourquoi, et quand la retirer. */
-const ACCEPTED = {
-  // maplibre-gl <= 6.4.0 : XSS dans DOM.sanitize() de l'attribution. Absent de la 4.7.1 installée ; le texte d'attribution
-  // est la constante « © IGN – Géoplateforme ». À retirer à la montée vers maplibre-gl >= 6.4.1.
-  'GHSA-jrc7-96c5-q579': 'maplibre-gl : fonction absente de la version installée, attribution constante',
-}
+/** Avis connus et jugés non exploitables ici. Chaque entrée dit pourquoi, et quand la retirer. Vide depuis la montée de maplibre-gl en 6.x. */
+const ACCEPTED = {}
 
 let out
 try {

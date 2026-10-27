@@ -37,8 +37,7 @@ jobs:
     name: Audit des dépendances de production
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Bloquant : toute alerte high/critical de production échoue, sauf les avis listés (avec raison) dans scripts/audit-prod.mjs.
-    # maplibre-gl 4.x (GHSA-jrc7-96c5-q579) y est toléré : non exploitable ici. Retirer l'entrée à la montée vers maplibre-gl >= 6.4.1.
+    # Bloquant : toute alerte high/critical de production échoue, sauf les avis listés (avec raison) dans scripts/audit-prod.mjs (liste vide aujourd'hui).
     steps:
       - uses: actions/checkout@v4
         with:
