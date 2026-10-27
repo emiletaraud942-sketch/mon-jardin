@@ -32,10 +32,10 @@ export function StorageBanner() {
             onCancel={() => setConfirming(false)}
             onConfirm={() => {
               setConfirming(false)
-              resumeSaving()
+              void resumeSaving()
             }}
           >
-            <p>Vos données illisibles seront remplacées dès le prochain enregistrement. Vous ne pourrez plus les retrouver.</p>
+            <p>Vos données illisibles seront remplacées dès le prochain enregistrement. Une copie est gardée sur cet appareil le temps de les récupérer.</p>
             <p className="small muted">Essayez d’abord « Réessayer » : le problème est parfois passager.</p>
           </ConfirmModal>
         )}

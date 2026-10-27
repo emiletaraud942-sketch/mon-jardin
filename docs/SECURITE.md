@@ -299,3 +299,13 @@ Vérifié par `api/_tests/identify.test.ts` (49 tests), le banc d'entraide sur P
 - *Retirer l'accès direct à `neighbors_is_blocked` / `neighbors_can_contact`* : les politiques RLS appellent ces fonctions avec les droits de la personne connectée, donc un `revoke` casserait l'entraide. Elles ne renvoient que des faits qui concernent l'appelant (un blocage où il figure ; un contact qu'il peut déjà voir).
 - *Conserver un extrait des contenus signalés* : change la promesse de confidentialité (« jamais le contenu signalé » dans `moderation_log`) et les textes légaux. Décision du propriétaire avant toute migration.
 - *Purge à 60 jours programmée* : la fonction SQL ne supprime pas les fichiers du Storage (il faut l'API Storage, donc une Edge Function ou un script avec la clé `service_role`). Reste l'action O4 du propriétaire.
+
+## 15. Corrections de l'audit du 27 octobre 2026, lot 2 (données locales)
+
+Vérifié par `security.test.ts`, `store.test.ts`, `sync.test.ts` (1344 tests au total, typecheck et build).
+
+| Constat | Correctif | Preuve |
+| --- | --- | --- |
+| « Effacer toutes mes données » laissait les clés `pj.…` (guide, qui contient des identifiants de jardin, LiDAR, grille, mode, qualité 3D, quota de scan…) : l'expression ne couvrait que `pj-` | `ERASABLE_LOCAL_KEY = /^(permajardin:\|pj[-.]\|sb-)/` ; le test qui parcourt le code source cherche maintenant aussi les clés `pj.xxx` (il ne voyait que `pj-xxx:`, d'où l'oubli) | `security.test.ts` |
+| « Repartir de zéro » (lecture impossible : version plus récente ou format inconnu) remplaçait les données au prochain enregistrement sans copie | `resumeSaving()` copie d'abord les données sous `permajardin:state:v1:illisible` ; si la copie échoue, rien n'est remplacé. Si le stockage est totalement illisible, il n'y a rien à copier et on reprend | `store.test.ts` (2 cas) |
+| Plafond de 5 Mo de la synchro compté en caractères (`length`) alors que la base compte des octets : un jardin plein d'accents ou d'emojis passait le contrôle client puis était refusé par la base (23514) | `jsonBytes` : octets UTF-8 | `sync.test.ts` |

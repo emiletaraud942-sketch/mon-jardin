@@ -299,15 +299,15 @@ describe('photos : identifiants forgés', () => {
 })
 
 describe('effacement', () => {
-  it('clearLocalKeys retire permajardin:*, pj-* et sb-*, et rien d’autre', () => {
-    const data = new Map([['permajardin:theme', 'dark'], ['permajardin:last-synced:u1', 'x'], ['pj-meteo:45.760,4.830', '{}'], ['pj-climat:1,2', '{}'], ['sb-abc-auth-token', 'jwt'], ['autre-site', 'garde']])
+  it('clearLocalKeys retire permajardin:*, pj-*, pj.* et sb-*, et rien d’autre', () => {
+    const data = new Map([['permajardin:theme', 'dark'], ['permajardin:last-synced:u1', 'x'], ['pj-meteo:45.760,4.830', '{}'], ['pj-climat:1,2', '{}'], ['pj.guide', '{"g1":true}'], ['pj.lidar', '1'], ['sb-abc-auth-token', 'jwt'], ['autre-site', 'garde']])
     const storage = {
       get length() { return data.size },
       key: (i: number) => [...data.keys()][i] ?? null,
       removeItem: (k: string) => void data.delete(k),
     } as unknown as Storage
     const removed = clearLocalKeys(storage)
-    expect(removed.sort()).toEqual(['permajardin:last-synced:u1', 'permajardin:theme', 'pj-climat:1,2', 'pj-meteo:45.760,4.830', 'sb-abc-auth-token'])
+    expect(removed.sort()).toEqual(['permajardin:last-synced:u1', 'permajardin:theme', 'pj-climat:1,2', 'pj-meteo:45.760,4.830', 'pj.guide', 'pj.lidar', 'sb-abc-auth-token'])
     expect([...data.keys()]).toEqual(['autre-site'])
   })
 
@@ -331,7 +331,7 @@ describe('effacement', () => {
     const found = new Set<string>()
     for (const f of files) {
       const src = readFileSync(f, 'utf8')
-      for (const m of src.matchAll(/['"`]((?:permajardin|pj-[a-z]+):[^'"`$]*)/g)) found.add(m[1])
+      for (const m of src.matchAll(/['"`]((?:permajardin|pj-[a-z]+):[^'"`$]*|pj\.[A-Za-z0-9]+)['"`]?/g)) found.add(m[1])
     }
     expect(found.size).toBeGreaterThan(3)
     for (const k of found) expect(ERASABLE_LOCAL_KEY.test(k), k).toBe(true)

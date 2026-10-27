@@ -24,6 +24,8 @@ export interface StorageStatus {
 
 const KEY = 'permajardin:state:v1'
 const BACKUP_KEY = KEY + ':avant-migration'
+/** Copie des données illisibles (version plus récente, format inconnu) avant « Repartir de zéro ». */
+const UNREADABLE_BACKUP_KEY = KEY + ':illisible'
 /** File d'attente du scan des plantes (IndexedDB) : ses photos ne sont pas des orphelines. Voir features/scan/queueStore.ts. */
 export const SCAN_QUEUE_KEY = 'permajardin:scan-queue'
 const WRITE_ERROR = "Impossible d'enregistrer sur cet appareil (stockage plein ou bloqué). Exportez une sauvegarde depuis les réglages."
@@ -246,8 +248,29 @@ export async function retryLoadState() {
   void purgeOrphanPhotos()
 }
 
-/** L'utilisateur accepte de continuer malgré l'échec de lecture : l'état actuel remplacera ce qui est stocké. */
-export function resumeSaving() {
+/**
+ * L'utilisateur accepte de continuer malgré l'échec de lecture : l'état actuel remplacera ce qui est stocké.
+ * Les données illisibles sont d'abord copiées sous une autre clé ; si la copie échoue, on ne remplace rien.
+ * Si la lecture elle-même est impossible (stockage en panne), il n'y a rien à copier : on reprend.
+ */
+export async function resumeSaving() {
+  if (!status.readFailed) return
+  try {
+    const raw = await get(KEY)
+    if (raw !== undefined && raw !== null) await set(UNREADABLE_BACKUP_KEY, raw)
+  } catch (e) {
+    let readable = true
+    try {
+      await get(KEY)
+    } catch {
+      readable = false
+    }
+    if (readable) {
+      console.warn('Copie des données illisibles impossible', e)
+      setStatus({ writeError: WRITE_ERROR })
+      return
+    }
+  }
   if (!status.readFailed) return
   setStatus({ readFailed: false })
   persist()

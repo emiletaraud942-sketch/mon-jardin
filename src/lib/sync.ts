@@ -13,8 +13,10 @@ const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
 
 const TABLE = 'garden_snapshots'
 const TIMEOUT_MS = 15_000
-/** Un peu en dessous de la contrainte SQL (pg_column_size(data) < 5 000 000). */
+/** Un peu en dessous de la contrainte SQL (pg_column_size(data) < 5 000 000), compté en octets UTF-8 (un accent en vaut 2). */
 const MAX_JSON_BYTES = 4_800_000
+/** Taille en octets UTF-8 du JSON envoyé (et non en caractères). */
+export const jsonBytes = (data: unknown) => new TextEncoder().encode(JSON.stringify(data)).length
 const lastSyncKey = (userId: string) => `permajardin:last-synced:${userId}`
 
 let client: SupabaseClient | undefined
@@ -219,7 +221,7 @@ export async function pushSnapshot(opts: { force?: boolean } = {}) {
   }
   const { gardens, plants, tasksDone } = getState()
   const data = serializeState({ gardens, plants, tasksDone })
-  if (JSON.stringify(data).length > MAX_JSON_BYTES) throw new Error('Vos données dépassent la taille maximale de synchronisation (5 Mo).')
+  if (jsonBytes(data) > MAX_JSON_BYTES) throw new Error('Vos données dépassent la taille maximale de synchronisation (5 Mo).')
 
   // `updated_at` n'est jamais envoyé : le trigger SQL le fixe à now() (horloge du serveur).
   const table = () => sb.from(TABLE)

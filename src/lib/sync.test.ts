@@ -293,6 +293,16 @@ describe('initSync (retour du lien magique)', () => {
   })
 })
 
+describe('taille de l’envoi', () => {
+  it('jsonBytes compte des octets UTF-8, pas des caractères', async () => {
+    const s = await load()
+    expect(s.jsonBytes({ n: 'abc' })).toBe(JSON.stringify({ n: 'abc' }).length)
+    const accents = { n: 'é'.repeat(1000) }
+    expect(s.jsonBytes(accents)).toBe(JSON.stringify(accents).length + 1000)
+    expect(s.jsonBytes({ n: '🌱' })).toBe(JSON.stringify({ n: '🌱' }).length + 2)
+  })
+})
+
 describe('pushSnapshot', () => {
   it('première synchro, rien à distance : insère et mémorise la date serveur', async () => {
     const s = await load()

@@ -209,10 +209,35 @@ describe('échec de lecture', () => {
     const s = await freshStore()
     await s.loadState()
     s.addGarden(garden)
-    s.resumeSaving()
+    await s.resumeSaving()
     await vi.advanceTimersByTimeAsync(300)
     expect(s.getStorageStatus().readFailed).toBe(false)
     expect(db.has(KEY)).toBe(true)
+  })
+
+  it('« Repartir de zéro » garde d’abord une copie des données illisibles', async () => {
+    const newer = { version: 99, gardens: [garden], plants: [] }
+    db.set(KEY, newer)
+    const s = await freshStore()
+    await s.loadState()
+    expect(s.getStorageStatus().readFailed).toBe(true)
+    s.addGarden({ ...garden, id: 'g2' })
+    await s.resumeSaving()
+    await vi.advanceTimersByTimeAsync(500)
+    expect(db.get(KEY + ':illisible')).toEqual(newer)
+    expect(s.getStorageStatus().readFailed).toBe(false)
+    expect((db.get(KEY) as { gardens: unknown[] }).gardens).toHaveLength(1)
+  })
+
+  it('« Repartir de zéro » ne remplace rien si la copie échoue', async () => {
+    db.set(KEY, { version: 99, gardens: [garden], plants: [] })
+    const s = await freshStore()
+    await s.loadState()
+    idb.failSet = new Error('écriture KO')
+    await s.resumeSaving()
+    await vi.advanceTimersByTimeAsync(500)
+    expect(s.getStorageStatus().readFailed).toBe(true)
+    expect((db.get(KEY) as { version: number }).version).toBe(99)
   })
 
   it('retryLoadState() relit et lève le blocage si la lecture réussit', async () => {

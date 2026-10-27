@@ -230,7 +230,7 @@ export const PERMISSIONS: readonly PermissionInfo[] = [
 ]
 
 /** Clés localStorage effacées par « Effacer toutes mes données ». */
-export const ERASABLE_LOCAL_KEY = /^(permajardin:|pj-|sb-)/
+export const ERASABLE_LOCAL_KEY = /^(permajardin:|pj[-.]|sb-)/
 /** Caches du service worker contenant des lieux consultés. Les caches du code de l’appli sont conservés. */
 export const ERASABLE_CACHE = /^ign-/
 
