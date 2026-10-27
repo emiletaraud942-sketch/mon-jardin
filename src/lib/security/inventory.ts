@@ -211,15 +211,21 @@ export const PERMISSIONS: readonly PermissionInfo[] = [
   },
   {
     permission: 'Géolocalisation',
-    ou: 'Non utilisée : l’emplacement du jardin vient de l’adresse saisie',
-    pourquoi: 'Aucune. Autorisée par la politique des permissions (geolocation=(self)) mais jamais demandée.',
-    siRefusee: 'Sans objet.',
+    ou: 'Scan du jardin, « Je suis ici » et photos du jardin, seulement après un appui',
+    pourquoi: 'Placer une plante ou un point photo à votre position. La position reste sur cet appareil.',
+    siRefusee: 'Vous placez à la main sur la carte.',
   },
   {
-    permission: 'Caméra et microphone',
-    ou: 'Non utilisés (pas de getUserMedia)',
-    pourquoi: 'Aucune. camera=(self) permet seulement au sélecteur de fichiers de proposer l’appareil photo du système.',
-    siRefusee: 'Sans objet.',
+    permission: 'Caméra',
+    ou: 'Photos du jardin et scan, seulement après un appui. Le microphone n’est jamais utilisé.',
+    pourquoi: 'Prendre les photos. Elles restent sur cet appareil (rien n’est envoyé, sauf une photo que vous choisissez d’identifier).',
+    siRefusee: 'Vous choisissez une photo déjà prise dans vos fichiers.',
+  },
+  {
+    permission: 'Capteurs de mouvement (boussole)',
+    ou: 'Photos du jardin, seulement après un appui',
+    pourquoi: 'Connaître la direction vers laquelle vous regardez pour ranger les photos. Rien n’est enregistré en dehors du cap de chaque photo.',
+    siRefusee: 'Vous indiquez la direction de départ à la main.',
   },
 ]
 
