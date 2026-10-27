@@ -220,26 +220,29 @@ function PlantesStep({ garden, next, skip }: StepProps) {
         secondary={{ label: 'J’en ajouterai plus tard', onClick: skip }}
       >
         <div className="choices">
-          <button className="choice" onClick={() => openScan('menu')}>
-            <Icon name="camera" size={26} />
+          <button className="choice rec" onClick={() => openScan('menu')}>
+            <Icon name="scan" size={30} />
             <span>
               <strong>Scanner mon jardin</strong>
               <span className="muted small">Marchez et filmez, on repère les plantes.</span>
             </span>
+            <Icon name="forward" size={20} />
           </button>
           <button className="choice" onClick={() => setIdentifying(true)}>
-            <Icon name="leaf" size={26} />
+            <Icon name="camera" size={30} />
             <span>
               <strong>Photographier une plante</strong>
               <span className="muted small">On devine son nom à partir de la photo.</span>
             </span>
+            <Icon name="forward" size={20} />
           </button>
           <button className="choice" onClick={() => setPicking(true)}>
-            <Icon name="book" size={26} />
+            <Icon name="list" size={30} />
             <span>
               <strong>Choisir dans la liste</strong>
               <span className="muted small">146 plantes, avec une fiche pour chacune.</span>
             </span>
+            <Icon name="forward" size={20} />
           </button>
         </div>
         {plants.length > 0 && (
@@ -401,34 +404,40 @@ export function Parcours({ garden }: { garden?: Garden }) {
   return (
     <div className="parcours" ref={bodyRef}>
       <header className="parcours-head">
-        <button className="btn ghost" onClick={back}>
-          <Icon name="arrow-left" size={18} /> Retour
+        <button className="back-circle" onClick={back} aria-label="Retour">
+          <Icon name="back" size={22} />
         </button>
+        <ol className="stepbar" aria-label="Les étapes">
+          {steps.map((id) => {
+            const st = stepStatus(state, id)
+            return (
+              <li key={id} className={(id === step ? 'current ' : '') + st} aria-current={id === step ? 'step' : undefined}>
+                <span className="sr-only">
+                  {STEP_TITLE[id]}
+                  {st === 'done' ? ' : fait' : st === 'skipped' ? ' : passée' : ''}
+                </span>
+              </li>
+            )
+          })}
+        </ol>
         <span className="parcours-count" aria-live="polite">
-          {step ? `Étape ${n} sur ${steps.length}` : 'C’est fini'}
+          {step ? (
+            <>
+              <span aria-hidden>
+                {n}/{steps.length}
+              </span>
+              <span className="sr-only">{`Étape ${n} sur ${steps.length}`}</span>
+            </>
+          ) : (
+            'C’est fini'
+          )}
         </span>
-        {garden ? (
-          <button className="btn ghost" onClick={() => closeParcours()} aria-label="Quitter la visite et revenir à l’accueil">
-            <Icon name="x" size={18} /> Quitter
+        {garden && (
+          <button className="quit-circle" onClick={() => closeParcours()} aria-label="Quitter la visite et revenir à l’accueil">
+            <Icon name="x" size={20} />
           </button>
-        ) : (
-          <span className="parcours-spacer" />
         )}
       </header>
-      <ol className="stepbar" aria-label="Les étapes">
-        {steps.map((id, k) => {
-          const st = stepStatus(state, id)
-          return (
-            <li key={id} className={(id === step ? 'current ' : '') + st} aria-current={id === step ? 'step' : undefined}>
-              <span className="sr-only">
-                {STEP_TITLE[id]}
-                {st === 'done' ? ' : fait' : st === 'skipped' ? ' : passée' : ''}
-              </span>
-              <i aria-hidden>{k + 1}</i>
-            </li>
-          )
-        })}
-      </ol>
       {screen === 'adresse' && <AdresseStep {...props} />}
       {screen === 'terrain' && <TerrainStep {...props} />}
       {screen === 'plantes' && <PlantesStep {...props} />}

@@ -9,9 +9,9 @@ interface Props {
 }
 
 /** Grande forme organique douce, à poser derrière une plante. */
-export function Blob({ size = 280, className, style }: Props) {
+export function Blob({ size = 280, height, className, style }: Props & { height?: number }) {
   return (
-    <svg className={'il ' + (className ?? '')} style={style} width={size} height={(size * 260) / 300} viewBox="0 0 300 260" aria-hidden="true" focusable="false">
+    <svg className={'il ' + (className ?? '')} style={style} width={size} height={height ?? (size * 260) / 300} viewBox="0 0 300 260" aria-hidden="true" focusable="false">
       <path className="il-blob" d="M60 40C110-10 230-5 270 60c35 60-5 150-80 185C120 275 30 240 10 160 0 110 20 70 60 40Z" />
     </svg>
   )

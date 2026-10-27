@@ -1,7 +1,7 @@
 import { SPECIES_BY_ID } from '../../data/species'
-import { CATEGORY_LABEL, STATUS_LABEL, TASK_ICON } from '../../data/labels'
+import { CATEGORY_LABEL, STATUS_LABEL, SUN_LABEL, TASK_ICON, WATER_LABEL } from '../../data/labels'
 import { Icon } from '../../components/Icon'
-import { PlantScene } from '../../components/illustrations'
+import { Blob, PlantPot, PlantScene } from '../../components/illustrations'
 import { PhotoThumb } from '../../components/PhotoThumb'
 import { deletePhoto, savePhoto } from '../../lib/photos'
 import { addPlant, getState, removePlant, updatePlant, useGardenPlants } from '../../lib/store'
@@ -21,7 +21,19 @@ export function plantName(p: Plant): string {
   return p.customName || SPECIES_BY_ID[p.speciesId]?.nomCommun || 'Plante inconnue'
 }
 
-export function PlantPanel({ garden, plant, onClose }: { garden: Garden; plant: Plant; onClose?: () => void }) {
+/** « plantée le 12 mai » / « prévue le 3 mars » (sans l'année : la fiche donne l'âge à côté). */
+function plantedLabel(plant: Plant): string {
+  const d = new Date(plant.plantedAt)
+  if (Number.isNaN(d.getTime())) return ''
+  const day = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
+  return plant.status === 'projet' ? `prévue le ${day}` : `plantée le ${day}`
+}
+
+/**
+ * Fiche d'une plante. `fiche` : plein écran de la maquette (grande illustration, feuille blanche, pastilles, deux boutons).
+ * Sans `fiche` : panneau compact (feuille du bas de la carte, colonne de droite sur grand écran).
+ */
+export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { garden: Garden; plant: Plant; onClose?: () => void; fiche?: boolean; onShowOnMap?: () => void }) {
   const plants = useGardenPlants(garden.id)
   const species = SPECIES_BY_ID[plant.speciesId]
   const { tasks } = useTasks(garden)
@@ -91,8 +103,93 @@ export function PlantPanel({ garden, plant, onClose }: { garden: Garden; plant: 
 
   const ageYears = plantAgeYears(plant, now)
 
+  const nameField = !species && (
+    <label className="field">
+      <span>Nom de la plante</span>
+      <input
+        className="input"
+        value={name}
+        maxLength={80}
+        onChange={(e) => setName(e.target.value)}
+        onBlur={() => {
+          const clean = cleanCustomName(name)
+          if (clean && clean !== plant.customName) updatePlant(plant.id, { customName: clean })
+          setName(clean || (plant.customName ?? ''))
+        }}
+      />
+    </label>
+  )
+  const fields = (
+    <div className="grid cols-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 11rem), 1fr))', gap: 8 }}>
+      <label className="field">
+        <span>Où en est-elle ?</span>
+        <select className="input" value={plant.status} onChange={(e) => updatePlant(plant.id, { status: e.target.value as PlantStatus })}>
+          {Object.entries(STATUS_LABEL).map(([k, v]) => (
+            <option key={k} value={k}>
+              {v}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
+        <span>{plant.status === 'projet' ? 'Prévue le' : 'Plantée le'}</span>
+        <input className="input" type="date" value={plant.plantedAt.slice(0, 10)} onChange={(e) => e.target.value && updatePlant(plant.id, { plantedAt: e.target.value })} />
+      </label>
+      {species?.vivace && (
+        <label className="field">
+          <span>Âge à la plantation (ans)</span>
+          <input className="input" type="number" min={0} max={50} inputMode="decimal" placeholder="0" value={plant.ageAtPlanting ?? ''} onChange={(e) => updatePlant(plant.id, { ageAtPlanting: e.target.value === '' ? undefined : Math.max(0, Number(e.target.value) || 0) })} />
+        </label>
+      )}
+    </div>
+  )
+  const now_ = size && species && (
+    <div className={'plant-now' + (fiche ? ' plant-now-fiche' : '')}>
+      {fiche ? (
+        <>
+          <strong>Dans mon jardin</strong>
+          <span>
+            {frMeters(size.heightM)} de haut · {frMeters(size.spreadM)} de large · {frNumber(ageYears)} {ageYears >= 2 ? 'ans' : 'an'}
+          </span>
+          <span>
+            Adulte : {frMeters(species.hauteurAdulteM)} de haut, {frMeters(species.envergureAdulteM)} de large.
+          </span>
+        </>
+      ) : (
+        <p className="small" style={{ margin: 0 }}>
+          <strong>Aujourd’hui :</strong> {frMeters(size.heightM)} de haut, {frMeters(size.spreadM)} de large ({frNumber(ageYears)} {ageYears >= 2 ? 'ans' : 'an'}).
+          <span className="muted" style={{ display: 'block' }}>
+            Adulte : {frMeters(species.hauteurAdulteM)} de haut, {frMeters(species.envergureAdulteM)} de large.
+          </span>
+        </p>
+      )}
+    </div>
+  )
+
   return (
-    <div className="stack plants-ui" style={{ gap: 12 }}>
+    <div className={fiche ? 'fiche plants-ui' : 'stack plants-ui'} style={fiche ? undefined : { gap: 12 }}>
+      {fiche && (
+        <div className="fiche-hero">
+          <Blob size={330} height={280} className="fh-blob" />
+          <PlantPot size={200} className="fh-plant" />
+          {onClose && (
+            <button className="fiche-back" onClick={onClose} aria-label="Fermer la fiche et revenir à la liste">
+              <Icon name="back" size={22} />
+            </button>
+          )}
+        </div>
+      )}
+      <div className={fiche ? 'fiche-sheet stack' : 'stack'} style={fiche ? undefined : { gap: 12 }}>
+      {fiche ? (
+        <div>
+          <h2 className="fiche-name">{plantName(plant)}</h2>
+          {species && (
+            <p className="fiche-latin">
+              {species.nomLatin} · {plantedLabel(plant)}
+            </p>
+          )}
+        </div>
+      ) : (
       <div className="row plant-head" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'nowrap' }}>
         <PlantScene size={76} className="plant-head-art" />
         <div style={{ minWidth: 0, flex: 1 }}>
@@ -109,54 +206,41 @@ export function PlantPanel({ garden, plant, onClose }: { garden: Garden; plant: 
           </button>
         )}
       </div>
-
-      {!species && (
-        <label className="field">
-          <span>Nom de la plante</span>
-          <input
-            className="input"
-            value={name}
-            maxLength={80}
-            onChange={(e) => setName(e.target.value)}
-            onBlur={() => {
-              const clean = cleanCustomName(name)
-              if (clean && clean !== plant.customName) updatePlant(plant.id, { customName: clean })
-              setName(clean || (plant.customName ?? ''))
-            }}
-          />
-        </label>
       )}
 
-      <div className="grid cols-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 11rem), 1fr))', gap: 8 }}>
-        <label className="field">
-          <span>Où en est-elle ?</span>
-          <select className="input" value={plant.status} onChange={(e) => updatePlant(plant.id, { status: e.target.value as PlantStatus })}>
-            {Object.entries(STATUS_LABEL).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field">
-          <span>{plant.status === 'projet' ? 'Prévue le' : 'Plantée le'}</span>
-          <input className="input" type="date" value={plant.plantedAt.slice(0, 10)} onChange={(e) => e.target.value && updatePlant(plant.id, { plantedAt: e.target.value })} />
-        </label>
-        {species?.vivace && (
-          <label className="field">
-            <span>Âge à la plantation (ans)</span>
-            <input className="input" type="number" min={0} max={50} inputMode="decimal" placeholder="0" value={plant.ageAtPlanting ?? ''} onChange={(e) => updatePlant(plant.id, { ageAtPlanting: e.target.value === '' ? undefined : Math.max(0, Number(e.target.value) || 0) })} />
-          </label>
-        )}
-      </div>
-      {size && species && (
-        <p className="small plant-now" style={{ margin: 0 }}>
-          <strong>Aujourd’hui :</strong> {frMeters(size.heightM)} de haut, {frMeters(size.spreadM)} de large ({frNumber(ageYears)} {ageYears >= 2 ? 'ans' : 'an'}).
-          <span className="muted" style={{ display: 'block' }}>
-            Adulte : {frMeters(species.hauteurAdulteM)} de haut, {frMeters(species.envergureAdulteM)} de large.
-          </span>
-        </p>
+      {fiche && species && (
+        <ul className="fiche-chips">
+          <li>
+            <Icon name="sun" size={22} />
+            <span>{species.soleil.map((x) => SUN_LABEL[x]).join(' ou ')}</span>
+          </li>
+          <li>
+            <Icon name="drop" size={22} />
+            <span>{WATER_LABEL[species.eau]}</span>
+          </li>
+          <li>
+            <Icon name="snow" size={22} />
+            <span>Jusqu’à {species.rusticiteC.toLocaleString('fr-FR')} °C</span>
+          </li>
+        </ul>
       )}
+      {fiche && now_}
+      {fiche && (
+        <div className="fiche-actions">
+          {onShowOnMap && (
+            <button className="fiche-btn primary" onClick={onShowOnMap}>
+              Voir sur la carte
+            </button>
+          )}
+          <button className="fiche-btn" aria-label="Mesurer pour placer la plante" onClick={() => openScan('mesures', { kind: 'plant', plantId: plant.id })}>
+            Mesurer
+          </button>
+        </div>
+      )}
+
+      {nameField}
+      {fields}
+      {!fiche && now_}
 
       {myTasks.length > 0 && (
         <div>
@@ -227,9 +311,11 @@ export function PlantPanel({ garden, plant, onClose }: { garden: Garden; plant: 
         <button className="btn" onClick={() => startMoving(plant.id)}>
           <Icon name="move" size={16} /> Déplacer cette plante
         </button>
-        <button className="btn" onClick={() => openScan('mesures', { kind: 'plant', plantId: plant.id })}>
-          <Icon name="pin" size={16} /> Placer par mesures
-        </button>
+        {!fiche && (
+          <button className="btn" onClick={() => openScan('mesures', { kind: 'plant', plantId: plant.id })}>
+            <Icon name="pin" size={16} /> Placer par mesures
+          </button>
+        )}
         <button className="btn" onClick={() => startPlacing(plant.speciesId, { customName: plant.customName, series: true })}>
           <Icon name="plus" size={16} /> Ajouter une autre « {plantName(plant)} »
         </button>
@@ -243,6 +329,7 @@ export function PlantPanel({ garden, plant, onClose }: { garden: Garden; plant: 
         <button className="btn danger" onClick={remove}>
           <Icon name="trash" size={16} /> Supprimer cette plante
         </button>
+      </div>
       </div>
     </div>
   )

@@ -12,22 +12,26 @@ const SLIDES = [
   { title: 'Un rappel chaque semaine', kicker: 'Tailler, arroser, récolter', text: 'L’appli suit la météo et la saison. Elle vous dit quoi faire.' },
 ]
 
-/** Décor de bienvenue : grande forme sauge et plantes en pot (change à chaque écran). */
+/** Décor de bienvenue : grande forme sauge et plantes en pot (change à chaque écran). Boîte de 390 × 300 px, comme la maquette. */
 function Art({ i }: { i: number }) {
   return (
     <div className="welcome-art" aria-hidden="true">
-      <Blob size={300} className="welcome-blob" />
       {i === 1 ? (
-        <HouseGarden size={260} className="il-plant il-wide" />
+        <>
+          <Blob size={280} height={240} className="wa-blob" />
+          <HouseGarden size={280} className="wa-house" />
+        </>
       ) : i === 2 ? (
         <>
-          <PlantPot size={170} tilts={[-44, -20, 0, 20, 44]} className="il-plant il-main" style={{ left: '22%' }} />
-          <LeafSprig size={56} className="il-plant" style={{ right: '10%', top: '12%', width: '18%' }} />
+          <Blob size={280} height={240} className="wa-blob" />
+          <PlantPot size={200} tilts={[-44, -20, 0, 20, 44]} className="wa-p3" />
+          <LeafSprig size={56} className="wa-leaf" />
         </>
       ) : (
         <>
-          <PlantPot size={200} className="il-plant il-main" />
-          <PlantPot size={140} tilts={[-30, -8, 12, 34]} className="il-plant il-second" />
+          <Blob size={280} height={240} className="wa-blob" />
+          <PlantPot size={240} className="wa-p1" />
+          <PlantPot size={170} tilts={[-30, -8, 12, 34]} className="wa-p2" />
         </>
       )}
     </div>
@@ -67,9 +71,9 @@ export function Welcome({ onStart }: { onStart: () => void }) {
   return (
     <div className="parcours welcome">
       <div className="parcours-body welcome-body">
-        <Art i={i} />
-        <p className="welcome-kicker">{slide.kicker}</p>
         <h1 tabIndex={-1}>{slide.title}</h1>
+        <p className="welcome-kicker">{slide.kicker}</p>
+        <Art i={i} />
         <p className="welcome-text">{slide.text}</p>
         <div className="welcome-dots" role="group" aria-label="Écrans de bienvenue">
           {SLIDES.map((s, k) => (
@@ -78,22 +82,22 @@ export function Welcome({ onStart }: { onStart: () => void }) {
             </button>
           ))}
         </div>
-      </div>
-      <div className="parcours-foot stack">
-        <button className="btn primary big" onClick={onStart}>
-          Commencer
-        </button>
         {i < SLIDES.length - 1 && (
-          <button className="btn big" onClick={() => setI(i + 1)}>
+          <button className="welcome-next" onClick={() => setI(i + 1)}>
             Suivant
           </button>
         )}
-        <button className="btn ghost big" onClick={() => void demo()}>
-          Visiter un jardin d’exemple
-        </button>
         <p className="muted small legal-accept">
           Gratuit, sans compte. En continuant, vous acceptez les <LegalLink id="cgu" label="conditions d’utilisation" /> et la <LegalLink id="confidentialite" label="politique de confidentialité" />.
         </p>
+      </div>
+      <div className="parcours-foot">
+        <button className="btn primary big" onClick={onStart}>
+          Commencer
+        </button>
+        <button className="btn ghost big" onClick={() => void demo()}>
+          Visiter un jardin d’exemple
+        </button>
       </div>
     </div>
   )

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { Tabs, TabPanel } from '../../components/Tabs'
+import { Icon } from '../../components/Icon'
+import { PageHead } from '../../components/PageHead'
 import { SPECIES_BY_ID } from '../../data/species'
 import { TASK_ICON, TASK_LABEL } from '../../data/labels'
 import { markTaskDone, unmarkTask, useGardenPlants, useStore } from '../../lib/store'
@@ -15,31 +16,42 @@ import { useTasks } from './useTasks'
 import { doneOnLabel, doneTaskLabel } from './taskLabel'
 import { rainWord, weatherSentences } from './weatherText'
 import '../../styles/novice-pages.css'
-import { PlantScene } from '../../components/illustrations'
+import { PlantPot, PlantScene } from '../../components/illustrations'
 
 /** Types de tâches dont la faisabilité dépend de la météo : grisés tant qu'elle n'est pas chargée. */
 const WEATHER_TYPES = new Set<TaskType>(['arrosage', 'desherbage', 'taille', 'traitement', 'protection'])
 
-function WeatherStrip({ weather }: { weather: WeatherBundle }) {
+/** Jours de la semaine à venir : tuiles de la maquette (jour, température, temps). Le premier jour de gel est en vert foncé. */
+function WeatherDays({ weather }: { weather: WeatherBundle }) {
+  const days = weather.forecast.slice(0, 7)
+  const firstFrost = days.findIndex((d) => d.tMin <= 0)
+  return (
+    <ul className="wx-days" aria-label="Météo des 7 prochains jours">
+      {days.map((d, i) => {
+        const frost = d.tMin <= 0
+        const label = new Date(d.date).toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')
+        return (
+          <li key={d.date} className={'wx-day' + (i === firstFrost ? ' hot' : '')}>
+            <span className="wx-d">{label.charAt(0).toUpperCase() + label.slice(1)}</span>
+            <strong>{Math.round(d.tMax)}°</strong>
+            <span className="wx-w">{frost ? '❄ Gel' : rainWord(d.rainMm)}</span>
+            <span className="sr-only">
+              , {Math.round(d.tMin)} à {Math.round(d.tMax)} °C
+            </span>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
+/** Phrases sur le sol et la pluie, puis les chiffres à la demande. */
+function WeatherMore({ weather }: { weather: WeatherBundle }) {
   const wb = waterBalance(weather)
   return (
-    <div className="card">
-      <h2>Météo des 7 prochains jours</h2>
-      <div className="np-weather">
-        {weather.forecast.slice(0, 7).map((d) => (
-          <div key={d.date} className={'d' + (d.tMin <= 0 ? ' frost' : d.rainMm >= 0.5 ? ' rain' : '')}>
-            <div>{new Date(d.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' })}</div>
-            <strong>{Math.round(d.tMax)}°</strong>
-            <div className="muted">{Math.round(d.tMin)}°</div>
-            <div>{rainWord(d.rainMm)}</div>
-            {d.tMin <= 0 && <div>❄ Gel</div>}
-          </div>
-        ))}
-      </div>
+    <div className="wx-more">
       {weatherSentences(wb).map((s) => (
-        <p key={s} style={{ margin: '8px 0 0' }}>
-          {s}
-        </p>
+        <p key={s}>{s}</p>
       ))}
       <details className="np-details">
         <summary>Détails météo</summary>
@@ -59,55 +71,65 @@ function WeatherStrip({ weather }: { weather: WeatherBundle }) {
   )
 }
 
+/** Lundi de la semaine en cours, en toutes lettres (« 26 octobre »). */
+function mondayLabel(now = new Date()): string {
+  const d = new Date(now)
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7))
+  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
+}
+
 function TaskItem({ garden, task, weatherPending }: { garden: Garden; task: GeneratedTask; weatherPending: boolean }) {
   const plants = useGardenPlants(garden.id)
   const names = task.plantIds.length
   return (
-    <li className={'task' + (task.blockedBy ? ' blocked' : '') + (weatherPending ? ' weather-pending' : '')}>
-      <div className="task-main">
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="row" style={{ gap: 6 }}>
-            <span aria-hidden>{TASK_ICON[task.type]}</span>
-            <strong className="task-title">{task.title}</strong>
+    <li className={'tcard' + (task.blockedBy ? ' blocked' : '') + (weatherPending ? ' weather-pending' : '')}>
+      <div className="tcard-tile" aria-hidden>
+        <PlantPot size={54} />
+      </div>
+      <div className="tcard-body">
+        <strong className="tcard-title">{task.title}</strong>
+        <span className="tcard-sub">{task.reason}</span>
+        {(task.priority === 'haute' && !task.blockedBy) || task.blockedBy || weatherPending ? (
+          <span className="tcard-badges">
             {task.priority === 'haute' && !task.blockedBy && <span className="badge warn">À faire vite</span>}
             {task.blockedBy && <span className="badge">{task.blockedBy}</span>}
             {weatherPending && <span className="badge">Météo en attente</span>}
-          </div>
-          <div className="small">{task.howTo}</div>
-          <div className="small muted">
-            {task.reason}
-            {task.tool ? ` Outil : ${task.tool}.` : ''}
-          </div>
-          {task.detail && (
-            <details className="np-details">
-              <summary>Détails météo</summary>
-              <p className="small muted" style={{ margin: 0 }}>{task.detail}</p>
-            </details>
-          )}
-        </div>
+          </span>
+        ) : null}
       </div>
-      <div className="np-task-actions">
-        <button
-          type="button"
-          className="btn primary np-done"
-          aria-label={`Fait : ${task.title}`}
-          onClick={() => {
-            markTaskDone({ id: uid(), gardenId: garden.id, taskKey: task.key, doneAt: new Date().toISOString() })
-            showToast({ message: `Fait : ${task.title}`, actionLabel: 'Annuler', onAction: () => unmarkTask(garden.id, task.key) })
-          }}
-        >
-          Fait ✓
-        </button>
-        {names > 0 &&
-          task.plantIds.slice(0, 8).map((id) => {
-            const p = plants.find((x) => x.id === id)
-            return (
-              <button key={id} className="btn small ghost" onClick={() => setUi({ tab: 'carte', selectedPlantId: id, focusPlantId: id })}>
-                📍 {p?.customName || SPECIES_BY_ID[p?.speciesId ?? '']?.nomCommun || 'plante'}
-              </button>
-            )
-          })}
-        {names > 8 && <span className="muted small">+ {names - 8}</span>}
+      <button
+        type="button"
+        className="tcard-done"
+        aria-label={`Fait : ${task.title}`}
+        onClick={() => {
+          markTaskDone({ id: uid(), gardenId: garden.id, taskKey: task.key, doneAt: new Date().toISOString() })
+          showToast({ message: `Fait : ${task.title}`, actionLabel: 'Annuler', onAction: () => unmarkTask(garden.id, task.key) })
+        }}
+      >
+        Fait
+      </button>
+      <div className="tcard-more">
+        <div className="small">{task.howTo}</div>
+        {task.tool && <div className="small muted">Outil : {task.tool}.</div>}
+        {task.detail && (
+          <details className="np-details">
+            <summary>Détails météo</summary>
+            <p className="small muted" style={{ margin: 0 }}>{task.detail}</p>
+          </details>
+        )}
+        {names > 0 && (
+          <div className="tcard-plants">
+            {task.plantIds.slice(0, 8).map((id) => {
+              const p = plants.find((x) => x.id === id)
+              return (
+                <button key={id} className="btn small ghost" onClick={() => setUi({ tab: 'carte', selectedPlantId: id, focusPlantId: id })}>
+                  <Icon name="pin" size={16} /> {p?.customName || SPECIES_BY_ID[p?.speciesId ?? '']?.nomCommun || 'plante'}
+                </button>
+              )
+            })}
+            {names > 8 && <span className="muted small">+ {names - 8}</span>}
+          </div>
+        )}
       </div>
     </li>
   )
@@ -150,36 +172,23 @@ export function TasksPage({ garden }: { garden: Garden }) {
   const recent = done.filter((d) => Date.now() - new Date(d.doneAt).getTime() < 14 * 86400000).slice(-10).reverse()
 
   return (
-    <div className="page np-page">
-      <h1>Entretien</h1>
-      <div className="row" style={{ margin: '4px 0 8px' }}>
-        {!notificationsSupported() ? (
-          <p className="small muted" style={{ margin: 0 }}>Les rappels ne marchent pas sur cet appareil.</p>
-        ) : notif === 'granted' ? (
-          <p className="small" style={{ margin: 0 }}>🔔 Les rappels sont activés.</p>
-        ) : notif === 'denied' ? (
-          <p className="small muted" style={{ margin: 0 }}>Les rappels sont bloqués. Autorisez les notifications dans les réglages de votre programme internet.</p>
-        ) : (
-          <button className="btn" onClick={async () => setNotif((await enableNotifications()) ? 'granted' : 'denied')}>
-            🔔 Me prévenir quand il y a du travail
+    <div className="page afaire">
+      <PageHead
+        big
+        kicker={view === 'semaine' ? `Semaine du ${mondayLabel()}` : 'Mois par mois'}
+        title={view === 'semaine' ? 'À faire cette semaine' : 'Calendrier de l’année'}
+        action={
+          <button className="pagehead-btn" aria-pressed={view === 'annee'} aria-label="Calendrier de l’année" onClick={() => setView(view === 'annee' ? 'semaine' : 'annee')}>
+            <Icon name={view === 'annee' ? 'check' : 'calendar'} size={22} />
           </button>
-        )}
-      </div>
-      <Tabs
-        idPrefix="entretien"
-        label="Vue de l'entretien"
-        value={view}
-        onChange={setView}
-        tabs={[
-          { id: 'semaine', label: 'Cette semaine' },
-          { id: 'annee', label: "Calendrier de l'année" },
-        ]}
+        }
       />
-      <TabPanel idPrefix="entretien" active={view}>
       {view === 'annee' ? (
-        <YearPlan garden={garden} />
+        <div className="afaire-year">
+          <YearPlan garden={garden} />
+        </div>
       ) : (
-        <div className="stack" style={{ gap: 12 }}>
+        <div className="afaire-week">
           {weatherLoading && !weather && (
             <p className="small muted" role="status">
               <span className="spinner" /> Météo en cours de chargement…
@@ -190,7 +199,7 @@ export function TasksPage({ garden }: { garden: Garden }) {
               Pas de réseau : météo du {new Date(weather.fetchedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}.
             </div>
           )}
-          {weather && <WeatherStrip weather={weather} />}
+          {weather && <WeatherDays weather={weather} />}
           {weatherError && <div className="alert small">La météo n’est pas disponible. Les tâches ne tiennent pas compte du temps.</div>}
           {plants.length === 0 ? (
             <div className="card empty">
@@ -202,27 +211,31 @@ export function TasksPage({ garden }: { garden: Garden }) {
               <PlaceAction>Aller les placer</PlaceAction>
             </div>
           ) : (
-            <div className="card">
-              <h2>À faire maintenant ({open.length})</h2>
-              {open.length === 0 && <p className="muted">Rien d'urgent : profitez du jardin.</p>}
-              <ul className="list">
+            <>
+              <h2 className="sr-only">À faire maintenant ({open.length})</h2>
+              {open.length === 0 && <p className="muted afaire-none">Rien d'urgent : profitez du jardin.</p>}
+              <ul className="tcards">
                 {open.map((t) => (
                   <TaskItem key={t.key} garden={garden} task={t} weatherPending={!weather && weatherLoading && WEATHER_TYPES.has(t.type)} />
                 ))}
               </ul>
               {blocked.length > 0 && (
-                <>
-                  <h3 style={{ marginTop: 16 }}>À faire plus tard ({blocked.length})</h3>
-                  <p className="small muted" style={{ margin: 0 }}>Ces tâches attendent le bon moment.</p>
-                  <ul className="list">
+                <details className="later">
+                  <summary>
+                    <span>À faire plus tard ({blocked.length})</span>
+                    <span className="later-badge" title={blocked[0].blockedBy}>{blocked[0].blockedBy}</span>
+                  </summary>
+                  <p className="small muted" style={{ margin: '12px 0 0' }}>Ces tâches attendent le bon moment.</p>
+                  <ul className="tcards">
                     {blocked.map((t) => (
                       <TaskItem key={t.key} garden={garden} task={t} weatherPending={!weather && weatherLoading && WEATHER_TYPES.has(t.type)} />
                     ))}
                   </ul>
-                </>
+                </details>
               )}
-            </div>
+            </>
           )}
+          {weather && <WeatherMore weather={weather} />}
           {recent.length > 0 && (
             <div className="card">
               <h3>Fait ces derniers jours</h3>
@@ -241,9 +254,21 @@ export function TasksPage({ garden }: { garden: Garden }) {
               </ul>
             </div>
           )}
+          <div className="afaire-notif">
+            {!notificationsSupported() ? (
+              <p className="small muted">Les rappels ne marchent pas sur cet appareil.</p>
+            ) : notif === 'granted' ? (
+              <p className="small">🔔 Les rappels sont activés.</p>
+            ) : notif === 'denied' ? (
+              <p className="small muted">Les rappels sont bloqués. Autorisez les notifications dans les réglages de votre programme internet.</p>
+            ) : (
+              <button className="btn" onClick={async () => setNotif((await enableNotifications()) ? 'granted' : 'denied')}>
+                🔔 Me prévenir quand il y a du travail
+              </button>
+            )}
+          </div>
         </div>
       )}
-      </TabPanel>
     </div>
   )
 }

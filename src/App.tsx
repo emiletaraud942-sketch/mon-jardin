@@ -42,7 +42,7 @@ const Loading = ({ label }: { label: string }) => (
   </div>
 )
 
-const RAYON_ICON: Record<Rayon, string> = { jardin: 'leaf', afaire: 'check', planter: 'sprout', voisins: 'users' }
+const RAYON_ICON: Record<Rayon, string> = { jardin: 'map', afaire: 'check', planter: 'leaf', voisins: 'users' }
 
 /** Pastille de nouveautés de l'entraide (rien tant qu'il n'y a rien de nouveau). */
 const NewsBadge = ({ count }: { count: number }) =>
@@ -152,7 +152,7 @@ export function App() {
   const taskBadge = `${open} tâche${open > 1 ? 's' : ''} à faire`
 
   return (
-    <div className="app">
+    <div className={'app' + (tab === 'accueil' || tab === 'entretien' ? ' has-pagehead' : '')}>
       <a
         className="skip-link"
         href="#main-panel"
@@ -218,7 +218,7 @@ export function App() {
       </nav>
       <main id="main-panel" ref={mainRef} tabIndex={-1} aria-label={TAB_LABEL[tab]} className={'main' + (full ? ' full' : '')}>
         <ErrorBoundary inline resetKey={tab}>
-          {tab === 'accueil' && <Accueil garden={garden} openTasks={open} newsCount={newsCount} />}
+          {tab === 'accueil' && <Accueil garden={garden} openTasks={open} newsCount={newsCount} onHelp={() => setHelpOpen(true)} />}
           {tab === 'carte' && (
             <Suspense fallback={<Loading label="Chargement de la carte…" />}>
               <MapView garden={garden} />

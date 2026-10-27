@@ -33,6 +33,7 @@ Orchestration : agent `chef-de-projet`. Skills : `ajouter-espece`, `deployer`, `
 
 ## Conventions
 - Interface et commentaires en français ; phrases courtes.
+- Fidélité à la maquette Leafora (fond blanc, cartes à ombre douce, DM Serif Display + DM Sans) : les tailles de la maquette s'écrivent `calc(N * var(--px))` (1 px de maquette, qui suit la taille du texte choisie ; la base mobile est de 15 px). En-têtes de page : `src/components/PageHead.tsx` (remplace la barre du haut sur téléphone pour l'accueil et À faire).
 - Couleurs de l'interface uniquement via les variables CSS de `:root` (thème clair et sombre). Exceptions assumées : la scène 3D (`src/features/garden3d/*`, couleurs de scène : sol, ciel, feuillages), les couches MapLibre (`MapView`, `SpotPicker` : le style de carte ne lit pas les variables CSS) et `couleur`/`couleurAccent` des fiches espèces (pastilles et feuillages).
 - Moteurs (`src/engine`) purs et testés ; ils reçoivent `speciesById` en paramètre. Tests présents pour `calendar`, `growth`, `planting`, `sun` et `tasks`.
 - Licences : IGN Licence Ouverte (commercial OK) ; Open-Meteo non commercial ; Pl@ntNet 500 identifications/jour partagées.

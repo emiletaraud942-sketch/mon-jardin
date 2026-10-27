@@ -13,6 +13,7 @@ import { PlantPanel, plantName } from './PlantPanel'
 import { IdentifyDialog } from './IdentifyDialog'
 import { openScan } from '../scan/scanUi'
 import { PlantScene } from '../../components/illustrations'
+import { useIsMobile } from '../../components/useMedia'
 
 export function PlantsPage({ garden }: { garden: Garden }) {
   const plants = useGardenPlants(garden.id)
@@ -22,6 +23,7 @@ export function PlantsPage({ garden }: { garden: Garden }) {
   const [picking, setPicking] = useState(false)
   const [identifying, setIdentifying] = useState(false)
   const selected = plants.find((p) => p.id === selectedPlantId)
+  const mobile = useIsMobile()
   // Sur téléphone la fiche s'ouvre sous la liste : on y amène l'écran, sinon rien ne semble se passer.
   const sheetRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -38,6 +40,11 @@ export function PlantsPage({ garden }: { garden: Garden }) {
     }
     return [...by.entries()].sort((a, b) => a[0].localeCompare(b[0], 'fr'))
   }, [plants, q, status])
+
+  // Téléphone : la fiche prend tout l'écran (maquette) ; le bouton rond ramène à la liste.
+  if (selected && mobile) {
+    return <PlantPanel garden={garden} plant={selected} onClose={closePlantSheet} fiche onShowOnMap={() => setUi({ tab: 'carte', focusPlantId: selected.id })} />
+  }
 
   return (
     <div className="page plants-ui">
