@@ -117,7 +117,7 @@ Projet > **Settings** :
 
 *Mes essais ont eu lieu sur ordinateur (Chromium). Le téléphone peut se comporter autrement.*
 
-- [ ] 🔴 **La carte** (montée en MapLibre 6) : ouvrir « Mon jardin », vérifier que la photo aérienne s'affiche (tuiles IGN réelles), que la parcelle jaune est dessinée, placer une plante, déplacer un marqueur, zoomer au doigt, puis couper le réseau et rouvrir l'appli : la carte doit encore s'ouvrir.
+- [ ] 🔴 **La carte** (montée en MapLibre 6, qui exige WebGL 2 : iPhone sous iOS 15 ou plus, Android récent ; sur un appareil plus ancien l'appli affiche « La carte ne peut pas s'afficher sur cet appareil » au lieu de planter) : ouvrir « Mon jardin », vérifier que la photo aérienne s'affiche (tuiles IGN réelles), que la parcelle jaune est dessinée, placer une plante, déplacer un marqueur, zoomer au doigt, puis couper le réseau et rouvrir l'appli : la carte doit encore s'ouvrir.
 
 - [ ] 🟠 **Installer l'appli** sur l'écran d'accueil (Android Chrome, iPhone Safari), la rouvrir hors connexion.
 - [ ] 🟠 **Photos du jardin** : prise guidée, boussole (l'iPhone demande une autorisation après un toucher), caméra refusée puis acceptée, **quitter l'écran pendant la demande d'autorisation** (la caméra doit s'éteindre).

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import '../../lib/mapWorker'
+import { webgl2Supported } from '../../lib/webgl'
+import { MapUnsupported } from '../../components/MapUnsupported'
 import type { GeoJSONSource, Map as MLMap } from 'maplibre-gl'
 import type * as GeoJSON from 'geojson'
 import { SPECIES_BY_ID } from '../../data/species'
@@ -96,7 +98,7 @@ const isTouch = () => window.matchMedia('(pointer: coarse)').matches
  * Carte photo du jardin pour les écrans de scan : toucher pour choisir un point, repères, cercles d'aide,
  * marqueurs « à valider » déplaçables (au doigt ou avec les flèches du clavier).
  */
-export function ScanMap({ garden, plants, onTap, dots = [], pending = [], onSelectPending, onMovePending, circles = [], fitTo, label = 'Carte du jardin', className }: Props) {
+function ScanMapInner({ garden, plants, onTap, dots = [], pending = [], onSelectPending, onMovePending, circles = [], fitTo, label = 'Carte du jardin', className }: Props) {
   const el = useRef<HTMLDivElement>(null)
   const map = useRef<MLMap>()
   const [ready, setReady] = useState(false)
@@ -255,4 +257,9 @@ export function ScanMap({ garden, plants, onTap, dots = [], pending = [], onSele
   }, [pending, garden.center, ready])
 
   return <div ref={el} className={'scan-map' + (className ? ' ' + className : '')} role="application" aria-label={label} />
+}
+
+/** Carte, ou un message si l'appareil n'a pas WebGL 2 (MapLibre 6 en a besoin). */
+export function ScanMap(props: Parameters<typeof ScanMapInner>[0]) {
+  return webgl2Supported() ? <ScanMapInner {...props} /> : <MapUnsupported className={props.className} />
 }

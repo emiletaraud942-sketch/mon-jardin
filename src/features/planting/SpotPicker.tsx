@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import '../../lib/mapWorker'
+import { webgl2Supported } from '../../lib/webgl'
+import { MapUnsupported } from '../../components/MapUnsupported'
 import type { GeoJSONSource, Map as MLMap } from 'maplibre-gl'
 import type * as GeoJSON from 'geojson'
 import { SPECIES_BY_ID } from '../../data/species'
@@ -38,7 +40,7 @@ function boundsOf(garden: Garden, plants: Plant[]): maplibregl.LngLatBoundsLike 
 }
 
 /** Mini-carte : un clic choisit l'emplacement à évaluer. */
-export function SpotPicker({ garden, plants, spot, onPick }: { garden: Garden; plants: Plant[]; spot?: XY; onPick: (p: XY) => void }) {
+function SpotPickerInner({ garden, plants, spot, onPick }: { garden: Garden; plants: Plant[]; spot?: XY; onPick: (p: XY) => void }) {
   const el = useRef<HTMLDivElement>(null)
   const map = useRef<MLMap>()
   const marker = useRef<maplibregl.Marker>()
@@ -124,4 +126,9 @@ export function SpotPicker({ garden, plants, spot, onPick }: { garden: Garden; p
   }, [spot, garden.center, ready])
 
   return <div ref={el} className="spot-map" role="application" aria-label="Carte du jardin : touchez un emplacement" />
+}
+
+/** Carte, ou un message si l'appareil n'a pas WebGL 2 (MapLibre 6 en a besoin). */
+export function SpotPicker(props: Parameters<typeof SpotPickerInner>[0]) {
+  return webgl2Supported() ? <SpotPickerInner {...props} /> : <MapUnsupported />
 }

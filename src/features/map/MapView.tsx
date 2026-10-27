@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import '../../lib/mapWorker'
+import { webgl2Supported } from '../../lib/webgl'
+import { MapUnsupported } from '../../components/MapUnsupported'
 import type { GeoJSONSource, Map as MLMap } from 'maplibre-gl'
 import type * as GeoJSON from 'geojson'
 import { SPECIES_BY_ID } from '../../data/species'
@@ -127,7 +129,7 @@ const SCHEMA_BG = '#2b3a2f'
 
 const emptyFc = (): GeoJSON.FeatureCollection => ({ type: 'FeatureCollection', features: [] })
 
-export function MapView({ garden }: { garden: Garden }) {
+function MapViewInner({ garden }: { garden: Garden }) {
   const el = useRef<HTMLDivElement>(null)
   const map = useRef<MLMap>()
   const markers = useRef(new Map<string, maplibregl.Marker>())
@@ -1052,4 +1054,9 @@ export function MapView({ garden }: { garden: Garden }) {
       </SidePanel>
     </div>
   )
+}
+
+/** Carte, ou un message si l'appareil n'a pas WebGL 2 (MapLibre 6 en a besoin). */
+export function MapView(props: Parameters<typeof MapViewInner>[0]) {
+  return webgl2Supported() ? <MapViewInner {...props} /> : <MapUnsupported />
 }
