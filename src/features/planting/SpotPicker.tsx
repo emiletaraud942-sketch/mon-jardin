@@ -5,7 +5,7 @@ import { IGN_ATTRIBUTION, ORTHO_MAXZOOM, ORTHO_TILES, TILE_SIZE } from '../../li
 import { toLocal, toLonLat } from '../../lib/geo'
 import type { Garden, Plant, XY } from '../../types'
 import { cssVar } from '../map/colors'
-import { orthoPaint, photoCapZoom, review } from '../map/photoZoom'
+import { PHOTO_MAP_MAXZOOM, orthoPaint, review } from '../map/photoZoom'
 
 function contextData(garden: Garden, plants: Plant[]): GeoJSON.FeatureCollection {
   const features: GeoJSON.Feature[] = []
@@ -52,7 +52,7 @@ export function SpotPicker({ garden, plants, spot, onPick }: { garden: Garden; p
       container: el.current,
       bounds: boundsOf(g, latest.current.plants),
       fitBoundsOptions: { padding: 24, maxZoom: 20 },
-      maxZoom: photoCapZoom(review()), // 22, sauf variante de revue « repères »
+      maxZoom: PHOTO_MAP_MAXZOOM, // la photo n'a pas de détail au-delà (zoom utile + 1)
       attributionControl: false,
       // Sur mobile, un doigt fait défiler la page ; deux doigts déplacent la carte.
       cooperativeGestures: true,

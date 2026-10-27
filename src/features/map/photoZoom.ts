@@ -1,4 +1,4 @@
-// Zoom utile de la photo aérienne et réglages de revue (adresse `?zoom=…`, `?ortho=…`, `?debug=map`).
+// Zoom utile de la photo aérienne, plafond de zoom et réglages de revue masqués (`?ortho=…`, `?debug=map`).
 // Pur, sans DOM : tout est testé dans photoZoom.test.ts.
 //
 // Convention MapLibre : une carte de zoom Z dessine le monde sur 512 × 2^Z pixels. Avec des tuiles de 256 px,
@@ -51,15 +51,22 @@ export function gridStepM(mapZoom: number, latDeg: number): 1 | 5 | null {
   return null
 }
 
-// ---------- réglages de revue (à retirer une fois le choix fait) ----------
+/**
+ * Zoom maximal de la carte quand la photo est affichée : zoom utile + 1 niveau (19). L'étirement ne dépasse jamais ×2.
+ * Sans photo (fond schématique, vue plan), la carte garde son zoom maximal de 22.
+ */
+export const PHOTO_MAP_MAXZOOM = PHOTO_MAX_MAP_ZOOM
+export const MAP_MAXZOOM = 22
 
-export type ZoomVariant = 'plan' | 'reperes'
+/** Zoom à partir duquel la mention « la photo n'est pas plus précise » s'affiche. */
+export const PHOTO_NOTE_ZOOM = PHOTO_MAX_MAP_ZOOM - 0.1
+
+// ---------- réglages de revue masqués (jamais actifs par défaut) ----------
+
 export type OrthoTweak = 'net' | 'nearest'
 
 export interface ReviewParams {
-  /** `?zoom=plan` : bascule en douceur vers la vue plan ; `?zoom=reperes` : photo plafonnée au zoom utile + 1. */
-  zoom?: ZoomVariant
-  /** `?ortho=net,nearest` : réglages de netteté de la photo (non validés visuellement). */
+  /** `?ortho=net,nearest` : réglages de netteté de la photo (NON validés visuellement). */
   ortho: OrthoTweak[]
   /** `?debug=map` : expose la carte dans `window.__pjMap` (mesures). */
   debug: boolean
@@ -67,12 +74,11 @@ export interface ReviewParams {
 
 export function parseReview(search: string): ReviewParams {
   const q = new URLSearchParams(search)
-  const z = q.get('zoom')
   const ortho = (q.get('ortho') ?? '')
     .split(',')
     .map((t) => t.trim())
     .filter((t): t is OrthoTweak => t === 'net' || t === 'nearest')
-  return { zoom: z === 'plan' || z === 'reperes' ? z : undefined, ortho, debug: q.get('debug') === 'map' }
+  return { ortho, debug: q.get('debug') === 'map' }
 }
 
 let cached: ReviewParams | undefined
@@ -80,18 +86,6 @@ export function review(): ReviewParams {
   if (!cached) cached = parseReview(typeof location === 'undefined' ? '' : location.search)
   return cached
 }
-
-/** Zoom maximal de la carte quand la photo est affichée. */
-export function photoCapZoom(r: ReviewParams, hardMax = 22): number {
-  return r.zoom === 'reperes' ? Math.min(hardMax, PHOTO_MAX_MAP_ZOOM) : hardMax
-}
-
-/** Début et fin du fondu photo → plan (variante « plan ») : dès le zoom utile + 1, fini 0,6 niveau plus haut. */
-export const PLAN_FADE_FROM = PHOTO_USEFUL_ZOOM + PHOTO_OVERSAMPLE_LEVELS
-export const PLAN_FADE_TO = PLAN_FADE_FROM + 0.6
-
-/** Zoom à partir duquel la mention « la photo n'est pas plus précise » s'affiche. */
-export const PHOTO_NOTE_ZOOM = PHOTO_MAX_MAP_ZOOM - 0.1
 
 /**
  * Réglages de peinture de la couche photo selon `?ortho=…`. Aucun réglage par défaut.

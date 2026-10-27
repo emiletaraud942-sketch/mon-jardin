@@ -20,7 +20,7 @@ import { GardenSide, PlacingBanner, useSheetHead } from './GardenSide'
 import { SidePanel } from './SidePanel'
 import { movePlant, moveWithUndo, placePlant } from './placing'
 import { confirmBeforePlacing, registerAim, setPlacingInfo, usePlacingInfo } from './aimBridge'
-import { PHOTO_NOTE_ZOOM, PLAN_FADE_FROM, PLAN_FADE_TO, gridStepM, orthoPaint, photoCapZoom, review } from './photoZoom'
+import { MAP_MAXZOOM, PHOTO_MAP_MAXZOOM, PHOTO_NOTE_ZOOM, gridStepM, orthoPaint, review } from './photoZoom'
 import { LOUPE_HOLD_MS, LOUPE_SIZE, LOUPE_SLOP_PX, LOUPE_ZOOM, gpsCircleRadiusM, loupeCenter, loupeSource, rulerSummary } from './placeAids'
 import { useGps } from '../scan/useGps'
 import { gpsMessage } from '../scan/gps'
@@ -420,7 +420,7 @@ export function MapView({ garden }: { garden: Garden }) {
       container: el.current,
       center: [garden.center.lon, garden.center.lat],
       zoom: 19,
-      maxZoom: photoCapZoom(rv),
+      maxZoom: PHOTO_MAP_MAXZOOM, // la photo n'a pas de détail au-delà : zoom utile + 1 niveau
       attributionControl: false,
       style: {
         version: 8,
@@ -549,17 +549,11 @@ export function MapView({ garden }: { garden: Garden }) {
     if (!m || !ready) return
     // Fond schématique : uni, sans photo, plan ni cadastre en image ; seuls les traits nets restent.
     const photo = base === 'ortho' && !schema
-    // Variante de revue « plan » : au-delà du zoom utile de la photo, fondu doux vers le plan IGN.
-    const fade = rv.zoom === 'plan' && photo
-    m.setLayoutProperty('schema', 'visibility', schema ? 'visible' : 'none')
-    m.setLayoutProperty('ortho', 'visibility', photo ? 'visible' : 'none')
-    m.setLayoutProperty('plan', 'visibility', (base === 'plan' && !schema) || fade ? 'visible' : 'none')
-    m.setLayerZoomRange('plan', fade ? PLAN_FADE_FROM - 0.1 : 0, 24)
-    m.setPaintProperty('plan', 'raster-opacity', fade ? ['interpolate', ['linear'], ['zoom'], PLAN_FADE_FROM, 0, PLAN_FADE_TO, 1] : 1)
+    m.setLayoutProperty('plan', 'visibility', base === 'plan' && !schema ? 'visible' : 'none')
     m.setLayoutProperty('cadastre', 'visibility', cadastre && !schema ? 'visible' : 'none')
-    // Variante de revue « repères » : la photo ne se zoome pas au-delà de son zoom utile + 1 niveau.
-    m.setMaxZoom(photo ? photoCapZoom(rv) : 22)
-  }, [base, cadastre, schema, ready]) // eslint-disable-line react-hooks/exhaustive-deps
+    // La photo ne se zoome pas au-delà de son zoom utile + 1 niveau (étirement ≤ ×2) ; plan et schéma gardent 22.
+    m.setMaxZoom(photo ? PHOTO_MAP_MAXZOOM : MAP_MAXZOOM)
+  }, [base, cadastre, schema, ready])
 
   useEffect(() => {
     const m = map.current
@@ -762,10 +756,11 @@ export function MapView({ garden }: { garden: Garden }) {
     const m = map.current
     if (!m || !ready) return
     if (placingNow) {
-      if (m.getZoom() < PLACE_ZOOM - 0.5) {
+      const placeZoom = Math.min(PLACE_ZOOM, m.getMaxZoom()) // 19 sur la photo : au-delà elle ne gagne aucun détail
+      if (m.getZoom() < placeZoom - 0.5) {
         const mv = movingPlantId ? plantsRef.current.find((x) => x.id === movingPlantId) : undefined
         const ll = mv ? toLonLat(gardenRef.current.center, mv.position) : undefined
-        m.easeTo({ zoom: PLACE_ZOOM, ...(ll ? { center: [ll.lon, ll.lat] as [number, number] } : {}), duration: 400 })
+        m.easeTo({ zoom: placeZoom, ...(ll ? { center: [ll.lon, ll.lat] as [number, number] } : {}), duration: 400 })
       }
     } else {
       aidRef.current?.clear()
@@ -987,7 +982,7 @@ export function MapView({ garden }: { garden: Garden }) {
               Les images de la carte ne s’affichent pas. Elles reviendront dès que la connexion reviendra.
             </div>
           )}
-          {rv.zoom && beyondPhoto && base === 'ortho' && !schema && (
+          {beyondPhoto && base === 'ortho' && !schema && (
             <p className="map-photo-note small" role="note">
               La photo n’est pas plus précise de plus près.
             </p>

@@ -4,13 +4,12 @@ import {
   PHOTO_MAX_MAP_ZOOM,
   PHOTO_NOTE_ZOOM,
   PHOTO_USEFUL_ZOOM,
-  PLAN_FADE_FROM,
-  PLAN_FADE_TO,
+  MAP_MAXZOOM,
+  PHOTO_MAP_MAXZOOM,
   gridStepM,
   mapZoomForTileZoom,
   orthoPaint,
   parseReview,
-  photoCapZoom,
   photoPixelM,
   photoStretch,
   photoUsefulMapZoom,
@@ -65,12 +64,11 @@ describe('grille d\'aide', () => {
   })
 })
 
-describe('réglages de revue', () => {
-  it('lit ?zoom, ?ortho et ?debug', () => {
-    expect(parseReview('')).toEqual({ zoom: undefined, ortho: [], debug: false })
-    expect(parseReview('?zoom=plan').zoom).toBe('plan')
-    expect(parseReview('?zoom=reperes&debug=map')).toEqual({ zoom: 'reperes', ortho: [], debug: true })
-    expect(parseReview('?zoom=autre').zoom).toBeUndefined()
+describe('réglages de revue masqués', () => {
+  it('lit ?ortho et ?debug ; ?zoom n\'existe plus', () => {
+    expect(parseReview('')).toEqual({ ortho: [], debug: false })
+    expect(parseReview('?zoom=plan&zoom=reperes')).toEqual({ ortho: [], debug: false })
+    expect(parseReview('?debug=map')).toEqual({ ortho: [], debug: true })
     expect(parseReview('?ortho=net,nearest,x').ortho).toEqual(['net', 'nearest'])
   })
   it('aucun réglage de peinture par défaut', () => {
@@ -78,14 +76,16 @@ describe('réglages de revue', () => {
     expect(orthoPaint(['net'])).toEqual({ 'raster-contrast': 0.2, 'raster-saturation': 0.1 })
     expect(orthoPaint(['nearest'])).toEqual({ 'raster-resampling': 'nearest' })
   })
-  it('plafond de zoom : 22 par défaut, 19 en variante « repères »', () => {
-    expect(photoCapZoom(parseReview(''))).toBe(22)
-    expect(photoCapZoom(parseReview('?zoom=plan'))).toBe(22)
-    expect(photoCapZoom(parseReview('?zoom=reperes'))).toBe(19)
+})
+
+describe('plafond de zoom de la photo (par défaut)', () => {
+  it('19 : l\'étirement ne dépasse jamais ×2 ; 22 sans photo', () => {
+    expect(PHOTO_MAP_MAXZOOM).toBe(19)
+    expect(photoStretch(PHOTO_MAP_MAXZOOM)).toBeLessThanOrEqual(2)
+    expect(MAP_MAXZOOM).toBe(22)
   })
-  it('fondu vers le plan : après le zoom maximal utile, avant la mention', () => {
-    expect(PLAN_FADE_FROM).toBe(19)
-    expect(PLAN_FADE_TO).toBeGreaterThan(PLAN_FADE_FROM)
-    expect(PHOTO_NOTE_ZOOM).toBeLessThan(PLAN_FADE_FROM)
+  it('la mention s\'affiche juste avant le plafond', () => {
+    expect(PHOTO_NOTE_ZOOM).toBeLessThan(PHOTO_MAP_MAXZOOM)
+    expect(PHOTO_NOTE_ZOOM).toBeGreaterThan(PHOTO_USEFUL_ZOOM)
   })
 })
