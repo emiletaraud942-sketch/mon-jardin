@@ -14,7 +14,7 @@ vi.mock('idb-keyval', () => ({
   }),
   set: vi.fn(async (k: string, v: unknown) => {
     if (idb.failSet) throw idb.failSet
-    idb.sets.push(k)
+    if (k !== 'permajardin:probe') idb.sets.push(k) // l'essai d'écriture du démarrage n'est pas une sauvegarde
     db.set(k, structuredClone(v))
   }),
   del: vi.fn(async (k: string) => {
@@ -41,6 +41,13 @@ const KEY = 'permajardin:state:v1'
 const garden = { id: 'g1', name: 'J', address: '', center: { lon: 4, lat: 45 }, createdAt: '2025-01-01T00:00:00.000Z' }
 const plant = { id: 'p1', gardenId: 'g1', speciesId: 'pommier', position: { x: 0, y: 0 }, plantedAt: '2024-03-10', status: 'en-place' as const, photos: ['photo:a'] }
 
+const ls = new Map<string, string>()
+const fakeLocalStorage = {
+  getItem: (k: string) => (ls.has(k) ? ls.get(k)! : null),
+  setItem: (k: string, v: string) => void ls.set(k, v),
+  removeItem: (k: string) => void ls.delete(k),
+}
+
 let win: EventTarget
 let doc: EventTarget & { visibilityState: string }
 
@@ -61,6 +68,8 @@ beforeEach(() => {
   vi.stubGlobal('document', doc)
   vi.stubGlobal('BroadcastChannel', FakeChannel)
   vi.stubGlobal('navigator', {})
+  ls.clear()
+  vi.stubGlobal('localStorage', fakeLocalStorage)
   vi.spyOn(console, 'warn').mockImplementation(() => undefined)
   vi.useFakeTimers()
 })
@@ -200,7 +209,7 @@ describe('échec de lecture', () => {
     s.flush()
     win.dispatchEvent(new Event('pagehide'))
     await vi.advanceTimersByTimeAsync(500)
-    expect(idb.sets).toEqual([])
+    expect(idb.sets.filter((k) => k === KEY)).toEqual([])
     expect((db.get(KEY) as { gardens: unknown[] }).gardens).toHaveLength(1)
   })
 
@@ -473,3 +482,99 @@ describe('photos des points de vue (panoramas)', () => {
   })
 })
 
+
+describe('copie de secours synchrone (fermeture avant la fin de l’écriture)', () => {
+  const MIRROR = KEY + ':miroir'
+
+  it('écrit la copie de secours tout de suite, avant IndexedDB', async () => {
+    const s = await freshStore()
+    await s.loadState()
+    s.addGarden(garden)
+    expect(JSON.parse(ls.get(MIRROR)!).data.gardens).toHaveLength(1) // aucun temps écoulé : IndexedDB n'a encore rien reçu
+    expect(db.has(KEY)).toBe(false)
+  })
+
+  it('une fermeture 20 ms après une modification ne perd rien : la copie de secours est reprise au démarrage', async () => {
+    const a = await freshStore()
+    await a.loadState()
+    a.addGarden(garden)
+    a.addPlant(plant)
+    // le navigateur est fermé ici : le minuteur d'écriture n'a jamais tourné, IndexedDB est vide
+    expect(db.has(KEY)).toBe(false)
+    const b = await freshStore()
+    await b.loadState()
+    expect(b.getState().gardens).toHaveLength(1)
+    expect(b.getState().plants).toHaveLength(1)
+    expect(b.getLoadWarnings().join(' ')).toMatch(/copie de secours/)
+    await vi.advanceTimersByTimeAsync(300)
+    expect((db.get(KEY) as { plants: unknown[] }).plants).toHaveLength(1) // et IndexedDB est remise à jour
+  })
+
+  it('reprise aussi quand IndexedDB est plus ancienne que la copie', async () => {
+    db.set(KEY, { gardens: [garden], plants: [], tasksDone: [], savedAt: 1000 })
+    ls.set(MIRROR, JSON.stringify({ savedAt: 2000, data: { version: 2, gardens: [garden], plants: [plant], tasksDone: [] } }))
+    const s = await freshStore()
+    await s.loadState()
+    expect(s.getState().plants).toHaveLength(1)
+  })
+
+  it('IndexedDB plus récente que la copie : la copie est ignorée', async () => {
+    db.set(KEY, { gardens: [garden], plants: [plant], tasksDone: [], savedAt: 3000 })
+    ls.set(MIRROR, JSON.stringify({ savedAt: 2000, data: { version: 2, gardens: [garden], plants: [], tasksDone: [] } }))
+    const s = await freshStore()
+    await s.loadState()
+    expect(s.getState().plants).toHaveLength(1)
+    expect(s.getLoadWarnings().join(' ')).not.toMatch(/copie de secours/)
+  })
+
+  it('IndexedDB illisible : la copie de secours permet de continuer au lieu de bloquer', async () => {
+    idb.failGet = true
+    ls.set(MIRROR, JSON.stringify({ savedAt: 2000, data: { version: 2, gardens: [garden], plants: [plant], tasksDone: [] } }))
+    const s = await freshStore()
+    await s.loadState()
+    expect(s.getState().plants).toHaveLength(1)
+  })
+
+  it('une copie abîmée ou vide est ignorée sans erreur', async () => {
+    db.set(KEY, { gardens: [garden], plants: [plant], tasksDone: [] })
+    for (const bad of ['pas du json', JSON.stringify({ savedAt: 'x' }), JSON.stringify({ savedAt: 9e12, data: { gardens: [], plants: [] } })]) {
+      ls.set(MIRROR, bad)
+      const s = await freshStore()
+      await s.loadState()
+      expect(s.getState().plants).toHaveLength(1)
+    }
+  })
+
+  it('« Effacer » supprime aussi la copie de secours', async () => {
+    const s = await freshStore()
+    await s.loadState()
+    s.addGarden(garden)
+    expect(ls.has(MIRROR)).toBe(true)
+    await s.wipeLocalData()
+    expect(ls.has(MIRROR)).toBe(false)
+  })
+})
+
+describe('essai d’écriture au démarrage', () => {
+  it('signale tout de suite un navigateur qui refuse IndexedDB, sans attendre une première modification', async () => {
+    idb.failSet = new Error('SecurityError')
+    const s = await freshStore()
+    await s.loadState()
+    await vi.advanceTimersByTimeAsync(10)
+    expect(s.getStorageStatus().writeError).toMatch(/Impossible d'enregistrer/)
+  })
+  it('rien à signaler quand l’écriture marche, et la clé d’essai est retirée', async () => {
+    const s = await freshStore()
+    await s.loadState()
+    await vi.advanceTimersByTimeAsync(10)
+    expect(s.getStorageStatus().writeError).toBeUndefined()
+    expect(db.has('permajardin:probe')).toBe(false)
+  })
+  it('mémorise l’heure de la dernière écriture réussie', async () => {
+    const s = await freshStore()
+    await s.loadState()
+    s.addGarden(garden)
+    await vi.advanceTimersByTimeAsync(300)
+    expect(s.getStorageStatus().savedAt).toBeGreaterThan(0)
+  })
+})

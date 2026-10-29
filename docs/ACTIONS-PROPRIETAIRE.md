@@ -32,6 +32,8 @@ Dépôt > **Settings** :
 
 ## 2. Supabase : sauvegarde en ligne (« synchronisation »), si vous l'utilisez
 
+> **Aujourd'hui, aucun Supabase n'est relié au projet : il n'y a aucune synchronisation.** Les jardins restent dans le navigateur de chaque appareil. Pour une synchronisation automatique entre appareils (code prêt, voir `docs/SECURITE.md` §20), il faut faire cette section **et** poser `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` sur Vercel (§4), puis redéployer. Sans cela, le passage d'un appareil à l'autre se fait par « Sauvegarde » puis « Reprendre une sauvegarde ».
+
 *Le projet Supabase de synchronisation est distinct de celui de l'entraide.*
 
 - [ ] 🔴 **SQL Editor** : coller et exécuter, **dans cet ordre**, les 4 fichiers de `supabase/migrations/` (chacun est rejouable sans danger sauf le premier, à ne jouer qu'une fois) :

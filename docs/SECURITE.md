@@ -369,3 +369,19 @@ Les neuf demandes Dependabot ouvertes ont été traitées une par une (typecheck
 
 **Non vérifié** : le déploiement réel sur Vercel avec ces versions (build, fonction `api/identify`), les téléphones, Safari et Firefox.
 
+## 20. Étape 1 du plan « retours » : ne plus perdre de données (29 octobre 2026)
+
+**Cause trouvée** : les données vivent dans le navigateur de chaque appareil et **aucun Supabase n'est relié au projet** (`VITE_SUPABASE_*` absents) : il n'y a donc aucune synchronisation, et un autre navigateur ou un autre téléphone montre un jardin vide. En plus, une fermeture moins de 200 ms après une action perdait cette action (écriture différée de 200 ms, reproduit dans Chromium).
+
+| Mesure | Preuve |
+| --- | --- |
+| **Copie de secours synchrone** (`permajardin:state:v1:miroir`, localStorage, 3 Mo au plus) écrite à chaque modification, avant IndexedDB ; reprise au démarrage si elle est plus récente, ou si IndexedDB est vide ou illisible | `store.test.ts` (7 cas) ; **navigateur réel** : plante placée puis fermeture brutale à 20 ms et à 150 ms (IndexedDB à 0 plante à la fermeture) → 1 plante après réouverture |
+| **Essai d'écriture au démarrage** : un navigateur qui refuse IndexedDB est signalé tout de suite (bandeau existant) | `store.test.ts` (3 cas) |
+| **Heure de la dernière écriture** et phrase claire dans Réglages : « Enregistré sur cet appareil à 14:32 », ou « Cet appareil refuse d'enregistrer… » ; texte « Vos données sont gardées dans ce navigateur, sur cet appareil… » | `sentences.test.ts` (phrases de 20 mots au plus) |
+| **Rappel de sauvegarde après 2 jours** (au lieu de 30) dès 3 plantes sans aucune sauvegarde, puis chaque semaine | `backup.test.ts` (4 cas) |
+| **Synchronisation automatique** (`src/lib/autoSync.ts`), active **seulement si Supabase est configuré**, qu'un compte est connecté et que l'accord est donné : envoi 5 s après la dernière modification, comparaison au démarrage et au retour dans l'appli ; **jamais d'écrasement silencieux** : si la copie en ligne a changé ailleurs ET que cet appareil a des modifications, état « conflit » et choix proposé dans Réglages | `autoSync.test.ts` (16 cas : conflit, appareil neuf, rafale de modifications, hors ligne, erreur, sans accord, reprise non prise pour une modification) |
+
+**Vie privée** : la copie de secours contient les mêmes données que IndexedDB (jardins, plantes, adresse, positions) : elle reste dans l'appareil, figure dans l'inventaire (`inventory.ts`, documents légaux régénérés) et est effacée par « Effacer toutes mes données » (préfixe `permajardin:`) et par `wipeLocalData()`.
+
+**Non fait** : l'essai de la synchronisation automatique avec un vrai projet Supabase et deux appareils (aucun projet n'est relié : voir `docs/ACTIONS-PROPRIETAIRE.md`, §2 ; pour avoir une synchronisation, il faut créer le projet, appliquer les 4 migrations et poser les deux variables `VITE_SUPABASE_*` sur Vercel). Sans Supabase, le seul moyen de passer d'un appareil à l'autre reste « Sauvegarde », puis « Reprendre une sauvegarde ».
+

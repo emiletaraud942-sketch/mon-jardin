@@ -9,6 +9,9 @@ const LAST_REMINDER_KEY = 'permajardin:last-export-reminder'
 const FIRST_USE_KEY = 'permajardin:first-use'
 const DAY_MS = 86400000
 export const REMIND_EVERY_DAYS = 30
+const EARLY_REMINDER_PLANTS = 3
+const EARLY_REMINDER_DAYS = 2
+const EARLY_REMINDER_REPEAT_DAYS = 7
 
 function read(key: string): string | null {
   try {
@@ -68,28 +71,34 @@ export function noteFirstUse(now = Date.now()) {
 export interface ReminderInput {
   now: number
   hasData: boolean
+  /** Nombre de plantes : à partir de 3 sans aucune sauvegarde, le premier rappel vient après 2 jours (au lieu de 30). */
+  plantCount?: number
   lastExport?: number
   lastReminder?: number
   firstUse?: number
 }
 
-/** Vrai s'il faut rappeler d'exporter : données présentes, aucun export ni rappel depuis 30 jours. */
-export function shouldRemindExport({ now, hasData, lastExport, lastReminder, firstUse }: ReminderInput): boolean {
+/** Vrai s'il faut rappeler d'exporter : données présentes, aucun export ni rappel depuis 30 jours (2 jours si 3 plantes ou plus et aucune sauvegarde). */
+export function shouldRemindExport({ now, hasData, plantCount, lastExport, lastReminder, firstUse }: ReminderInput): boolean {
   if (!hasData) return false
   const since = (t?: number) => (t === undefined ? Infinity : (now - t) / DAY_MS)
+  // Du travail déjà fait et jamais sauvegardé : on ne attend pas un mois (les données ne vivent que dans ce navigateur).
+  if (lastExport === undefined && (plantCount ?? 0) >= EARLY_REMINDER_PLANTS && firstUse !== undefined) {
+    return since(firstUse) >= EARLY_REMINDER_DAYS && since(lastReminder) >= EARLY_REMINDER_REPEAT_DAYS
+  }
   const baseline = lastExport ?? firstUse
   if (baseline === undefined) return false
   return since(baseline) >= REMIND_EVERY_DAYS && since(lastReminder) >= REMIND_EVERY_DAYS
 }
 
 /** À appeler une fois au démarrage : renvoie vrai (et mémorise) si un rappel doit s'afficher. */
-export function consumeExportReminder(hasData: boolean, now = Date.now()): boolean {
+export function consumeExportReminder(hasData: boolean, now = Date.now(), plantCount = 0): boolean {
   noteFirstUse(now)
   const num = (k: string) => {
     const n = Number(read(k))
     return Number.isFinite(n) && n > 0 ? n : undefined
   }
-  const due = shouldRemindExport({ now, hasData, lastExport: lastExportAt(), lastReminder: num(LAST_REMINDER_KEY), firstUse: num(FIRST_USE_KEY) })
+  const due = shouldRemindExport({ now, hasData, plantCount, lastExport: lastExportAt(), lastReminder: num(LAST_REMINDER_KEY), firstUse: num(FIRST_USE_KEY) })
   if (due) write(LAST_REMINDER_KEY, String(now))
   return due
 }

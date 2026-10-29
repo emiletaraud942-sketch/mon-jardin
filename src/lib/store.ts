@@ -20,12 +20,21 @@ export interface StorageStatus {
   readFailed: boolean
   /** Dernière écriture échouée (stockage plein, navigation privée…). */
   writeError?: string
+  /** Heure (ms) de la dernière écriture réussie dans IndexedDB. */
+  savedAt?: number
 }
 
 const KEY = 'permajardin:state:v1'
 const BACKUP_KEY = KEY + ':avant-migration'
 /** Copie des données illisibles (version plus récente, format inconnu) avant « Repartir de zéro ». */
 const UNREADABLE_BACKUP_KEY = KEY + ':illisible'
+/**
+ * Copie de secours SYNCHRONE dans localStorage : écrite à chaque modification, avant l'écriture (asynchrone, différée) dans IndexedDB.
+ * Si le navigateur est fermé avant que IndexedDB ait fini (Safari coupe les écritures de `pagehide`), ou si IndexedDB est vidée,
+ * la copie la plus récente est reprise au démarrage. Taille plafonnée : au-delà, pas de copie (IndexedDB reste la référence).
+ */
+const MIRROR_KEY = KEY + ':miroir'
+const MIRROR_MAX_CHARS = 3_000_000
 /** File d'attente du scan des plantes (IndexedDB) : ses photos ne sont pas des orphelines. Voir features/scan/queueStore.ts. */
 export const SCAN_QUEUE_KEY = 'permajardin:scan-queue'
 const WRITE_ERROR = "Impossible d'enregistrer sur cet appareil (stockage plein ou bloqué). Exportez une sauvegarde depuis les réglages."
@@ -42,7 +51,7 @@ function emit() {
 function setStatus(patch: Partial<StorageStatus>) {
   const next = { ...status, ...patch }
   if (next.writeError === undefined) delete next.writeError
-  if (next.persistent === status.persistent && next.readFailed === status.readFailed && next.writeError === status.writeError) return
+  if (next.persistent === status.persistent && next.readFailed === status.readFailed && next.writeError === status.writeError && next.savedAt === status.savedAt) return
   status = next
   emit()
 }
@@ -62,10 +71,41 @@ let saveTimer: ReturnType<typeof setTimeout> | undefined
 let dirty = false
 
 let wiping = false
+/** Heure (ms) de la dernière modification demandée : sert à comparer la copie de secours et IndexedDB. */
+let lastChange = 0
+
+function snapshotData() {
+  return { version: STATE_VERSION, gardens: state.gardens, plants: state.plants, tasksDone: state.tasksDone, activeGardenId: state.activeGardenId }
+}
+
+function writeMirror() {
+  if (typeof localStorage === 'undefined') return
+  try {
+    const text = JSON.stringify({ savedAt: lastChange, data: snapshotData() })
+    if (text.length <= MIRROR_MAX_CHARS) localStorage.setItem(MIRROR_KEY, text)
+    else localStorage.removeItem(MIRROR_KEY)
+  } catch {
+    /* navigation privée ou stockage plein : IndexedDB reste la référence */
+  }
+}
+
+function readMirror(): { savedAt: number; data: Record<string, unknown> } | undefined {
+  if (typeof localStorage === 'undefined') return undefined
+  try {
+    const raw = localStorage.getItem(MIRROR_KEY)
+    if (!raw) return undefined
+    const m = JSON.parse(raw) as { savedAt?: unknown; data?: unknown }
+    return typeof m.savedAt === 'number' && m.data && typeof m.data === 'object' ? { savedAt: m.savedAt, data: m.data as Record<string, unknown> } : undefined
+  } catch {
+    return undefined
+  }
+}
 
 function persist() {
   dirty = true
   if (status.readFailed) return // jamais d'écriture par-dessus des données qu'on n'a pas pu lire
+  lastChange = Date.now()
+  if (state.loaded && !wiping) writeMirror() // synchrone : survit à une fermeture immédiate
   clearTimeout(saveTimer)
   saveTimer = setTimeout(flush, 200)
 }
@@ -76,10 +116,10 @@ export function flush() {
   saveTimer = undefined
   if (!dirty || !state.loaded || status.readFailed || wiping) return
   dirty = false
-  const data = { version: STATE_VERSION, gardens: state.gardens, plants: state.plants, tasksDone: state.tasksDone, activeGardenId: state.activeGardenId }
+  const data = { ...snapshotData(), savedAt: lastChange }
   set(KEY, data).then(
     () => {
-      setStatus({ writeError: undefined })
+      setStatus({ writeError: undefined, savedAt: Date.now() })
       channel?.postMessage({ type: 'saved' })
     },
     (e) => {
@@ -144,23 +184,39 @@ async function requestPersistence() {
 
 const validActive = (gardens: Garden[], id?: string) => (id && gardens.some((g) => g.id === id) ? id : gardens[0]?.id)
 
-type Read = { kind: 'empty' } | { kind: 'failed' } | { kind: 'ok'; raw: Record<string, unknown>; data: StateData; warnings: string[] }
+type Read = { kind: 'empty' } | { kind: 'failed' } | { kind: 'ok'; raw: Record<string, unknown>; data: StateData; warnings: string[]; fromMirror?: boolean }
 
 async function readStored(): Promise<Read> {
   let raw: unknown
+  let readError = false
   try {
     raw = await get(KEY)
   } catch (e) {
     console.warn('Lecture impossible', e)
-    return { kind: 'failed' }
+    readError = true
   }
+  // La copie de secours gagne si elle est plus récente que IndexedDB (fermeture avant la fin de l'écriture), ou si IndexedDB est vide ou illisible.
+  const mirror = readMirror()
+  const idbSavedAt = raw && typeof raw === 'object' ? Number((raw as { savedAt?: unknown }).savedAt) || 0 : 0
+  let fromMirror = false
+  if (mirror && (readError || raw === undefined || raw === null || mirror.savedAt > idbSavedAt)) {
+    const rm = migrateState(mirror.data)
+    if (rm.ok && (rm.data.gardens.length > 0 || rm.data.plants.length > 0)) {
+      const stale = !readError && raw !== undefined && raw !== null && migrateState(raw).ok
+      raw = { ...mirror.data, savedAt: mirror.savedAt }
+      fromMirror = true
+      if (stale) console.warn('Copie de secours plus récente que IndexedDB : reprise.')
+    }
+  }
+  if (readError && !fromMirror) return { kind: 'failed' }
   if (raw === undefined || raw === null) return { kind: 'empty' }
   const r = migrateState(raw)
   if (!r.ok) {
     console.warn('Données stockées inutilisables :', r.error)
     return { kind: 'failed' }
   }
-  return { kind: 'ok', raw: raw as Record<string, unknown>, data: r.data, warnings: r.warnings }
+  const warnings = fromMirror ? [...r.warnings, 'Vos dernières modifications ont été retrouvées dans la copie de secours de cet appareil.'] : r.warnings
+  return { kind: 'ok', raw: raw as Record<string, unknown>, data: r.data, warnings, fromMirror }
 }
 
 async function reloadFromStorage() {
@@ -170,9 +226,27 @@ async function reloadFromStorage() {
   emit()
 }
 
+/**
+ * Essai d'écriture au démarrage : un navigateur qui refuse IndexedDB (navigation privée de Firefox, réglage « effacer à la fermeture »,
+ * espace plein) est signalé tout de suite, pas à la première modification perdue.
+ */
+async function probeWrite() {
+  const KEY_PROBE = 'permajardin:probe'
+  try {
+    const stamp = Date.now()
+    await set(KEY_PROBE, stamp)
+    if ((await get(KEY_PROBE)) !== stamp) throw new Error('relecture différente')
+    await del(KEY_PROBE)
+  } catch (e) {
+    console.warn('Essai d’écriture impossible', e)
+    setStatus({ writeError: WRITE_ERROR })
+  }
+}
+
 export async function loadState() {
   initLifecycle()
   void requestPersistence()
+  void probeWrite()
   const read = await readStored()
   if (read.kind === 'failed') {
     state = { ...state, loaded: true }
@@ -223,6 +297,11 @@ export async function wipeLocalData(): Promise<void> {
     state = { gardens: [], plants: [], tasksDone: [], activeGardenId: undefined, loaded: true }
     setStatus({ readFailed: false, writeError: undefined })
     emit()
+    try {
+      if (typeof localStorage !== 'undefined') localStorage.removeItem(MIRROR_KEY)
+    } catch {
+      /* ignoré */
+    }
     for (const k of await keys()) await del(k)
     channel?.postMessage({ type: 'erased' })
   } finally {
@@ -325,6 +404,11 @@ export function setState(update: (s: AppState) => Partial<AppState>) {
   state = { ...state, ...update(state) }
   emit()
   persist()
+}
+
+/** Abonnement hors React (synchronisation automatique, indicateurs) : appelé à chaque changement d'état. */
+export function subscribeStore(l: () => void) {
+  return subscribe(l)
 }
 
 function subscribe(l: () => void) {

@@ -246,6 +246,18 @@ export async function pushSnapshot(opts: { force?: boolean } = {}) {
 }
 
 /**
+ * Où en est la copie en ligne par rapport à cet appareil : connecté ?, date de la copie en ligne, date de notre dernière synchro.
+ * Un seul petit appel réseau (la date). Sert à la synchronisation automatique pour décider : envoyer, reprendre ou signaler un conflit.
+ */
+export async function syncStatus(): Promise<{ signedIn: boolean; remote: string | null; last: string | null }> {
+  const sb = supabase()
+  if (!sb) return { signedIn: false, remote: null, last: null }
+  const user = await currentUser()
+  if (!user) return { signedIn: false, remote: null, last: null }
+  return { signedIn: true, remote: await remoteDate(sb, user.id), last: readLastSynced(user.id) }
+}
+
+/**
  * Droit à l'effacement : supprime l'instantané en ligne de l'utilisateur connecté (jardins, plantes, adresse, position).
  * L'adresse e-mail du compte reste chez Supabase : `deleteMyAccount()` la supprime aussi.
  */

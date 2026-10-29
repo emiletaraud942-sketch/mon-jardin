@@ -8,6 +8,7 @@ import { Icon } from '../../components/Icon'
 import { Segmented } from '../../components/Segmented'
 import { SavedNote, useFlash } from '../../components/useFlash'
 import { exportCurrentState, lastExportAt, REMIND_EVERY_DAYS } from '../../lib/backup'
+import { autoSyncMessage, autoSyncReconcile, autoSyncResolved, useAutoSyncState } from '../../lib/autoSync'
 import { downloadFullBackup, estimateFullBackup, formatMo, FULL_EXTENSION, HEAVY_BACKUP_BYTES, isFullBackup, MESSAGE_TOO_HEAVY, readFullBackup, restorePhotos, type PhotoToRestore } from '../../lib/backupFull'
 import { formatDay, frNumber } from '../../lib/format'
 import { friendlyError, type FriendlyError } from '../../lib/http'
@@ -269,10 +270,18 @@ function ImportDialog({ pending, onClose, onDone }: { pending: PendingImport; on
   )
 }
 
+/** Où vivent les données : dit la vérité, en phrases courtes. */
+const STORAGE_REFUSED = '⚠ Cet appareil refuse d’enregistrer vos données. Causes possibles : navigation privée, espace plein, réglage « effacer à la fermeture ».'
+const STORAGE_AUTO = '✓ Vos données s’enregistrent toutes seules sur cet appareil, à chaque modification.'
+const STORAGE_WHERE =
+  'Vos données sont gardées dans ce navigateur, sur cet appareil. Elles ne passent pas toutes seules d’un navigateur ou d’un téléphone à l’autre. Pour les retrouver ailleurs, faites une sauvegarde ici, puis « Reprendre une sauvegarde » sur l’autre appareil.'
+
 function Backup() {
   const [msg, setMsg] = useState<{ text?: string; error?: FriendlyError }>()
   const [pending, setPending] = useState<PendingImport>()
-  const { persistent } = useStorageStatus()
+  const { persistent, savedAt, writeError } = useStorageStatus()
+  const savedTime = savedAt ? new Date(savedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''
+  const storageLine = writeError ? STORAGE_REFUSED : savedAt ? `✓ Enregistré sur cet appareil à ${savedTime}.` : STORAGE_AUTO
   const [last, setLast] = useState(lastExportAt())
   const overdue = !last || Date.now() - last > REMIND_EVERY_DAYS * 86400000
   const warnings = useRef(getLoadWarnings()).current
@@ -339,6 +348,8 @@ function Backup() {
   return (
     <div className="card">
       <h2>Sauvegarde de mes données</h2>
+      <p role="status" className={writeError ? 'warn-text' : 'small'}>{storageLine}</p>
+      <p className="small">{STORAGE_WHERE}</p>
       <p>La sauvegarde est un fichier, rangé dans les « Téléchargements » de cet appareil.</p>
       <p className={overdue ? 'warn-text' : 'muted'}>
         {last ? `Dernière sauvegarde : ${formatDay(last, { year: true })}.` : 'Vous n’avez pas encore fait de sauvegarde.'}
@@ -399,6 +410,7 @@ function Sync() {
   const [busy, setBusy] = useState(false)
   const [asking, setAsking] = useState<() => void>()
   const [pulling, setPulling] = useState(false)
+  const auto = useAutoSyncState()
   useEffect(() => {
     if (!syncConfigured) return
     let alive = true
@@ -444,21 +456,25 @@ function Sync() {
     run(async (m) => {
       await m.pushSnapshot({ force })
       setConflict(undefined)
+      autoSyncResolved()
       return 'Votre copie est en ligne.'
     })
   const pull = () =>
     run(async (m) => {
       setConflict(undefined)
-      return (await m.pullSnapshot()) ? 'Votre copie en ligne est reprise sur cet appareil.' : 'Il n’y a pas encore de copie en ligne.'
+      const done = await m.pullSnapshot()
+      autoSyncResolved()
+      return done ? 'Votre copie en ligne est reprise sur cet appareil.' : 'Il n’y a pas encore de copie en ligne.'
     })
   const hasPhotos = getState().plants.some((p) => p.photos.length > 0)
 
   return (
     <Fold title="Retrouver mes jardins sur un autre appareil">
-      <p className="small muted">Mettez une copie en ligne, puis reprenez-la sur un autre appareil. Les photos ne sont pas copiées.</p>
+      <p className="small muted">Connecté, vos jardins se mettent à jour en ligne tout seuls ; reprenez-les sur un autre appareil. Les photos ne sont pas copiées.</p>
       {user ? (
         <>
           <p>Connecté : {user.email}</p>
+          <p className="small" role="status">{autoSyncMessage(auto)}</p>
           <div className="row">
             <button className="btn" disabled={busy} onClick={() => withConsent(() => void push())}>
               Mettre ma copie en ligne
@@ -470,7 +486,7 @@ function Sync() {
               Se déconnecter
             </button>
           </div>
-          {conflict && (
+          {(conflict || auto.status === 'conflit') && (
             <div className="alert small" role="alert" style={{ marginTop: 10 }}>
               <p>Une copie plus récente existe en ligne, faite depuis un autre appareil. Laquelle voulez-vous garder ?</p>
               <div className="row">
@@ -481,7 +497,7 @@ function Sync() {
                   Garder celle de cet appareil
                 </button>
                 <button className="btn ghost" onClick={() => setConflict(undefined)}>
-                  Annuler
+                  Plus tard
                 </button>
               </div>
             </div>
@@ -541,6 +557,7 @@ function Sync() {
             const action = asking
             setAsking(undefined)
             action()
+            autoSyncReconcile()
           }}
           onRefuse={() => setAsking(undefined)}
         />

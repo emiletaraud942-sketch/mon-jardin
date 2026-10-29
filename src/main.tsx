@@ -50,6 +50,8 @@ function startSync() {
   void import('./lib/sync')
     .then((m) => m.initSync())
     .then((r) => {
+      // Synchronisation automatique (compte connecté et accord donné) : jamais d'écrasement silencieux (voir autoSync.ts).
+      void import('./lib/autoSync').then((a) => a.startAutoSync()).catch((e) => console.warn('Synchronisation automatique indisponible', e))
       if (!r.handled) return
       setUi({ tab: 'reglages' })
       if (r.error) showToast({ message: r.error, tone: 'error' })

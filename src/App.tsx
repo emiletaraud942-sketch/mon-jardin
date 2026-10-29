@@ -96,7 +96,7 @@ export function App() {
   useEffect(() => {
     if (!loaded) return
     if (getLoadWarnings().length > 0) showToast({ message: 'Certaines données ont été corrigées au démarrage. Le détail est dans Réglages.' })
-    if (consumeExportReminder(getState().plants.length > 0)) {
+    if (consumeExportReminder(getState().plants.length > 0, Date.now(), getState().plants.length)) {
       showToast({
         message: 'Pensez à faire une sauvegarde de vos données.',
         actionLabel: 'Faire une sauvegarde',
