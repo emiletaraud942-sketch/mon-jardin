@@ -81,12 +81,12 @@ Boutons **Hiver · Printemps · Été · Automne · Aujourd'hui** sur la vue 3D 
 2. Annonces « don de bouture » liées à une espèce de mon jardin ; un voisin voit « Marie a : lavande, romarin, rosier » dans sa zone.
 3. **Migration Supabase** (entraide v8) à appliquer par vous, mise à jour des textes de confidentialité (consentement), modération (signalement).
 
-## Étape 9 : « Street View » et reconnaissance
+## Étape 9 : « Street View » et reconnaissance (✅ textes faits le 29 oct. ; lien entre les deux à décider)
 
 1. Dire clairement dans l'appli ce que font « Photos du jardin » et « Scanner mon jardin ».
 2. Voir avec vous si on relie les deux (reconnaître les plantes sur les photos d'un point de vue). 📱 Je ne peux pas tester caméra et boussole : essai par vous d'abord.
 
-## Étape 10 : vidéo de promo
+## Étape 10 : vidéo de promo (✅ scénario dans `docs/VIDEO-PROMO.md`)
 
 Scénario écrit (30 à 60 secondes), liste des écrans à montrer dans l'ordre, textes à l'écran, captures préparées avec un jardin de démonstration. Je ne produis pas la vidéo elle-même.
 
