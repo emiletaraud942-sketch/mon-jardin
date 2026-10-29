@@ -546,3 +546,10 @@ label.btn.disabled {
   font-size: calc(13 * var(--px));
   color: var(--muted);
 }
+
+.pano-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: calc(12 * var(--px));
+  background: var(--accent-soft, var(--surface-2, transparent));
+}

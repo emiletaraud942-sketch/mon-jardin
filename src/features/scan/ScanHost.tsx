@@ -9,6 +9,9 @@ import { RecalerScreen } from './RecalerScreen'
 import { ScannerScreen } from './ScannerScreen'
 import { MesuresScreen } from './MesuresScreen'
 
+const SCAN_PLANTS_HINT = 'Filme le jardin et propose le nom des plantes, avec votre accord.'
+const PHOTOS_HINT = 'Pour vous promener dans de vraies photos, sans reconnaissance : « Photos du jardin » sur la carte.'
+
 /** Écrans de « Scanner mon jardin » : menu, recalage, scan des plantes, placement par mesures. */
 export default function ScanHost() {
   const { screen, target } = useScanUi()
@@ -31,9 +34,15 @@ export default function ScanHost() {
         <button className="btn more-item" onClick={() => openScan('scanner')}>
           <Icon name="camera" /> Scanner les plantes
         </button>
+        <p className="small muted" style={{ margin: '-4px 0 0' }}>
+          {SCAN_PLANTS_HINT}
+        </p>
         <button className="btn more-item" onClick={() => openScan('mesures', { kind: 'new' })}>
           <Icon name="move" /> Placer par mesures
         </button>
+        <p className="small muted" style={{ margin: 0 }}>
+          {PHOTOS_HINT}
+        </p>
         {c && (
           <button
             className="btn"

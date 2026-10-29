@@ -12,6 +12,9 @@ interface Info {
   bytes: number
 }
 
+/** Ce que font (et ne font pas) ces photos, pour ne pas les confondre avec « Scanner mon jardin ». */
+const NOT_A_SCAN = 'Ces photos ne reconnaissent pas les plantes toutes seules. Pour trouver le nom d’une plante, utilisez « Scanner mon jardin », puis « Scanner les plantes ».'
+
 /** Liste des points de vue du jardin, ou explication quand il n'y en a pas encore. */
 export function Home({ garden }: { garden: Garden }) {
   const points = panoramasOf(garden)
@@ -108,6 +111,7 @@ export function Home({ garden }: { garden: Garden }) {
           <Icon name="upload" /> Importer un panorama
         </button>
 
+        <p className="small pano-note">{NOT_A_SCAN}</p>
         <p className="small muted pano-foot">
           {points.length > 0 && (
             <>
