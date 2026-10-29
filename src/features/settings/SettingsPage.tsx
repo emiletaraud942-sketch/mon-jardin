@@ -7,7 +7,7 @@ import { Fold } from '../../components/Fold'
 import { Icon } from '../../components/Icon'
 import { Segmented } from '../../components/Segmented'
 import { SavedNote, useFlash } from '../../components/useFlash'
-import { exportCurrentState, lastExportAt, REMIND_EVERY_DAYS } from '../../lib/backup'
+import { backupCurrentState, canShareFile, exportCurrentState, lastExportAt, lastExportName, REMIND_EVERY_DAYS, saveBackupBlob, saveOutcomeText, shareFile, type SaveOutcome } from '../../lib/backup'
 import { autoSyncMessage, autoSyncReconcile, autoSyncResolved, useAutoSyncState } from '../../lib/autoSync'
 import { downloadFullBackup, estimateFullBackup, formatMo, FULL_EXTENSION, HEAVY_BACKUP_BYTES, isFullBackup, MESSAGE_TOO_HEAVY, readFullBackup, restorePhotos, type PhotoToRestore } from '../../lib/backupFull'
 import { formatDay, frNumber } from '../../lib/format'
@@ -286,11 +286,28 @@ function Backup() {
   const overdue = !last || Date.now() - last > REMIND_EVERY_DAYS * 86400000
   const warnings = useRef(getLoadWarnings()).current
 
-  function exportJson() {
-    exportCurrentState()
-    setLast(Date.now())
-    setMsg({ text: 'Sauvegarde faite. Le fichier est dans vos téléchargements.' })
-    showToast({ message: 'Sauvegarde faite. Le fichier est dans vos téléchargements.' })
+  const [outcome, setOutcome] = useState<SaveOutcome>()
+  const [lastName, setLastName] = useState(lastExportName())
+
+  /** Range le résultat (menu « Partager » sur téléphone, sinon téléchargement) et dit où le retrouver. */
+  function done(o: SaveOutcome, detail = '') {
+    setOutcome(o)
+    if (o.how !== 'annule') {
+      setLast(Date.now())
+      setLastName(o.name)
+    }
+    setMsg({ text: saveOutcomeText(o) + detail })
+    if (o.how !== 'annule') showToast({ message: o.how === 'partage' ? 'Sauvegarde envoyée.' : 'Sauvegarde faite. Le fichier est dans vos téléchargements.' })
+  }
+
+  async function exportJson() {
+    setMsg(undefined)
+    setOutcome(undefined)
+    try {
+      done(await backupCurrentState('permajardin', { share: true }))
+    } catch (e) {
+      setMsg({ error: friendlyError(e) })
+    }
   }
 
   const [busy, setBusy] = useState(false)
@@ -308,11 +325,11 @@ function Backup() {
     setBusy(true)
     setMsg(undefined)
     try {
-      const out = await downloadFullBackup()
-      setLast(Date.now())
-      const text = `Sauvegarde complète faite (${out.photos} photo${out.photos > 1 ? 's' : ''}). Le fichier est dans vos téléchargements.${out.missing ? ` ${out.missing} photo${out.missing > 1 ? 's' : ''} introuvable${out.missing > 1 ? 's' : ''} n’${out.missing > 1 ? 'ont' : 'a'} pas pu être ajoutée${out.missing > 1 ? 's' : ''}.` : ''}`
-      setMsg({ text })
-      showToast({ message: 'Sauvegarde complète faite.' })
+      setOutcome(undefined)
+      const out = await downloadFullBackup('permajardin-complet', { share: true })
+      const photos = ` Elle contient ${out.photos} photo${out.photos > 1 ? 's' : ''}.`
+      const missing = out.missing ? ` ${out.missing} photo${out.missing > 1 ? 's' : ''} introuvable${out.missing > 1 ? 's n’ont' : ' n’a'} pas pu être ajoutée${out.missing > 1 ? 's' : ''}.` : ''
+      done(out.outcome, photos + missing)
     } catch (e) {
       setMsg({ error: friendlyError(e) })
     } finally {
@@ -352,12 +369,12 @@ function Backup() {
       <p className="small">{STORAGE_WHERE}</p>
       <p>La sauvegarde est un fichier, rangé dans les « Téléchargements » de cet appareil.</p>
       <p className={overdue ? 'warn-text' : 'muted'}>
-        {last ? `Dernière sauvegarde : ${formatDay(last, { year: true })}.` : 'Vous n’avez pas encore fait de sauvegarde.'}
+        {last ? `Dernière sauvegarde : ${formatDay(last, { year: true })}${lastName ? `, fichier « ${lastName} »` : ''}.` : 'Vous n’avez pas encore fait de sauvegarde.'}
         {overdue && ' Pensez à en faire une.'}
       </p>
       {warnings.length > 0 && <p className="alert small">Certaines données ont été corrigées au démarrage : {warnings.join(' ')}</p>}
       <div className="row">
-        <button className="btn primary" onClick={exportJson} disabled={busy}>
+        <button className="btn primary" onClick={() => void exportJson()} disabled={busy}>
           <Icon name="download" /> Faire une sauvegarde
         </button>
         <button className="btn" onClick={() => void exportFull()} disabled={busy || est?.photos === 0}>
@@ -373,8 +390,27 @@ function Backup() {
       {msg?.error && <ErrorNote error={msg.error} />}
       {msg?.text && (
         <p role="status" style={{ marginTop: 8 }}>
-          ✓ {msg.text}
+          {outcome?.how === 'annule' ? '' : '✓ '}
+          {msg.text}
         </p>
+      )}
+      {outcome?.file && outcome.how !== 'partage' && (
+        <div className="row" style={{ marginTop: 6 }}>
+          {canShareFile(outcome.file) && (
+            <button
+              className="btn"
+              onClick={async () => {
+                const r = await shareFile(outcome.file!)
+                if (r === 'partage') done({ ...outcome, how: 'partage' })
+              }}
+            >
+              Partager
+            </button>
+          )}
+          <button className="btn" onClick={async () => done(await saveBackupBlob(outcome.file!, outcome.name))}>
+            Enregistrer sur cet appareil
+          </button>
+        </div>
       )}
       <details className="np-details">
         <summary>Détails</summary>

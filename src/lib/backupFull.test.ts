@@ -10,7 +10,10 @@ vi.mock('./photos', () => ({
 const downloads: { blob: Blob; name: string }[] = []
 let exported = 0
 vi.mock('./backup', () => ({
-  downloadBlob: (blob: Blob, name: string) => void downloads.push({ blob, name }),
+  saveBackupBlob: async (blob: Blob, name: string) => {
+    downloads.push({ blob, name })
+    return { how: 'telecharge', name }
+  },
   markExported: () => void exported++,
 }))
 const fixture: { gardens: Garden[]; plants: Plant[]; tasksDone: never[] } = { gardens: [], plants: [], tasksDone: [] }

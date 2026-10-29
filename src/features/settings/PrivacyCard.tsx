@@ -4,7 +4,7 @@ import { Icon } from '../../components/Icon'
 import { TechDetails } from '../../components/ErrorNote'
 import { Modal } from '../../components/Modal'
 import { formatDay } from '../../lib/format'
-import { exportCurrentState } from '../../lib/backup'
+import { backupCurrentState, saveOutcomeText, type SaveOutcome } from '../../lib/backup'
 import { downloadFullBackup, estimateFullBackup, formatMo, MESSAGE_TOO_HEAVY } from '../../lib/backupFull'
 import { showToast } from '../../lib/toast'
 import { eraseAllData, type EraseReport } from '../../lib/security/erase'
@@ -33,11 +33,11 @@ function EraseDialog({ onClose }: { onClose: () => void }) {
   const [hasNeighbors, setHasNeighbors] = useState(false)
   const [delNeighbors, setDelNeighbors] = useState(false)
   const [sure, setSure] = useState(false)
-  const [backedUp, setBackedUp] = useState(false)
   const [busy, setBusy] = useState(false)
   const [report, setReport] = useState<EraseReport>()
   const [photoEst, setPhotoEst] = useState<{ photos: number; bytes: number; tooHeavy: boolean }>()
   const [backupError, setBackupError] = useState<string>()
+  const [saved, setSaved] = useState<SaveOutcome>()
   const [backingUp, setBackingUp] = useState(false)
   useEffect(() => {
     let alive = true
@@ -52,8 +52,8 @@ function EraseDialog({ onClose }: { onClose: () => void }) {
     setBackingUp(true)
     setBackupError(undefined)
     try {
-      await downloadFullBackup('permajardin-complet-avant-effacement')
-      setBackedUp(true)
+      const out = await downloadFullBackup('permajardin-complet-avant-effacement', { share: true })
+      setSaved(out.outcome)
     } catch (e) {
       setBackupError(e instanceof Error ? e.message : 'La sauvegarde a échoué.')
     } finally {
@@ -159,16 +159,17 @@ function EraseDialog({ onClose }: { onClose: () => void }) {
         {backupError && <p className="alert error small" role="alert" style={{ margin: 0 }}>{backupError}</p>}
         <button
           className="btn"
-          onClick={() => {
-            exportCurrentState('permajardin-avant-effacement')
-            setBackedUp(true)
+          onClick={async () => {
+            const out = await backupCurrentState('permajardin-avant-effacement', { share: true })
+            setSaved(out)
           }}
         >
           <Icon name="download" /> {hasPhotos ? 'Sauvegarde simple, sans photos' : 'Faire d’abord une sauvegarde'}
         </button>
-        {backedUp && (
+        {saved && (
           <p className="small" role="status" style={{ margin: 0 }}>
-            ✓ Sauvegarde faite. Elle est dans vos téléchargements.
+            {saved.how === 'annule' ? '' : '✓ '}
+            {saveOutcomeText(saved)}
           </p>
         )}
         {levels.length > 1 && (

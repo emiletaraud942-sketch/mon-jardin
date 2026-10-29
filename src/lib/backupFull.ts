@@ -1,5 +1,5 @@
 import { isoDate } from './dates'
-import { downloadBlob, markExported } from './backup'
+import { markExported, saveBackupBlob, type SaveOutcome } from './backup'
 import { getPhoto, restorePhoto } from './photos'
 import { migrateState, serializeState, type StateData } from './migrate'
 import { LIMITS } from './security/limits'
@@ -173,13 +173,13 @@ export async function restorePhotos(photos: PhotoToRestore[]): Promise<number> {
   return n
 }
 
-/** Fabrique la sauvegarde complète et la télécharge. Refuse (message clair) si le fichier dépasserait ce que l'appli sait relire. */
-export async function downloadFullBackup(prefix = 'permajardin-complet'): Promise<FullBackup> {
+/** Fabrique la sauvegarde complète et la range (menu « Partager » sur téléphone, sinon téléchargement). Refuse (message clair) si le fichier dépasserait ce que l'appli sait relire. */
+export async function downloadFullBackup(prefix = 'permajardin-complet', opts: { share?: boolean } = {}): Promise<FullBackup & { outcome: SaveOutcome }> {
   const out = await buildFullBackup()
   if (out.blob.size > LIMITS.fullBackupBytes) throw new Error(MESSAGE_TOO_HEAVY(Math.round(out.blob.size / (1024 * 1024))))
-  downloadBlob(out.blob, `${prefix}-${isoDate()}${FULL_EXTENSION}`)
-  markExported()
-  return out
+  const outcome = await saveBackupBlob(out.blob, `${prefix}-${isoDate()}${FULL_EXTENSION}`, { share: opts.share })
+  if (outcome.how !== 'annule') markExported(Date.now(), outcome.name)
+  return { ...out, outcome }
 }
 
 /** « 85 Mo » ou « 0,4 Mo » : taille lisible. */

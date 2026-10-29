@@ -6,6 +6,7 @@ import { serializeState } from './migrate'
 
 const LAST_EXPORT_KEY = 'permajardin:last-export'
 const LAST_REMINDER_KEY = 'permajardin:last-export-reminder'
+const LAST_EXPORT_NAME_KEY = 'permajardin:last-export-name'
 const FIRST_USE_KEY = 'permajardin:first-use'
 const DAY_MS = 86400000
 export const REMIND_EVERY_DAYS = 30
@@ -46,6 +47,80 @@ export function downloadJson(text: string, filename: string) {
   downloadBlob(new Blob([text], { type: 'application/json' }), filename)
 }
 
+export type DeviceKind = 'ios' | 'android' | 'bureau'
+
+/** iPhone, iPad (qui se dit parfois « Mac » mais a un écran tactile), Android, ou ordinateur. */
+export function deviceKind(ua: string, maxTouchPoints = 0): DeviceKind {
+  if (/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && maxTouchPoints > 1)) return 'ios'
+  if (/Android/i.test(ua)) return 'android'
+  return 'bureau'
+}
+
+export interface SaveOutcome {
+  how: 'partage' | 'telecharge' | 'annule'
+  name: string
+  /** Le fichier, gardé en mémoire pour proposer « Partager » avec un nouveau geste si le premier essai n'a pas pu s'ouvrir. */
+  file?: File
+}
+
+const currentDevice = () => (typeof navigator === 'undefined' ? 'bureau' : deviceKind(navigator.userAgent, navigator.maxTouchPoints ?? 0))
+
+/** Le navigateur sait-il partager ce fichier (menu « Partager » : Fichiers, Drive, Mail, AirDrop…) ? */
+export function canShareFile(file: File): boolean {
+  try {
+    return typeof navigator !== 'undefined' && typeof navigator.share === 'function' && !!navigator.canShare?.({ files: [file] })
+  } catch {
+    return false
+  }
+}
+
+/** Ouvre le menu « Partager ». `refuse` : le navigateur n'a pas pu l'ouvrir (geste trop ancien, non pris en charge). */
+export async function shareFile(file: File): Promise<'partage' | 'annule' | 'refuse'> {
+  try {
+    await navigator.share({ files: [file], title: 'Sauvegarde PermaJardin' })
+    return 'partage'
+  } catch (e) {
+    return (e as { name?: string } | null)?.name === 'AbortError' ? 'annule' : 'refuse'
+  }
+}
+
+/**
+ * Range une sauvegarde : sur téléphone, le menu « Partager » d'abord (on choisit Fichiers, Drive, Mail…), sinon téléchargement.
+ * Partage annulé par l'utilisateur : rien n'est téléchargé dans son dos.
+ */
+export async function saveBackupBlob(blob: Blob, name: string, opts: { share?: boolean } = {}): Promise<SaveOutcome> {
+  const file = new File([blob], name, { type: blob.type || 'application/octet-stream' })
+  if (opts.share && currentDevice() !== 'bureau' && canShareFile(file)) {
+    const r = await shareFile(file)
+    if (r === 'partage') return { how: 'partage', name, file }
+    if (r === 'annule') return { how: 'annule', name, file }
+  }
+  downloadBlob(blob, name)
+  return { how: 'telecharge', name, file }
+}
+
+/** Ce qu'on dit à l'utilisateur après une sauvegarde : où est le fichier, en phrases courtes. */
+export function saveOutcomeText(o: SaveOutcome, device: DeviceKind = currentDevice()): string {
+  if (o.how === 'partage') return 'Sauvegarde envoyée là où vous l’avez choisie. Gardez-la en lieu sûr.'
+  if (o.how === 'annule') return 'Partage annulé : rien n’a été enregistré. Appuyez sur « Partager » ou sur « Enregistrer sur cet appareil ».'
+  const where =
+    device === 'ios'
+      ? 'dans l’appli Fichiers, dossier Téléchargements (ou « Sur mon iPhone »)'
+      : device === 'android'
+        ? 'dans l’appli Fichiers, dossier Téléchargements'
+        : 'dans le dossier Téléchargements de l’ordinateur'
+  return `Sauvegarde faite. Le fichier « ${o.name} » est ${where}. Vous ne le voyez pas ? Ouvrez la liste des téléchargements de votre navigateur.`
+}
+
+/** Sauvegarde simple (JSON, sans photos) de l'état courant. */
+export async function backupCurrentState(name = 'permajardin', opts: { remember?: boolean; share?: boolean } = {}): Promise<SaveOutcome> {
+  const { gardens, plants, tasksDone } = getState()
+  const text = JSON.stringify(serializeState({ gardens, plants, tasksDone }), null, 2)
+  const out = await saveBackupBlob(new Blob([text], { type: 'application/json' }), `${name}-${isoDate()}.json`, { share: opts.share })
+  if (out.how !== 'annule' && opts.remember !== false) markExported(Date.now(), out.name)
+  return out
+}
+
 /** Exporte l'état courant. `name` : préfixe du fichier (par défaut « permajardin »). */
 export function exportCurrentState(name = 'permajardin', remember = true) {
   const { gardens, plants, tasksDone } = getState()
@@ -54,8 +129,14 @@ export function exportCurrentState(name = 'permajardin', remember = true) {
 }
 
 /** Note qu'une sauvegarde vient d'être faite (rappel mensuel). */
-export function markExported(now = Date.now()) {
+export function markExported(now = Date.now(), fileName?: string) {
   write(LAST_EXPORT_KEY, String(now))
+  if (fileName) write(LAST_EXPORT_NAME_KEY, fileName)
+}
+
+/** Nom du dernier fichier de sauvegarde (pour dire à l'utilisateur quoi chercher). */
+export function lastExportName(): string | undefined {
+  return read(LAST_EXPORT_NAME_KEY) ?? undefined
 }
 
 export function lastExportAt(): number | undefined {
