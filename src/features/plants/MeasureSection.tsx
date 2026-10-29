@@ -10,12 +10,12 @@ import {
   compareSentence,
   differs,
   expectedVsAdjusted,
-  needsRemeasure,
   parseMeasure,
   remindersEnabled,
   removeMeasurement,
   setRemindersEnabled,
 } from '../../lib/measure'
+import { measureAdvice } from '../../lib/purchase'
 import { getState, updatePlant } from '../../lib/store'
 import { showToast } from '../../lib/toast'
 import { plantSizeAt } from '../../engine/growth'
@@ -30,7 +30,7 @@ export function MeasureSection({ plant, species, name }: { plant: Plant; species
   const now = new Date()
   const list = plant.measurements ?? []
   const latest = list[0]
-  const due = remind && needsRemeasure(plant, now)
+  const advice = remind ? measureAdvice(plant, now) : undefined
 
   const save = () => {
     const heightM = h.trim() ? parseMeasure(h, MAX_HEIGHT_M) : undefined
@@ -85,11 +85,14 @@ export function MeasureSection({ plant, species, name }: { plant: Plant; species
       <p className="muted small" style={{ margin: 0 }}>
         Mesurez au mètre ruban ou en comptant vos pas.
       </p>
-      {due && (
-        <p className="alert info small" role="status" style={{ margin: 0 }}>
-          {list.length ? 'Votre dernière mesure date d’un an ou plus. Mesurez à nouveau.' : 'Mesurez-la une première fois pour recaler la prévision.'}
+      {advice && (
+        <p className={'small ' + (advice.due ? 'alert info' : 'muted')} role="status" style={{ margin: 0 }}>
+          {advice.text}
         </p>
       )}
+      <p className="muted small" style={{ margin: 0 }}>
+        Hauteur : du sol au sommet. Largeur : à l’endroit le plus large.
+      </p>
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 9rem), 1fr))', gap: 8 }}>
         <label className="field">
           <span>Hauteur (m)</span>

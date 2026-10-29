@@ -200,6 +200,22 @@ export interface TerrainGrid {
 
 export type PlantStatus = 'projet' | 'en-place' | 'malade' | 'mort'
 
+/** Forme sous laquelle la plante a été achetée ou plantée. */
+export type PurchaseForm = 'graine' | 'godet' | 'motte' | 'racines-nues' | 'scion' | 'baliveau' | 'demi-tige' | 'haute-tige'
+
+/** Achat et plantation : tout est facultatif (« je ne sais pas », « plus tard »). */
+export interface PlantPurchase {
+  form?: PurchaseForm
+  /** Hauteur à l'achat (cm) : recale la courbe de croissance dès le premier jour. */
+  heightCm?: number
+  boughtAt?: string // ISO date
+  shop?: string
+  priceEur?: number
+  note?: string
+  /** La personne ne veut pas renseigner ces informations : on ne les redemande pas. */
+  skipped?: boolean
+}
+
 export interface Plant {
   id: string
   gardenId: string
@@ -210,6 +226,8 @@ export interface Plant {
   plantedAt: string // ISO date
   /** Âge au moment de la plantation (années), pour un arbre acheté en pot. */
   ageAtPlanting?: number
+  /** Forme d'achat (scion, baliveau, godet…), lieu, prix, note. */
+  purchase?: PlantPurchase
   status: PlantStatus
   notes?: string
   photos: string[] // ids de photos (IndexedDB)

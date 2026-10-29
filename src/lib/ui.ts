@@ -120,6 +120,8 @@ interface UiState {
   pendingPhotos?: string[]
   /** Placement en série : le mode reste actif après chaque plante, jusqu'à « Terminé ». */
   placingSeries?: { count: number }
+  /** Plante dont on demande l'achat (forme, hauteur, lieu, prix) juste après son placement. */
+  purchasePlantId?: string
   /** « Déplacer cette plante » : la prochaine pression sur la carte donne son nouvel emplacement. */
   movingPlantId?: string
   /** Endroit touché sur la carte, en attente de « Valider » (placement ou déplacement). Absent en mode Viser : le viseur fait foi. */

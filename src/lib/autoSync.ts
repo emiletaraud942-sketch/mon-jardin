@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
-import type { AppState } from './store'
+import { hasConsent } from './consent'
+import { getState, subscribeStore, type AppState } from './store'
 
 // Synchronisation automatique de la copie en ligne (si Supabase est configuré, qu'un compte est connecté et que l'accord est donné).
 // Règle d'or : JAMAIS d'écrasement silencieux. Si les deux côtés ont changé, on s'arrête et on demande (état « conflit »).
@@ -185,7 +186,7 @@ export function createAutoSync(deps: AutoSyncDeps) {
 const DIRTY_KEY = 'permajardin:sync-dirty'
 
 export async function startAutoSync(): Promise<() => void> {
-  const [store, sync, consent] = await Promise.all([import('./store'), import('./sync'), import('./consent')])
+  const sync = await import('./sync')
   const readDirty = () => {
     try {
       return localStorage.getItem(DIRTY_KEY) === '1'
@@ -202,12 +203,12 @@ export async function startAutoSync(): Promise<() => void> {
     }
   }
   const auto = createAutoSync({
-    getState: store.getState,
-    subscribe: store.subscribeStore,
+    getState,
+    subscribe: subscribeStore,
     remote: sync.syncStatus,
     push: () => sync.pushSnapshot(),
     pull: () => sync.pullSnapshot(),
-    hasConsent: () => consent.hasConsent('sync'),
+    hasConsent: () => hasConsent('sync'),
     isConflict: (e) => e instanceof sync.SyncConflictError,
     online: () => (typeof navigator === 'undefined' ? true : navigator.onLine !== false),
     now: () => Date.now(),
@@ -218,9 +219,9 @@ export async function startAutoSync(): Promise<() => void> {
   // Attend que les données locales soient chargées avant la première comparaison.
   const waitLoaded = () =>
     new Promise<void>((resolve) => {
-      if (store.getState().loaded) return resolve()
-      const off = store.subscribeStore(() => {
-        if (store.getState().loaded) {
+      if (getState().loaded) return resolve()
+      const off = subscribeStore(() => {
+        if (getState().loaded) {
           off()
           resolve()
         }

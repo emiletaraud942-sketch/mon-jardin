@@ -218,7 +218,7 @@ describe('configuration du service worker', () => {
     const cfg = read('vite.config.ts')
     expect(cfg).toContain("importScripts: ['push-sw.js']")
     expect(cfg).toContain("registerType: 'prompt'")
-    expect(cfg).toMatch(/globIgnores: \['assets\/three-\*\.js', 'push-sw\.js'\]/)
+    expect(cfg).toMatch(/globIgnores: \['assets\/three-\*\.js', 'push-sw\.js', 'ocr\/\*\*'\]/) // le chunk 3D, le service worker des alertes et les modules de lecture d'étiquette restent hors précache
     expect(cfg).toContain('skipWaiting: false')
     expect(cfg).toContain("envPrefix: ['VITE_', 'NEIGHBORS_']")
   })

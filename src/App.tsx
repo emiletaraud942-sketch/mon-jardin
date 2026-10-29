@@ -11,6 +11,7 @@ import { ToastHost } from './components/Toast'
 import { UpdateBanner } from './components/UpdateBanner'
 import { consumeExportReminder, exportCurrentState } from './lib/backup'
 import { historyKeyHandler } from './lib/history'
+import { PurchaseDialog } from './features/plants/PurchaseDialog'
 import { getLoadWarnings, getState, useActiveGarden, useGardenPlants, useStore } from './lib/store'
 import { showToast } from './lib/toast'
 import { RAYON_LABEL, TAB_LABEL, getUi, goRayon, noteVisit, openHelp, openParcours, rayonOfTab, setGuide, setHelpOpen, setUi, subTabs, useHelpOpen, useUi, visibleRayons, type Rayon, type Tab } from './lib/ui'
@@ -293,6 +294,7 @@ export function App() {
         <StorageBanner />
       </div>
       <ToastHost />
+      <PurchaseDialog />
       <LegalModal />
       {scanOpen && (
         <Suspense fallback={null}>

@@ -2,6 +2,8 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { readFileSync } from 'node:fs'
+import type { Plugin } from 'vite'
 
 // Les mêmes préfixes sont réécrits par vercel.json en production :
 // le navigateur n'appelle que notre domaine (pas de souci CORS).
@@ -12,6 +14,35 @@ const proxies = {
   '/ext/apicarto': 'https://apicarto.ign.fr',
   '/ext/meteo-archive': 'https://archive-api.open-meteo.com',
   '/ext/meteo': 'https://api.open-meteo.com',
+}
+
+// Lecture de l'étiquette (Tesseract) : les modules sont servis par NOTRE domaine (la CSP interdit les CDN) et ne sont ni précachés
+// (≈ 5 Mo) ni chargés au démarrage : ils sont téléchargés une fois, à la première lecture d'étiquette, puis gardés pour le hors ligne
+// (règle `ocr-modules` ci-dessous). Même chemin en développement (middleware) et en production (fichiers émis dans dist/ocr).
+const OCR_FILES: Record<string, string> = {
+  'worker.min.js': 'node_modules/tesseract.js/dist/worker.min.js',
+  // Le navigateur ne télécharge que la variante qu'il sait exécuter (relaxed-simd, puis simd, puis la version de base).
+  'tesseract-core-relaxedsimd-lstm.wasm.js': 'node_modules/tesseract.js-core/tesseract-core-relaxedsimd-lstm.wasm.js',
+  'tesseract-core-simd-lstm.wasm.js': 'node_modules/tesseract.js-core/tesseract-core-simd-lstm.wasm.js',
+  'tesseract-core-lstm.wasm.js': 'node_modules/tesseract.js-core/tesseract-core-lstm.wasm.js',
+  'fra.traineddata.gz': 'node_modules/@tesseract.js-data/fra/4.0.0_best_int/fra.traineddata.gz',
+}
+function ocrAssets(): Plugin {
+  return {
+    name: 'permajardin-ocr-assets',
+    configureServer(server) {
+      server.middlewares.use('/ocr', (req, res, next) => {
+        const name = decodeURIComponent((req.url ?? '').split('?')[0]).replace(/^\//, '')
+        const file = OCR_FILES[name]
+        if (!file) return next()
+        res.setHeader('Content-Type', name.endsWith('.js') ? 'text/javascript' : 'application/gzip')
+        res.end(readFileSync(file))
+      })
+    },
+    generateBundle() {
+      for (const [name, file] of Object.entries(OCR_FILES)) this.emitFile({ type: 'asset', fileName: `ocr/${name}`, source: readFileSync(file) })
+    },
+  }
 }
 
 // Découpage des bundles : chaque grosse bibliothèque a son chunk, au hash stable.
@@ -36,6 +67,7 @@ export default defineConfig({
   envPrefix: ['VITE_', 'NEIGHBORS_'],
   plugins: [
     react(),
+    ocrAssets(),
     VitePWA({
       // « prompt » : le nouveau service worker attend (pas de skipWaiting automatique).
       // L'interface propose « Nouvelle version — Recharger » (virtual:pwa-register/react),
@@ -77,7 +109,7 @@ export default defineConfig({
         // retéléchargé qu'à une mise à jour de MapLibre).
         // Polices autohébergées (DM Serif Display + DM Sans, 2 fichiers woff2 latin, ~60 ko) : précachées pour que le texte s'affiche pareil hors ligne.
         globPatterns: ['**/*.{js,css,html,woff2}'],
-        globIgnores: ['assets/three-*.js', 'push-sw.js'],
+        globIgnores: ['assets/three-*.js', 'push-sw.js', 'ocr/**'],
         // Alertes de nouveaux messages : deux gestionnaires (push, notificationclick) dans public/push-sw.js, chargés par le
         // service worker généré. Le mode « prompt » et le précache ne changent pas. Le navigateur compare aussi ce fichier
         // quand il cherche une nouvelle version. Il n'est pas précaché : il est gardé avec le service worker lui-même.
@@ -95,6 +127,16 @@ export default defineConfig({
             options: {
               cacheName: 'chunk-3d',
               expiration: { maxEntries: 3, maxAgeSeconds: 60 * 60 * 24 * 90 },
+              cacheableResponse: { statuses: [200] },
+            },
+          },
+          {
+            // Modules de lecture de l'étiquette (≈ 5 Mo) : téléchargés à la première lecture, puis servis du cache (hors ligne).
+            urlPattern: ({ url }) => url.pathname.startsWith('/ocr/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'ocr-modules',
+              expiration: { maxEntries: 8, maxAgeSeconds: 60 * 60 * 24 * 365 },
               cacheableResponse: { statuses: [200] },
             },
           },

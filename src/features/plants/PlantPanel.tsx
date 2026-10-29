@@ -16,6 +16,7 @@ import { companionReport, legalDistance } from '../../engine/planting'
 import type { Garden, Plant, PlantStatus } from '../../types'
 import { Fragment, useEffect, useState, type ComponentType, type ReactNode } from 'react'
 import { MeasureSection } from './MeasureSection'
+import { PurchaseSummary } from './PurchaseDialog'
 import { useTasks } from '../tasks/useTasks'
 
 /** Note de position (distance à la limite, art. 671) : une phrase bien visible, le détail dessous. */
@@ -285,6 +286,7 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
         </div>
       )}
 
+      {species && <PurchaseSummary plantId={plant.id} />}
       {species && <MeasureSection plant={plant} species={species} name={plantName(plant)} />}
 
       <div>

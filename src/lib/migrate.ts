@@ -1,6 +1,6 @@
 // Validation et migration des données (stockage local, import JSON, synchronisation).
 // PROPRIÉTAIRE : dev-backend-supabase. La signature de `migrateState` est le contrat ; ne pas la changer.
-import type { Building, Garden, Panorama, PanoramaShot, Plant, PlantMeasurement, PlantStatus, SoilTexture, TaskDone, TerrainGrid, XY } from '../types'
+import type { Building, Garden, Panorama, PanoramaShot, Plant, PlantMeasurement, PlantPurchase, PlantStatus, PurchaseForm, SoilTexture, TaskDone, TerrainGrid, XY } from '../types'
 import { isoDate } from './dates'
 import { isValidCalibration } from './calibration'
 import { uid } from './geo'
@@ -37,7 +37,7 @@ const inRange = (n: number, max: number) => Math.abs(n) <= max
 const text = (v: string, max: number = LIMITS.shortText) => clipText(v, max)
 
 const GARDEN_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'address', 'center', 'altitudeM', 'parcel', 'parcelRefs', 'areaM2', 'buildings', 'terrain', 'sol', 'lastFrostDoy', 'firstFrostDoy', 'minAbsC', 'calibration', 'panoramas', 'createdAt'])
-const PLANT_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'speciesId', 'customName', 'position', 'plantedAt', 'ageAtPlanting', 'status', 'notes', 'photos', 'measurements'])
+const PLANT_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'speciesId', 'customName', 'position', 'plantedAt', 'ageAtPlanting', 'purchase', 'status', 'notes', 'photos', 'measurements'])
 const TASK_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'taskKey', 'doneAt'])
 
 /** Date ISO plausible : « 2024-03-10 » ou date-heure complète. Rejette « 2024-13-45 ». */
@@ -284,9 +284,30 @@ function sanitizePlant(raw: unknown, gardenIds: Set<string>, report: Report): Pl
       report.add('p-mesures', "{n} plante avait des mesures invalides : elles ont été écartées.", "{n} plantes avaient des mesures invalides : elles ont été écartées.")
     }
   } else delete p.measurements
+  if (raw.purchase !== undefined) {
+    const purchase = sanitizePurchase(raw.purchase)
+    if (purchase) p.purchase = purchase
+    else delete p.purchase
+  }
   if (typeof raw.notes === 'string') p.notes = text(raw.notes, LIMITS.longText)
   if (typeof raw.customName === 'string') p.customName = text(raw.customName)
   return p
+}
+
+const PURCHASE_FORMS_SET: ReadonlySet<string> = new Set(['graine', 'godet', 'motte', 'racines-nues', 'scion', 'baliveau', 'demi-tige', 'haute-tige'])
+
+/** Achat : champs connus seulement, bornés ; rien d'exploitable = pas d'achat. */
+function sanitizePurchase(raw: unknown): PlantPurchase | undefined {
+  if (!isRec(raw)) return undefined
+  const out: PlantPurchase = {}
+  if (typeof raw.form === 'string' && PURCHASE_FORMS_SET.has(raw.form)) out.form = raw.form as PurchaseForm
+  if (isNum(raw.heightCm) && raw.heightCm > 0 && raw.heightCm <= 3000) out.heightCm = raw.heightCm
+  if (isValidDate(raw.boughtAt)) out.boughtAt = raw.boughtAt
+  if (typeof raw.shop === 'string' && raw.shop.trim()) out.shop = text(raw.shop.trim(), 120)
+  if (isNum(raw.priceEur) && raw.priceEur >= 0 && raw.priceEur <= 100_000) out.priceEur = raw.priceEur
+  if (typeof raw.note === 'string' && raw.note.trim()) out.note = text(raw.note, LIMITS.longText)
+  if (raw.skipped === true) out.skipped = true
+  return Object.keys(out).length > 0 ? out : undefined
 }
 
 function sanitizeTaskDone(raw: unknown, gardenIds: Set<string>): TaskDone | undefined {

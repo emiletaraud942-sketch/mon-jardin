@@ -4587,3 +4587,31 @@ html[data-immersive] body {
     font-size: 214.8%;
   }
 }
+
+/* Forme d'achat : boutons à choisir (compact), l'explication du choix actif est dessous. */
+.purchase-forms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.purchase-form-choice {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border: var(--border-w) solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: var(--fw-strong);
+  cursor: pointer;
+}
+.purchase-form-choice.on {
+  background: var(--btn-green);
+  color: var(--on-btn-green);
+  border-color: var(--btn-green);
+}
+.purchase-form-choice:focus-within {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}

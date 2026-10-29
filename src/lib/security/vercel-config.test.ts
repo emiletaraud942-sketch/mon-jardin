@@ -94,7 +94,8 @@ describe('en-têtes de sécurité', () => {
 
   it('CSP : rien d’externe hors Supabase, pas d’unsafe-eval ni de script inline', () => {
     expect(csp['default-src']).toEqual(["'self'"])
-    expect(csp['script-src']).toEqual(["'self'"])
+    // 'wasm-unsafe-eval' : permet de compiler du WebAssembly (lecture de l'étiquette, module Tesseract) ; PAS de 'unsafe-eval' (aucun eval JavaScript).
+    expect(csp['script-src']).toEqual(["'self'", "'wasm-unsafe-eval'"])
     expect(csp['object-src']).toEqual(["'none'"])
     expect(csp['frame-ancestors']).toEqual(["'none'"])
     expect(csp['frame-src']).toEqual(["'none'"])
@@ -103,7 +104,7 @@ describe('en-têtes de sécurité', () => {
     // Pas de Realtime (WebSocket) : seul HTTPS vers Supabase est autorisé.
     expect(csp['connect-src']).toEqual(["'self'", 'https://*.supabase.co'])
     expect(csp['upgrade-insecure-requests']).toEqual([])
-    expect(globalHeaders['Content-Security-Policy']).not.toMatch(/unsafe-eval|http:|\*\s|;\s*\*/)
+    expect(globalHeaders['Content-Security-Policy']).not.toMatch(/(?<!wasm-)unsafe-eval|http:|\*\s|;\s*\*/) // « wasm-unsafe-eval » seul est permis
   })
 
   it('Permissions-Policy minimale : seuls caméra, géolocalisation, capteurs de mouvement (boussole) et écran allumé (prise de photos) sont autorisés, pour notre origine', () => {

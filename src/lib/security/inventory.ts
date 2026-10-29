@@ -22,7 +22,7 @@ export interface DataItem {
 export const DATA_INVENTORY: readonly DataItem[] = [
   {
     id: 'jardins',
-    donnee: 'Jardins : nom, adresse, position du centre, contour de parcelle, bâtiments, relief, plantes (position au mètre près, notes), tâches faites',
+    donnee: 'Jardins : nom, adresse, position du centre, contour de parcelle, bâtiments, relief, plantes (position au mètre près, notes, informations d’achat facultatives : forme, hauteur, lieu et prix), tâches faites',
     stockage: 'IndexedDB du navigateur (clé permajardin:state:v1) ; copie « avant migration » en cas de correction au chargement ; copie de secours dans le localStorage (clé permajardin:state:v1:miroir) qui évite de perdre la dernière modification si le navigateur se ferme trop vite',
     destinataires: [],
     finalite: 'Fournir le service : carte, 3D, calendrier d’entretien',
