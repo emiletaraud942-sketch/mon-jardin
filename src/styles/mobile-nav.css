@@ -269,3 +269,35 @@
     display: none;
   }
 }
+
+/* ---------- Carte, panneau « Options » ouvert sur téléphone ---------- */
+@media (max-width: 760px) {
+  /* Le panneau défile au-dessus de la feuille du bas (elle le coupait) ; « Ajouter une plante » se cache le temps qu'il est ouvert. */
+  .app:has(#map-options) .map-top {
+    max-height: max(200px, calc(100dvh - 335px));
+  }
+  .app:has(#map-options) .add-fab {
+    display: none;
+  }
+  /* Saison : 3 boutons par rangée, grands, sans rien qui dépasse. */
+  .map-options .season-picker {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .map-options .season-picker .btn {
+    justify-content: center;
+    padding-inline: 6px;
+    min-height: var(--tap);
+  }
+}
+
+/* ---------- Entraide : 7 onglets sur téléphone, deux rangées au plus ---------- */
+@media (max-width: 760px) {
+  .nb-page .tabs {
+    gap: 2px;
+  }
+  .nb-page .tabs button {
+    padding: 8px 8px;
+    font-size: 0.9375rem;
+  }
+}

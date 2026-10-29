@@ -553,3 +553,14 @@ label.btn.disabled {
   border-radius: calc(12 * var(--px));
   background: var(--accent-soft, var(--surface-2, transparent));
 }
+
+/* Saison sur téléphone : une seule rangée qui défile, pour ne pas manger la photo. */
+.pano-season .season-picker {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pano-season .season-picker .pano-pill {
+  padding: 4px 12px;
+  font-size: calc(14 * var(--px));
+}

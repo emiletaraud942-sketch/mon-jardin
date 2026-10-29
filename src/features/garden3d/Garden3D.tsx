@@ -680,6 +680,8 @@ export function Garden3D({
               {panelOpen && (
               <div className="g3d-panel" id="g3d-time-panel">
                 {hourRow(true)}
+                {/* Les saisons restent visibles même panneau réduit (téléphone) : c'est ce qu'on cherche pour voir son jardin fleuri en hiver. */}
+                <SeasonPicker className="g3d-shortcuts" buttonClass="g3d-btn g3d-btn--small" value={seasonShown} onChange={chooseSeason} />
                 {!collapsed && (
                   <>
                     <label className="g3d-field">
@@ -708,7 +710,6 @@ export function Garden3D({
                       </div>
                       <span className="g3d-help">« Simple » si votre téléphone ralentit.</span>
                     </div>
-                    <SeasonPicker className="g3d-shortcuts" buttonClass="g3d-btn g3d-btn--small" value={seasonShown} onChange={chooseSeason} />
                     <label className="g3d-field">
                       <span className="g3d-field-label">
                         <b>{yearsLabel(yearsAhead)}</b>
