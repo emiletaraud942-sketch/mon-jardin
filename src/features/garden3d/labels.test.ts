@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ERROR_3D_TITLE, SEASON_SHORTCUTS, describeSun, describeSunShort, walkHelpShort, directionName, formatClock, gardenSummary, walkHelp, yearsLabel } from './labels'
+import { ERROR_3D_TITLE, describeSun, describeSunShort, walkHelpShort, directionName, formatClock, gardenSummary, walkHelp, yearsLabel } from './labels'
 
 describe('libellés 3D en langage clair', () => {
   it('direction en toutes lettres', () => {
@@ -22,9 +22,6 @@ describe('libellés 3D en langage clair', () => {
     expect(yearsLabel(0)).toBe('Aujourd’hui')
     expect(yearsLabel(1)).toBe('Dans 1 an')
     expect(yearsLabel(5)).toBe('Dans 5 ans')
-  })
-  it('raccourcis de saison sans jargon', () => {
-    expect(SEASON_SHORTCUTS.map((s) => s.label)).toEqual(['Début du printemps', 'Plein été', 'Plein hiver'])
   })
   it('résumé du jardin et aide sans ZQSD', () => {
     expect(gardenSummary('Chez moi', 3, 0)).toContain('3 plantes')

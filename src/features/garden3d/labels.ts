@@ -40,11 +40,6 @@ export function yearsLabel(n: number): string {
 }
 
 /** Raccourcis de saison : libellé clair, date de repère (mois, jour). */
-export const SEASON_SHORTCUTS = [
-  { label: 'Début du printemps', month: 3, day: 21 },
-  { label: 'Plein été', month: 6, day: 21 },
-  { label: 'Plein hiver', month: 12, day: 21 },
-] as const
 
 /** Résumé du jardin pour les lecteurs d'écran (le canvas 3D n'a pas de contenu textuel). */
 export function gardenSummary(name: string | undefined, plantCount: number, buildingCount: number): string {

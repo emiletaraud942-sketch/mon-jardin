@@ -4663,3 +4663,25 @@ html[data-immersive] body {
     opacity: 1;
   }
 }
+
+/* Saison du jardin : mêmes boutons sur la carte, la 3D et les photos du jardin. */
+.season-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.season-picker .btn {
+  flex: none;
+}
+.map-opt-label {
+  font-size: calc(13 * var(--px));
+  font-weight: var(--fw-key);
+  color: var(--muted);
+}
+.season-note {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: min(92vw, 30rem);
+}

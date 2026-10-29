@@ -3,6 +3,7 @@
 import * as THREE from 'three'
 import type { Plant, Species, XY } from '../../types'
 import { plantStateAt, type PlantState } from '../../engine/growth'
+import { stateAtSeason } from '../../engine/season'
 import type { HeightSampler } from './terrain'
 import type { DetailLevel } from './walk'
 import { archetypeOf, generatePlant, type GenTier, type PlantLook } from './plantGen'
@@ -49,32 +50,9 @@ export function plantLabel(plant: Plant, species: Species | undefined): string {
   return name + st
 }
 
-const isoLocal = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
-/**
- * État de la plante pour le rendu. `growthAt` fixe l'âge (taille, stade) ; `seasonAt` fixe la saison (feuilles, fleurs, fruits,
- * teinte d'automne). Sans `seasonAt`, une seule date pilote tout. Les annuelles sont ressemées chaque année :
- * leur cycle suit la saison choisie, y compris dans les années futures.
- */
-export function renderState(plant: Plant, species: Species | undefined, growthAt: Date, seasonAt: Date = growthAt): PlantState {
-  const grown = plantStateAt(plant, species, growthAt)
-  if (grown.dead || seasonAt.getTime() === growthAt.getTime() || plant.status === 'projet') return grown
-  if (species && !species.vivace) {
-    // ressemis : l'année de plantation devient celle de la saison affichée
-    const planted = new Date(plant.plantedAt)
-    const y = seasonAt.getFullYear()
-    if (Number.isFinite(planted.getTime()) && y > planted.getFullYear()) {
-      const shifted = new Date(planted)
-      shifted.setFullYear(y)
-      return plantStateAt({ ...plant, plantedAt: isoLocal(shifted), ageAtPlanting: 0, measurements: undefined }, species, seasonAt)
-    }
-    return plantStateAt(plant, species, seasonAt)
-  }
-  // Vivace : même âge qu'à growthAt, vu à la saison choisie.
-  const start = new Date(seasonAt.getTime() - grown.ageYears * 365.25 * 86400000)
-  const s = plantStateAt({ ...plant, plantedAt: isoLocal(start), ageAtPlanting: 0, measurements: undefined }, species, seasonAt)
-  return { ...s, heightM: grown.heightM, spreadM: grown.spreadM, ageYears: grown.ageYears, stage: grown.stage }
-}
+/** État de la plante pour le rendu (voir `stateAtSeason` : l'âge suit `growthAt`, la saison suit `seasonAt`). */
+export const renderState = stateAtSeason
 
 export function plantSize(plant: Plant, species: Species | undefined, at: Date) {
   const s = plantStateAt(plant, species, at)

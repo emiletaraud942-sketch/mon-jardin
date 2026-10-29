@@ -71,9 +71,9 @@ Légende : ✅ constaté dans le code ou par un essai · ❓ question pour vous 
 2. **Pas maintenant** (repousser d'une semaine, d'un mois) et **Je ne veux pas le faire** (ne plus proposer pour cette plante), toujours annulables ; visibles dans « Historique ».
 3. Format : état de la tâche (`fait`, `reporte`, `refuse`) avec migration et test.
 
-## Étape 7 : choisir la saison du jardin
+## Étape 7 : choisir la saison du jardin (✅ fait le 29 oct.)
 
-Boutons **Hiver · Printemps · Été · Automne · Aujourd'hui** sur la vue 3D et sur la carte (aspect des plantes : feuilles, fleurs, fruits), pour montrer son jardin en été même en janvier. ❓ voir les questions.
+Boutons **Hiver · Printemps · Été · Automne · Aujourd'hui** sur la vue 3D et sur la carte (aspect des plantes : feuilles, fleurs, fruits), pour montrer son jardin en été même en janvier. Réponse : aussi sur la carte et sur les photos du jardin. Fait : mêmes boutons partout (`SeasonPicker`) ; sur les photos, l’image reste celle du jour de la prise de vue et chaque nom dit l’état de la plante à la saison choisie.
 
 ## Étape 8 : boutures entre voisins
 

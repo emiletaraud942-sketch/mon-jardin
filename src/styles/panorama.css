@@ -531,3 +531,18 @@ label.btn.disabled {
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+/* Saison du jardin : boutons sous l'en-tête de la visionneuse. */
+.pano-season {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 16px 8px;
+}
+.pano-season .season-picker {
+  overflow-x: auto;
+}
+.pano-season-note {
+  font-size: calc(13 * var(--px));
+  color: var(--muted);
+}

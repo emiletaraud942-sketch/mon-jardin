@@ -5,7 +5,7 @@ import { Canvas, type RootState } from '@react-three/fiber'
 import type { Garden, Plant, Species, TerrainGrid, XY } from '../../types'
 import { Scene } from './Scene'
 import { dateFromDoy, dayOfYear, daysInYearOf, doyOf, formatInGarden, sunState, zonedParts } from './sun'
-import { EMPTY_GARDEN_TEXT, ERROR_3D_TEXT, ERROR_3D_TITLE, SEASON_SHORTCUTS, describeSunShort, formatClock, gardenSummary, walkHelpShort, yearsLabel } from './labels'
+import { EMPTY_GARDEN_TEXT, ERROR_3D_TEXT, ERROR_3D_TITLE, describeSunShort, formatClock, gardenSummary, walkHelpShort, yearsLabel } from './labels'
 import { disposeBuildingMaterial, heatmapRange, rampColor } from './Ground'
 import { disposePlantMaterials } from './Plants'
 import { disposePartGeometries } from './plantModel'
@@ -17,6 +17,9 @@ import type { DetectedTree } from '../../lib/lidar'
 import { LIDAR_ATTRIBUTION } from '../../lib/lidar'
 import { Joystick, MiniMap, WalkButtons } from './WalkUI'
 import { QUALITY_PREFS, TIER_LABEL, useQuality3D } from './quality'
+import { SeasonPicker } from '../../components/SeasonPicker'
+import { seasonDate, type SeasonChoice } from '../../engine/season'
+import { setUi, useUi } from '../../lib/ui'
 import './garden3d.css'
 
 export interface Garden3DProps {
@@ -371,7 +374,17 @@ export function Garden3D({
   const seasonTime = useMemo(() => dateFromDoy(year + yearsAhead, doy, 12).getTime(), [year, yearsAhead, doy])
   const quality = useQuality3D()
 
-  const shortcuts = useMemo(() => SEASON_SHORTCUTS.map((s) => ({ label: s.label, doy: doyOf(year, s.month, s.day) })), [year])
+  // Saison choisie (boutons, ou depuis la carte) : le curseur de jour suit ; un curseur déplacé à la main n'en désigne aucune.
+  const seasonChoice = useUi().season
+  const seasonDoy = (c: SeasonChoice | undefined) => dayOfYear(seasonDate(c, today))
+  const seasonShown = seasonChoice && seasonDoy(seasonChoice) === doy ? seasonChoice : doy === dayOfYear(today) ? 'aujourdhui' : undefined
+  const chooseSeason = (c: SeasonChoice) => {
+    setUi({ season: c })
+    setDoy(seasonDoy(c))
+  }
+  useEffect(() => {
+    if (seasonChoice) setDoy(dayOfYear(seasonDate(seasonChoice, today)))
+  }, [seasonChoice, today])
   const daysInYear = daysInYearOf(year)
   const dateLabel = formatInGarden(sunDate, { day: 'numeric', month: 'long' })
   const dateShort = formatInGarden(sunDate, { day: 'numeric', month: 'short' })
@@ -695,13 +708,7 @@ export function Garden3D({
                       </div>
                       <span className="g3d-help">« Simple » si votre téléphone ralentit.</span>
                     </div>
-                    <div className="g3d-shortcuts" role="group" aria-label="Saisons">
-                      {shortcuts.map((s) => (
-                        <button key={s.label} type="button" className="g3d-btn g3d-btn--small" aria-pressed={doy === s.doy} onClick={() => setDoy(s.doy)}>
-                          {s.label}
-                        </button>
-                      ))}
-                    </div>
+                    <SeasonPicker className="g3d-shortcuts" buttonClass="g3d-btn g3d-btn--small" value={seasonShown} onChange={chooseSeason} />
                     <label className="g3d-field">
                       <span className="g3d-field-label">
                         <b>{yearsLabel(yearsAhead)}</b>

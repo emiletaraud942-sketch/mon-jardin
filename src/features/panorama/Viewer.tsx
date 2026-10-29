@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '../../components/Icon'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { plantSizeAt } from '../../engine/growth'
+import { PHASE_LABEL, phaseOf, seasonDate, stateAtSeason } from '../../engine/season'
+import { SeasonPicker } from '../../components/SeasonPicker'
+import { setUi, useUi } from '../../lib/ui'
 import { SPECIES_BY_ID } from '../../data/species'
 import { frMeters } from '../../lib/format'
 import { useGardenPlants } from '../../lib/store'
@@ -16,6 +19,7 @@ import { buildStrip, PPD, type Strip } from './strip'
 
 const ZOOM_MAX = 2.5
 const LABEL_ROW_PX = 28
+const SEASON_PHOTO_NOTE = 'La photo montre le jour de la prise de vue. Les noms disent l’état de la plante à la saison choisie.'
 
 function cssColor(name: string, fallback: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
@@ -24,6 +28,7 @@ function cssColor(name: string, fallback: string): string {
 /** Visionneuse : on est au centre du cylindre de photos. Glisser, pincer, ou capteur du téléphone. */
 export function Viewer({ garden, pointId }: { garden: Garden; pointId: string }) {
   const ui = usePanoUi()
+  const season = useUi().season
   const points = panoramasOf(garden)
   const [currentId, setCurrentId] = useState(pointId)
   const point = points.find((p) => p.id === currentId) ?? points.find((p) => p.id === pointId)
@@ -62,6 +67,19 @@ export function Viewer({ garden, pointId }: { garden: Garden; pointId: string })
     })
     return plantsSeenFrom(point, list)
   }, [point, plants, northOk])
+  // Saison choisie : la photo ne change pas (elle montre le jour de la prise de vue), mais chaque nom dit l'état de la plante à cette saison.
+  const seasonText = useMemo(() => {
+    const out = new Map<string, string>()
+    if (!season || season === 'aujourdhui') return out
+    const now = new Date()
+    const at = seasonDate(season, now)
+    for (const p of plants) {
+      const sp = SPECIES_BY_ID[p.speciesId]
+      if (!sp || p.status === 'projet' || p.status === 'mort') continue
+      out.set(p.id, PHASE_LABEL[phaseOf(stateAtSeason(p, sp, now, at))])
+    }
+    return out
+  }, [season, plants])
   const neighbors = useMemo(() => (point ? neighborsOf(point, points) : []), [point, points])
   const seenRef = useRef(seen)
   seenRef.current = seen
@@ -397,6 +415,10 @@ export function Viewer({ garden, pointId }: { garden: Garden; pointId: string })
           <span>{photoDateLabel(point.takenAt)}</span>
         </div>
       </div>
+      <div className="pano-season">
+        <SeasonPicker value={season} onChange={(c) => setUi({ season: c })} buttonClass="btn pano-pill" />
+        {season && season !== 'aujourdhui' && <span className="pano-season-note">{SEASON_PHOTO_NOTE}</span>}
+      </div>
 
       <div
         ref={wrap}
@@ -416,6 +438,7 @@ export function Viewer({ garden, pointId }: { garden: Garden; pointId: string })
           {seen.map((it) => (
             <span key={it.id} className="pano-label" ref={(el) => (el ? labelEls.current.set(it.id, el) : labelEls.current.delete(it.id))} style={{ display: 'none' }}>
               {it.name}
+              {seasonText.get(it.id) ? ` · ${seasonText.get(it.id)}` : ''}
             </span>
           ))}
           {neighbors.map((n) => {

@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import type { Category, XY } from '../types'
 import type { LegalId } from './legal'
+import type { SeasonChoice } from '../engine/season'
 import { neighborsEnabled } from './neighbors/enabled'
 import { EMPTY_ONBOARDING, hideRoute, markStep, markWelcomed, parseOnboarding, restartTour, type OnboardingState, type OnboardingStepId } from './onboarding'
 
@@ -138,6 +139,8 @@ interface UiState {
   focusPlantId?: string
   /** Demande l'ouverture du formulaire « Nouveau jardin » dans les Réglages. */
   newGarden?: boolean
+  /** Saison du jardin choisie (carte, 3D, photos du jardin). Absent : aujourd'hui. Pas mémorisée : on repart d'aujourd'hui. */
+  season?: SeasonChoice
 }
 
 export type ParcoursScreen = OnboardingStepId | 'fin' | 'auto'

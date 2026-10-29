@@ -18,6 +18,8 @@ import { updatePlant, useGardenPlants } from '../../lib/store'
 import { getUi, openHelp, setUi, useUi } from '../../lib/ui'
 import { useBanner } from '../../lib/banners'
 import { plantSizeAt } from '../../engine/growth'
+import { canopyLook, seasonDate, seasonSummary, stateAtSeason, type SeasonChoice } from '../../engine/season'
+import { SeasonPicker } from '../../components/SeasonPicker'
 import type { Garden, LonLat, Plant, XY } from '../../types'
 import { GardenDataBanner } from '../settings/GardenDataBanner'
 import { plantName } from '../plants/PlantPanel'
@@ -61,13 +63,16 @@ function ringFeature(center: LonLat, ring: XY[], props: Record<string, unknown> 
   return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [coords] }, properties: props }
 }
 
-function canopyFeatures(garden: Garden, plants: Plant[], adult: boolean): Feature[] {
+function canopyFeatures(garden: Garden, plants: Plant[], adult: boolean, season?: SeasonChoice): Feature[] {
   const now = new Date()
+  const at = seasonDate(season, now)
   return plants.flatMap((p) => {
     const s = SPECIES_BY_ID[p.speciesId]
     if (!s) return []
     const spread = adult ? s.envergureAdulteM : plantSizeAt(p, s, now).spreadM
-    return [circle(garden.center, p.position, Math.max(0.15, spread / 2), { color: s.couleur, projet: p.status === 'projet' })]
+    // Aujourd'hui : couleur de l'espèce, comme avant. Autre saison : feuilles, fleurs, fruits ou bois nu.
+    const look = season && season !== 'aujourdhui' ? canopyLook(stateAtSeason(p, s, now, at), s) : { color: s.couleur, opacity: 0.4 }
+    return [circle(garden.center, p.position, Math.max(0.15, spread / 2), { color: look.color, opacity: look.opacity, projet: p.status === 'projet' })]
   })
 }
 
@@ -135,7 +140,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
   const map = useRef<MLMap>()
   const markers = useRef(new Map<string, maplibregl.Marker>())
   const plants = useGardenPlants(garden.id)
-  const { selectedPlantId, placingSpeciesId, movingPlantId, aim, placingSpot } = useUi()
+  const { selectedPlantId, placingSpeciesId, movingPlantId, aim, placingSpot, season } = useUi()
   const head = useSheetHead(garden)
   const placingInfo = usePlacingInfo()
   const rv = review()
@@ -463,7 +468,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
         id: 'canopy',
         type: 'fill',
         source: 'canopy',
-        paint: { 'fill-color': ['get', 'color'], 'fill-opacity': ['case', ['get', 'projet'], 0.2, 0.4] },
+        paint: { 'fill-color': ['get', 'color'], 'fill-opacity': ['case', ['get', 'projet'], 0.2, ['get', 'opacity']] },
       })
       m.addLayer({ id: 'canopy-line', type: 'line', source: 'canopy', paint: { 'line-color': '#ffffff', 'line-width': 1, 'line-opacity': 0.7 } })
       // Placement : cercles des plantes en place à leur taille adulte, puis cercle de la plante à poser avec son point central.
@@ -587,8 +592,8 @@ function MapViewInner({ garden }: { garden: Garden }) {
   useEffect(() => {
     const m = map.current
     if (!m || !ready) return
-    ;(m.getSource('canopy') as GeoJSONSource).setData({ type: 'FeatureCollection', features: canopyFeatures(garden, plants, adult) })
-  }, [garden, plants, adult, ready])
+    ;(m.getSource('canopy') as GeoJSONSource).setData({ type: 'FeatureCollection', features: canopyFeatures(garden, plants, adult, season) })
+  }, [garden, plants, adult, season, ready])
 
   // Marqueurs déplaçables (un par plante). Zone tactile de 40 px autour d'un point de 14 px.
   useEffect(() => {
@@ -951,6 +956,8 @@ function MapViewInner({ garden }: { garden: Garden }) {
               <button className={'btn small' + (cadastre ? ' on' : '')} aria-pressed={cadastre} onClick={() => setCadastre((c) => !c)}>
                 {cadastre ? '✓ ' : ''}Limites du terrain
               </button>
+              <span className="map-opt-label">Saison du jardin</span>
+              <SeasonPicker value={season} onChange={(c) => setUi({ season: c })} />
               <button className={'btn small' + (adult ? ' on' : '')} aria-pressed={adult} onClick={() => setAdult((a) => !a)}>
                 {adult ? '✓ ' : ''}Taille adulte
               </button>
@@ -970,6 +977,14 @@ function MapViewInner({ garden }: { garden: Garden }) {
               </button>
               <button className="btn small" aria-haspopup="dialog" onClick={openHelp}>
                 Aide sur cet écran
+              </button>
+            </div>
+          )}
+          {season && season !== 'aujourdhui' && !placingNow && (
+            <div className="floating season-note small" role="status">
+              <span>{seasonSummary(plants, SPECIES_BY_ID, season, new Date())}</span>
+              <button className="btn small" onClick={() => setUi({ season: 'aujourdhui' })}>
+                Revenir à aujourd’hui
               </button>
             </div>
           )}
