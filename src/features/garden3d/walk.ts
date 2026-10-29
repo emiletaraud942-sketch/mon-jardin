@@ -6,8 +6,11 @@ import { CONTEXT_M, type Bounds } from './framing'
 import type { HeightSampler } from './terrain'
 
 export const EYE_HEIGHT_M = 1.65
-export const WALK_SPEED = 1.4
-export const RUN_SPEED = 3
+/** Vitesses de promenade (m/s) : plus vives que la marche réelle (1,4 m/s), pour traverser un jardin sans s'impatienter. */
+export const WALK_SPEED = 2.5
+export const RUN_SPEED = 6
+/** Longueur maximale d'un sous-pas (m) : à pleine vitesse et peu d'images par seconde, on ne saute jamais un mur fin. */
+const MAX_SUBSTEP_M = 0.2
 export const WALKER_RADIUS_M = 0.35
 /** Distance maximale autorisée au-delà de l'emprise de la parcelle : le voisinage visible (sol et orthophoto). */
 export const MAX_OUTSIDE_M = CONTEXT_M
@@ -199,12 +202,18 @@ export function stepWalker(w: Walker, input: WalkInput, dt: number, world: WalkW
     vy /= mag
   }
   const speed = input.run ? RUN_SPEED : WALK_SPEED
-  let p: XY = { x: w.x + vx * speed * step, y: w.y + vy * speed * step }
-  p = resolveCollisions(p, WALKER_RADIUS_M, world.colliders)
+  const parts = Math.max(1, Math.ceil((speed * step) / MAX_SUBSTEP_M))
   const from: XY = { x: w.x, y: w.y }
-  let q = clampToBounds(p, world.bounds, world.maxOutsideM ?? MAX_OUTSIDE_M, from)
-  if (world.groundHalfM != null) q = clampToGround(q, world.groundHalfM, from)
-  const limited = Math.abs(q.x - p.x) > 1e-6 || Math.abs(q.y - p.y) > 1e-6
+  let q: XY = from
+  let limited = false
+  for (let i = 0; i < parts; i++) {
+    const prev = q
+    let p: XY = { x: prev.x + (vx * speed * step) / parts, y: prev.y + (vy * speed * step) / parts }
+    p = resolveCollisions(p, WALKER_RADIUS_M, world.colliders)
+    q = clampToBounds(p, world.bounds, world.maxOutsideM ?? MAX_OUTSIDE_M, prev)
+    if (world.groundHalfM != null) q = clampToGround(q, world.groundHalfM, prev)
+    if (Math.abs(q.x - p.x) > 1e-6 || Math.abs(q.y - p.y) > 1e-6) limited = true
+  }
   return { x: q.x, y: q.y, yaw, limited }
 }
 

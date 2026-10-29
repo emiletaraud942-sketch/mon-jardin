@@ -4,7 +4,7 @@ import type { Building, Plant, Species, XY } from '../../types'
 import type { Bounds } from './framing'
 import { forwardOf, joystickVector, type WalkShared } from './walk'
 
-const STICK_TRAVEL_PX = 32
+const STICK_TRAVEL_PX = 58
 
 /** Joystick virtuel (déplacement) : zone tactile de 112 px, bouton central de 48 px. Un seul doigt à la fois ; le regard reste libre pour l'autre main. */
 export function Joystick({ shared }: { shared: WalkShared }) {
@@ -133,7 +133,7 @@ export function WalkButtons({ shared, running, onToggleRun }: { shared: WalkShar
       <PadButton shared={shared} axis="turnLeft" label="Tourner à gauche (maintenir)" className="g3d-turn">
         <span aria-hidden="true">↺</span>
       </PadButton>
-      <button type="button" className="g3d-btn g3d-padbtn g3d-pad-run" aria-pressed={running} onClick={onToggleRun} title="Courir : environ 3 m/s au lieu de 1,4 m/s">
+      <button type="button" className="g3d-btn g3d-padbtn g3d-pad-run" aria-pressed={running} onClick={onToggleRun} title="Courir : plus vite que la marche">
         Courir
       </button>
       <PadButton shared={shared} axis="turnRight" label="Tourner à droite (maintenir)" className="g3d-turn">

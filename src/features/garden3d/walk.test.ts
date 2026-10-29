@@ -326,7 +326,7 @@ describe('joystick virtuel', () => {
     expect(half).toBeGreaterThan(0.3)
     expect(half).toBeLessThan(0.7)
   })
-  it('joystick poussé -> le promeneur avance dans la direction du regard à ~1,4 m/s', () => {
+  it('joystick poussé -> le promeneur avance dans la direction du regard à la vitesse de marche', () => {
     const w = { x: 0, y: 0, yaw: 0 }
     const j = joystickVector(0, -40, 32)
     let cur = w
@@ -334,10 +334,20 @@ describe('joystick virtuel', () => {
     expect(cur.y).toBeCloseTo(WALK_SPEED, 1)
     expect(cur.x).toBeCloseTo(0, 5)
   })
-  it('en courant : ~3 m/s, et la diagonale n’est pas plus rapide', () => {
+  it('en courant : RUN_SPEED m/s, et la diagonale n’est pas plus rapide', () => {
     let cur = { x: 0, y: -10, yaw: 0 }
     for (let i = 0; i < 60; i++) cur = stepWalker(cur, { forward: 1, strafe: 1, turn: 0, run: true }, 1 / 60, { colliders: [], bounds })
     expect(Math.hypot(cur.x, cur.y + 10)).toBeCloseTo(RUN_SPEED, 1)
+  })
+  it('à pleine vitesse et peu d’images par seconde (pas de 0,1 s), un mur fin n’est pas traversé', () => {
+    const colliders = makeColliders([{ id: 'mur', ring: rect(-5, 2, 10, 0.3), heightM: 2 }])
+    let cur = { x: 0, y: -1, yaw: 0 }
+    for (let i = 0; i < 60; i++) cur = stepWalker(cur, { forward: 1, strafe: 0, turn: 0, run: true }, 0.1, { colliders, bounds })
+    expect(cur.y).toBeLessThan(2 - WALKER_RADIUS_M + 0.01)
+  })
+  it('vitesses : marcher et courir restent nettement plus vifs que la marche réelle (1,4 m/s)', () => {
+    expect(WALK_SPEED).toBeGreaterThanOrEqual(2.2)
+    expect(RUN_SPEED).toBeGreaterThanOrEqual(2 * WALK_SPEED)
   })
   it('le promeneur ne traverse pas un bâtiment au joystick', () => {
     const colliders = makeColliders([{ id: 'b', ring: rect(-3, 2, 6, 4), heightM: 5 }])
