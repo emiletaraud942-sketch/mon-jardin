@@ -46,6 +46,9 @@ export const NEIGHBORS_LIMITS = {
   messagesPerDay: 200,
   reportsPerDay: 20,
   postLifetimeDays: 60,
+  // Jardin partagé (miroir de la migration v8)
+  gardenSpeciesMax: 80,
+  gardenWritesPerDay: 20,
   defaultRadiusKm: 10,
   maxRadiusKm: 50,
   // Événements (miroir de la migration v4)
@@ -231,4 +234,14 @@ export interface NewEvent {
   signupUrl?: string
   /** Facultatif, entier de 1 à 10 000. */
   capacity?: number | null
+}
+
+/** Jardin partagé par un voisin (migration v8) : la liste des espèces, jamais les positions, nombres ou photos. */
+export interface GardenShare {
+  userId: string
+  pseudo: string
+  /** Identifiants de fiches espèces, triés. */
+  species: string[]
+  updatedAt: string
+  mine: boolean
 }

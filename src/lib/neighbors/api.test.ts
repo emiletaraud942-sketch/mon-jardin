@@ -765,3 +765,55 @@ describe('signalement d’un événement', () => {
     expect(args[0]).toMatchObject({ reporter: ME_ID, target_kind: 'event', target_id: EV1, reason: 'spam' })
   })
 })
+
+describe('jardins partagés (v8)', () => {
+  const ID = '11111111-1111-4111-8111-111111111111'
+  const OTHER = '22222222-2222-4222-8222-222222222222'
+  it('validateGardenSpecies : trie, dédoublonne, refuse tout ce qui n’est pas un identifiant de fiche', () => {
+    expect(api.validateGardenSpecies(['romarin', 'pommier', 'romarin'])).toEqual(['pommier', 'romarin'])
+    expect(() => api.validateGardenSpecies(['Pommier'])).toThrow(/inconnue/)
+    expect(() => api.validateGardenSpecies(['pommier,poirier'])).toThrow(/inconnue/)
+    expect(() => api.validateGardenSpecies(['a'])).toThrow(/inconnue/)
+    expect(() => api.validateGardenSpecies(Array.from({ length: 81 }, (_, i) => `espece-${i}`))).toThrow(/80/)
+    expect(api.validateGardenSpecies([])).toEqual([])
+  })
+  it('saveMyGardenShare met à jour sans créer quand la ligne existe (une seule écriture au quota)', async () => {
+    set('garden_shares:update', [{ user_id: ID, species: ['pommier'], updated_at: 't' }])
+    const r = await api.saveMyGardenShare(['pommier'])
+    expect(r).toMatchObject({ mine: true, species: ['pommier'] })
+    expect(opsOf('garden_shares').some(([m]) => m === 'insert')).toBe(false)
+    expect(opsOf('garden_shares').find(([m]) => m === 'update')![1][0]).toEqual({ species: ['pommier'] })
+  })
+  it('saveMyGardenShare crée la ligne la première fois, au nom du compte seulement (aucun user_id envoyé)', async () => {
+    set('garden_shares:update', [])
+    set('garden_shares:insert', { user_id: ID, species: ['thym'], updated_at: 't' })
+    await api.saveMyGardenShare(['thym'])
+    const ins = opsOf('garden_shares').find(([m]) => m === 'insert')![1][0] as Record<string, unknown>
+    expect(ins).toEqual({ species: ['thym'] })
+  })
+  it('saveMyGardenShare n’envoie rien si la liste est invalide', async () => {
+    await expect(api.saveMyGardenShare(['<b>'])).rejects.toThrow(/inconnue/)
+    expect(state.calls.some((c) => c.table === 'garden_shares')).toBe(false)
+  })
+  it('stopGardenShare supprime ma ligne seulement', async () => {
+    await api.stopGardenShare()
+    const ops = opsOf('garden_shares')
+    expect(ops.some(([m]) => m === 'delete')).toBe(true)
+    expect(ops.find(([m]) => m === 'eq')![1]).toEqual(['user_id', ID])
+  })
+  it('listGardenShares ignore ma ligne et les listes vides, donne les pseudos', async () => {
+    set('garden_shares:select', [
+      { user_id: ID, species: ['pommier'], updated_at: '2026-10-29T10:00:00Z' },
+      { user_id: OTHER, species: ['thym', 'lavande'], updated_at: '2026-10-28T10:00:00Z' },
+      { user_id: '33333333-3333-4333-8333-333333333333', species: [], updated_at: '2026-10-27T10:00:00Z' },
+    ])
+    set('profiles:select', [{ user_id: OTHER, pseudo: 'Marie' }])
+    const list = await api.listGardenShares()
+    expect(list).toEqual([{ userId: OTHER, pseudo: 'Marie', species: ['lavande', 'thym'], updatedAt: '2026-10-28T10:00:00Z', mine: false }])
+  })
+  it('messages d’erreur : quota, liste refusée, base pas à jour', () => {
+    expect(api.translateError({ message: 'quota_exceeded:garden_share' })).toMatch(/Revenez demain/)
+    expect(api.translateError({ message: 'violates check constraint "garden_shares_species_check"', code: '23514' })).toMatch(/plante inconnue/)
+    expect(api.translateError({ message: "Could not find the table 'public.garden_shares' in the schema cache", code: 'PGRST205' })).toMatch(/pas encore ouverts/)
+  })
+})

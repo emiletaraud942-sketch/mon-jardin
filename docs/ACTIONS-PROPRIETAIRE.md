@@ -56,14 +56,15 @@ Dépôt > **Settings** :
 *Projet DÉDIÉ à l'entraide (ne réutilisez pas celui de la synchronisation). Détails complets : `docs/ENTRAIDE.md`, « Étapes pour le propriétaire ».*
 
 - [ ] 🔴 **Créer un nouveau projet Supabase, région Union européenne** (ex. Francfort ou Paris). Impossible à changer après coup.
-- [ ] 🔴 **SQL Editor** : coller et exécuter, **dans cet ordre**, les 7 fichiers de `supabase/neighbors/migrations/` (tous rejouables ; si vous en rejouez un ancien, rejouez ensuite les suivants jusqu'à la v7) :
+- [ ] 🔴 **SQL Editor** : coller et exécuter, **dans cet ordre**, les 8 fichiers de `supabase/neighbors/migrations/` (tous rejouables ; si vous en rejouez un ancien, rejouez ensuite les suivants jusqu'à la v8) :
   1. `20261023000000_neighbors.sql`
   2. `20261025000000_neighbors_v2.sql` (« Je cherche », catégories)
   3. `20261025010000_neighbors_v3_read.sql` (messages non lus)
   4. `20261025020000_neighbors_v4_events.sql` (organisateurs, événements)
   5. `20261025030000_neighbors_v5_push.sql` (alertes)
   6. `20261025040000_neighbors_v6_cell_size.sql` (quartier 2 km / 5 km)
-  7. `20261027000000_neighbors_v7_hardening.sql` *(nouveau : un changement de quartier par semaine, textes sans caractères invisibles)*
+  7. `20261027000000_neighbors_v7_hardening.sql` (un changement de quartier par semaine, textes sans caractères invisibles)
+  8. `20261029000000_neighbors_v8_gardens.sql` *(nouveau : « Ce que j'ai dans mon jardin », boutures entre voisins ; à coller en dernier)*
   - *Vérifier* : **Table Editor** : toutes les tables ont « RLS enabled » ; **Security Advisor** ne signale rien de critique.
 - [ ] 🔴 **Authentication > Providers** : Email (lien magique) activé ; **Anonymous sign-ins**, Phone et OAuth désactivés.
 - [ ] 🔴 **Authentication > URL Configuration** : comme au §2.

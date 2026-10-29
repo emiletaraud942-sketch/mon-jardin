@@ -28,8 +28,12 @@ import {
   neighborhoodText,
   neighborhoodWithZone,
   gardenNeighborhoodText,
+  cuttingRequestText,
+  sameSpecies,
+  speciesToShare,
+  whoHas,
 } from './logic'
-import { POST_CATEGORIES, POST_KINDS, POST_KIND_LABELS, REPORT_REASONS } from './types'
+import { NEIGHBORS_LIMITS, POST_CATEGORIES, POST_KINDS, POST_KIND_LABELS, REPORT_REASONS } from './types'
 
 const NOW = new Date('2026-10-23T12:00:00Z')
 const sentencesOf = (t: string) => t.split(/(?<=[.!?])\s+(?=[A-ZÀ-ÖØ-Þ«“"'])/).map((x) => x.trim()).filter(Boolean)
@@ -387,5 +391,43 @@ describe('événements : saisie date et heure', () => {
     ['2026-11-14', '10h00'],
   ])('refuse %j %j', (d, t) => {
     expect(localDateTimeToIso(d, t)).toBeNull()
+  })
+})
+
+describe('jardins partagés (v8)', () => {
+  it('speciesToShare : espèces en place, sans doublon, triées ; ni projets ni plantes mortes', () => {
+    const plants = [
+      { speciesId: 'romarin', status: 'en-place' },
+      { speciesId: 'pommier', status: 'en-place' },
+      { speciesId: 'pommier', status: 'en-place' },
+      { speciesId: 'cerisier', status: 'projet' },
+      { speciesId: 'poirier', status: 'mort' },
+    ]
+    expect(speciesToShare(plants)).toEqual(['pommier', 'romarin'])
+  })
+  it('speciesToShare : écarte ce que la base refuserait ou que l’appli ne connaît pas', () => {
+    const plants = [{ speciesId: 'Bizarre!', status: 'en-place' }, { speciesId: 'inconnu', status: 'en-place' }, { speciesId: 'thym', status: 'en-place' }]
+    expect(speciesToShare(plants, (id) => id === 'thym')).toEqual(['thym'])
+  })
+  it('speciesToShare : au plus 80 espèces', () => {
+    const plants = Array.from({ length: 100 }, (_, i) => ({ speciesId: `esp-${String(i).padStart(3, '0')}`, status: 'en-place' }))
+    expect(speciesToShare(plants)).toHaveLength(80)
+  })
+  it('sameSpecies ignore l’ordre', () => {
+    expect(sameSpecies(['a1', 'b2'], ['b2', 'a1'])).toBe(true)
+    expect(sameSpecies(['a1'], ['a1', 'b2'])).toBe(false)
+    expect(sameSpecies([], [])).toBe(true)
+  })
+  it('cuttingRequestText : poli, avec le pseudo et la plante', () => {
+    const t = cuttingRequestText('Romarin', 'Marie')
+    expect(t).toContain('Marie')
+    expect(t).toContain('Romarin')
+    expect(t).toMatch(/bouture/)
+    expect(t.length).toBeLessThan(NEIGHBORS_LIMITS.messageMax)
+  })
+  it('whoHas : les voisins qui ont cette espèce', () => {
+    const shares = [{ id: 1, species: ['thym', 'lavande'] }, { id: 2, species: ['pommier'] }]
+    expect(whoHas(shares, 'thym').map((s) => s.id)).toEqual([1])
+    expect(whoHas(shares, 'rose')).toEqual([])
   })
 })

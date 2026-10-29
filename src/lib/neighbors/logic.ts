@@ -348,3 +348,37 @@ export function localDateTimeToIso(date: string, time: string): string | null {
   if (x.getFullYear() !== y || x.getMonth() !== mo - 1 || x.getDate() !== da || x.getHours() !== h || x.getMinutes() !== mi) return null
   return x.toISOString()
 }
+
+// ---------- Jardins partagés et boutures (v8) ----------
+
+/** Forme d'un identifiant de fiche accepté par la base (miroir de `neighbors_species_valid`). */
+export const SPECIES_ID = /^[a-z0-9-]{2,40}$/
+
+/**
+ * Liste à partager : les espèces des plantes en place (ni projets ni plantes mortes), sans doublon, triées, limitées à 80.
+ * Jamais de position, de nombre ni de nom personnel : seulement l'identifiant de la fiche.
+ */
+export function speciesToShare(plants: { speciesId: string; status: string }[], known: (id: string) => boolean = () => true): string[] {
+  const ids = new Set<string>()
+  for (const p of plants) {
+    if (p.status === 'projet' || p.status === 'mort') continue
+    if (SPECIES_ID.test(p.speciesId) && known(p.speciesId)) ids.add(p.speciesId)
+  }
+  return [...ids].sort().slice(0, L.gardenSpeciesMax)
+}
+
+/** Vrai si la liste partagée est celle du jardin (sert à proposer « Mettre à jour »). */
+export function sameSpecies(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && [...a].sort().every((x, i) => x === [...b].sort()[i])
+}
+
+/** Message proposé (modifiable) pour demander une bouture. */
+export function cuttingRequestText(speciesName: string, pseudo: string): string {
+  const name = speciesName.trim() || 'plante'
+  return `Bonjour ${pseudo}, j’ai vu dans votre jardin : ${name}. Auriez-vous une bouture à me donner ? Merci !`
+}
+
+/** Voisins qui ont cette espèce, pour répondre à « qui a du romarin ? ». */
+export function whoHas<T extends { species: readonly string[] }>(shares: readonly T[], speciesId: string): T[] {
+  return shares.filter((s) => s.species.includes(speciesId))
+}

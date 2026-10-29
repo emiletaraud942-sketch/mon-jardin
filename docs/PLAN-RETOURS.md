@@ -75,7 +75,7 @@ Légende : ✅ constaté dans le code ou par un essai · ❓ question pour vous 
 
 Boutons **Hiver · Printemps · Été · Automne · Aujourd'hui** sur la vue 3D et sur la carte (aspect des plantes : feuilles, fleurs, fruits), pour montrer son jardin en été même en janvier. Réponse : aussi sur la carte et sur les photos du jardin. Fait : mêmes boutons partout (`SeasonPicker`) ; sur les photos, l’image reste celle du jour de la prise de vue et chaque nom dit l’état de la plante à la saison choisie.
 
-## Étape 8 : boutures entre voisins
+## Étape 8 : boutures entre voisins (✅ code fait le 29 oct. ; migration v8 à coller par vous)
 
 1. Option **« Montrer ce que j'ai dans mon jardin »** (désactivée par défaut) : liste des **espèces** seulement, jamais les positions.
 2. Annonces « don de bouture » liées à une espèce de mon jardin ; un voisin voit « Marie a : lavande, romarin, rosier » dans sa zone.

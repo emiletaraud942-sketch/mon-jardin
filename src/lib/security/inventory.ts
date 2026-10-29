@@ -121,6 +121,16 @@ export const DATA_INVENTORY: readonly DataItem[] = [
     effacement: 'Entraide > Mes annonces > Supprimer (photo comprise) ; suppression du compte',
   },
   {
+    id: 'entraide-jardin',
+    donnee: 'Entraide : la liste des espèces de votre jardin (par exemple pommier, romarin), seulement si vous choisissez de la montrer. Jamais les positions, les nombres, les photos ni l’adresse',
+    stockage: 'Supabase de l’entraide (table garden_shares ; une ligne par membre ; RLS ; seuls des identifiants de fiches sont acceptés, jamais de texte libre)',
+    destinataires: ['Supabase (sous-traitant)', 'Autres membres de l’entraide à moins de ~55 km, sauf personnes que vous avez bloquées : ils voient la liste et votre pseudo, et peuvent vous écrire pour demander une bouture'],
+    finalite: 'Savoir quelles plantes les voisins ont, pour demander une bouture',
+    base: 'consentement',
+    duree: 'Jusqu’à ce que vous cessiez de montrer votre jardin ou supprimiez votre compte',
+    effacement: 'Entraide > Jardins > Ne plus montrer mon jardin ; suppression du compte',
+  },
+  {
     id: 'entraide-evenements',
     donnee: 'Entraide : demande d’organisateur (nom public, courte description), événements (titre, description, dates, lieu en texte libre, lien d’inscription https, nombre de places, quartier arrondi) et « Je suis intéressé(e) » (une ligne par membre et par événement)',
     stockage: 'Supabase de l’entraide (tables organizers, events et event_interest ; RLS ; chaque membre ne voit que sa propre ligne d’intérêt, les autres voient seulement le total)',

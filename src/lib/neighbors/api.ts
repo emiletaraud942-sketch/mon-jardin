@@ -6,7 +6,7 @@ import { compressToTarget } from '../photos'
 import { imageSize, jpegMetadataSegments, sizeWithinLimits } from '../security/image'
 import { CELL_SLACK_KM, cellBounds, cellDistanceKm, distanceLabel, isCellSize, isValidCoord, roundCell } from './cell'
 import { isNeighborsConfigured, neighborsClient, NEIGHBORS_STORAGE_KEY } from './client'
-import { checkHttpsUrl, safeExternalUrl, unreadByThread } from './logic'
+import { checkHttpsUrl, safeExternalUrl, SPECIES_ID, unreadByThread } from './logic'
 import { neighborsVapidPublic } from './env'
 import {
   currentSubscription,
@@ -31,6 +31,7 @@ import {
   type CellSize,
   type EventItem,
   type EventStatus,
+  type GardenShare,
   type InitNeighborsResult,
   type ListEventsOptions,
   type ListPostsOptions,
@@ -88,6 +89,7 @@ const QUOTA_TEXT: Record<string, string> = {
   interest: LIMIT_TEXT,
   organizer: LIMIT_TEXT,
   push: LIMIT_TEXT,
+  garden_share: `Vous avez modifié votre liste ${L.gardenWritesPerDay} fois aujourd’hui. Revenez demain.`,
 }
 
 /** Traduit une erreur Supabase / Postgres / réseau en message français lisible. */
@@ -113,6 +115,11 @@ export function translateError(e: unknown): string {
   if (low.includes('organizers_pkey')) return 'Vous avez déjà fait une demande.'
   if (low.includes('push_limit')) return 'Vous avez déjà 5 appareils avec des alertes. Arrêtez-en un sur un autre appareil, puis réessayez.'
   if (low.includes('push_subscriptions_endpoint_check') || low.includes('push_subscriptions_keys_check')) return 'Cet appareil ne peut pas recevoir nos alertes.'
+  // Base pas encore mise à jour (migration v8 non collée) : les jardins partagés n'existent pas encore.
+  if ((err.code === 'PGRST205' || err.code === '42P01' || /could not find the table|relation .* does not exist/.test(low)) && /garden_shares/.test(low)) {
+    return 'Les jardins des voisins ne sont pas encore ouverts chez vous. Réessayez plus tard.'
+  }
+  if (low.includes('garden_shares_species_check')) return 'La liste contient une plante inconnue. Mettez-la à jour depuis votre jardin.'
   // Base pas encore mise à jour (migration v5 non collée) : les alertes n'existent pas encore.
   if ((err.code === 'PGRST205' || err.code === '42P01' || /could not find the table|relation .* does not exist/.test(low)) && /push_subscriptions|notification_prefs/.test(low)) {
     return 'Les alertes ne sont pas encore ouvertes chez vous. Réessayez plus tard.'
@@ -966,6 +973,62 @@ export async function toggleInterest(rawEventId: string, current: boolean): Prom
 }
 
 // ---------- Modération ----------
+
+// ---------- Jardins partagés et boutures (migration v8) ----------
+
+interface GardenShareRow {
+  user_id: string
+  species: string[]
+  updated_at: string
+}
+const toShare = (r: GardenShareRow, uid: string, names: Map<string, string>): GardenShare => ({
+  userId: r.user_id,
+  pseudo: r.user_id === uid ? 'Vous' : names.get(r.user_id) ?? 'Voisin',
+  species: [...r.species].sort(),
+  updatedAt: r.updated_at,
+  mine: r.user_id === uid,
+})
+
+/** Ma liste partagée, ou null si je ne partage rien. */
+export async function getMyGardenShare(): Promise<GardenShare | null> {
+  const uid = await requireUserId()
+  const row = await run<GardenShareRow>(sb().from('garden_shares').select('user_id, species, updated_at').eq('user_id', uid).maybeSingle() as never)
+  return row ? toShare(row, uid, new Map()) : null
+}
+
+/** Valide la liste avant envoi : identifiants de fiches uniquement, sans doublon, 80 au plus. */
+export function validateGardenSpecies(list: readonly string[]): string[] {
+  const out = [...new Set(list.map((x) => String(x)))].sort()
+  if (out.length > L.gardenSpeciesMax) throw new NeighborsError(`La liste est limitée à ${L.gardenSpeciesMax} plantes différentes.`, 'invalid')
+  if (out.some((x) => !SPECIES_ID.test(x))) throw new NeighborsError('La liste contient une plante inconnue.', 'invalid')
+  return out
+}
+
+/** Partage (ou met à jour) la liste des espèces de mon jardin. Mise à jour d'abord, création sinon : une seule écriture compte au quota. */
+export async function saveMyGardenShare(species: readonly string[]): Promise<GardenShare> {
+  const uid = await requireUserId()
+  const list = validateGardenSpecies(species)
+  const client = sb()
+  let row = await run<GardenShareRow[]>(client.from('garden_shares').update({ species: list }).eq('user_id', uid).select('user_id, species, updated_at') as never)
+  if (!row?.length) row = [(await run<GardenShareRow>(client.from('garden_shares').insert({ species: list }).select('user_id, species, updated_at').single() as never)) as GardenShareRow]
+  if (!row[0]) throw new NeighborsError('La liste n’a pas pu être enregistrée.')
+  return toShare(row[0], uid, new Map())
+}
+
+/** Arrête de montrer mon jardin : la ligne est supprimée, les voisins ne voient plus rien. */
+export async function stopGardenShare(): Promise<void> {
+  const uid = await requireUserId()
+  await run(sb().from('garden_shares').delete().eq('user_id', uid) as never)
+}
+
+/** Jardins que mes voisins montrent (zone, blocages et bannissements filtrés par la base), les plus récents d'abord. */
+export async function listGardenShares(): Promise<GardenShare[]> {
+  const uid = await requireUserId()
+  const rows = (await run<GardenShareRow[]>(sb().from('garden_shares').select('user_id, species, updated_at').order('updated_at', { ascending: false }).limit(200) as never)) ?? []
+  const others = rows.filter((r) => r.user_id !== uid && r.species.length > 0)
+  const names = await pseudos(others.map((r) => r.user_id))
+  return others.map((r) => toShare(r, uid, names))
+}
 
 /** Signale un contenu. À 3 signalements de personnes distinctes, une annonce ou une réponse est masquée automatiquement. */
 export async function report(target: ReportTarget, rawTargetId: string, reason: ReportReason, details?: string): Promise<void> {

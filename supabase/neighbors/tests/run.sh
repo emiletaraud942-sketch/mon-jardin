@@ -11,6 +11,7 @@ MIG4=../migrations/20261025020000_neighbors_v4_events.sql
 MIG5=../migrations/20261025030000_neighbors_v5_push.sql
 MIG6=../migrations/20261025040000_neighbors_v6_cell_size.sql
 MIG7=../migrations/20261027000000_neighbors_v7_hardening.sql
+MIG8=../migrations/20261029000000_neighbors_v8_gardens.sql
 export PGDATABASE=postgres
 psql -q -c 'drop database if exists neighbors_test' -c 'create database neighbors_test' || exit 2
 export PGDATABASE=neighbors_test
@@ -29,6 +30,7 @@ OUT=$(mktemp)
   psql -q -v ON_ERROR_STOP=1 -f "$MIG6" &&
   psql -q -v pass=2 -f scenarios_v6_migration.sql &&
   psql -q -v ON_ERROR_STOP=1 -f "$MIG7" &&
+  psql -q -v ON_ERROR_STOP=1 -f "$MIG8" &&
   psql -q -v ON_ERROR_STOP=1 -f "$MIG" &&   # idempotence : deuxième application de chaque fichier
   psql -q -v ON_ERROR_STOP=1 -f "$MIG2" &&
   psql -q -v ON_ERROR_STOP=1 -f "$MIG3" &&
@@ -36,6 +38,7 @@ OUT=$(mktemp)
   psql -q -v ON_ERROR_STOP=1 -f "$MIG5" &&
   psql -q -v ON_ERROR_STOP=1 -f "$MIG6" &&   # v6 puis v7 en dernier : un ancien fichier rejoué remet l'ancien arrondi ou l'ancien déclencheur
   psql -q -v ON_ERROR_STOP=1 -f "$MIG7" &&
+  psql -q -v ON_ERROR_STOP=1 -f "$MIG8" &&   # v8 tout à la fin : elle remplace neighbors_can_contact et profiles_select de la v1
   psql -q -f scenarios.sql &&
   psql -q -f scenarios_audit.sql &&
   psql -q -f scenarios_v2.sql &&
@@ -43,7 +46,8 @@ OUT=$(mktemp)
   psql -q -f scenarios_v4.sql &&
   psql -q -f scenarios_v5.sql &&
   psql -q -f scenarios_v6.sql &&
-  psql -q -f scenarios_v7.sql
+  psql -q -f scenarios_v7.sql &&
+  psql -q -f scenarios_v8.sql
 } >"$OUT" 2>&1
 grep -E "PASS|FAIL|ERROR" "$OUT" | sed 's/^psql:[^ ]* //'
 FAILS=$(grep -c "FAIL\|ERROR" "$OUT"); PASSES=$(grep -c "PASS" "$OUT")

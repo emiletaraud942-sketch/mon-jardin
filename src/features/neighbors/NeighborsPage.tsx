@@ -16,6 +16,7 @@ import { EventDetail } from './EventDetail'
 import { EventForm } from './EventForm'
 import { EventsTab } from './Events'
 import { Feed } from './Feed'
+import { Gardens } from './Gardens'
 import { errorText, useLoad, useOnline, usePolling } from './hooks'
 import { POLL_MS, ThreadList, ThreadView } from './Messages'
 import { MyEvents } from './MyEvents'
@@ -29,7 +30,7 @@ import { ProfileForm } from './ProfileForm'
 import { ProfileTab } from './ProfileTab'
 import { SignIn } from './SignIn'
 
-type Section = 'accueil' | 'fil' | 'evenements' | 'messages' | 'mes' | 'profil'
+type Section = 'accueil' | 'fil' | 'jardins' | 'evenements' | 'messages' | 'mes' | 'profil'
 type View =
   | { k: 'tabs' }
   | { k: 'new'; kind?: PostKind }
@@ -43,6 +44,7 @@ type View =
 const SECTIONS: { id: Section; label: string }[] = [
   { id: 'accueil', label: 'Nouveautés' },
   { id: 'fil', label: 'Annonces' },
+  { id: 'jardins', label: 'Jardins' },
   { id: 'evenements', label: 'Événements' },
   { id: 'messages', label: 'Messages' },
   { id: 'mes', label: 'Mes annonces' },
@@ -302,6 +304,17 @@ function Main({ userId, profile, email, garden, online, onProfile }: { userId: s
                 onRadius={changeRadius}
                 onOpen={(p) => setView({ k: 'post', post: p })}
                 onNew={(k) => setView({ k: 'new', kind: k })}
+              />
+            )}
+            {section === 'jardins' && (
+              <Gardens
+                garden={garden}
+                online={online}
+                onNew={(k) => setView({ k: 'new', kind: k })}
+                onChat={(thread, draft) => {
+                  setSection('messages')
+                  setView({ k: 'thread', thread, draft })
+                }}
               />
             )}
             {section === 'evenements' && (
