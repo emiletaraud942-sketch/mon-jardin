@@ -363,7 +363,7 @@ label:focus-within:has(> input.sr-only) {
 /* ---------- Layout ---------- */
 .app {
   display: grid;
-  grid-template-columns: 220px 1fr;
+  grid-template-columns: 13.75rem 1fr; /* 220 px à 16 px de base ; suit la taille du texte et l'échelle des grands écrans */
   grid-template-rows: minmax(56px, auto) auto minmax(0, 1fr);
   height: 100%;
 }
@@ -1302,7 +1302,7 @@ label.field > span {
   min-width: 0;
 }
 .sidepanel {
-  width: 360px;
+  width: 22.5rem; /* 360 px à 16 px de base */
   max-width: 100%;
   background: var(--surface);
   border-left: var(--border-w) solid var(--border);
@@ -4487,4 +4487,103 @@ html[data-immersive] body {
 }
 .placing-banner .placing-dist {
   font-size: calc(13 * var(--px));
+}
+
+/* Annuler / rétablir (barre de la carte et aides au placement). */
+.history-btns {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.history-btns .btn {
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+.history-btns .btn:disabled {
+  opacity: 0.4;
+}
+
+/* Message avec « Annuler » : la croix pour le fermer est grande et bien visible (pas de petit symbole perdu). */
+.toast .icon-btn {
+  min-width: 44px;
+  min-height: 44px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  opacity: 1;
+}
+.toast .icon-btn svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 3;
+}
+.toast .toast-action {
+  min-height: 44px;
+  padding-inline: 18px;
+  background: var(--bg);
+  color: var(--text);
+  font-weight: var(--fw-key);
+}
+
+/* Note de position d'une plante (distance à la limite) : bien visible, le détail se déplie. */
+.position-note {
+  border-left: 6px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 10px 14px;
+}
+.position-note.warn {
+  border-left-color: var(--warn-text);
+  background: var(--warn-soft);
+  color: var(--warn-text);
+}
+.position-note-main {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: var(--fw-key);
+}
+.position-note details {
+  margin-top: 6px;
+}
+.position-note summary {
+  cursor: pointer;
+  min-height: 32px;
+}
+
+/* Grands écrans (ordinateur, télévision) : tout est en rem, donc agrandir la base agrandit texte, boutons et panneaux ensemble.
+   Se combine avec la taille du texte choisie dans Réglages (grand, très grand). Les téléphones ne sont pas concernés. */
+@media (min-width: 1800px) {
+  html {
+    font-size: 112.5%;
+  }
+  html[data-text-size='grand'] {
+    font-size: 133.5%;
+  }
+  html[data-text-size='tres-grand'] {
+    font-size: 154.7%;
+  }
+}
+@media (min-width: 2300px) {
+  html {
+    font-size: 131.25%;
+  }
+  html[data-text-size='grand'] {
+    font-size: 155.8%;
+  }
+  html[data-text-size='tres-grand'] {
+    font-size: 180.5%;
+  }
+}
+@media (min-width: 3000px) {
+  html {
+    font-size: 156.25%;
+  }
+  html[data-text-size='grand'] {
+    font-size: 185.5%;
+  }
+  html[data-text-size='tres-grand'] {
+    font-size: 214.8%;
+  }
 }

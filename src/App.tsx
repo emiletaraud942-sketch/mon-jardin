@@ -10,6 +10,7 @@ import { StorageBanner } from './components/StorageBanner'
 import { ToastHost } from './components/Toast'
 import { UpdateBanner } from './components/UpdateBanner'
 import { consumeExportReminder, exportCurrentState } from './lib/backup'
+import { historyKeyHandler } from './lib/history'
 import { getLoadWarnings, getState, useActiveGarden, useGardenPlants, useStore } from './lib/store'
 import { showToast } from './lib/toast'
 import { RAYON_LABEL, TAB_LABEL, getUi, goRayon, noteVisit, openHelp, openParcours, rayonOfTab, setGuide, setHelpOpen, setUi, subTabs, useHelpOpen, useUi, visibleRayons, type Rayon, type Tab } from './lib/ui'
@@ -77,6 +78,12 @@ export function App() {
   const newsCount = useNeighborsBadge(neighborsEnabled && voisins, readRadius)
   // Alertes de nouveaux messages : le service worker prévient l'appli ouverte (pastille, clic sur l'alerte).
   useEffect(() => (neighborsEnabled && voisins ? startPushBridge() : undefined), [voisins])
+  // Ctrl/⌘ + Z : annuler ; Ctrl/⌘ + Maj + Z ou Ctrl + Y : rétablir (ignoré pendant la saisie dans un champ).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => void historyKeyHandler(e)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
   const scanOpen = !!useScanUi().screen
   const panoOpen = !!usePanoUi().screen
   const onboarding = useOnboarding()

@@ -257,3 +257,21 @@ describe('companionReport', () => {
     expect(r.ennemis.map((p) => p.id)).toEqual([f.id])
   })
 })
+
+describe('legalDistance : résumé court et mis en valeur', () => {
+  it('une phrase de 20 mots au plus, dans chaque cas', () => {
+    const cas = [
+      legalDistance(pommier, { x: 9, y: 0 }, parcel), // trop près
+      legalDistance(pommier, { x: 0, y: 0 }, parcel), // conforme
+      legalDistance(pommier, { x: 40, y: 0 }, parcel), // hors parcelle
+      legalDistance(pommier, { x: 0, y: 0 }), // limite inconnue
+    ]
+    for (const c of cas) {
+      expect(c.summary.split(/\s+/).length, c.summary).toBeLessThanOrEqual(20)
+      expect(c.summary).toContain('671')
+      expect(c.summary.length).toBeLessThan(c.message.length / 2)
+    }
+    expect(cas[0].summary).toMatch(/Trop près de la limite : 1 m au lieu de 2 m/)
+    expect(cas[1].summary).toMatch(/conforme à l’art\. 671/)
+  })
+})

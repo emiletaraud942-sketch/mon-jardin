@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import '../../lib/mapWorker'
+import { HistoryButtons } from '../../components/HistoryButtons'
 import { webgl2Supported } from '../../lib/webgl'
 import { MapUnsupported } from '../../components/MapUnsupported'
 import type { GeoJSONSource, Map as MLMap } from 'maplibre-gl'
@@ -912,6 +913,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
             <button className={'btn small' + (optionsOpen ? ' on' : '')} aria-expanded={optionsOpen} aria-controls="map-options" onClick={() => setOptionsOpen((o) => !o)}>
               Options <span aria-hidden>{optionsOpen ? '▴' : '▾'}</span>
             </button>
+            <HistoryButtons />
           </div>
           )}
           {placingNow && (
@@ -926,6 +928,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
                 <button className="btn small" disabled={gpsBusy} onClick={() => void placeHere()}>
                   Je suis ici
                 </button>
+                <HistoryButtons />
               </div>
               <div className="map-aid-row">
                 <button className={'btn small' + (snapOn ? ' primary' : '')} aria-pressed={snapOn} onClick={() => setSnapPref(!snapOn)}>

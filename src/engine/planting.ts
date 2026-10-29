@@ -81,7 +81,7 @@ export function legalDistance(
   species: Species,
   spot: XY,
   parcel?: XY[],
-): { requiredM: number; actualM?: number; ok: boolean; message: string } {
+): { requiredM: number; actualM?: number; ok: boolean; message: string; summary: string } {
   const tall = species.hauteurAdulteM > 2
   const requiredM = tall ? 2 : 0.5
   // Art. 671 : les règlements particuliers et les usages locaux passent d'abord ; 2 m et 0,5 m ne valent qu'à défaut.
@@ -92,10 +92,10 @@ export function legalDistance(
     'Des règlements particuliers (PLU, lotissement) ou des usages locaux constants et reconnus priment sur ces distances : renseignez-vous en mairie. Une limite en bordure de voirie n’est pas une limite séparative : l’art. 671 ne s’y applique pas.'
   const espalier = 'En espalier contre un mur séparatif, aucune distance n’est exigée, mais la plante ne doit pas dépasser la crête du mur. Art. 672 : le voisin peut exiger l’arrachage ou la réduction d’une plantation trop proche, sauf si elle a plus de 30 ans.'
   if (!parcel || parcel.length < 3) {
-    return { requiredM, ok: true, message: `${rule} (limite de parcelle inconnue). ${local}` }
+    return { requiredM, ok: true, message: `${rule} (limite de parcelle inconnue). ${local}`, summary: 'Limite de parcelle inconnue : distance de l’art. 671 non vérifiée.' }
   }
   if (!pointInRing(spot, parcel)) {
-    return { requiredM, actualM: 0, ok: false, message: `Emplacement hors de votre parcelle. ${rule}. ${local}` }
+    return { requiredM, actualM: 0, ok: false, message: `Emplacement hors de votre parcelle. ${rule}. ${local}`, summary: 'Emplacement hors de votre parcelle : distance à la limite non vérifiable (art. 671).' }
   }
   const actualM = distanceToRing(spot, parcel)
   const ok = actualM >= requiredM
@@ -103,7 +103,10 @@ export function legalDistance(
   const message = ok
     ? `Distance à la limite : ${fmt(actualM)} m, conforme à l’art. 671 du Code civil (minimum ${fmt(requiredM)} m). ${local}`
     : `${rule}${prune} : ici ${fmt(actualM)} m seulement. ${local} ${espalier}`
-  return { requiredM, actualM, ok, message }
+  const summary = ok
+    ? `Distance à la limite : ${fmt(actualM)} m, conforme à l’art. 671 (minimum ${fmt(requiredM)} m).`
+    : `Trop près de la limite : ${fmt(actualM)} m au lieu de ${fmt(requiredM)} m au minimum (art. 671).`
+  return { requiredM, actualM, ok, message, summary }
 }
 
 export function companionReport(
@@ -192,7 +195,7 @@ export function scoreSpecies(
     const legal = legalDistance(species, spot, garden.parcel)
     if (!legal.ok) {
       factors.push({ label: 'Proche de la limite de parcelle (art. 671 si c’est un voisin)', points: -25 })
-      warnings.push(legal.message)
+      warnings.push(legal.summary)
     }
   }
 

@@ -25,9 +25,9 @@ export interface ToastInput {
 
 /** Nombre de messages au-delà duquel on retire les plus anciens (sauf ceux qui ont un bouton « Annuler »). */
 export const MAX_TOASTS = 3
-/** Message simple : 7 s. Avec « Annuler » : 20 s. Une erreur reste jusqu'à sa fermeture. */
+/** Message simple : 7 s. Avec « Annuler » : 30 s. Une erreur reste jusqu'à sa fermeture. */
 export const INFO_MS = 7000
-export const ACTION_MS = 20000
+export const ACTION_MS = 30000
 
 let toasts: Toast[] = []
 let nextId = 1

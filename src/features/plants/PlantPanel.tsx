@@ -4,9 +4,9 @@ import { Icon } from '../../components/Icon'
 import { Blob, PlantPot, PlantScene } from '../../components/illustrations'
 import { PhotoThumb } from '../../components/PhotoThumb'
 import { RiskNotes } from '../../components/RiskNotes'
-import { deletePhoto, savePhoto } from '../../lib/photos'
+import { savePhoto } from '../../lib/photos'
 import { addPlant, getState, removePlant, updatePlant, useGardenPlants } from '../../lib/store'
-import { showToast } from '../../lib/toast'
+import { recordWithToast } from '../../lib/history'
 import { cleanCustomName } from '../../lib/customName'
 import { frMeters, frNumber } from '../../lib/format'
 import { openScan } from '../scan/scanUi'
@@ -17,6 +17,21 @@ import type { Garden, Plant, PlantStatus } from '../../types'
 import { Fragment, useEffect, useState, type ComponentType, type ReactNode } from 'react'
 import { MeasureSection } from './MeasureSection'
 import { useTasks } from '../tasks/useTasks'
+
+/** Note de position (distance à la limite, art. 671) : une phrase bien visible, le détail dessous. */
+function PositionNote({ legal }: { legal: { ok: boolean; summary: string; message: string } }) {
+  return (
+    <section className={'position-note ' + (legal.ok ? 'ok' : 'warn')} aria-label="Position par rapport à la limite">
+      <p className="position-note-main">
+        <span aria-hidden>{legal.ok ? '✓' : '⚠'}</span> {legal.summary}
+      </p>
+      <details>
+        <summary>En savoir plus</summary>
+        <p className="small">{legal.message}</p>
+      </details>
+    </section>
+  )
+}
 
 export function plantName(p: Plant): string {
   return p.customName || SPECIES_BY_ID[p.speciesId]?.nomCommun || 'Plante inconnue'
@@ -71,35 +86,20 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
   }
 
   function removePhoto(id: string) {
+    const before = plant.photos
     updatePlant(plant.id, { photos: plant.photos.filter((x) => x !== id) })
-    showToast({
-      message: 'Photo supprimée.',
-      actionLabel: 'Annuler',
-      onAction: () => {
-        const cur = getState().plants.find((p) => p.id === plant.id)
-        if (cur && !cur.photos.includes(id)) updatePlant(plant.id, { photos: [...cur.photos, id] })
-      },
-      onExpire: () => {
-        // Supprimée pour de bon, sauf si elle a été remise entre-temps.
-        const cur = getState().plants.find((p) => p.id === plant.id)
-        if (!cur?.photos.includes(id)) void deletePhoto(id)
-      },
-    })
+    const set = (photos: string[]) => updatePlant(plant.id, { photos })
+    recordWithToast({ label: 'Suppression d’une photo', undo: () => set(before), redo: () => set(before.filter((x) => x !== id)) }, 'Photo supprimée.')
   }
 
   function remove() {
     const name = plantName(plant)
-    removePlant(plant.id, { keepPhotos: true })
+    removePlant(plant.id, { keepPhotos: true }) // les photos restent : purgées au démarrage suivant seulement si la plante n'est pas revenue
     closePlantSheet()
-    showToast({
-      message: `« ${name} » est supprimée du jardin.`,
-      actionLabel: 'Annuler',
-      onAction: () => addPlant(plant),
-      // Les photos ne sont effacées qu'une fois le délai d'annulation passé.
-      onExpire: () => {
-        if (!getState().plants.some((p) => p.id === plant.id)) plant.photos.forEach((id) => void deletePhoto(id))
-      },
-    })
+    recordWithToast(
+      { label: `Suppression de « ${name} »`, undo: () => addPlant(plant), redo: () => removePlant(plant.id, { keepPhotos: true }) },
+      `« ${name} » est supprimée du jardin.`,
+    )
   }
 
   const ageYears = plantAgeYears(plant, now)
@@ -248,6 +248,7 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
       {species && <RiskNotes species={species} />}
       {nameField}
       {!fiche && now_}
+      {legal && <PositionNote legal={legal} />}
 
       {myTasks.length > 0 && (
         <div>
@@ -265,11 +266,6 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
         </div>
       )}
 
-      {legal && (
-        <div className={'alert small ' + (legal.ok ? 'info' : '')}>
-          <strong>Distance avec le voisin :</strong> {legal.message}
-        </div>
-      )}
       <details className="np-details plant-details">
         <summary>Détails</summary>
         <div className="stack" style={{ gap: 12 }}>

@@ -27,7 +27,7 @@ describe('toast', () => {
     const onExpire = vi.fn()
     const id = showToast({ message: 'x', actionLabel: 'Annuler', onAction, onExpire })
     runToastAction(id)
-    vi.advanceTimersByTime(20000)
+    vi.advanceTimersByTime(30000)
     expect(onAction).toHaveBeenCalledTimes(1)
     expect(onExpire).not.toHaveBeenCalled()
   })
@@ -37,7 +37,7 @@ describe('toast', () => {
     const id = showToast({ message: 'x', onExpire })
     dismissToast(id)
     dismissToast(id)
-    vi.advanceTimersByTime(20000)
+    vi.advanceTimersByTime(30000)
     expect(onExpire).toHaveBeenCalledTimes(1)
   })
 
@@ -49,14 +49,14 @@ describe('toast', () => {
     expect(getToasts()).toHaveLength(MAX_TOASTS)
   })
 
-  it('message simple : 7 s ; avec Annuler : 20 s', () => {
+  it('message simple : 7 s ; avec Annuler : 30 s', () => {
     showToast({ message: 'Enregistré' })
     showToast({ message: 'Supprimée', actionLabel: 'Annuler', onAction: () => undefined })
     expect(INFO_MS).toBe(7000)
-    expect(ACTION_MS).toBe(20000)
+    expect(ACTION_MS).toBe(30000)
     vi.advanceTimersByTime(7001)
     expect(getToasts().map((t) => t.message)).toEqual(['Supprimée'])
-    vi.advanceTimersByTime(13000)
+    vi.advanceTimersByTime(23000)
     expect(getToasts()).toHaveLength(0)
   })
 
