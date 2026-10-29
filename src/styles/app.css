@@ -4615,3 +4615,51 @@ html[data-immersive] body {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
+
+/* Tâches : « Plus tard » et les choix, et la carte verte qui montre qu'une tâche vient d'être traitée. */
+.tcard-later {
+  flex: none;
+  min-height: 44px;
+  padding: 0 14px;
+  border: var(--border-w) solid var(--border);
+  border-radius: 22px;
+  background: transparent;
+  color: var(--text);
+  font-weight: var(--fw-strong);
+  font-size: calc(14 * var(--px));
+  cursor: pointer;
+}
+.tcard-menu {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 4px;
+}
+.tcard-flash {
+  background: var(--accent-soft);
+  border: 2px solid var(--accent);
+  color: var(--text);
+  animation: tcard-flash-in 220ms ease-out;
+}
+.tcard-flash.reporte {
+  border-color: var(--warn-text);
+  background: var(--warn-soft);
+}
+.tcard-flash.refuse {
+  border-color: var(--muted-2);
+}
+.tcard-flash .tcard-tile {
+  background: var(--accent);
+  color: var(--bg);
+}
+@keyframes tcard-flash-in {
+  from {
+    transform: scale(0.97);
+    opacity: 0.4;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

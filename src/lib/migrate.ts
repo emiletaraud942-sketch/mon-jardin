@@ -38,7 +38,7 @@ const text = (v: string, max: number = LIMITS.shortText) => clipText(v, max)
 
 const GARDEN_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'address', 'center', 'altitudeM', 'parcel', 'parcelRefs', 'areaM2', 'buildings', 'terrain', 'sol', 'lastFrostDoy', 'firstFrostDoy', 'minAbsC', 'calibration', 'panoramas', 'createdAt'])
 const PLANT_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'speciesId', 'customName', 'position', 'plantedAt', 'ageAtPlanting', 'purchase', 'status', 'notes', 'photos', 'measurements'])
-const TASK_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'taskKey', 'doneAt'])
+const TASK_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'taskKey', 'status', 'until', 'doneAt'])
 
 /** Date ISO plausible : « 2024-03-10 » ou date-heure complète. Rejette « 2024-13-45 ». */
 function isValidDate(v: unknown): v is string {
@@ -316,6 +316,14 @@ function sanitizeTaskDone(raw: unknown, gardenIds: Set<string>): TaskDone | unde
   const extras = cleanExtras(raw, TASK_KEYS) as unknown as Partial<TaskDone>
   const done: TaskDone = { ...extras, id: isId(raw.id) ? raw.id : uid(), gardenId: raw.gardenId as string, taskKey: raw.taskKey, doneAt: raw.doneAt }
   if (raw.gardenId === undefined) delete (done as Partial<TaskDone>).gardenId
+  // Choix de la personne : seuls « reporte » (avec une date valide) et « refuse » sont gardés ; le reste vaut « faite ».
+  delete (done as Partial<TaskDone>).status
+  delete (done as Partial<TaskDone>).until
+  if (raw.status === 'refuse') done.status = 'refuse'
+  else if (raw.status === 'reporte' && isValidDate(raw.until)) {
+    done.status = 'reporte'
+    done.until = raw.until
+  }
   return done
 }
 
@@ -402,6 +410,7 @@ export function compactTasksDone(tasks: TaskDone[], now: Date = new Date()): Tas
   const bucket = (t: TaskDone) => `${t.gardenId ?? ''}|${baseOf(t.taskKey)}`
   for (const t of tasks) {
     const at = stamp(t)
+    if (t.status === 'refuse' || t.status === 'reporte') continue
     if (!Number.isFinite(at) || at >= keepAll) continue
     const b = bucket(t)
     if (at > (latest.get(b) ?? -Infinity)) latest.set(b, at)
@@ -409,6 +418,11 @@ export function compactTasksDone(tasks: TaskDone[], now: Date = new Date()): Tas
   const seenLatest = new Set<string>()
   const out = tasks.filter((t) => {
     const at = stamp(t)
+    if (t.status === 'refuse') return true // un refus dure : jamais purgé
+    if (t.status === 'reporte') {
+      const until = Date.parse(t.until ?? '')
+      return !Number.isFinite(until) || t0 - until <= 30 * DAY_MS // gardé jusqu'à 30 jours après son retour
+    }
     if (!Number.isFinite(at)) return true
     if (t0 - at > 400 * DAY_MS) return false
     if (at >= keepAll) return true

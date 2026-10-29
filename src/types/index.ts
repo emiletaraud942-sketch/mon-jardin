@@ -241,11 +241,18 @@ export interface PlantMeasurement {
   spreadM?: number
 }
 
+/** Ce que la personne a décidé pour une tâche : faite, repoussée (« pas maintenant »), ou refusée (« je ne veux pas le faire »). */
+export type TaskChoice = 'fait' | 'reporte' | 'refuse'
+
 export interface TaskDone {
   id: string
   gardenId: string
   /** Clé stable de la tâche générée (voir engine/tasks). */
   taskKey: string
+  /** Absent = faite. `reporte` : masquée jusqu'à `until` ; `refuse` : plus jamais proposée pour ces plantes. */
+  status?: TaskChoice
+  /** Pour `reporte` : date (ISO) où la tâche revient. */
+  until?: string
   doneAt: string
 }
 

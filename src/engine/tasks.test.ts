@@ -901,3 +901,65 @@ describe('annuelles hors saison', () => {
     expect(avec.some((t) => t.plantIds.includes(neuve.id))).toBe(true)
   })
 })
+
+// ---------- Choix de la personne : « pas maintenant » et « je ne veux pas le faire » ----------
+
+describe('tâches reportées ou refusées', () => {
+  const winter = new Date(2026, 0, 13, 9) // janvier : taille d'hiver du pommier
+  it('« pas maintenant » masque la tâche jusqu’à la date, puis elle revient', () => {
+    const p = plant('pommier')
+    const key = run({ plants: [p], today: winter }).find(tailleHiver)!.key
+    const until = new Date(2026, 0, 20).toISOString()
+    const choice: TaskDone = { id: 'c1', gardenId: 'g1', taskKey: key, doneAt: '2026-01-13T09:00:00.000Z', status: 'reporte', until }
+    expect(run({ plants: [p], today: winter, tasksDone: [choice] }).find(tailleHiver)).toBeUndefined()
+    // le 21 janvier : la date est passée, la tâche est de nouveau proposée
+    const later = new Date(2026, 0, 21, 9)
+    expect(run({ plants: [p], today: later, tasksDone: [choice] }).find(tailleHiver)).toBeDefined()
+  })
+  it('« je ne veux pas le faire » : plus jamais proposée pour ces plantes, quelle que soit la période', () => {
+    const p = plant('pommier')
+    const key = run({ plants: [p], today: winter }).find(tailleHiver)!.key
+    const refuse: TaskDone = { id: 'r1', gardenId: 'g1', taskKey: key, doneAt: '2026-01-13T09:00:00.000Z', status: 'refuse' }
+    expect(run({ plants: [p], today: winter, tasksDone: [refuse] }).find(tailleHiver)).toBeUndefined()
+    // décembre de la même saison, puis l'hiver suivant : toujours refusée
+    expect(run({ plants: [p], today: new Date(2026, 11, 15, 9), tasksDone: [refuse] }).find(tailleHiver)).toBeUndefined()
+    expect(run({ plants: [p], today: new Date(2027, 0, 12, 9), tasksDone: [refuse] }).find(tailleHiver)).toBeUndefined()
+  })
+  it('le refus ne vaut que pour ces plantes : un autre pommier ajouté ensuite reçoit la tâche', () => {
+    const p1 = plant('pommier')
+    const key = run({ plants: [p1], today: winter }).find(tailleHiver)!.key
+    const refuse: TaskDone = { id: 'r1', gardenId: 'g1', taskKey: key, doneAt: '2026-01-13T09:00:00.000Z', status: 'refuse' }
+    const p2 = plant('pommier')
+    const tasks = run({ plants: [p1, p2], today: winter, tasksDone: [refuse] }).filter(tailleHiver)
+    expect(tasks).toHaveLength(1)
+    expect(tasks[0].plantIds).toEqual([p2.id])
+  })
+  it('un report ou un refus ne compte pas comme « fait » pour les autres règles', () => {
+    const p = plant('pommier')
+    const key = run({ plants: [p], today: winter }).find(tailleHiver)!.key
+    const others = run({ plants: [p], today: winter }).filter((t) => !tailleHiver(t)).map((t) => t.key)
+    const refuse: TaskDone = { id: 'r1', gardenId: 'g1', taskKey: key, doneAt: '2026-01-13T09:00:00.000Z', status: 'refuse' }
+    expect(run({ plants: [p], today: winter, tasksDone: [refuse] }).filter((t) => !tailleHiver(t)).map((t) => t.key)).toEqual(others)
+  })
+  it('l’alerte de gel ne se coupe que pour sa nuit : un refus ne l’éteint pas pour de bon', () => {
+    const today = new Date(2026, 3, 10, 9)
+    const w = weather(today, [], [{ tMin: -2 }])
+    const gel = run({ plants: [plant('citronnier')], today, weather: w }).find((t) => t.key.endsWith(':jardin:protection:gel'))!
+    expect(gel).toBeDefined()
+    const refuse: TaskDone = { id: 'r1', gardenId: 'g1', taskKey: gel.key, doneAt: today.toISOString(), status: 'refuse' }
+    expect(run({ plants: [plant('citronnier')], today, weather: w, tasksDone: [refuse] }).some((t) => t.key.endsWith(':jardin:protection:gel'))).toBe(false)
+    // une autre nuit de gel (autre date de première nuit) : l'alerte revient
+    const later = new Date(2026, 3, 20, 9)
+    const w2 = weather(later, [], [{ tMin: -3 }])
+    expect(run({ plants: [plant('citronnier')], today: later, weather: w2, tasksDone: [refuse] }).some((t) => t.key.endsWith(':jardin:protection:gel'))).toBe(true)
+  })
+  it('purgeTasksDone garde les refus et les reports, même très anciens', () => {
+    const old = '2020-01-01T00:00:00.000Z'
+    const list: TaskDone[] = [
+      { id: 'a', gardenId: 'g1', taskKey: '2020-W01:pommier:taille:m1', doneAt: old },
+      { id: 'b', gardenId: 'g1', taskKey: '2020-W01:pommier:taille:m1:abcd', doneAt: old, status: 'refuse' },
+      { id: 'c', gardenId: 'g1', taskKey: '2020-W01:tomate:arrosage:m6', doneAt: old, status: 'reporte', until: '2020-02-01T00:00:00.000Z' },
+    ]
+    expect(purgeTasksDone(list, new Date(2026, 0, 13)).map((t) => t.id)).toEqual(['b', 'c'])
+  })
+})

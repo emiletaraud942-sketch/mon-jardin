@@ -1,25 +1,26 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Icon } from "../../components/Icon";
 import { PageHead } from "../../components/PageHead";
 import { SPECIES_BY_ID } from "../../data/species";
 import { TASK_ICON, TASK_LABEL } from "../../data/labels";
 import {
   markTaskDone,
-  unmarkTask,
+  removeTaskDoneById,
   useGardenPlants,
   useStore,
 } from "../../lib/store";
+import { activeChoices, choiceEntry, choiceSentence, SNOOZE_LABEL, type Snooze } from "../../lib/taskChoices";
 import { enableNotifications, notificationsSupported } from "../../lib/notify";
 import { showToast } from "../../lib/toast";
 import { downloadBlob } from "../../lib/backup";
 import { buildIcs } from "../../lib/ics";
-import { uid } from "../../lib/geo";
 import { setUi } from "../../lib/ui";
 import { MONTH_NAMES } from "../../engine/calendar";
 import { waterBalance, yearPlan } from "../../engine/tasks";
 import type {
   Garden,
   GeneratedTask,
+  TaskChoice,
   TaskType,
   WeatherBundle,
 } from "../../types";
@@ -122,17 +123,50 @@ function mondayLabel(now = new Date()): string {
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
 }
 
+interface Flash {
+  id: string;
+  title: string;
+  choice: TaskChoice;
+  sentence?: string;
+}
+const FLASH_MS = 8000;
+
+/** Carte verte qui remplace la tâche pendant quelques secondes : on voit qu'elle est faite, repoussée ou refusée, et on peut annuler. */
+function FlashCard({ item, onUndo, onClose }: { item: Flash; onUndo: () => void; onClose: () => void }) {
+  const text = item.choice === "fait" ? "Fait" : item.choice === "reporte" ? "Mise de côté" : "Refusée";
+  return (
+    <li className={"tcard tcard-flash " + item.choice} role="status">
+      <div className="tcard-tile" aria-hidden>
+        <Icon name="check" size={28} />
+      </div>
+      <div className="tcard-body">
+        <strong className="tcard-title">✓ {text} : {item.title}</strong>
+        {item.sentence && <span className="tcard-sub">{item.sentence}</span>}
+      </div>
+      <button type="button" className="tcard-done" onClick={onUndo}>
+        Annuler
+      </button>
+      <button type="button" className="btn ghost small icon-btn" aria-label="Fermer ce message" onClick={onClose}>
+        <Icon name="x" size={18} />
+      </button>
+    </li>
+  );
+}
+
 function TaskItem({
   garden,
   task,
   weatherPending,
+  onDecide,
 }: {
   garden: Garden;
   task: GeneratedTask;
   weatherPending: boolean;
+  onDecide: (task: GeneratedTask, choice: TaskChoice, snooze?: Snooze) => void;
 }) {
   const plants = useGardenPlants(garden.id);
   const names = task.plantIds.length;
+  const [menu, setMenu] = useState(false);
   return (
     <li
       className={
@@ -163,22 +197,31 @@ function TaskItem({
         type="button"
         className="tcard-done"
         aria-label={`Fait : ${task.title}`}
-        onClick={() => {
-          markTaskDone({
-            id: uid(),
-            gardenId: garden.id,
-            taskKey: task.key,
-            doneAt: new Date().toISOString(),
-          });
-          showToast({
-            message: `Fait : ${task.title}`,
-            actionLabel: "Annuler",
-            onAction: () => unmarkTask(garden.id, task.key),
-          });
-        }}
+        onClick={() => onDecide(task, "fait")}
       >
         Fait
       </button>
+      <button
+        type="button"
+        className="tcard-later"
+        aria-expanded={menu}
+        aria-label={`Autres choix pour : ${task.title}`}
+        onClick={() => setMenu((m) => !m)}
+      >
+        Plus tard <span aria-hidden>{menu ? "▴" : "▾"}</span>
+      </button>
+      {menu && (
+        <div className="tcard-menu" role="group" aria-label="Autres choix">
+          {(Object.keys(SNOOZE_LABEL) as Snooze[]).map((k) => (
+            <button key={k} type="button" className="btn small" onClick={() => onDecide(task, "reporte", k)}>
+              Pas maintenant : {SNOOZE_LABEL[k].toLowerCase()}
+            </button>
+          ))}
+          <button type="button" className="btn small danger" onClick={() => onDecide(task, "refuse")}>
+            Je ne veux pas le faire
+          </button>
+        </div>
+      )}
       <details className="tcard-more np-details">
         <summary>Détails</summary>
         <div className="small">{task.howTo}</div>
@@ -284,9 +327,31 @@ export function TasksPage({ garden }: { garden: Garden }) {
   const open = tasks.filter((t) => !t.blockedBy);
   const blocked = tasks.filter((t) => t.blockedBy);
   const recent = done
+    .filter((d) => !d.status || d.status === "fait")
     .filter((d) => Date.now() - new Date(d.doneAt).getTime() < 14 * 86400000)
     .slice(-10)
     .reverse();
+  const aside = useMemo(() => activeChoices(allDone, garden.id, new Date()), [allDone, garden.id]);
+
+  // Retour visuel : la tâche validée ne disparaît pas d'un coup, elle reste quelques secondes en vert, avec « Annuler ».
+  const [flash, setFlash] = useState<Flash[]>([]);
+  const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  function decide(task: GeneratedTask, choice: TaskChoice, snooze?: Snooze) {
+    const entry = choiceEntry(garden.id, task.key, choice, new Date(), snooze);
+    markTaskDone(entry);
+    const item: Flash = { id: entry.id, title: task.title, choice, sentence: choice === "fait" ? undefined : choiceSentence(entry) };
+    setFlash((f) => [item, ...f]);
+    timers.current.set(entry.id, setTimeout(() => dropFlash(entry.id), FLASH_MS));
+  }
+  function dropFlash(id: string) {
+    clearTimeout(timers.current.get(id));
+    timers.current.delete(id);
+    setFlash((f) => f.filter((x) => x.id !== id));
+  }
+  function undoFlash(id: string) {
+    removeTaskDoneById(id);
+    dropFlash(id);
+  }
 
   return (
     <div className="page afaire">
@@ -351,11 +416,15 @@ export function TasksPage({ garden }: { garden: Garden }) {
                   </p>
                 )}
                 <ul className="tcards">
+                  {flash.map((f) => (
+                    <FlashCard key={f.id} item={f} onUndo={() => undoFlash(f.id)} onClose={() => dropFlash(f.id)} />
+                  ))}
                   {open.map((t) => (
                     <TaskItem
                       key={t.key}
                       garden={garden}
                       task={t}
+                      onDecide={decide}
                       weatherPending={
                         !weather && weatherLoading && WEATHER_TYPES.has(t.type)
                       }
@@ -379,6 +448,7 @@ export function TasksPage({ garden }: { garden: Garden }) {
                           key={t.key}
                           garden={garden}
                           task={t}
+                          onDecide={decide}
                           weatherPending={
                             !weather &&
                             weatherLoading &&
@@ -396,6 +466,25 @@ export function TasksPage({ garden }: { garden: Garden }) {
       </div>
       <div className="afaire-extra">
         {view === "semaine" && weather && <WeatherMore weather={weather} />}
+        {view === "semaine" && aside.length > 0 && (
+          <div className="card">
+            <h3>Mises de côté</h3>
+            <ul className="list small">
+              {aside.map((d) => (
+                <li key={d.id} className="row" style={{ justifyContent: "space-between" }}>
+                  <span>
+                    {d.status === "refuse" ? "✕" : "⏱"}{" "}
+                    {doneTaskLabel(d.taskKey, (id) => SPECIES_BY_ID[id]?.nomCommun)}{" "}
+                    <span className="muted">{choiceSentence(d)}</span>
+                  </span>
+                  <button className="btn small ghost" onClick={() => removeTaskDoneById(d.id)}>
+                    Remettre
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         {view === "semaine" && recent.length > 0 && (
           <div className="card">
             <h3>Fait ces derniers jours</h3>
@@ -416,7 +505,7 @@ export function TasksPage({ garden }: { garden: Garden }) {
                   </span>
                   <button
                     className="btn small ghost"
-                    onClick={() => unmarkTask(garden.id, d.taskKey)}
+                    onClick={() => removeTaskDoneById(d.id)}
                   >
                     Annuler
                   </button>

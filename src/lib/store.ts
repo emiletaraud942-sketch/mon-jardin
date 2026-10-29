@@ -484,6 +484,11 @@ export function markTaskDone(t: TaskDone) {
   setState((s) => ({ tasksDone: [...s.tasksDone, t] }))
 }
 
+/** Retire une décision précise (annuler un « fait », un report ou un refus) sans toucher aux autres entrées de la même tâche. */
+export function removeTaskDoneById(id: string) {
+  setState((s) => ({ tasksDone: s.tasksDone.filter((t) => t.id !== id) }))
+}
+
 export function unmarkTask(gardenId: string, taskKey: string) {
   setState((s) => ({ tasksDone: s.tasksDone.filter((t) => !(t.gardenId === gardenId && t.taskKey === taskKey)) }))
 }

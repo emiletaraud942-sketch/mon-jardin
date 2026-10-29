@@ -195,7 +195,10 @@ export function purgeTasksDone(done: TaskDone[], now: Date): TaskDone[] {
     const at = new Date(t.doneAt).getTime()
     return Number.isFinite(at) ? at : null
   }
+  // Un refus (« je ne veux pas le faire ») ou un report (« pas maintenant ») n'est jamais purgé par l'âge : il vaut tant que la personne ne le retire pas.
+  const isChoice = (t: TaskDone) => t.status === 'refuse' || t.status === 'reporte'
   const fresh = done.filter((t) => {
+    if (isChoice(t)) return true
     const at = timeOf(t)
     return at == null || at >= limit
   })
@@ -203,6 +206,7 @@ export function purgeTasksDone(done: TaskDone[], now: Date): TaskDone[] {
   const drop = new Set<TaskDone>()
   const newestFirst = [...fresh].sort((a, b) => (timeOf(b) ?? -Infinity) - (timeOf(a) ?? -Infinity))
   for (const t of newestFirst) {
+    if (isChoice(t)) continue
     const k = parseTaskKey(t.taskKey)
     if (!FREQUENT_PREFIX.test(k.prefix) || k.base.startsWith('jardin:protection')) continue
     const id = `${t.gardenId ?? ''}|${k.base}`
@@ -438,8 +442,24 @@ export function generateTasks(ctx: TaskContext): GeneratedTask[] {
   const week = weekKey(today)
 
   // Historique des tâches faites, indexé par clé de base (sans période ni plantes).
-  const done = ctx.tasksDone.filter((t) => !t.gardenId || t.gardenId === garden.id)
+  const allDone = ctx.tasksDone.filter((t) => !t.gardenId || t.gardenId === garden.id)
+  const done = allDone.filter((t) => !t.status || t.status === 'fait')
   const doneKeys = new Set(done.map((t) => t.taskKey))
+  // Choix de la personne : « pas maintenant » (masquée jusqu'à la date) et « je ne veux pas le faire » (plus proposée pour ces plantes).
+  // Pour une plante, le choix vaut pour la tâche (espèce, type, règle) quelle que soit la période ; pour une tâche du jardin
+  // (alerte de gel, arrosage météo), seulement pour sa clé du jour : on ne coupe jamais une alerte de protection pour de bon.
+  const choiceByBase = new Map<string, (Set<string> | null)[]>()
+  const choiceKeys = new Set<string>()
+  for (const c of allDone) {
+    if (c.status !== 'reporte' && c.status !== 'refuse') continue
+    if (c.status === 'reporte' && !(Date.parse(c.until ?? '') > today.getTime())) continue
+    choiceKeys.add(c.taskKey)
+    const k = parseTaskKey(c.taskKey)
+    const list = choiceByBase.get(k.base) ?? []
+    list.push(k.tags ? new Set(k.tags) : null)
+    choiceByBase.set(k.base, list)
+  }
+  const choiceHidesPlant = (bases: string[], tag: string) => bases.some((b) => (choiceByBase.get(b) ?? []).some((tags) => tags === null || tags.has(tag)))
   interface DoneEntry { prefix: string; at: number; tags: Set<string> | null }
   const doneByBase = new Map<string, DoneEntry[]>()
   for (const t of done) {
@@ -502,7 +522,7 @@ export function generateTasks(ctx: TaskContext): GeneratedTask[] {
       const young = Number.isFinite(planted) && today.getTime() - planted < 365.25 * DAY_MS
       return sp.eau === 'moyen' || sp.eau === 'eleve' || young
     })
-    meteoWateringHidden = recentlyDone(base, 3)
+    meteoWateringHidden = recentlyDone(base, 3) || choiceKeys.has(`${todayIso}:${base}`)
     if (thirsty.length && !meteoWateringHidden) {
       const detail =
         `Déficit en eau : ${fmt(balance.deficitMm)} mm sur 7 jours (pluie ${fmt(balance.rain7)} mm, évaporation ${fmt(balance.et07)} mm). ` +
@@ -535,7 +555,7 @@ export function generateTasks(ctx: TaskContext): GeneratedTask[] {
       const coldest = frostDays.reduce((c, d) => (d.tMin < c.tMin ? d : c), first)
       const atRisk = plants.filter((p) => isActive(p) && speciesById[p.speciesId] && speciesById[p.speciesId].rusticiteC > coldest.tMin && !annualSeasonOver(p, speciesById[p.speciesId], today))
       const key = `${first.date}:jardin:protection:gel`
-      if (atRisk.length && !doneKeys.has(key)) {
+      if (atRisk.length && !doneKeys.has(key) && !choiceKeys.has(key)) {
         const spNames = [...new Set(atRisk.map((p) => lowerFirst(speciesById[p.speciesId].nomCommun)))]
         const list = spNames.slice(0, 4).join(', ') + (spNames.length > 4 ? '…' : '')
         const verb = atRisk.length > 1 ? 'risquent' : 'risque'
@@ -587,7 +607,7 @@ export function generateTasks(ctx: TaskContext): GeneratedTask[] {
     const freq = rule.frequencyDays
     const prefix = freq ? (freq < 7 ? todayIso : week) : seasonKey(rule.months, today)
     // Plantes pas encore couvertes par une tâche faite.
-    let todo = gp.filter((p) => !covered(bases, prefix, freq, plantTag(p.id)))
+    let todo = gp.filter((p) => !covered(bases, prefix, freq, plantTag(p.id)) && !choiceHidesPlant(bases, plantTag(p.id)))
     if (!todo.length) continue
 
     // L'arrosage météo couvre déjà les plantes concernées : on les y rattache.
