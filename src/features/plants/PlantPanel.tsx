@@ -17,6 +17,7 @@ import type { Garden, Plant, PlantStatus } from '../../types'
 import { Fragment, useEffect, useState, type ComponentType, type ReactNode } from 'react'
 import { MeasureSection } from './MeasureSection'
 import { PurchaseSummary } from './PurchaseDialog'
+import { NoteAssist } from './NoteAssist'
 import { useTasks } from '../tasks/useTasks'
 
 /** Note de position (distance à la limite, art. 671) : une phrase bien visible, le détail dessous. */
@@ -315,6 +316,7 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
         <span>Notes</span>
         <textarea className="input" rows={3} value={plant.notes ?? ''} onChange={(e) => updatePlant(plant.id, { notes: e.target.value })} placeholder="Variété, où vous l’avez achetée, observations…" />
       </label>
+      <NoteAssist plant={plant} species={species} />
 
       <div className="stack panel-actions">
         <button className="btn" onClick={() => startMoving(plant.id)}>
