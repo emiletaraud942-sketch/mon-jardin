@@ -10,6 +10,7 @@ interface Fake {
   getSession: ReturnType<typeof vi.fn>
   getUser: ReturnType<typeof vi.fn>
   signInWithOtp: ReturnType<typeof vi.fn>
+  verifyOtp: ReturnType<typeof vi.fn>
   signOut: ReturnType<typeof vi.fn>
   rpc: ReturnType<typeof vi.fn>
   options?: { auth?: Record<string, unknown> }
@@ -34,6 +35,7 @@ function makeFake(): Fake {
     getSession: vi.fn(async () => ({ data: { session: f.session }, error: null })),
     getUser: vi.fn(async () => ({ data: { user: f.session?.user ?? null }, error: null })),
     signInWithOtp: vi.fn(async () => ({ error: null })),
+    verifyOtp: vi.fn(async () => ({ data: { session: { user: { id: 'u1', email: 'a@b.fr' } }, user: { id: 'u1', email: 'a@b.fr' } }, error: null })),
     signOut: vi.fn(async () => ({ error: null })),
     rpc: vi.fn(async () => ({ data: null, error: null })),
     tick,
@@ -178,7 +180,7 @@ describe('sans Supabase configuré', () => {
     expect(await s.currentUser()).toBeNull()
     expect(await s.initSync()).toEqual({ handled: false })
     await expect(s.pushSnapshot()).rejects.toThrow(/Connectez-vous|configurée/)
-    await expect(s.sendMagicLink('a@b.fr')).rejects.toThrow(/non configurée/)
+    await expect(s.sendLoginCode('a@b.fr')).rejects.toThrow(/non configurée/)
     await s.signOut() // ne plante pas
   })
 })
@@ -199,16 +201,26 @@ describe('client et session', () => {
     expect(await s.currentUser()).toBeNull()
   })
 
-  it('le lien magique redirige vers la racine du site', async () => {
+  it('le code est demandé avec création du compte, et le lien éventuel revient à la racine du site', async () => {
     const s = await load()
-    await s.sendMagicLink('a@b.fr')
-    expect(fake.signInWithOtp).toHaveBeenCalledWith({ email: 'a@b.fr', options: { emailRedirectTo: 'https://app.test/' } })
+    await s.sendLoginCode('a@b.fr')
+    expect(fake.signInWithOtp).toHaveBeenCalledWith({ email: 'a@b.fr', options: { shouldCreateUser: true, emailRedirectTo: 'https://app.test/' } })
   })
 
-  it('une erreur Supabase à l’envoi du lien est relancée', async () => {
+  it('une erreur Supabase à l’envoi du code est relancée', async () => {
     const s = await load()
     fake.signInWithOtp.mockResolvedValueOnce({ error: new Error('limite') })
-    await expect(s.sendMagicLink('a@b.fr')).rejects.toThrow('limite')
+    await expect(s.sendLoginCode('a@b.fr')).rejects.toThrow('limite')
+  })
+
+  it('les erreurs d’envoi courantes sont traduites', async () => {
+    const s = await load()
+    fake.signInWithOtp.mockResolvedValueOnce({ error: { message: 'email rate limit exceeded', status: 429 } })
+    await expect(s.sendLoginCode('a@b.fr')).rejects.toThrow('Trop de demandes')
+    fake.signInWithOtp.mockResolvedValueOnce({ error: { message: 'For security purposes, you can only request this after 42 seconds.', code: 'over_email_send_rate_limit' } })
+    await expect(s.sendLoginCode('a@b.fr')).rejects.toThrow('Trop de demandes')
+    fake.signInWithOtp.mockResolvedValueOnce({ error: { message: 'Signups not allowed for otp' } })
+    await expect(s.sendLoginCode('a@b.fr')).rejects.toThrow('fermés')
   })
 
   it('timeout de 15 s sur les appels réseau', async () => {
@@ -219,6 +231,46 @@ describe('client et session', () => {
     const assertion = expect(p).rejects.toThrow(/trop de temps/)
     await vi.advanceTimersByTimeAsync(15_001)
     await assertion
+  })
+})
+
+describe('connexion par code (iPhone : l’appli épinglée n’est pas le navigateur)', () => {
+  it('verifyLoginCode vérifie le code puis rend l’utilisateur', async () => {
+    const s = await load()
+    const user = await s.verifyLoginCode(' a@b.fr ', '123 456')
+    expect(fake.verifyOtp).toHaveBeenCalledWith({ email: 'a@b.fr', token: '123456', type: 'email' })
+    expect(user.id).toBe('u1')
+  })
+  it('accepte les espaces ou tirets saisis au milieu du code (copier-coller, saisie semi-automatique)', async () => {
+    const s = await load()
+    await s.verifyLoginCode('a@b.fr', '123-456')
+    expect(fake.verifyOtp).toHaveBeenLastCalledWith({ email: 'a@b.fr', token: '123456', type: 'email' })
+  })
+  it('refuse un code qui n’est pas fait de chiffres, sans appel réseau', async () => {
+    const s = await load()
+    for (const bad of ['', '12', 'abcdef', '12345678901', '12 34 5x']) await expect(s.verifyLoginCode('a@b.fr', bad)).rejects.toThrow(/chiffres/)
+    await expect(s.verifyLoginCode('pas-une-adresse', '123456')).rejects.toThrow(/invalide/)
+    expect(fake.verifyOtp).not.toHaveBeenCalled()
+  })
+  it('un code faux ou expiré donne une phrase claire', async () => {
+    const s = await load()
+    fake.verifyOtp.mockResolvedValueOnce({ data: { session: null, user: null }, error: { message: 'Token has expired or is invalid', code: 'otp_expired' } })
+    await expect(s.verifyLoginCode('a@b.fr', '123456')).rejects.toThrow('Code incorrect ou expiré')
+  })
+  it('une réponse sans session est refusée', async () => {
+    const s = await load()
+    fake.verifyOtp.mockResolvedValueOnce({ data: { session: null, user: null }, error: null })
+    await expect(s.verifyLoginCode('a@b.fr', '123456')).rejects.toThrow('Code incorrect ou expiré')
+  })
+  it('une autre erreur (réseau, limite) est relancée telle quelle', async () => {
+    const s = await load()
+    fake.verifyOtp.mockResolvedValueOnce({ data: { session: null, user: null }, error: new Error('Failed to fetch') })
+    await expect(s.verifyLoginCode('a@b.fr', '123456')).rejects.toThrow('Failed to fetch')
+  })
+  it('la session est gardée sur l’appareil et renouvelée toute seule', async () => {
+    const s = await load()
+    await s.currentUser()
+    expect(fake.options?.auth).toMatchObject({ persistSession: true, autoRefreshToken: true })
   })
 })
 
@@ -473,13 +525,13 @@ describe('effacement en ligne et déconnexion', () => {
     expect([...local.keys()]).toEqual(['permajardin:theme'])
   })
 
-  it('sendMagicLink refuse une adresse invalide avant tout appel réseau', async () => {
+  it('sendLoginCode refuse une adresse invalide avant tout appel réseau', async () => {
     const s = await load()
     for (const bad of ['', 'abc', 'a@b', 'a b@c.fr', 'a@b.fr,c@d.fr', 'x'.repeat(260) + '@b.fr', '<x>@b.fr']) {
-      await expect(s.sendMagicLink(bad)).rejects.toThrow(/invalide/)
+      await expect(s.sendLoginCode(bad)).rejects.toThrow(/invalide/)
     }
     expect(fake.signInWithOtp).not.toHaveBeenCalled()
-    await s.sendMagicLink('  a@b.fr ')
-    expect(fake.signInWithOtp).toHaveBeenCalledWith({ email: 'a@b.fr', options: { emailRedirectTo: 'https://app.test/' } })
+    await s.sendLoginCode('  a@b.fr ')
+    expect(fake.signInWithOtp).toHaveBeenCalledWith({ email: 'a@b.fr', options: { shouldCreateUser: true, emailRedirectTo: 'https://app.test/' } })
   })
 })

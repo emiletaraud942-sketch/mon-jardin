@@ -115,14 +115,48 @@ export async function currentUser(): Promise<User | null> {
 /** Adresse plausible (la vraie validation est faite par Supabase) : évite d'envoyer n'importe quoi au service. */
 export const isPlausibleEmail = (e: string) => e.length <= 254 && /^[^\s@<>"',;]+@[^\s@<>"',;]+\.[^\s@<>"',;]+$/.test(e)
 
-export async function sendMagicLink(email: string) {
+/**
+ * Envoie un CODE à saisir dans l'appli (plutôt qu'un lien à ouvrir) : sur iPhone, l'appli épinglée à l'écran d'accueil et Safari
+ * n'ont pas le même stockage, donc un lien ouvert dans Safari ne connecte jamais l'appli. Le code, lui, se tape là où on l'a demandé.
+ * Le modèle d'e-mail Supabase doit contenir {{ .Token }} (voir docs/ACTIONS-PROPRIETAIRE.md).
+ */
+export async function sendLoginCode(email: string) {
   const sb = supabase()
   if (!sb) throw new Error('Synchronisation non configurée')
   const address = email.trim()
   if (!isPlausibleEmail(address)) throw new Error('Adresse e-mail invalide.')
-  // Le retour se fait toujours sur notre propre origine ; Supabase n'accepte que les « Redirect URLs » de sa liste blanche.
-  const { error } = await withTimeout(sb.auth.signInWithOtp({ email: address, options: { emailRedirectTo: location.origin + '/' } }))
-  if (error) throw error
+  // Le lien éventuel du même e-mail revient toujours sur notre propre origine (liste blanche « Redirect URLs » de Supabase).
+  const { error } = await withTimeout(sb.auth.signInWithOtp({ email: address, options: { shouldCreateUser: true, emailRedirectTo: location.origin + '/' } }))
+  if (error) throw sendError(error)
+}
+
+/** Erreurs d'envoi de code les plus courantes, en français (Supabase les renvoie en anglais). */
+function sendError(e: { message?: string; code?: string; status?: number }): Error {
+  const low = `${e.message ?? ''} ${e.code ?? ''}`.toLowerCase()
+  if (e.status === 429 || /rate.?limit|too many|seconds/.test(low)) return new Error('Trop de demandes. Patientez une minute ou deux avant de redemander un code.')
+  if (/invalid.*email|email.*invalid|unable to validate email/.test(low)) return new Error('Adresse e-mail refusée. Vérifiez-la.')
+  if (/signups? not allowed|not allowed/.test(low)) return new Error('Les nouveaux comptes sont fermés pour le moment.')
+  return e instanceof Error ? e : new Error(e.message || 'Le code n’a pas pu être envoyé. Réessayez.')
+}
+
+const CODE_WRONG = 'Code incorrect ou expiré. Vérifiez-le, ou demandez-en un nouveau.'
+
+/** Vérifie le code reçu par e-mail et ouvre la session sur cet appareil (elle reste ouverte : jeton renouvelé tout seul). */
+export async function verifyLoginCode(email: string, code: string): Promise<User> {
+  const sb = supabase()
+  if (!sb) throw new Error('Synchronisation non configurée')
+  const address = email.trim()
+  if (!isPlausibleEmail(address)) throw new Error('Adresse e-mail invalide.')
+  const token = code.replace(/[\s-]/g, '')
+  if (!/^\d{6,10}$/.test(token)) throw new Error('Le code est fait de chiffres seulement (6 à 10).')
+  const { data, error } = await withTimeout(sb.auth.verifyOtp({ email: address, token, type: 'email' }))
+  if (error) {
+    const low = `${error.message ?? ''} ${(error as { code?: string }).code ?? ''}`.toLowerCase()
+    if (/expired|invalid|otp/.test(low)) throw new Error(CODE_WRONG)
+    throw error
+  }
+  if (!data.session || !data.user) throw new Error(CODE_WRONG)
+  return data.user
 }
 
 export async function signOut() {

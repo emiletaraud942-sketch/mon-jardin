@@ -8,6 +8,7 @@ import { Icon } from '../../components/Icon'
 import { Segmented } from '../../components/Segmented'
 import { SavedNote, useFlash } from '../../components/useFlash'
 import { backupCurrentState, canShareFile, exportCurrentState, lastExportAt, lastExportName, REMIND_EVERY_DAYS, saveBackupBlob, saveOutcomeText, shareFile, type SaveOutcome } from '../../lib/backup'
+import { CODE_HINT, CODE_SENT, LOGGED_IN, RESEND_AFTER_S, STAY_LOGGED } from '../../lib/loginText'
 import { autoSyncMessage, autoSyncReconcile, autoSyncResolved, useAutoSyncState } from '../../lib/autoSync'
 import { downloadFullBackup, estimateFullBackup, formatMo, FULL_EXTENSION, HEAVY_BACKUP_BYTES, isFullBackup, MESSAGE_TOO_HEAVY, readFullBackup, restorePhotos, type PhotoToRestore } from '../../lib/backupFull'
 import { formatDay, frNumber } from '../../lib/format'
@@ -434,6 +435,7 @@ function Backup() {
 }
 
 type SyncModule = typeof import('../../lib/sync')
+
 const syncConfigured = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY
 
 function Sync() {
@@ -446,7 +448,17 @@ function Sync() {
   const [busy, setBusy] = useState(false)
   const [asking, setAsking] = useState<() => void>()
   const [pulling, setPulling] = useState(false)
+  // Étape « code » : l'adresse a reçu un code, on attend qu'il soit saisi (jamais de lien : voir sendLoginCode).
+  const [codeFor, setCodeFor] = useState<string>()
+  const [code, setCode] = useState('')
+  const [resendAt, setResendAt] = useState(0)
+  const [now, setNow] = useState(() => Date.now())
   const auto = useAutoSyncState()
+  useEffect(() => {
+    if (!resendAt) return
+    const t = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(t)
+  }, [resendAt])
   useEffect(() => {
     if (!syncConfigured) return
     let alive = true
@@ -502,14 +514,34 @@ function Sync() {
       autoSyncResolved()
       return done ? 'Votre copie en ligne est reprise sur cet appareil.' : 'Il n’y a pas encore de copie en ligne.'
     })
+  const sendCode = (to: string) =>
+    run(async (m) => {
+      await m.sendLoginCode(to)
+      setCodeFor(to.trim())
+      setCode('')
+      setNow(Date.now())
+      setResendAt(Date.now() + RESEND_AFTER_S * 1000)
+      return CODE_SENT
+    })
+  const verify = () =>
+    run(async (m) => {
+      const u = await m.verifyLoginCode(codeFor!, code)
+      setUser(u)
+      setCodeFor(undefined)
+      setCode('')
+      // Reprend tout de suite la copie en ligne (ou la met en ligne) : jamais d'écrasement sans votre accord.
+      autoSyncReconcile()
+      return LOGGED_IN
+    })
   const hasPhotos = getState().plants.some((p) => p.photos.length > 0)
 
   return (
     <Fold title="Retrouver mes jardins sur un autre appareil">
-      <p className="small muted">Connecté, vos jardins se mettent à jour en ligne tout seuls ; reprenez-les sur un autre appareil. Les photos ne sont pas copiées.</p>
+      <p className="small muted">Connecté, vos jardins se mettent à jour en ligne tout seuls ; reprenez-les sur un autre appareil. Les photos ne sont pas copiées. Un code reçu par e-mail suffit, sans lien à ouvrir.</p>
       {user ? (
         <>
           <p>Connecté : {user.email}</p>
+          <p className="small muted" style={{ margin: 0 }}>{STAY_LOGGED}</p>
           <p className="small" role="status">{autoSyncMessage(auto)}</p>
           <div className="row">
             <button className="btn" disabled={busy} onClick={() => withConsent(() => void push())}>
@@ -539,6 +571,45 @@ function Sync() {
             </div>
           )}
         </>
+      ) : codeFor ? (
+        <>
+          <p role="status" style={{ margin: 0 }}>
+            {CODE_SENT}
+          </p>
+          <p className="small muted" style={{ margin: 0 }}>
+            Adresse : {codeFor}. {CODE_HINT}
+          </p>
+          <label className="field">
+            <span>Code reçu par e-mail</span>
+            <input
+              className="input"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9 ]*"
+              maxLength={14}
+              placeholder="123456"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && code.replace(/\D/g, '').length >= 6 && !busy) void verify()
+              }}
+            />
+          </label>
+          <div className="stack" style={{ marginTop: 8 }}>
+            <button className="btn primary" disabled={busy || code.replace(/\D/g, '').length < 6} onClick={() => void verify()}>
+              Me connecter
+            </button>
+            <div className="row">
+              <button className="btn" disabled={busy || now < resendAt} onClick={() => withConsent(() => void sendCode(codeFor))}>
+                {now < resendAt ? `Renvoyer un code (${Math.ceil((resendAt - now) / 1000)} s)` : 'Renvoyer un code'}
+              </button>
+              <button className="btn ghost" disabled={busy} onClick={() => (setCodeFor(undefined), setCode(''), setMsg(undefined))}>
+                Changer d’adresse
+              </button>
+            </div>
+          </div>
+        </>
       ) : (
         <>
           <label className="field">
@@ -554,12 +625,8 @@ function Sync() {
             />
           </label>
           <div className="stack" style={{ marginTop: 8 }}>
-            <button
-              className="btn"
-              disabled={busy || !email.includes('@')}
-              onClick={() => withConsent(() => void run(async (m) => (await m.sendMagicLink(email), 'Un lien vous a été envoyé. Ouvrez-le sur cet appareil, avec le même programme internet.')))}
-            >
-              Recevoir un lien de connexion
+            <button className="btn primary" disabled={busy || !email.includes('@')} onClick={() => withConsent(() => void sendCode(email))}>
+              Recevoir un code par e-mail
             </button>
             {!email.includes('@') && <p className="small muted" style={{ margin: 0 }}>Écrivez votre adresse e-mail pour continuer.</p>}
           </div>

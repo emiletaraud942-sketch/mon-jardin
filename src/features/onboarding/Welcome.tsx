@@ -4,6 +4,9 @@ import { noteWelcomed, setUi } from '../../lib/ui'
 import { INITIAL_STEPS, type Step } from '../settings/createGarden'
 import { StepList } from '../settings/GardenCreator'
 import { createDemoGarden } from './create'
+import { RestoreAccount } from './RestoreAccount'
+
+const syncConfigured = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY
 
 const SLIDES = [
   { title: 'PermaJardin', kicker: 'Votre jardin, pas à pas', text: 'Voyez votre jardin, placez vos plantes et sachez quoi faire chaque semaine.' },
@@ -41,6 +44,7 @@ function Art({ i }: { i: number }) {
 export function Welcome({ onStart }: { onStart: () => void }) {
   const [i, setI] = useState(0)
   const [steps, setSteps] = useState<Step[]>()
+  const [restoring, setRestoring] = useState(false)
   const slide = SLIDES[i]
   const touchX = useRef<number>()
   // Glissement horizontal : écran suivant ou précédent.
@@ -97,7 +101,13 @@ export function Welcome({ onStart }: { onStart: () => void }) {
         <button className="btn ghost big" onClick={() => void demo()}>
           Visiter un jardin d’exemple
         </button>
+        {syncConfigured && (
+          <button className="btn ghost big" onClick={() => setRestoring(true)}>
+            J’ai déjà un compte
+          </button>
+        )}
       </div>
+      {restoring && <RestoreAccount onClose={() => setRestoring(false)} />}
     </div>
   )
 }

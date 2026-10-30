@@ -43,6 +43,12 @@ Dépôt > **Settings** :
   4. `20261027000000_snapshots_no_anonymous.sql` *(nouveau : refuse les comptes anonymes)*
   - Ou, avec le CLI : `supabase link --project-ref <réf>` puis `supabase db push`.
   - *Vérifier* : **Table Editor** montre `garden_snapshots` avec « RLS enabled ».
+- [ ] 🔴 **Authentication > Emails > Templates : le code de connexion.** L'appli demande un **code à saisir** (et non un lien à ouvrir : sur iPhone, l'appli épinglée à l'écran d'accueil et Safari ne partagent pas leur stockage, donc un lien ouvert dans Safari ne connecte jamais l'appli). Il faut que l'e-mail **contienne le code** : modifier **les deux** modèles, **« Confirm signup »** (première connexion d'une adresse) et **« Magic Link »** (connexions suivantes), avec par exemple :
+  - Objet : `Votre code PermaJardin`
+  - Corps : `<p>Votre code de connexion PermaJardin :</p><h2>{{ .Token }}</h2><p>Saisissez-le dans l'appli. Il est valable une heure. Si vous n'avez rien demandé, ignorez ce message.</p>`
+  - **Sans** lien `{{ .ConfirmationURL }}` : un lien serait ouvert dans le mauvais navigateur et ne marcherait pas.
+  - *Vérifier* : Authentication > **Sign In / Providers > Email** : longueur du code (6 par défaut ; l'appli accepte 6 à 10 chiffres) et durée de validité (3600 s par défaut).
+  - *Limite d'envoi* : le service d'e-mail par défaut de Supabase n'envoie que très peu de messages par heure pour tout le projet. Avant d'ouvrir à d'autres personnes : **Authentication > SMTP** avec un expéditeur à vous (Resend, Brevo…).
 - [ ] 🔴 **Authentication > Providers** : vérifier que **Anonymous sign-ins** est désactivé.
 - [ ] 🔴 **Authentication > URL Configuration** : *Site URL* = l'adresse de production ; *Redirect URLs* = `https://<domaine>/**` et `http://localhost:5173/**`, **sans** joker du type `https://*.vercel.app/**`.
 - [ ] 🟠 **Authentication > Rate Limits** : limiter les e-mails envoyés par heure ; **SMTP personnalisé** si le nombre d'utilisateurs grandit (Resend, Brevo…).
