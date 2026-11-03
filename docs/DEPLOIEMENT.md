@@ -1,25 +1,29 @@
 # Déployer PermaJardin sur Vercel
 
-Guide pas à pas, gratuit (offre Hobby de Vercel + offre gratuite de Supabase). Comptez 15 minutes.
+Guide pas à pas, gratuit (offre Hobby de Vercel + offre gratuite de Supabase). Comptez 15 minutes pour le site seul ; l'entraide entre voisins et ses alertes demandent une heure de plus (§4).
+
+Les étapes marquées **ACTION DU PROPRIÉTAIRE** ne peuvent pas être faites par le dépôt : elles se font dans les tableaux de bord Vercel, Supabase ou GitHub, ou demandent une décision. Le propriétaire ne touche qu'aux projets de PermaJardin, jamais à ceux d'autres applications.
 
 ## 1. Avant de commencer
 - Le dépôt est sur GitHub et `npm run typecheck && npm test && npm run build` passe en local.
 - Un compte Vercel (connexion avec GitHub).
-- Facultatif : un compte Supabase (synchronisation) et une clé Pl@ntNet (identification par photo).
+- Facultatif : deux projets Supabase (l'un pour la synchronisation, l'autre, **distinct**, pour l'entraide entre voisins) et une clé Pl@ntNet (identification par photo).
 
 ## 2. Importer le dépôt dans Vercel
 1. Vercel > **Add New… > Project** > choisir le dépôt GitHub de PermaJardin > **Import**.
 2. Vercel détecte **Vite** (`vercel.json` le précise aussi) : laissez les réglages par défaut.
    - Build command : `npm run build` · Output directory : `dist` · Install command : `npm install`.
-3. Dépliez **Environment Variables** et ajoutez, si vous les avez (toutes sont facultatives) :
+3. Dépliez **Environment Variables** et ajoutez, si vous les avez (toutes sont facultatives). La **table unique** de toutes les variables lues par le code (nom, où la saisir, public ou secret, rôle) est en tête de [`.env.example`](../.env.example) ; un test (`src/lib/security/env-docs.test.ts`) vérifie qu'elle est complète. À Vercel, il faut :
 
    | Nom | Valeur | Rôle |
    | --- | --- | --- |
    | `PLANTNET_API_KEY` | clé gratuite de https://my.plantnet.org | Identification par photo (serveur uniquement). Cochez **Production seulement** (pas Preview ni Development) et *Sensitive* |
-   | `VITE_SUPABASE_URL` | `https://xxxx.supabase.co` | Synchronisation entre appareils |
-   | `VITE_SUPABASE_ANON_KEY` | clé « anon public » du projet Supabase | Idem (clé publique, jamais `service_role`) |
+   | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | URL et clé « anon public » du projet de **synchronisation** | Synchronisation entre appareils (clé publique, jamais `service_role`) |
+   | `NEIGHBORS_SUPABASE_URL`, `NEIGHBORS_SUPABASE_PUBLISHABLE` | URL et clé publique du projet **dédié** à l'entraide | Entraide entre voisins. Production seulement : en Preview, elles pointeraient sur de vraies personnes. Anciens noms acceptés : `VITE_NEIGHBORS_SUPABASE_URL`, `VITE_NEIGHBORS_SUPABASE_PUBLIC_TOKEN`, `VITE_NEIGHBORS_SUPABASE_ANON_KEY` (Vercel peut refuser le mot « KEY ») |
+   | `NEIGHBORS_VAPID_PUBLIC` | clé **publique** VAPID (87 caractères) | Alertes de nouveaux messages (§4 quater). Jamais la clé privée |
+   | `VITE_WEATHER_PROVIDER` | `open-meteo` (défaut) ou `meteo-france` | Fournisseur météo |
 
-   Les variables `VITE_*` sont lues **au build** : après les avoir ajoutées ou modifiées, faites **Redeploy**.
+   Les variables `VITE_*` et `NEIGHBORS_*` sont lues **au build** et publiques : après les avoir ajoutées ou modifiées, faites **Redeploy**. Aucun secret ne porte ces préfixes.
 4. **Deploy**. Le premier déploiement prend 1 à 2 minutes.
 
 ## 3. Branche de production et domaines
@@ -27,20 +31,56 @@ Guide pas à pas, gratuit (offre Hobby de Vercel + offre gratuite de Supabase). 
 - Project Settings > **Domains** : ajoutez votre domaine (Vercel indique l'enregistrement DNS à créer, `CNAME` ou `A`) ; le certificat HTTPS est automatique. L'adresse `https://<projet>.vercel.app` reste valable.
 - HTTPS est indispensable : sans lui, ni la PWA installable, ni le service worker, ni les notifications, ni la caméra ne fonctionnent.
 
-## 4. Supabase (facultatif : synchronisation)
-1. Créez un projet sur https://supabase.com (offre gratuite). Notez *Project URL* et la clé *anon public* (Project Settings > API) pour les variables ci-dessus.
+## 4. Supabase (facultatif)
+
+Deux projets **séparés** : la **synchronisation** (§4.1) et l'**entraide** (§4.2). Ne réutilisez jamais l'un pour l'autre, ni un projet d'une autre application.
+
+### 4.1 Synchronisation entre appareils
+1. Créez un projet sur https://supabase.com (offre gratuite). Notez *Project URL* et la clé *anon public* (Project Settings > API) pour `VITE_SUPABASE_*`.
 2. **Appliquez les migrations** de `supabase/migrations/` dans l'ordre des noms de fichier :
    - `20261017000000_garden_snapshots.sql` (table et règles RLS),
    - `20261018000000_snapshots_hardening.sql` (droits, idempotente),
-   - `20261019000000_security_hardening.sql` (retire `TRUNCATE` et les droits inutiles, impose un objet JSON, ajoute `delete_my_account()` ; **ne pas l'oublier** : sans elle, le droit à l'effacement du compte n'existe pas côté serveur).
+   - `20261019000000_security_hardening.sql` (retire `TRUNCATE` et les droits inutiles, impose un objet JSON, ajoute `delete_my_account()` ; **ne pas l'oublier** : sans elle, le droit à l'effacement du compte n'existe pas côté serveur),
+   - `20261027010000_snapshots_no_anon.sql` (refuse les connexions anonymes de Supabase, qui ont le rôle `authenticated`).
 
-   Soit dans Supabase > **SQL Editor** (coller chaque fichier, *Run*), soit avec le CLI : `supabase link --project-ref <ref>` puis `supabase db push`.
-3. Supabase > **Authentication > URL Configuration** :
-   - *Site URL* : `https://<domaine>`
-   - *Redirect URLs* : `https://<domaine>/**` (couvre le retour sur `https://<domaine>/#reglages`), et `http://localhost:5173/**` pour le développement.
+   Soit dans Supabase > **SQL Editor** (coller chaque fichier, *Run*), soit avec le CLI : `supabase link --project-ref <ref>` puis `supabase db push`. **ACTION DU PROPRIÉTAIRE** (le dépôt n'a aucun accès à un vrai projet).
+3. Supabase > **Authentication > URL Configuration** : *Site URL* = `https://<domaine>` ; *Redirect URLs* = `https://<domaine>/**` (couvre le retour sur `https://<domaine>/#reglages`) et `http://localhost:5173/**`, **sans** joker `*.vercel.app`. Sans cela, le lien magique est refusé ; il doit être ouvert dans **le même navigateur** que celui où il a été demandé.
+4. Authentication > Providers : désactiver **Allow anonymous sign-ins** ; Authentication > Rate Limits et **CAPTCHA** (Attack Protection) avant l'ouverture publique (le client devra alors envoyer un `captchaToken` : demande à dev-backend-supabase). **ACTION DU PROPRIÉTAIRE.**
+5. **Région** : Project Settings > General. Le texte légal dit « région d'hébergement à confirmer par l'éditeur » : vérifiez la région réelle (idéalement UE), puis complétez `src/lib/legal.ts` (voir §10). **ACTION DU PROPRIÉTAIRE.**
+6. Redéployez sur Vercel si vous venez d'ajouter `VITE_SUPABASE_*`.
 
-   Sans cela, le lien magique de connexion est refusé. Il doit être ouvert dans **le même navigateur** que celui où il a été demandé.
-4. Redéployez sur Vercel si vous venez d'ajouter `VITE_SUPABASE_*`.
+### 4.2 Entraide entre voisins (projet dédié)
+Le détail (schéma, règles, modération, incident) est dans [ENTRAIDE.md](ENTRAIDE.md). En résumé, **ACTIONS DU PROPRIÉTAIRE** dans le SQL Editor du projet dédié, dans l'ordre :
+1. `supabase/neighbors/migrations/20261023000000_neighbors.sql`, puis `…25000000_neighbors_v2.sql`, `…25010000_neighbors_v3_read.sql`, `…25020000_neighbors_v4_events.sql`, `…25030000_neighbors_v5_push.sql` (alertes), `…25040000_neighbors_v6_cell_size.sql` (quartier de 2 ou 5 km), puis `20261027000000_neighbors_v7_hardening.sql` (durcissement : fonctions de politique dans un schéma privé, textes sans caractères de direction, changement de quartier limité, masquage plus prudent). Toutes sont rejouables ; si vous rejouez un ancien fichier, rejouez ensuite les suivants. Rejouer ensuite `supabase/neighbors/tests/run.sh` sur une base **jetable** (jamais sur le projet).
+2. Authentication > Providers : Email seul ; **Anonymous sign-ins désactivés** ; SMTP dédié ; CAPTCHA ; pas de Realtime ; seul le schéma `public` exposé (le schéma `neighbors_private` de la v7 ne doit **jamais** être ajouté à *Exposed schemas*).
+3. **Alertes** (facultatif) : fonction Edge `notify-message` (voir §4 quater).
+4. **Purge quotidienne** : fonction Edge `purge-neighbors-photos` et `supabase/neighbors/cron.sql` (tout y est en commentaire ; à activer à la main, §4 quater).
+
+### 4 bis. Remplacer le joker `https://*.supabase.co` de la CSP par les deux hôtes exacts (ACTION DU PROPRIÉTAIRE)
+Aujourd'hui `connect-src` autorise n'importe quel projet Supabase (`https://*.supabase.co`) : un script injecté pourrait envoyer des données vers un projet qui n'est pas le vôtre. Une fois les deux projets créés :
+1. Relevez les deux adresses exactes : `https://<ref-synchro>.supabase.co` et `https://<ref-entraide>.supabase.co` (Project Settings > API > Project URL). Si un seul projet est utilisé, n'en mettez qu'un.
+2. Dans `vercel.json`, dans la valeur de `Content-Security-Policy`, remplacez `connect-src 'self' https://*.supabase.co` par `connect-src 'self' https://<ref-synchro>.supabase.co https://<ref-entraide>.supabase.co`.
+3. Dans `src/lib/security/vercel-config.test.ts`, adaptez l'attente `expect(csp['connect-src']).toEqual(["'self'", 'https://*.supabase.co'])` avec ces deux adresses, puis `npm test`.
+4. Déployez, ouvrez l'appli avec les deux fonctions (connexion de synchro, entraide avec photo) et vérifiez dans la console (F12) qu'aucune ligne « violates the following Content Security Policy » n'apparaît. Les photos de l'entraide, l'authentification et l'API passent toutes par le même hôte du projet.
+5. Retour arrière en cas de blocage : remettre le joker, redéployer.
+(Il faut refaire cette modification si un projet est recréé : la référence change.)
+
+### 4 ter. Pare-feu Vercel (ACTION DU PROPRIÉTAIRE, le dépôt ne peut pas le faire)
+Vercel > le projet PermaJardin > **Firewall** (ou Security > Firewall) > *Configure* > *Add Rule*. Les noms exacts des menus changent : suivre l'intention.
+1. **Limitation de débit sur `/api/identify`** : par exemple 10 requêtes par minute et par IP, action *Deny* ou *Rate limit*. C'est le seul limiteur réellement partagé entre instances (celui du code est un garde-fou par instance, et le quota Pl@ntNet de 500 par jour est commun à toute l'appli).
+2. **Limitation de débit sur `/ext/*`** : par exemple 120 requêtes par minute et par IP (les tuiles de carte en demandent beaucoup : ne pas descendre trop bas). Sans cela, un tiers peut utiliser les proxys comme relais vers l'IGN et Open-Meteo.
+3. **Méthodes sur `/ext/*`** : règle personnalisée « le chemin commence par `/ext/` ET la méthode n'est ni GET ni HEAD : *Deny* ». `vercel.json` ne sait pas filtrer les méthodes d'un rewrite (seulement des conditions d'en-tête, de cookie, d'hôte ou de paramètre), d'où cette règle.
+4. Settings > Deployment Protection : protéger les prévisualisations ; la production reste publique.
+Vérification : après la règle, `for i in $(seq 1 30); do curl -s -o /dev/null -w "%{http_code} " https://<domaine>/api/identify -X POST -H 'Content-Type: application/json' -d '{}'; done` doit finir par des 429 (ou 403 selon l'action). **Non testé ici.**
+
+### 4 quater. Alertes de nouveaux messages et purge quotidienne (ACTIONS DU PROPRIÉTAIRE)
+Projet **dédié à l'entraide** uniquement. Pas à pas dans [ENTRAIDE.md](ENTRAIDE.md) (« Alertes de nouveaux messages… » et « Entretien quotidien »). Résumé :
+1. **Clés VAPID** : `node supabase/functions/notify-message/vapid-keys.mjs` (trois lignes : clé publique, clé privée, secret du webhook). Gardez-les dans un gestionnaire de mots de passe ; jamais dans le dépôt, un e-mail ou une variable `VITE_`/`NEIGHBORS_`.
+2. **Secrets de la fonction** : `npx supabase secrets set --project-ref <REF> VAPID_PUBLIC_KEY=… VAPID_PRIVATE_KEY=… VAPID_SUBJECT="mailto:<contact>" NOTIFY_WEBHOOK_SECRET=…` (ou Dashboard > Edge Functions > Secrets). `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` sont fournis tout seuls et ne sortent jamais de la fonction.
+3. **Déployer** : `npx supabase functions deploy notify-message --no-verify-jwt --project-ref <REF>`, puis Database > Webhooks : table `messages`, évènement *Insert*, URL `https://<REF>.supabase.co/functions/v1/notify-message`, en-tête `x-webhook-secret`.
+4. **Clé publique pour l'appli** : Vercel > `NEIGHBORS_VAPID_PUBLIC` = la clé publique (Production), puis Redeploy.
+5. **Purge** : `npx supabase functions deploy purge-neighbors-photos --no-verify-jwt --project-ref <REF>`, secret `PURGE_SECRET` (16 caractères au moins, 32 recommandés), puis activer à la main `supabase/neighbors/cron.sql` (pg_cron, pg_net, secret rangé dans le Vault). Sans cela, « annonces supprimées après 60 jours, photos comprises » est faux.
+6. Essai de bout en bout avec deux comptes de test (voir ENTRAIDE.md) ; Logs de la fonction : compteurs seulement.
 
 ## 5. Vérifications après déploiement
 Remplacez `<domaine>` par votre adresse.
@@ -55,7 +95,8 @@ Remplacez `<domaine>` par votre adresse.
    curl -i -X POST https://<domaine>/api/identify -H 'Content-Type: application/json' -d '{}'
    ```
    Attendu : **503** tant que `PLANTNET_API_KEY` est absente (ordre des contrôles : méthode, origine, limite de débit, clé), **400** si la clé est présente mais qu'aucune photo valide n'est envoyée, **200** avec une vraie photo (testez depuis l'appli : *Plantes > Identifier*).
-4. **En-têtes de sécurité** : `curl -I https://<domaine>/` montre `Content-Security-Policy`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options`. `curl -I https://<domaine>/sw.js` montre `Cache-Control: no-cache`.
+4. **En-têtes de sécurité** : `curl -I https://<domaine>/` montre `Content-Security-Policy`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` (avec `screen-wake-lock=(self)` et les capteurs de mouvement en `(self)`), `X-Frame-Options`. `curl -I https://<domaine>/sw.js` montre `Cache-Control: no-cache`.
+   **`security.txt`** : `curl -i https://<domaine>/.well-known/security.txt` renvoie le texte (pas `index.html`) ; son `Expires` est à renouveler au moins une fois par an (un test de la CI échoue à l'échéance) et le contact e-mail est à compléter (voir `SECURITY.md`).
 5. **PWA** : DevTools > Application > *Manifest* (4 icônes, aucune erreur) et *Service Workers* (activé).
 6. Créez un jardin de démonstration : la carte, la 3D et les tâches s'affichent.
 
@@ -64,11 +105,11 @@ Remplacez `<domaine>` par votre adresse.
 - **Android (Chrome)** : menu ⋮ > **Installer l'application** (ou la bannière proposée).
 - **Ordinateur (Chrome, Edge)** : icône d'installation dans la barre d'adresse.
 
-Les « rappels » sont une notification **locale**, au plus une fois par jour, affichée à l'ouverture de l'appli : il n'y a pas de notification poussée en arrière-plan.
+Les « rappels » de tâches sont une notification **locale**, au plus une fois par jour, affichée à l'ouverture de l'appli. La seule notification poussée est facultative : les alertes de nouveaux messages de l'entraide (§4 quater, `public/push-sw.js`), qui n'existent que si le propriétaire les a configurées et que la personne les a activées.
 
 ## 7. Mettre à jour l'appli (service worker)
 - Chaque déploiement produit de nouveaux fichiers ; le service worker les télécharge en arrière-plan.
-- Le service worker est en mode « prompt » : la nouvelle version **attend**. L'appli affiche « Nouvelle version disponible — Recharger » ; elle ne recharge jamais la page sans prévenir (vous ne perdez pas de saisie). En cliquant, la nouvelle version prend la main et la page se recharge.
+- Le service worker est en mode « prompt » : la nouvelle version **attend**. L'appli affiche « Mise à jour disponible » avec le bouton **Mettre à jour** ; elle ne recharge jamais la page sans prévenir (vous ne perdez pas de saisie). En cliquant, la nouvelle version prend la main et la page se recharge. Si les données stockées viennent d'une version plus récente que celle qui tourne, l'appli ne les efface jamais et propose « Mettre à jour l'appli ».
 - Si le bandeau n'apparaît pas : fermez complètement l'appli (et les autres onglets du site) puis rouvrez-la ; ou DevTools > Application > Service Workers > *Update* / *skipWaiting*.
 - Le gros fichier de la 3D (~230 ko compressés) n'est pas préchargé à l'installation : il est gardé en cache à la première ouverture de l'onglet 3D. Ouvrez la 3D une fois en ligne avant d'aller au jardin sans réseau. La carte, elle, est préchargée. Les tuiles IGN déjà vues restent disponibles hors ligne.
 
@@ -91,4 +132,23 @@ Les « rappels » sont une notification **locale**, au plus une fois par jour, a
 | Identification : 429 | Quota quotidien Pl@ntNet ou limite par visiteur atteints | Réessayer plus tard. |
 | Synchronisation absente dans Réglages | `VITE_SUPABASE_*` absentes au build | Ajouter les variables puis **Redeploy**. |
 | Lien magique refusé | URL de redirection non autorisée côté Supabase, ou ouvert dans un autre navigateur | Étape 4.3 ; ouvrir le lien dans le navigateur d'où il a été demandé. |
-| L'appli reste sur l'ancienne version | Mise à jour en attente | Étape 7 : « Recharger » sur le bandeau, ou fermer tous les onglets. |
+| L'appli reste sur l'ancienne version | Mise à jour en attente | Étape 7 : « Mettre à jour » sur le bandeau, ou fermer tous les onglets. |
+
+## 10. Compléter les informations légales (ACTION DU PROPRIÉTAIRE)
+Les trois pages (confidentialité, mentions légales, conditions) sont des **brouillons** à faire valider par un professionnel. Champs `[à compléter]` de `src/lib/legal.ts` : `EDITEUR_NOM`, `EDITEUR_STATUT`, `EDITEUR_ADRESSE`, `CONTACT_EMAIL`, `DIRECTEUR_PUBLICATION`, auxquels s'ajoutent, dans les mentions légales, la raison sociale, l'adresse et la **région d'hébergement** des projets Supabase. Tant que la région n'est pas vérifiée, les textes disent « région d'hébergement à confirmer par l'éditeur » : n'écrivez « UE » qu'après vérification dans le tableau de bord. Après modification de `legal.ts`, régénérez `docs/{CONFIDENTIALITE,MENTIONS-LEGALES,CGU}.md` (le test `legal.test.ts` compare les deux) puis augmentez `LEGAL_VERSION`.
+
+## 11. Retour arrière et restauration (ACTIONS DU PROPRIÉTAIRE)
+
+**Revenir à la version précédente du site (Vercel).**
+1. Vercel > le projet > **Deployments** : repérez le dernier déploiement de production qui fonctionnait.
+2. Menu « … » du déploiement > **Promote to Production** (aussi appelé *Instant Rollback* : aucun nouveau build, la bascule est immédiate). En ligne de commande : `vercel rollback` (réservé au projet de PermaJardin).
+3. Les visiteurs gardent l'ancienne version jusqu'à la mise à jour du service worker (§7) ; les données locales ne sont pas touchées.
+4. Limites : le retour arrière ne défait **ni** les migrations Supabase (elles ne vont que vers l'avant ; l'ancienne version du site doit rester compatible avec la base : par exemple la v6 ajoute `profiles.cell_size`), **ni** les variables d'environnement (les `VITE_*` sont figées dans chaque build ; une variable modifiée après coup ne change pas un ancien déploiement). Si un secret a fuité, un retour arrière ne suffit pas : le **révoquer** (clé Pl@ntNet, clés Supabase, clés VAPID) puis redéployer.
+
+**Restaurer la base (Supabase).**
+1. Avant toute opération risquée, faites une copie : Database > **Backups** (sauvegardes quotidiennes ou retour à un instant donné selon l'offre : l'offre gratuite n'en propose pas de téléchargeable à ma connaissance, à vérifier dans votre tableau de bord) ou, depuis votre ordinateur, `pg_dump` avec la chaîne de connexion du projet (Project Settings > Database), rangée hors du dépôt.
+2. Restauration : de préférence vers un **nouveau projet** (les sauvegardes du tableau de bord remplacent le projet entier), puis réappliquer les migrations manquantes, puis changer `VITE_SUPABASE_URL` / `NEIGHBORS_SUPABASE_URL` et les clés publiques sur Vercel, **mettre à jour la CSP** (§4 bis, la référence du projet change) et la liste *Redirect URLs*, redéployer.
+3. Les photos de l'entraide sont dans Storage : une sauvegarde de base ne les contient pas. Jamais de restauration sur un projet d'une autre application.
+4. Non testé ici : aucun accès à un vrai projet. Faites un essai de restauration sur un projet de test avant d'en avoir besoin.
+
+**Les données locales** (jardins, photos) ne sont pas sur le serveur : l'export JSON (Réglages) et, pour une récupération, la copie de sécurité gardée sur l'appareil (Réglages, « Récupérer la copie de sécurité ») sont les seules sauvegardes.

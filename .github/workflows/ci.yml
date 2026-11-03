@@ -1,5 +1,7 @@
-# Intégration continue minimale et sûre : aucun secret, lecture seule, pas de pull_request_target.
-# Les actions sont épinglées par version majeure (Dependabot propose les mises à jour : voir dependabot.yml).
+# Intégration continue : aucun secret, lecture seule par défaut, pas de pull_request_target.
+# Les actions sont référencées par version majeure (@v4, @v3) et NON épinglées par empreinte SHA : l'empreinte exacte
+# n'a pas pu être vérifiée hors ligne. À faire par le propriétaire (voir docs/SECURITE.md) : épingler chaque action par SHA
+# (Dependabot suit les mises à jour des actions, voir dependabot.yml).
 name: CI
 
 on:
@@ -34,13 +36,16 @@ jobs:
       - run: npx vite build
 
   audit:
-    name: Audit des dépendances de production
+    name: Audit des dépendances de production (bloquant)
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Non bloquant pour l'instant : maplibre-gl 4.x est signalé (GHSA-jrc7-96c5-q579, XSS dans l'attribution de carte).
-    # L'appli désactive le contrôle d'attribution et n'injecte que des textes fixes : non exploitable ici, mais la mise à jour
-    # vers maplibre-gl >= 6.4.1 est à planifier. Retirer `continue-on-error` une fois la mise à jour faite.
-    continue-on-error: true
+    # BLOQUANT : tout avis critique sur une dépendance de production fait échouer la CI, sauf les exceptions documentées de
+    # .github/audit-exceptions.json (id d'avis, paquet, raison, date d'échéance ; une exception échue ne protège plus).
+    # Seule exception aujourd'hui : maplibre-gl GHSA-jrc7-96c5-q579 (XSS dans DOM.sanitize() de l'attribution). Non exploitable ici :
+    # la fonction est absente de la 4.7.1 installée, l'attribution de la carte est la constante « © IGN – Géoplateforme »
+    # (jamais une donnée venue d'un utilisateur ou d'un service), et l'appli n'utilise ni setHTML ni Popup.
+    # Le correctif demande une montée majeure (maplibre-gl 6.x) à planifier ; retirer alors l'exception.
+    # Voir docs/SECURITE.md, « Exceptions d'audit ».
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,4 +55,75 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --ignore-scripts
-      - run: npm audit --omit=dev --audit-level=high
+      - run: node .github/scripts/audit-prod.mjs --level=critical
+
+  secrets:
+    name: Détection de secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Motifs courants (clés privées, jetons JWT, clés sk-, jetons GitHub, URL Supabase réelles, variables secrètes) dans l'arbre
+    # de travail ET dans tout l'historique. Aucun service externe. Complète (ne remplace pas) « Secret scanning » et
+    # « Push protection » de GitHub, à activer par le propriétaire.
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node .github/scripts/scan-secrets.mjs --history
+
+  sql:
+    name: Banc SQL de l'entraide (Postgres jetable)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Postgres 16 éphémère dans un conteneur de service : aucun projet Supabase réel, aucun secret.
+    # Le banc (supabase/neighbors/tests/run.sh) crée puis supprime la base « neighbors_test » et sort en erreur au premier FAIL.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: bash supabase/neighbors/tests/run.sh
+
+  codeql:
+    name: Analyse CodeQL (JavaScript et TypeScript)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Les résultats apparaissent dans l'onglet Security > Code scanning. Demande que « Code scanning » soit disponible
+    # (gratuit pour un dépôt public ; dépôt privé : GitHub Advanced Security). Non bloquant tant que le propriétaire n'a pas
+    # confirmé que l'analyse fonctionne sur son dépôt : retirer `continue-on-error` ensuite. Les pull requests venant d'un fork
+    # n'ont pas le droit d'écrire les résultats : elles sont ignorées.
+    continue-on-error: true
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          queries: security-extended
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript-typescript"

@@ -10,6 +10,11 @@ MIG3=../migrations/20261025010000_neighbors_v3_read.sql
 MIG4=../migrations/20261025020000_neighbors_v4_events.sql
 MIG5=../migrations/20261025030000_neighbors_v5_push.sql
 MIG6=../migrations/20261025040000_neighbors_v6_cell_size.sql
+MIG7=../migrations/20261027000000_neighbors_v7_hardening.sql
+SYNC1=../../migrations/20261017000000_garden_snapshots.sql   # synchro privée (autre projet en production ; ici dans la même base jetable)
+SYNC2=../../migrations/20261018000000_snapshots_hardening.sql
+SYNC3=../../migrations/20261019000000_security_hardening.sql
+SYNC4=../../migrations/20261027010000_snapshots_no_anon.sql
 export PGDATABASE=postgres
 psql -q -c 'drop database if exists neighbors_test' -c 'create database neighbors_test' || exit 2
 export PGDATABASE=neighbors_test
@@ -39,7 +44,27 @@ OUT=$(mktemp)
   psql -q -f scenarios_v3.sql &&
   psql -q -f scenarios_v4.sql &&
   psql -q -f scenarios_v5.sql &&
-  psql -q -f scenarios_v6.sql
+  psql -q -f scenarios_v6.sql &&
+  # ---- v7 (audit du 27 oct. 2026) : les suites v1 à v6 ci-dessus tournent AVANT (elles décrivent l'ancien comportement : 24 h, 5 changements de quartier par jour…)
+  psql -q -v ON_ERROR_STOP=1 -f "$MIG7" &&
+  psql -q -v ON_ERROR_STOP=1 -f "$MIG7" &&   # idempotence
+  psql -q -f scenarios_v7.sql &&
+  psql -q -f scenarios_v7_moderation.sql &&
+  psql -q -f scenarios_v2.sql &&   # non-régression des politiques après le déplacement des fonctions en schéma privé
+  psql -q -f scenarios_v3.sql &&
+  psql -q -f scenarios_v5.sql &&
+  psql -q -v ON_ERROR_STOP=1 -f v7_legacy_seed.sql &&   # données d'avant la v7 qui violent la nouvelle règle de texte
+  psql -q -v ON_ERROR_STOP=1 -f "$MIG7" &&
+  psql -q -v pass=1 -f scenarios_v7_legacy.sql &&
+  psql -q -v ON_ERROR_STOP=1 -f "$MIG7" &&
+  psql -q -v pass=2 -f scenarios_v7_legacy.sql &&
+  # ---- synchro privée : instantanés sans comptes anonymes
+  psql -q -v ON_ERROR_STOP=1 -f "$SYNC1" &&
+  psql -q -v ON_ERROR_STOP=1 -f "$SYNC2" &&
+  psql -q -v ON_ERROR_STOP=1 -f "$SYNC3" &&
+  psql -q -v ON_ERROR_STOP=1 -f "$SYNC4" &&
+  psql -q -v ON_ERROR_STOP=1 -f "$SYNC4" &&   # idempotence
+  psql -q -f scenarios_snapshots.sql
 } >"$OUT" 2>&1
 grep -E "PASS|FAIL|ERROR" "$OUT" | sed 's/^psql:[^ ]* //'
 FAILS=$(grep -c "FAIL\|ERROR" "$OUT"); PASSES=$(grep -c "PASS" "$OUT")

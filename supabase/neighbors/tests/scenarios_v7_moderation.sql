@@ -16,7 +16,7 @@ end $$;
 
 do $$
 declare
-  p1 uuid; p2 uuid; p3 uuid; p4 uuid; p5 uuid; q uuid; ev uuid; i int; w1 int; w2 int; th uuid;
+  p1 uuid; p2 uuid; p3 uuid; p4 uuid; p5 uuid; q uuid; ev uuid; rid uuid; i int; w1 int; w2 int; th uuid;
 begin
  -- Tous au même endroit. 1 = auteur ; 2..9 = signaleurs.
  for i in 1..9 loop perform t.mk(i, 'Membre' || i, 48.86, 2.34); end loop;
@@ -49,8 +49,8 @@ begin
  -- ===== Cas 3 : 3 comptes qualifiés (8 jours + annonce / réponse / message) : masquage, avertissement AVANT =====
  -- 5 : annonce ; 6 : réponse à une question ; 7 : message privé.
  perform t.as(t.u(5), 'insert into public.posts(kind,title) values (''don'',''Mes graines'')');
- perform t.as(t.u(1), 'insert into public.posts(kind,title) values (''question'',''Quand semer ?'')');
- select id into q from public.posts where kind = 'question' and author = t.u(1);
+ perform t.as(t.u(2), 'insert into public.posts(kind,title) values (''question'',''Quand semer ?'')');
+ select id into q from public.posts where kind = 'question' and author = t.u(2);
  perform t.as(t.u(6), format('insert into public.replies(post_id,body) values (%L,''En mars'')', q));
  perform t.expect('S8 7 ouvre une conversation avec l''auteur (annonce visible)', t.as(t.u(7), format('insert into public.threads(user_a,user_b) values (%L,%L)', least(t.u(1), t.u(7)), greatest(t.u(1), t.u(7)))), 'OK rows=1');
  select id into th from public.threads where t.u(7) in (user_a, user_b);
@@ -83,23 +83,53 @@ begin
  perform t.expect('S8 ... p4 masquée', (select 'OK '||status from public.posts where id = p4), 'OK hidden');
  perform t.expect('S8 ... journal complet', t.logs('post', p4), 'warn,warn,warn,auto_hide');
 
- -- ===== Cas 5 : comptes bannis =====
- -- Une annonce neuve ; 5, 6 et 7 qualifiés, mais 7 est banni avant de signaler (bannir masque ses contenus, il ne lit plus rien) : ne compte pas.
+ -- ===== Cas 5 : un signaleur banni ne compte pas (avant comme après son signalement) =====
  perform t.as(t.u(1), 'insert into public.posts(kind,title) values (''don'',''Annonce 5'')');
  select id into p5 from public.posts where title = 'Annonce 5';
- perform t.rep(5, 'post', p5); perform t.rep(6, 'post', p5);
  perform set_config('request.jwt.claim.sub', '', true);
  update public.profiles set banned_at = now() where user_id = t.u(8);
  perform t.expect('S8 un banni ne peut plus signaler', t.rep(8, 'post', p5), 'ERR 42501');
- perform t.expect('S8 ... p5 ouverte avec 2 signalements qualifiés', (select 'OK '||status from public.posts where id = p5), 'OK open');
- -- Un signaleur banni APRÈS son signalement ne compte plus.
  perform t.age(9, interval '9 days'); perform t.as(t.u(9), 'insert into public.posts(kind,title) values (''don'',''Mes graines'')');
- perform t.rep(9, 'post', p5);   -- 3e qualifié : masque
- perform t.expect('S8 3 qualifiés : p5 masquée', (select 'OK '||status from public.posts where id = p5), 'OK hidden');
+ perform t.rep(5, 'post', p5); perform t.rep(6, 'post', p5);
+ perform set_config('request.jwt.claim.sub', '', true);
+ update public.profiles set banned_at = now() where user_id = t.u(6);
+ perform t.expect('S8 7 signale après le bannissement de 6 : 5 et 7 seulement comptent, pas de masquage', t.rep(7, 'post', p5), 'OK rows=1');
+ perform t.expect('S8 ... p5 ouverte (le signalement du banni ne compte plus)', (select 'OK '||status from public.posts where id = p5), 'OK open');
+ perform t.expect('S8 9 signale : 5, 7, 9 = 3 qualifiés', t.rep(9, 'post', p5), 'OK rows=1');
+ perform t.expect('S8 ... p5 masquée', (select 'OK '||status from public.posts where id = p5), 'OK hidden');
 
- -- ===== Cas 6 : réponse et événement =====
- perform t.as(t.u(1), 'insert into public.posts(kind,title) values (''question'',''Quand tailler ?'')');
+ -- ===== Cas 6 : réponse =====
+ perform t.as(t.u(3), 'insert into public.posts(kind,title) values (''question'',''Quand tailler ?'')');
  q := (select id from public.posts where title = 'Quand tailler ?');
- perform t.as(t.u(2), format('insert into public.replies(post_id,body) values (%L,''Réponse douteuse'')', q));
- id_reply: null;
+ perform t.as(t.u(4), format('insert into public.replies(post_id,body) values (%L,''Réponse douteuse'')', q));
+ rid := (select id from public.replies where post_id = q);
+ perform t.rep(5, 'reply', rid); perform t.rep(7, 'reply', rid);
+ perform t.expect('S8 réponse : 2 qualifiés, encore ouverte', (select 'OK '||status from public.replies where id = rid), 'OK open');
+ perform t.rep(9, 'reply', rid);
+ perform t.expect('S8 réponse : 3 qualifiés, masquée', (select 'OK '||status from public.replies where id = rid), 'OK hidden');
+ perform t.expect('S8 ... journal de la réponse', t.logs('reply', rid), 'warn,warn,auto_hide');
+
+ -- ===== Cas 7 : événement =====
+ perform t.expect('S8 3 devient organisateur', t.as(t.u(3), format('insert into public.organizers(user_id,name) values (%L,''Jardins ouverts'')', t.u(3))), 'OK rows=1');
+ perform set_config('request.jwt.claim.sub', '', true);
+ update public.organizers set verified_at = now() where user_id = t.u(3);
+ perform t.as(t.u(3), 'insert into public.events(title,starts_at,ends_at,place) values (''Troc'',now()+interval ''2 days'',now()+interval ''3 days'',''Salle'')');
+ ev := (select id from public.events limit 1);
+ perform t.rep(5, 'event', ev); perform t.rep(7, 'event', ev);
+ perform t.expect('S8 événement : 2 qualifiés, encore ouvert', (select 'OK '||status from public.events where id = ev), 'OK open');
+ perform t.rep(9, 'event', ev);
+ perform t.expect('S8 événement : 3 qualifiés, masqué', (select 'OK '||status from public.events where id = ev), 'OK hidden');
+ perform t.expect('S8 ... journal de l''événement', t.logs('event', ev), 'warn,warn,auto_hide');
+
+ -- ===== Cas 8 : profil et message (jamais masqués seuls ; l'éditeur est prévenu une fois au 3e) =====
+ perform t.rep(5, 'profile', t.u(2)); perform t.rep(7, 'profile', t.u(2));
+ perform t.expect('S8 profil : 2 qualifiés, rien dans le journal', t.logs('profile', t.u(2)), '-');
+ perform t.rep(9, 'profile', t.u(2));
+ perform t.expect('S8 profil : 3 qualifiés, l''éditeur est prévenu (pas de masquage)', t.logs('profile', t.u(2)), 'warn');
+ perform t.expect('S8 ... le profil n''est pas banni', (select 'OK '||(banned_at is null) from public.profiles where user_id = t.u(2)), 'OK true');
+ perform t.expect('S8 un 4e signalement du profil n''ajoute rien', t.as(t.u(1), format('insert into public.reports(target_kind,target_id,reason) values (''profile'',%L,''spam'')', t.u(2))), 'OK rows=1');
+ perform t.expect('S8 ... journal inchangé', t.logs('profile', t.u(2)), 'warn');
+
+ -- ===== Cas 9 : le même compte ne compte qu'une fois ; contenu déjà masqué =====
+ perform t.expect('S8 doublon refusé', t.rep(5, 'event', ev), 'ERR');
 end $$;

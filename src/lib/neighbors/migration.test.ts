@@ -264,3 +264,86 @@ describe('migration entraide v4 : organisateurs, événements, intérêt', () =>
     expect(outside).not.toMatch(/\bdelete from\b|\btruncate\b|\bdrop (table|column|function|index)\b/i)
   })
 })
+
+describe('migration entraide v7 : durcissement de l’audit du 27 octobre 2026', () => {
+  const sql7 = readFileSync('supabase/neighbors/migrations/20261027000000_neighbors_v7_hardening.sql', 'utf8')
+  const code7 = sql7.replace(/--.*$/gm, '')
+  const sync4 = readFileSync('supabase/migrations/20261027010000_snapshots_no_anon.sql', 'utf8').replace(/--.*$/gm, '')
+
+  it('S6 : les deux aides qui sondent autrui passent en schéma privé et disparaissent de public', () => {
+    expect(code7).toMatch(/create or replace function neighbors_private\.neighbors_is_blocked\(other uuid\)/)
+    expect(code7).toMatch(/create or replace function neighbors_private\.neighbors_can_contact\(other uuid\)/)
+    expect(code7).toMatch(/drop function if exists public\.neighbors_can_contact\(uuid\);/)
+    expect(code7).toMatch(/drop function if exists public\.neighbors_is_blocked\(uuid\);/)
+    expect(code7).not.toMatch(/drop function[^;]*cascade/i)
+    expect(code7).not.toMatch(/create or replace function public\.neighbors_(is_blocked|can_contact)/)
+    expect(code7).toMatch(/revoke all on schema neighbors_private from public, anon;/)
+    expect(code7).not.toMatch(/grant [^;]*neighbors_private[^;]*\banon\b/i)
+  })
+  it('S6 : les 6 politiques qui utilisaient ces fonctions sont recréées avec le schéma privé, aucune ne garde l’ancien nom', () => {
+    for (const name of ['profiles_select', 'posts_select', 'replies_select', 'threads_select', 'threads_insert', 'events_select']) {
+      const policy = new RegExp(`create policy ${name} on public\\.\\w+[\\s\\S]*?\\n\\);`).exec(code7)?.[0] ?? ''
+      expect(policy, name).toMatch(/neighbors_private\.neighbors_(is_blocked|can_contact)\(/)
+      expect(policy, name).not.toMatch(/public\.neighbors_(is_blocked|can_contact)/)
+      expect(code7, name).toMatch(new RegExp(`drop policy if exists ${name} on`))
+    }
+  })
+  it('S3 : un changement de quartier tous les 30 jours, date posée par le serveur, aucun droit client sur la colonne', () => {
+    expect(code7).toMatch(/add column if not exists cell_moved_at timestamptz/)
+    expect(code7).toMatch(/old\.cell_moved_at > now\(\) - interval '30 days'/)
+    expect(code7).toMatch(/raise exception 'cell_change_too_soon'/)
+    expect(code7).toMatch(/new\.cell_moved_at := old\.cell_moved_at/)
+    expect(code7).not.toMatch(/grant [^;]*cell_moved_at/)
+  })
+  it('S7 : 9 contraintes de texte, NOT VALID puis validation sans jamais échouer', () => {
+    const adds = [...code7.matchAll(/add constraint (\w+_text_check)\s+check \((\w+) !~ '([^']+)'\) not valid;/g)]
+    expect(adds.map((m) => m[1]).sort()).toEqual([
+      'events_description_text_check', 'events_place_text_check', 'events_title_text_check', 'messages_body_text_check',
+      'organizers_description_text_check', 'posts_body_text_check', 'posts_title_text_check', 'replies_body_text_check', 'reports_details_text_check',
+    ])
+    for (const m of adds) {
+      // même liste que TEXT_STRIP côté client ; le retour à la ligne (U+000A) et le liant d'emoji (U+200D) ne sont pas interdits
+      expect(m[3]).toBe('[\\u0001-\\u0009\\u000b-\\u001f\\u007f-\\u009f\\u061c\\u200e\\u200f\\u202a-\\u202e\\u2066-\\u2069]')
+      expect(code7).toMatch(new RegExp(`drop constraint if exists ${m[1]};`))
+    }
+    expect(code7).toMatch(/exception when check_violation then/)
+    expect(code7).toMatch(/validate constraint/)
+  })
+  it('S8 : 7 jours ET activité, avertissement avant le masquage', () => {
+    const fn = /create or replace function public\.neighbors_report_after_insert\(\)[\s\S]*?\$\$;/.exec(code7)?.[0] ?? ''
+    expect(fn).toMatch(/p\.created_at < now\(\) - interval '7 days'/)
+    expect(fn).not.toMatch(/24 hours/)
+    expect(fn).toMatch(/from public\.posts x where x\.author = r\.reporter/)
+    expect(fn).toMatch(/from public\.messages m where m\.sender = r\.reporter/)
+    expect(fn.indexOf("'warn'")).toBeGreaterThan(-1)
+    expect(fn.indexOf("'warn'")).toBeLessThan(fn.indexOf("'auto_hide'"))
+  })
+  it('S9 : extrait de 500 caractères posé par le déclencheur, jamais écrit ni relu par le client', () => {
+    expect(code7).toMatch(/add column if not exists snapshot text/)
+    expect(code7).toMatch(/char_length\(snapshot\) <= 500/)
+    expect(code7).toMatch(/new\.snapshot := left\(snip, 500\)/)
+    expect(code7).toMatch(/revoke select on public\.reports from authenticated;/)
+    const grant = /grant select \(([^)]*)\) on public\.reports to authenticated/.exec(code7)![1]
+    expect(grant).not.toMatch(/snapshot/)
+    expect(code7).not.toMatch(/grant insert[^;]*snapshot/)
+  })
+  it('S4 : purge et orphelins réservés à service_role', () => {
+    expect(code7).toMatch(/grant execute on function public\.neighbors_purge_expired\(\) to service_role/)
+    expect(code7).toMatch(/grant execute on function public\.neighbors_orphan_photos\(\) to service_role/)
+  })
+  it('aucun secret, aucune suppression de données, aucun droit à anon', () => {
+    expect(code7).not.toMatch(/eyJ[A-Za-z0-9_-]{20,}|service_role_key/i)
+    expect(code7).not.toMatch(/\bdelete from\b|\btruncate\b|\bdrop (table|column)\b/i)
+    expect(code7).not.toMatch(/grant [^;]*\bto\b[^;]*\banon\b/i)
+    expect(code7).not.toMatch(/using\s*\(\s*true\s*\)|with check\s*\(\s*true\s*\)/i)
+  })
+  it('g : les instantanés refusent les comptes anonymes (lecture, création, mise à jour), la suppression reste permise', () => {
+    for (const name of ['lecture', 'création', 'mise à jour']) {
+      const policy = new RegExp(`create policy "${name} de son instantané" on public\\.garden_snapshots[\\s\\S]*?;`).exec(sync4)?.[0] ?? ''
+      expect(policy, name).toMatch(/auth\.jwt\(\)\) ->> 'is_anonymous', 'false'\) = 'false'/)
+    }
+    const del = /create policy "suppression de son instantané"[\s\S]*?;/.exec(sync4)?.[0] ?? ''
+    expect(del).not.toMatch(/is_anonymous/)
+    for (const name of ['lecture', 'création', 'mise à jour', 'suppression']) expect(sync4).toMatch(new RegExp(`drop policy if exists "${name} de son instantané"`))
+  })
+})

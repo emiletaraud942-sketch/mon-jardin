@@ -9,7 +9,8 @@ Votre jardin en 3D à partir de la photo aérienne et du cadastre de l'IGN, avec
 - **Entretien** : tâches de la semaine (taille, désherbage, arrosage, protection gel, récolte…) calculées à partir de 146 fiches espèces et de la météo (gel, pluie, bilan hydrique) ; calendrier de l'année ; rappel quotidien (notification locale, voir « Limites »).
 - **Planter** : score « quelle plante pour cet endroit » (ensoleillement simulé, pente, sol, bons et mauvais voisins, distance légale art. 671 du Code civil) ; que semer ce mois-ci selon les gelées locales.
 - **Catalogue** : 146 espèces (légumes, aromatiques, fleurs, engrais verts, vivaces, petits fruits, fruitiers, arbres et haies) avec fiche d'entretien.
-- **Réglages** : plusieurs jardins, sol, export/import (avec validation du fichier), synchronisation Supabase optionnelle.
+- **Réglages** : plusieurs jardins, sol, export/import (avec validation du fichier), synchronisation Supabase optionnelle, « Effacer toutes mes données » (appareil, sauvegarde en ligne, compte).
+- **Voisins** : l'onglet de l'**entraide entre voisins** (facultative, projet Supabase dédié) : dons, échanges, demandes, événements, messages privés. Voir [docs/ENTRAIDE.md](docs/ENTRAIDE.md).
 
 ## Démarrer
 ```bash
@@ -19,24 +20,21 @@ npm run typecheck    # src/, api/ et vite.config.ts
 npm test             # vitest
 npm run build        # typecheck + build de production (dist/)
 ```
-Mise en ligne sur Vercel : voir [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md).
+Mise en ligne sur Vercel : voir [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md). Sécurité et données personnelles : [SECURITY.md](SECURITY.md), [docs/SECURITE.md](docs/SECURITE.md), [docs/CONFIDENTIALITE.md](docs/CONFIDENTIALITE.md).
 
-## Variables d'environnement (toutes optionnelles, modèle dans `.env.example`)
-| Variable | Où | Rôle |
-| --- | --- | --- |
-| `PLANTNET_API_KEY` | Vercel (serveur) | Identification par photo. Clé gratuite sur my.plantnet.org |
-| `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | Vercel (build) | Synchronisation entre appareils (appliquer `supabase/migrations`) |
+## Variables d'environnement (toutes optionnelles)
+La table unique des variables lues par le code (nom, où la saisir, public ou secret, rôle) est en tête de [`.env.example`](.env.example), qui sert aussi de modèle. Un test vérifie qu'elle est complète. Les principales : `PLANTNET_API_KEY` (serveur Vercel, identification par photo) ; `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` (synchronisation) ; `NEIGHBORS_SUPABASE_URL`, `NEIGHBORS_SUPABASE_PUBLISHABLE` et `NEIGHBORS_VAPID_PUBLIC` (entraide entre voisins) ; `VITE_WEATHER_PROVIDER` (fournisseur météo). Aucun secret ne porte le préfixe `VITE_` ou `NEIGHBORS_` (ils finissent dans le JavaScript public).
 
 ## Limites à connaître
 - **Données locales** : vos jardins sont stockés dans le navigateur de l'appareil (IndexedDB). Sans synchronisation, effacer les données du site les supprime : exportez régulièrement depuis Réglages.
-- **Rappels** : une **notification locale, au plus une fois par jour, à l'ouverture de l'appli**, s'il y a des tâches prioritaires. Il n'y a **pas de notification poussée en arrière-plan** : l'appli fermée, rien n'est envoyé. Sur iPhone, les notifications exigent l'appli installée sur l'écran d'accueil (iOS 16.4 minimum).
+- **Rappels** : une **notification locale, au plus une fois par jour, à l'ouverture de l'appli**, s'il y a des tâches prioritaires ; elle ne vient d'aucun serveur. Seule exception, facultative : si la fonction d'entraide entre voisins est configurée et que vous activez les alertes (Entraide > Profil > Mes notifications), le service d'alertes de votre navigateur peut afficher une alerte neutre « Vous avez un nouveau message » même appli fermée (`public/push-sw.js` ; aucun texte ni pseudo ne transite). Sur iPhone, les notifications exigent l'appli installée sur l'écran d'accueil (iOS 16.4 minimum).
 - **Hors ligne** : l'appli s'ouvre sans réseau, mais l'IGN et la météo ont besoin de connexion ; seules les tuiles déjà vues et la dernière orthophoto 3D sont gardées en cache. Le service worker ne met jamais la météo en cache.
 - **Identification par photo** : 500 identifications par jour pour toute l'appli (quota Pl@ntNet gratuit partagé), et une limite par visiteur.
 - **Open-Meteo** : service gratuit pour un usage **non commercial** uniquement ; l'usage commercial de l'appli demanderait une clé payante ou une autre source météo.
 - **Précision** : le placement vise ≈ 20 cm ; la parcelle cadastrale, le relief et les bâtiments sont ceux de l'IGN et peuvent être décalés ou datés.
 - **Règles d'entretien** : repères généraux d'après les fiches espèces et la météo, à adapter à votre sol et votre microclimat.
 - **Distance de plantation** : l'avertissement lié à l'art. 671 du Code civil est indicatif (limite parcellaire cadastrale, pas un bornage).
-- **Service worker** : une mise à jour est proposée par un bandeau « Recharger » ; elle n'est jamais appliquée sans votre accord.
+- **Service worker** : une mise à jour est proposée par un bandeau « Mise à jour disponible » avec le bouton « Mettre à jour » ; elle n'est jamais appliquée sans votre accord.
 
 ## Sources
 IGN Géoplateforme (Licence Ouverte 2.0) · Open-Meteo (CC BY 4.0, non commercial) · Pl@ntNet · Code civil art. 671.

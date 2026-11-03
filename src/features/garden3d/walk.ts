@@ -13,7 +13,28 @@ export const WALKER_RADIUS_M = 0.35
 export const MAX_OUTSIDE_M = CONTEXT_M
 export const TURN_SPEED = 1.8 // rad/s au clavier
 export const PITCH_LIMIT = 1.25
+/** FOV vertical de repli (écran inconnu ou carré). Voir `walkFovFor` : en pratique il dépend de la forme de l'écran. */
 export const WALK_FOV_DEG = 65
+/** Champ horizontal visé en Promenade (degrés) : ce que l'œil attend d'une scène de jardin, quel que soit l'écran. */
+export const WALK_TARGET_HFOV_DEG = 60
+export const WALK_FOV_MIN_DEG = 50
+export const WALK_FOV_MAX_DEG = 95
+
+/**
+ * FOV vertical (degrés) qui donne ≈ `targetHDeg` de champ horizontal pour un écran de rapport largeur/hauteur `aspect`,
+ * borné à [min, max]. Un FOV vertical fixe de 65° ne donne que ≈ 33° de large sur un téléphone en portrait (390×844) : tunnel.
+ * Portrait 390×844 : 95° vertical (≈ 53° de large, bornée) ; paysage 1280×800 : 50° vertical (≈ 73° de large).
+ */
+export function walkFovFor(aspect: number, targetHDeg = WALK_TARGET_HFOV_DEG, minDeg = WALK_FOV_MIN_DEG, maxDeg = WALK_FOV_MAX_DEG): number {
+  if (!(aspect > 0) || !Number.isFinite(aspect)) return WALK_FOV_DEG
+  const v = (2 * Math.atan(Math.tan((targetHDeg * Math.PI) / 360) / aspect) * 180) / Math.PI
+  return Math.min(maxDeg, Math.max(minDeg, v))
+}
+
+/** Champ horizontal (degrés) d'une caméra de FOV vertical `vDeg` et de rapport `aspect`. */
+export function horizontalFovDeg(vDeg: number, aspect: number): number {
+  return (2 * Math.atan(Math.tan((vDeg * Math.PI) / 360) * Math.max(0, aspect)) * 180) / Math.PI
+}
 
 export interface Walker {
   x: number
@@ -30,11 +51,44 @@ export interface WalkInput {
 }
 
 export interface Collider {
+  /** Contour du polygone (bâtiment, haie) ; vide pour un cercle. */
   ring: XY[]
   minX: number
   maxX: number
   minY: number
   maxY: number
+  /** Tronc, arbuste ou arbre des environs : obstacle circulaire (centre et rayon en m). */
+  circle?: { x: number; y: number; r: number }
+}
+
+/** Obstacle circulaire (tronc). */
+export function circleCollider(x: number, y: number, r: number): Collider {
+  return { ring: [], minX: x - r, maxX: x + r, minY: y - r, maxY: y + r, circle: { x, y, r } }
+}
+
+/** Obstacle rectangulaire de largeur `w` (selon x avant rotation), profondeur `d`, tourné de `rot` rad autour du centre. */
+export function boxCollider(cx: number, cy: number, w: number, d: number, rot = 0): Collider {
+  const c = Math.cos(rot)
+  const s = Math.sin(rot)
+  const pts: XY[] = [
+    [-w / 2, -d / 2],
+    [w / 2, -d / 2],
+    [w / 2, d / 2],
+    [-w / 2, d / 2],
+  ].map(([x, y]) => ({ x: cx + x * c - y * s, y: cy + x * s + y * c }))
+  return {
+    ring: pts,
+    minX: Math.min(...pts.map((p) => p.x)),
+    maxX: Math.max(...pts.map((p) => p.x)),
+    minY: Math.min(...pts.map((p) => p.y)),
+    maxY: Math.max(...pts.map((p) => p.y)),
+  }
+}
+
+/** Rayon du tronc (m) d'après la hauteur de l'arbre : 0,15 m pour un jeune plant, 0,5 m pour un grand arbre (≥ 16 m). */
+export function trunkRadiusM(heightM: number): number {
+  const h = Number.isFinite(heightM) ? heightM : 0
+  return Math.min(0.5, Math.max(0.15, 0.1 + 0.025 * h))
 }
 
 export function makeColliders(buildings: Building[] | undefined): Collider[] {
@@ -83,6 +137,17 @@ function signedArea(ring: XY[]): number {
 }
 
 const EPS = 1e-3
+
+/** Cercle du promeneur (centre p, rayon r) contre un obstacle circulaire : centre repoussé radialement, ou null. */
+export function pushOutOfCircle(p: XY, r: number, c: { x: number; y: number; r: number }): XY | null {
+  const min = r + c.r
+  const dx = p.x - c.x
+  const dy = p.y - c.y
+  const d = Math.hypot(dx, dy)
+  if (d >= min) return null
+  if (d < 1e-9) return { x: c.x + min + EPS, y: c.y }
+  return { x: c.x + (dx / d) * (min + EPS), y: c.y + (dy / d) * (min + EPS) }
+}
 
 /**
  * Cercle (centre p, rayon r) contre polygone : renvoie le centre repoussé hors du polygone,
@@ -133,7 +198,7 @@ export function resolveCollisions(p: XY, r: number, colliders: Collider[], passe
     let moved = false
     for (const c of colliders) {
       if (cur.x < c.minX - r || cur.x > c.maxX + r || cur.y < c.minY - r || cur.y > c.maxY + r) continue
-      const out = pushOutOfPolygon(cur, r, c.ring)
+      const out = c.circle ? pushOutOfCircle(cur, r, c.circle) : pushOutOfPolygon(cur, r, c.ring)
       if (out) {
         cur = out
         moved = true
@@ -175,6 +240,10 @@ export interface WalkWorld {
   maxOutsideM?: number
   /** Demi-côté (m) du sol texturé : la marche s'arrête à son bord. */
   groundHalfM?: number
+  /** Contour de la parcelle : limite souple (voir `limitToParcel`). Absent : seule l'emprise rectangulaire borne la marche. */
+  parcel?: XY[]
+  /** Distance (m) autorisée au-delà du contour de la parcelle. */
+  parcelMarginM?: number
 }
 
 /** Résultat d'un pas : `limited` vaut vrai quand la limite du jardin a retenu le promeneur. */
@@ -183,6 +252,88 @@ export type WalkStep = Walker & { limited: boolean }
 /** Vecteur « avant » du promeneur dans le repère local (x est, y nord). */
 export function forwardOf(yaw: number): XY {
   return { x: -Math.sin(yaw), y: Math.cos(yaw) }
+}
+
+// ---------- Limite de parcelle (polygone, souple, avec glissement) ----------
+
+/** Au-delà du contour de la parcelle, le promeneur peut aller jusqu'à cette distance (m) : la rue et le voisinage proche. */
+export const PARCEL_MARGIN_M = 12
+/** Dès cette part de la marge, la marche ralentit quand on s'éloigne (limite « souple »). */
+const SOFT_START = 0.6
+const SOFT_MIN_FACTOR = 0.35
+
+/** Point du contour le plus proche de p et sa distance. */
+export function nearestOnRing(p: XY, ring: XY[]): { q: XY; d: number } {
+  let best = Infinity
+  let q: XY = ring[0] ?? { x: p.x, y: p.y }
+  for (let i = 0; i < ring.length; i++) {
+    const a = ring[i]
+    const b = ring[(i + 1) % ring.length]
+    const ex = b.x - a.x
+    const ey = b.y - a.y
+    const len2 = ex * ex + ey * ey
+    const t = len2 > 0 ? Math.max(0, Math.min(1, ((p.x - a.x) * ex + (p.y - a.y) * ey) / len2)) : 0
+    const cx = a.x + ex * t
+    const cy = a.y + ey * t
+    const d = Math.hypot(p.x - cx, p.y - cy)
+    if (d < best) {
+      best = d
+      q = { x: cx, y: cy }
+    }
+  }
+  return { q, d: best }
+}
+
+/** Distance (m) de p à l'extérieur du polygone : 0 dedans. */
+export function distanceOutside(p: XY, ring: XY[]): number {
+  if (ring.length < 3 || pointInPolygon(p, ring)) return 0
+  return nearestOnRing(p, ring).d
+}
+
+/**
+ * Ramène p dans « parcelle + marge ». Le point est replacé sur la ligne qui le joint au contour le plus proche :
+ * le promeneur qui pousse en biais glisse le long de la limite au lieu de s'arrêter net.
+ * `allowedM` est la marge effective : jamais plus petite que l'écart actuel de `from` (pas de téléportation).
+ */
+export function limitToParcel(p: XY, ring: XY[], marginM: number, from?: XY): XY {
+  if (ring.length < 3) return p
+  const allowed = Math.max(marginM, from ? distanceOutside(from, ring) : 0)
+  if (pointInPolygon(p, ring)) return p
+  const { q, d } = nearestOnRing(p, ring)
+  if (d <= allowed) return p
+  const k = allowed / d
+  return { x: q.x + (p.x - q.x) * k, y: q.y + (p.y - q.y) * k }
+}
+
+/** Facteur de vitesse (0,35 à 1) quand on s'éloigne de la parcelle : 1 jusqu'à 60 % de la marge, puis décroissant. */
+export function softFactor(distOutsideM: number, marginM: number): number {
+  const t = (distOutsideM - SOFT_START * marginM) / ((1 - SOFT_START) * marginM)
+  if (!(t > 0)) return 1
+  return 1 - (1 - SOFT_MIN_FACTOR) * Math.min(1, t)
+}
+
+/** Déplacement déjà calculé (dx, dy en m) : souplesse, obstacles, limites. Commun à la marche continue et aux bonds. */
+function applyMove(w: Walker, yaw: number, dx: number, dy: number, world: WalkWorld): WalkStep {
+  const from: XY = { x: w.x, y: w.y }
+  const ring = world.parcel && world.parcel.length > 2 ? world.parcel : undefined
+  const margin = world.parcelMarginM ?? PARCEL_MARGIN_M
+  if (ring && (dx !== 0 || dy !== 0)) {
+    // Limite souple : on ralentit en s'éloignant de la parcelle (les pas qui rapprochent ne sont pas freinés).
+    const d0 = distanceOutside(from, ring)
+    const d1 = distanceOutside({ x: from.x + dx, y: from.y + dy }, ring)
+    if (d1 > d0) {
+      const k = softFactor(d1, margin)
+      dx *= k
+      dy *= k
+    }
+  }
+  let p: XY = { x: from.x + dx, y: from.y + dy }
+  p = resolveCollisions(p, WALKER_RADIUS_M, world.colliders)
+  let q = clampToBounds(p, world.bounds, world.maxOutsideM ?? MAX_OUTSIDE_M, from)
+  if (ring) q = limitToParcel(q, ring, margin, from)
+  if (world.groundHalfM != null) q = clampToGround(q, world.groundHalfM, from)
+  const limited = Math.abs(q.x - p.x) > 1e-6 || Math.abs(q.y - p.y) > 1e-6
+  return { x: q.x, y: q.y, yaw, limited }
 }
 
 /** Avance le promeneur de dt secondes. */
@@ -199,13 +350,49 @@ export function stepWalker(w: Walker, input: WalkInput, dt: number, world: WalkW
     vy /= mag
   }
   const speed = input.run ? RUN_SPEED : WALK_SPEED
-  let p: XY = { x: w.x + vx * speed * step, y: w.y + vy * speed * step }
-  p = resolveCollisions(p, WALKER_RADIUS_M, world.colliders)
-  const from: XY = { x: w.x, y: w.y }
-  let q = clampToBounds(p, world.bounds, world.maxOutsideM ?? MAX_OUTSIDE_M, from)
-  if (world.groundHalfM != null) q = clampToGround(q, world.groundHalfM, from)
-  const limited = Math.abs(q.x - p.x) > 1e-6 || Math.abs(q.y - p.y) > 1e-6
-  return { x: q.x, y: q.y, yaw, limited }
+  return applyMove(w, yaw, vx * speed * step, vy * speed * step, world)
+}
+
+// ---------- Mouvement réduit : bonds ----------
+
+/** Longueur d'un bond (m) et angle d'un bond de rotation. Le bond « courir » est deux fois plus long. */
+export const HOP_M = 1.5
+export const HOP_TURN_RAD = Math.PI / 6
+/** Délai (s) entre deux bonds tant que la commande reste enfoncée. */
+export const HOP_INTERVAL_S = 0.45
+const HOP_DEADZONE = 0.5
+
+/**
+ * Un bond : le promeneur apparaît 1,5 m plus loin (3 m en courant) ou tourné de 30°, sans glissement de la vue.
+ * Renvoie null si la commande est sous le seuil (rien à faire). Même règles d'obstacles et de limites que la marche.
+ */
+export function hopWalker(w: Walker, input: WalkInput, world: WalkWorld): WalkStep | null {
+  const turning = Math.abs(input.turn) > HOP_DEADZONE
+  const moving = Math.hypot(input.forward, input.strafe) > HOP_DEADZONE
+  if (!turning && !moving) return null
+  if (turning && !moving) return applyMove(w, w.yaw + Math.sign(input.turn) * HOP_TURN_RAD, 0, 0, world)
+  const f = forwardOf(w.yaw)
+  const right = { x: Math.cos(w.yaw), y: Math.sin(w.yaw) }
+  let vx = f.x * input.forward + right.x * input.strafe
+  let vy = f.y * input.forward + right.y * input.strafe
+  const mag = Math.hypot(vx, vy) || 1
+  const len = input.run ? HOP_M * 2 : HOP_M
+  return applyMove(w, w.yaw, (vx / mag) * len, (vy / mag) * len, world)
+}
+
+/**
+ * Pose d'arrivée d'une téléportation vers (x, y) : hors des obstacles, dans les limites, regard conservé
+ * (ou tourné vers `look` s'il est donné).
+ */
+export function teleportPose(w: Walker, to: XY, world: WalkWorld, look?: XY): WalkStep {
+  const ring = world.parcel && world.parcel.length > 2 ? world.parcel : undefined
+  let q = resolveCollisions({ x: to.x, y: to.y }, WALKER_RADIUS_M, world.colliders)
+  q = clampToBounds(q, world.bounds, world.maxOutsideM ?? MAX_OUTSIDE_M)
+  if (ring) q = limitToParcel(q, ring, world.parcelMarginM ?? PARCEL_MARGIN_M)
+  if (world.groundHalfM != null) q = clampToGround(q, world.groundHalfM)
+  q = resolveCollisions(q, WALKER_RADIUS_M, world.colliders) // une dernière fois : la limite a pu ramener dans un obstacle
+  const yaw = look ? yawToward(q, look) : w.yaw
+  return { x: q.x, y: q.y, yaw, limited: Math.hypot(q.x - to.x, q.y - to.y) > 1e-6 }
 }
 
 /**
@@ -326,6 +513,8 @@ export interface WalkShared {
   run: boolean
   /** Demande une image (rendu à la demande) : posé par WalkRig, appelé par le joystick et « Courir ». */
   wake?: () => void
+  /** Téléporte le promeneur près de (x, y) (hors obstacles et limites), en regardant `look` s'il est donné. Posé par WalkRig. */
+  teleport?: (to: XY, look?: XY) => void
   /** Une pose est mémorisée (reprise de la promenade). */
   saved: boolean
 }

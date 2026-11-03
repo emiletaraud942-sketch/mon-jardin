@@ -183,31 +183,31 @@ create trigger neighbors_profile_before_update before update on public.profiles
 -- existantes est tentée plus bas, sans jamais faire échouer la migration.
 alter table public.posts drop constraint if exists posts_title_text_check;
 alter table public.posts add constraint posts_title_text_check
-  check (title !~ '[\u0001-\u0009\u000b-\u001f\u007f-\u009f؜‎‏‪-‮⁦-⁩]') not valid;
+  check (title !~ '[\u0001-\u0009\u000b-\u001f\u007f-\u009f\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]') not valid;
 alter table public.posts drop constraint if exists posts_body_text_check;
 alter table public.posts add constraint posts_body_text_check
-  check (body !~ '[\u0001-\u0009\u000b-\u001f\u007f-\u009f؜‎‏‪-‮⁦-⁩]') not valid;
+  check (body !~ '[\u0001-\u0009\u000b-\u001f\u007f-\u009f\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]') not valid;
 alter table public.replies drop constraint if exists replies_body_text_check;
 alter table public.replies add constraint replies_body_text_check
-  check (body !~ '[\u0001-\u0009\u000b-\u001f\u007f-\u009f؜‎‏‪-‮⁦-⁩]') not valid;
+  check (body !~ '[\u0001-\u0009\u000b-\u001f\u007f-\u009f\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]') not valid;
 alter table public.messages drop constraint if exists messages_body_text_check;
 alter table public.messages add constraint messages_body_text_check
-  check (body !~ '[\u0001-\u0009\u000b-\u001f\u007f-\u009f؜‎‏‪-‮⁦-⁩]') not valid;
+  check (body !~ '[\u0001-\u0009\u000b-\u001f\u007f-\u009f\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]') not valid;
 alter table public.events drop constraint if exists events_title_text_check;
 alter table public.events add constraint events_title_text_check
-  check (title !~ '[\u0001-\u0009\u000b-\u001f\u007f-\u009f؜‎‏‪-‮⁦-⁩]') not valid;
+  check (title !~ '[\u0001-\u0009\u000b-\u001f\u007f-\u009f\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]') not valid;
 alter table public.events drop constraint if exists events_description_text_check;
 alter table public.events add constraint events_description_text_check
-  check (description !~ '[\u0001-\u0009\u000b-\u001f\u007f-\u009f؜‎‏‪-‮⁦-⁩]') not valid;
+  check (description !~ '[\u0001-\u0009\u000b-\u001f\u007f-\u009f\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]') not valid;
 alter table public.events drop constraint if exists events_place_text_check;
 alter table public.events add constraint events_place_text_check
-  check (place !~ '[\u0001-\u0009\u000b-\u001f\u007f-\u009f؜‎‏‪-‮⁦-⁩]') not valid;
+  check (place !~ '[\u0001-\u0009\u000b-\u001f\u007f-\u009f\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]') not valid;
 alter table public.organizers drop constraint if exists organizers_description_text_check;
 alter table public.organizers add constraint organizers_description_text_check
-  check (description !~ '[\u0001-\u0009\u000b-\u001f\u007f-\u009f؜‎‏‪-‮⁦-⁩]') not valid;
+  check (description !~ '[\u0001-\u0009\u000b-\u001f\u007f-\u009f\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]') not valid;
 alter table public.reports drop constraint if exists reports_details_text_check;
 alter table public.reports add constraint reports_details_text_check
-  check (details !~ '[\u0001-\u0009\u000b-\u001f\u007f-\u009f؜‎‏‪-‮⁦-⁩]') not valid;
+  check (details !~ '[\u0001-\u0009\u000b-\u001f\u007f-\u009f\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]') not valid;
 
 -- Validation des lignes existantes. Si l'une d'elles contient un caractère interdit, la contrainte reste « not valid »
 -- (elle contrôle quand même les nouvelles écritures) et un message l'indique : rien n'est modifié ni supprimé.
@@ -346,6 +346,10 @@ begin
         insert into public.moderation_log (actor, action, target_kind, target_id, reason)
         values ('auto', 'auto_hide', new.target_kind, new.target_id, n || ' signalements de membres distincts');
       end if;
+    elsif new.target_kind in ('profile', 'message') and n = 3 then
+      -- Un profil ou un message ne se masque pas tout seul : l'éditeur est seulement prévenu (une fois, au 3e).
+      insert into public.moderation_log (actor, action, target_kind, target_id, reason)
+      values ('auto', 'warn', new.target_kind, new.target_id, '3 signalements de comptes qualifiés sur un ' || new.target_kind || ' (pas de masquage automatique) : à examiner');
     end if;
   else
     select exists (
@@ -355,7 +359,7 @@ begin
           or exists (select 1 from public.replies y where y.author = new.reporter)
           or exists (select 1 from public.messages m where m.sender = new.reporter))
     ) into new_ok;
-    if new_ok and n = 2 then
+    if new_ok and n = 2 and can_hide then
       insert into public.moderation_log (actor, action, target_kind, target_id, reason)
       values ('auto', 'warn', new.target_kind, new.target_id, '2 signalements de comptes qualifiés : le prochain masquera automatiquement');
     elsif n_all = 3 then

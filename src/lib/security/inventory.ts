@@ -152,7 +152,7 @@ export const DATA_INVENTORY: readonly DataItem[] = [
   },
   {
     id: 'entraide-moderation',
-    donnee: 'Entraide : signalements envoyés (motif, précisions facultatives), personnes bloquées, compteurs d’usage par jour, journal de modération (identifiants et décision, sans le contenu)',
+    donnee: 'Entraide : signalements envoyés (motif, précisions facultatives, extrait de 500 caractères du contenu signalé, qui est un contenu de tiers), personnes bloquées, compteurs d’usage par jour, journal de modération (identifiants et décision, sans le contenu)',
     stockage: 'Supabase de l’entraide (tables reports, blocks, quotas, moderation_log ; non lisibles par les autres membres)',
     destinataires: ['Supabase (sous-traitant)', 'L’éditeur (modération)'],
     finalite: 'Modérer les contenus (loi pour la confiance dans l’économie numérique), protéger les membres, limiter les abus',
@@ -273,6 +273,11 @@ export const LOCAL_STORAGE_KEYS: readonly StorageKeyInfo[] = [
   { cle: 'pj-meteo:', prefixe: true, contenu: 'Cache de prévisions, par coordonnées arrondies à 2 décimales' },
   { cle: 'pj-climat:', prefixe: true, contenu: 'Cache de climat local, par coordonnées arrondies à 2 décimales' },
   { cle: 'sb-', prefixe: true, contenu: 'Jetons de session Supabase (synchronisation : sb-<projet>-auth-token ; entraide : sb-neighbors-auth-token) et leur vérificateur PKCE' },
+]
+
+/** Clés sessionStorage (effacées à la fermeture de l'onglet ; « Effacer toutes mes données » les retire aussi). */
+export const SESSION_STORAGE_KEYS: readonly StorageKeyInfo[] = [
+  { cle: 'pj.force3d', contenu: '« Essayer quand même » choisi pour la 3D (session seulement)' },
 ]
 
 /** Clés IndexedDB (base par défaut de idb-keyval) : toutes sont supprimées par `wipeLocalData()` (`del` de chaque clé). */

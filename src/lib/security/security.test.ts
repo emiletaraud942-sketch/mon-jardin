@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { migrateState } from '../migrate'
 import { importSizeError, parseBackupText, readBackupFile } from './import'
 import { imageSize, jpegMetadataSegments, sizeWithinLimits } from './image'
-import { DATA_INVENTORY, ERASABLE_CACHE, ERASABLE_LOCAL_KEY, getDataInventory, INDEXEDDB_KEYS, isListedKey, LOCAL_STORAGE_KEYS, PERMISSIONS } from './inventory'
+import { DATA_INVENTORY, ERASABLE_CACHE, ERASABLE_LOCAL_KEY, getDataInventory, INDEXEDDB_KEYS, isListedKey, LOCAL_STORAGE_KEYS, PERMISSIONS, SESSION_STORAGE_KEYS } from './inventory'
 import { LIMITS } from './limits'
 import { cleanJson, clipText, isPhotoId, isSafeId } from './sanitize'
 import { clearLocalKeys, clearPlaceCaches } from './erase'
@@ -352,13 +352,13 @@ describe('effacement', () => {
       for (const m of src.matchAll(/['"`]((?:permajardin:|pj\.|pj-|sb-)[^'"`$\s]*)/g)) found.set(m[1], f)
       // 2. Toute constante « …KEY… = 'littéral' » (une clé SANS ces préfixes serait oubliée par l'effacement).
       for (const m of src.matchAll(/\b(?:const|let)\s+[A-Za-z_]*KEY[A-Za-z_]*\s*(?::[^=]+)?=\s*['"`]([^'"`$]+)['"`]/g)) found.set(m[1], f)
-      // 3. Tout littéral passé directement à localStorage.getItem/setItem/removeItem.
-      for (const m of src.matchAll(/localStorage\.(?:get|set|remove)Item\(\s*['"`]([^'"`$]+)['"`]/g)) found.set(m[1], f)
+      // 3. Tout littéral passé directement à localStorage/sessionStorage.getItem/setItem/removeItem.
+      for (const m of src.matchAll(/(?:local|session)Storage\.(?:get|set|remove)Item\(\s*['"`]([^'"`$]+)['"`]/g)) found.set(m[1], f)
     }
     // Noms d'événements et de messages (pas des clés de stockage) qui partagent le préfixe « permajardin: ».
     for (const evt of ['permajardin:voisins-news', 'permajardin:open-messages', 'permajardin:nouveau-message', 'permajardin:ouvrir-messages']) found.delete(evt)
     expect(found.size).toBeGreaterThan(20)
-    const listed = [...LOCAL_STORAGE_KEYS, ...INDEXEDDB_KEYS]
+    const listed = [...LOCAL_STORAGE_KEYS, ...SESSION_STORAGE_KEYS, ...INDEXEDDB_KEYS]
     for (const [k, f] of found) {
       // Les clés IndexedDB (photo:, lidar:) ne passent pas par localStorage : elles sont vidées par wipeLocalData.
       const idb = isListedKey(INDEXEDDB_KEYS, k)
@@ -367,7 +367,7 @@ describe('effacement', () => {
     }
     // La liste ne contient pas de clé fantôme : chaque entrée apparaît dans le code.
     const all = [...found.keys()]
-    for (const i of LOCAL_STORAGE_KEYS) {
+    for (const i of [...LOCAL_STORAGE_KEYS, ...SESSION_STORAGE_KEYS]) {
       expect(all.some((k) => (i.prefixe ? k.startsWith(i.cle) : k === i.cle)), `${i.cle} n’est écrite nulle part dans le code`).toBe(true)
     }
     expect(ERASABLE_CACHE.test('ign-tuiles')).toBe(true)
@@ -375,7 +375,7 @@ describe('effacement', () => {
   })
 
   it('chaque clé localStorage de la liste est retirée par clearLocalKeys (avec un suffixe pour les préfixes)', () => {
-    const data = new Map<string, string>(LOCAL_STORAGE_KEYS.map((i) => [i.prefixe ? i.cle + 'x:1,2' : i.cle, 'v']))
+    const data = new Map<string, string>([...LOCAL_STORAGE_KEYS, ...SESSION_STORAGE_KEYS].map((i) => [i.prefixe ? i.cle + 'x:1,2' : i.cle, 'v']))
     data.set('autre-site', 'garde')
     const storage = {
       get length() { return data.size },
