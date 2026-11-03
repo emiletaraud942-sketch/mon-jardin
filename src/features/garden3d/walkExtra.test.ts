@@ -85,7 +85,7 @@ describe('troncs (cercles) et haies (boîtes)', () => {
   it('on ne traverse pas un tronc : de face on s’arrête devant, un peu de côté on le contourne en glissant', () => {
     const world: WalkWorld = { colliders: [circleCollider(0, 5, 0.4)], bounds }
     for (const [x0, passes] of [[0, false], [0.3, true]] as const) {
-      let w = { x: x0, y: 0, yaw: 0 }
+      let w: { x: number; y: number; yaw: number } = { x: x0, y: 0, yaw: 0 }
       let minDist = Infinity
       for (let i = 0; i < 240; i++) {
         w = stepWalker(w, fwd, 1 / 30, world)

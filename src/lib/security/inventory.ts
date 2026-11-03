@@ -265,6 +265,8 @@ export const LOCAL_STORAGE_KEYS: readonly StorageKeyInfo[] = [
   { cle: 'pj.guide', contenu: 'Aides et repères mémorisés : étapes d’accueil, cartes repliées, identifiants des jardins dont la 3D et l’Entretien ont été ouverts' },
   { cle: 'pj.lidar', contenu: 'Réglage du relevé LiDAR HD' },
   { cle: 'pj.quality3d', contenu: 'Qualité de la vue 3D' },
+  { cle: 'pj.walkHop', contenu: 'Promenade 3D : « Mouvement réduit » (bonds) activé ou non' },
+  { cle: 'pj.walkHelpSeen', contenu: 'Promenade 3D : aide de la première visite déjà lue' },
   { cle: 'pj.mapNames', contenu: 'Noms des plantes sur la carte affichés ou non' },
   { cle: 'pj.snap', contenu: 'Aimantation de la carte activée ou non' },
   { cle: 'pj.grid', contenu: 'Grille de la carte affichée ou non' },
