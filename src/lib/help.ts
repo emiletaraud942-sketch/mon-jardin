@@ -12,7 +12,7 @@ export const HELP: Record<Tab, HelpContent> = {
   accueil: {
     title: 'L’accueil',
     steps: [
-      'Choisissez un rayon : Mon jardin, À faire, Où planter ? ou Voisins. Le bouton Accueil, en bas, ramène ici.',
+      'Choisissez une partie de l’appli : Mon jardin, À faire, Où planter ? ou Voisins. Le bouton Accueil, en bas, ramène ici.',
       '« Chez » résume votre jardin : plantes et choses à faire.',
       '« Votre jardin en 5 étapes » vous guide au début. Touchez une étape pour la reprendre.',
       '« Passer et découvrir l’appli » masque ce guide. Vous pouvez le revoir dans Mon compte.',
@@ -105,12 +105,12 @@ export const HELP: Record<Tab, HelpContent> = {
 export const HELP_SCREENS = Object.keys(HELP) as Tab[]
 
 export const RAYONS_HELP = {
-  title: 'À quoi servent les 4 rayons ?',
-  intro: 'Les boutons du bas rangent l’appli en 4 rayons, plus l’Accueil. Rien n’est bloqué.',
+  title: 'À quoi servent les 4 parties de l’appli ?',
+  intro: 'Les boutons du bas rangent l’appli en 4 parties, plus l’Accueil. Rien n’est bloqué.',
   rayons: [
     { name: 'Mon jardin', text: 'La carte, vos plantes et la vue 3D. Touchez Carte, Plantes ou Vue 3D, en haut.' },
     { name: 'À faire', text: 'Quoi faire cette semaine : tailler, désherber, arroser, récolter. Avec la météo et le calendrier.' },
-    { name: 'Où planter ?', text: 'Où planter chaque plante, et le catalogue des 146 plantes.' },
+    { name: 'Où planter ?', text: 'Où planter chaque plante, et le catalogue des plantes.' },
     { name: 'Voisins', text: 'Dons, questions et rendez-vous près de chez vous. Facultatif.' },
   ],
   optional: 'Placer vos plantes est facultatif : vous pouvez aller directement à « À faire ».',

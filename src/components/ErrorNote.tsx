@@ -21,7 +21,7 @@ export function ErrorNote({ error, className = 'alert error small', role = 'aler
 export function TechDetails({ detail }: { detail: string }) {
   return (
     <details className="tech-details">
-      <summary>Détails</summary>
+      <summary>Informations techniques</summary>
       <p className="small muted">{detail}</p>
     </details>
   )

@@ -10,7 +10,7 @@ import { enableNotifications, notificationsSupported } from '../../lib/notify'
 import { activeSteps, currentStep, stepAfter, stepBefore, stepStatus, STEP_TITLE, type OnboardingStepId } from '../../lib/onboarding'
 import { updateGarden, useGardenPlants, useStore } from '../../lib/store'
 import { getTextSize, setTextSize, TEXT_SIZE_LABEL, TEXT_SIZES, type TextSize } from '../../lib/textSize'
-import { closeParcours, noteStep, noteWelcomed, setUi, startPlacing, useUi } from '../../lib/ui'
+import { closeLayer, closeParcours, noteStep, noteWelcomed, openLayer, setUi, startPlacing, useUi } from '../../lib/ui'
 import type { Garden } from '../../types'
 import { IdentifyDialog } from '../plants/IdentifyDialog'
 import { openScan } from '../scan/scanUi'
@@ -24,6 +24,7 @@ import { TechDetails } from '../../components/ErrorNote'
 import { createDemoGarden, createRealGarden } from './create'
 import { LegalLink } from '../legal/LegalLinks'
 import { useOnboarding } from './useOnboarding'
+import { TextSizeButton } from '../../components/TextSizeButton'
 import { Welcome } from './Welcome'
 
 type Screen = 'welcome' | OnboardingStepId | 'fin'
@@ -146,6 +147,7 @@ function AdresseStep({ garden, next, skip }: StepProps) {
             }
       }
     >
+      <TextSizeButton />
       <AddressSearch onSelect={setPlace} onClear={() => setPlace(undefined)} />
       {!place && <p className="small muted" style={{ margin: 0 }}>Choisissez votre adresse dans la liste pour continuer.</p>}
       {!garden && (
@@ -246,7 +248,7 @@ function PlantesStep({ garden, next, skip }: StepProps) {
             <Icon name="list" size={30} />
             <span>
               <strong>Choisir dans la liste</strong>
-              <span className="muted small">146 plantes, avec une fiche pour chacune.</span>
+              <span className="muted small">Plus de 160 plantes, avec une fiche pour chacune.</span>
             </span>
             <Icon name="forward" size={20} />
           </button>
@@ -293,12 +295,12 @@ function EntretienStep({ next, skip }: StepProps) {
         {!supported ? (
           <p className="small muted" style={{ margin: 0 }}>Les rappels ne marchent pas sur cet appareil.</p>
         ) : perm === 'granted' ? (
-          <p style={{ margin: 0 }}>✓ Les rappels sont activés.</p>
+          <p style={{ margin: 0 }}><Icon name="check" size={16} /> Les rappels sont activés.</p>
         ) : perm === 'denied' ? (
           <p className="small muted" style={{ margin: 0 }}>Les rappels sont bloqués. Autorisez les notifications dans les réglages de votre programme internet.</p>
         ) : (
           <button className="btn big" onClick={async () => setPerm((await enableNotifications()) ? 'granted' : 'denied')}>
-            🔔 Activer les rappels
+            <Icon name="bell" size={18} /> Activer les rappels
           </button>
         )}
       </div>
@@ -341,7 +343,7 @@ function VoisinsStep({ skip }: StepProps) {
 // ---------- Fin ----------
 function FinScreen({ onDone }: { onDone: () => void }) {
   return (
-    <Frame title="Votre jardin est prêt" lead="Vous pouvez tout changer plus tard dans « Mon compte et réglages »." primary={{ label: 'Voir mes rayons', onClick: onDone }}>
+    <Frame title="Votre jardin est prêt" lead="Vous pouvez tout changer plus tard dans « Mon compte et réglages »." primary={{ label: 'Voir les 4 parties de l’appli', onClick: onDone }}>
       <div className="card stack">
         <strong>Gardez l’appli sur votre téléphone</strong>
         <p className="small muted" style={{ margin: 0 }}>Elle s’ouvre comme une appli, depuis votre écran d’accueil.</p>
@@ -394,6 +396,31 @@ export function Parcours({ garden }: { garden?: Garden }) {
     else setScreen('welcome')
   }
   const props: StepProps = { garden, next, skip }
+
+  // Retour (Android) : une étape de plus = une entrée d'historique ; Retour revient à l'étape d'avant au lieu de quitter l'appli.
+  const firstScreen = useRef(screen).current
+  const layerId = useRef<string>()
+  const backRef = useRef(back)
+  backRef.current = back
+  const beyondFirst = screen !== firstScreen
+  useEffect(() => {
+    if (beyondFirst && !layerId.current) {
+      layerId.current = openLayer(() => {
+        layerId.current = undefined
+        backRef.current()
+      })
+    } else if (!beyondFirst && layerId.current) {
+      closeLayer(layerId.current)
+      layerId.current = undefined
+    }
+  }, [beyondFirst, screen])
+  useEffect(
+    () => () => {
+      if (layerId.current) closeLayer(layerId.current)
+      layerId.current = undefined
+    },
+    [],
+  )
 
   if (screen === 'welcome') {
     return (

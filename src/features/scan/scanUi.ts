@@ -11,14 +11,16 @@ export type MeasureTarget = { kind: 'plant'; plantId: string } | { kind: 'item';
 export interface ScanUi {
   screen?: ScanScreen
   target?: MeasureTarget
+  /** « Filmer en marchant » : le scan s'ouvre directement sur la prise de vue vidéo. */
+  video?: boolean
 }
 
 let ui: ScanUi = {}
 const listeners = new Set<() => void>()
 const emit = () => listeners.forEach((l) => l())
 
-export function openScan(screen: ScanScreen, target?: MeasureTarget) {
-  ui = { screen, target }
+export function openScan(screen: ScanScreen, target?: MeasureTarget, opts: { video?: boolean } = {}) {
+  ui = { screen, target, video: opts.video }
   emit()
 }
 

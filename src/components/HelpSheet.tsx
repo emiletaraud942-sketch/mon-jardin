@@ -4,7 +4,7 @@ import { restartOnboarding, type Tab } from '../lib/ui'
 import { LegalLinks } from '../features/legal/LegalLinks'
 import { Modal } from './Modal'
 
-/** Feuille d'aide du bouton « ? » : étapes de l'écran courant, explication des 4 rayons, retour à la visite. */
+/** Feuille d'aide du bouton « ? » : étapes de l'écran courant, explication des 4 parties de l’appli, retour à la visite. */
 export function HelpSheet({ tab, onClose }: { tab: Tab; onClose: () => void }) {
   const [view, setView] = useState<'ecran' | 'rayons'>('ecran')
   const help = helpFor(tab)
@@ -13,7 +13,7 @@ export function HelpSheet({ tab, onClose }: { tab: Tab; onClose: () => void }) {
       {view === 'ecran' ? (
         <div className="stack help-body">
           <button className="btn" onClick={() => setView('rayons')}>
-            À quoi servent les 4 rayons ?
+            À quoi servent les 4 parties de l’appli ?
           </button>
           <ol className="help-steps">
             {help.steps.map((s) => (

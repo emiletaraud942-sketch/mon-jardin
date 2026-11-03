@@ -107,6 +107,7 @@ export function PlantsPage({ garden }: { garden: Garden }) {
                       <button
                         className="btn ghost plant-row"
                         style={{ width: '100%', justifyContent: 'flex-start', gap: 10, background: p.id === selectedPlantId ? 'var(--accent-soft)' : undefined }}
+                        aria-current={p.id === selectedPlantId ? 'true' : undefined}
                         onClick={() => setUi({ selectedPlantId: p.id })}
                       >
                         <span className="plant-tile">

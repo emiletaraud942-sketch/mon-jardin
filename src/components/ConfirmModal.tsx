@@ -45,7 +45,7 @@ export function ConfirmModal({
             </button>
             {backedUp && (
               <p className="small" role="status" style={{ margin: 0 }}>
-                ✓ Sauvegarde faite. Elle est dans vos téléchargements.
+                <Icon name="check" size={16} /> Sauvegarde faite. Elle est dans vos téléchargements.
               </p>
             )}
           </div>

@@ -1,4 +1,5 @@
-import { dismissToast, pauseToast, resumeToast, runToastAction, useToasts, type Toast } from '../lib/toast'
+import { useEffect, useRef } from 'react'
+import { dismissToast, getToasts, pauseToast, resumeToast, runToastAction, useToasts, type Toast } from '../lib/toast'
 import { useUi } from '../lib/ui'
 import { Icon } from './Icon'
 
@@ -36,7 +37,20 @@ function ToastItem({ t }: { t: Toast }) {
  */
 export function ToastHost() {
   const toasts = useToasts()
-  const { placingSpeciesId, movingPlantId } = useUi()
+  const { placingSpeciesId, movingPlantId, tab } = useUi()
+  // Changer d'écran ferme les messages d'information ; ceux qui ont « Annuler » restent.
+  const lastTab = useRef(tab)
+  useEffect(() => {
+    if (lastTab.current === tab) return
+    lastTab.current = tab
+    for (const t of getToasts()) if (t.tone !== 'error' && !t.actionLabel) dismissToast(t.id)
+  }, [tab])
+  // Marge basse : tant qu'un message est affiché, la page garde de la place pour ne pas cacher « Fait ».
+  const showing = toasts.length > 0
+  useEffect(() => {
+    document.documentElement.toggleAttribute('data-toast', showing)
+    return () => document.documentElement.removeAttribute('data-toast')
+  }, [showing])
   // Pendant un placement, la consigne (Valider, Annuler) reste libre : les messages d'information attendent la fin.
   const info = placingSpeciesId || movingPlantId ? [] : toasts.filter((t) => t.tone !== 'error')
   const current = info[info.length - 1]

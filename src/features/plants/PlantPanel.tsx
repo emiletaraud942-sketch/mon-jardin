@@ -3,6 +3,7 @@ import { CATEGORY_LABEL, STATUS_LABEL, SUN_LABEL, TASK_ICON, WATER_LABEL } from 
 import { Icon } from '../../components/Icon'
 import { Blob, PlantPot, PlantScene } from '../../components/illustrations'
 import { PhotoThumb } from '../../components/PhotoThumb'
+import { RiskNote } from '../../components/RiskNote'
 import { deletePhoto, savePhoto } from '../../lib/photos'
 import { addPlant, getState, removePlant, updatePlant, useGardenPlants } from '../../lib/store'
 import { showToast } from '../../lib/toast'
@@ -84,6 +85,13 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
         if (!cur?.photos.includes(id)) void deletePhoto(id)
       },
     })
+  }
+
+  /** Annuelle finie : elle ne génère plus de tâches. « Annuler » remet l'état d'avant. */
+  function markHarvested() {
+    const before = plant.status
+    updatePlant(plant.id, { status: 'recoltee' })
+    showToast({ message: `${plantName(plant)} : récoltée.`, actionLabel: 'Annuler', onAction: () => updatePlant(plant.id, { status: before }) })
   }
 
   function remove() {
@@ -268,27 +276,7 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
           <strong>Distance avec le voisin :</strong> {legal.message}
         </div>
       )}
-      <details className="np-details plant-details">
-        <summary>Détails</summary>
-        <div className="stack" style={{ gap: 12 }}>
-      {fields}
-      {(report.amis.length > 0 || report.ennemis.length > 0) && (
-        <div className="small stack">
-          {report.amis.length > 0 && (
-            <p style={{ margin: 0 }}>
-              <span className="badge green">Bonnes plantes voisines</span> {Array.from(new Set(report.amis.map(plantName))).join(', ')}
-            </p>
-          )}
-          {report.ennemis.length > 0 && (
-            <p style={{ margin: 0 }}>
-              <span className="badge danger">Plantes à éviter à côté</span> {Array.from(new Set(report.ennemis.map(plantName))).join(', ')}
-            </p>
-          )}
-        </div>
-      )}
-
-      {species && <MeasureSection plant={plant} species={species} name={plantName(plant)} />}
-
+      {species && <RiskNote species={species} />}
       <div>
         <h3>Photos</h3>
         <div className="row photo-row">
@@ -311,15 +299,42 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
         {photoError && <p className="alert error small" role="alert" style={{ marginTop: 8 }}>{photoError}</p>}
       </div>
 
+      <button className="btn plant-move" onClick={() => startMoving(plant.id)}>
+        <Icon name="move" size={16} /> Déplacer cette plante
+      </button>
+      {species && !species.vivace && plant.status !== 'recoltee' && plant.status !== 'mort' && (
+        <button className="btn plant-harvested" onClick={markHarvested}>
+          <Icon name="check" size={16} /> Marquer comme récoltée
+        </button>
+      )}
+
+      <details className="np-details plant-details">
+        <summary>Date, notes et autres actions</summary>
+        <div className="stack" style={{ gap: 12 }}>
+      {fields}
+      {(report.amis.length > 0 || report.ennemis.length > 0) && (
+        <div className="small stack">
+          {report.amis.length > 0 && (
+            <p style={{ margin: 0 }}>
+              <span className="badge green">Bonnes plantes voisines</span> {Array.from(new Set(report.amis.map(plantName))).join(', ')}
+            </p>
+          )}
+          {report.ennemis.length > 0 && (
+            <p style={{ margin: 0 }}>
+              <span className="badge danger">Plantes à éviter à côté</span> {Array.from(new Set(report.ennemis.map(plantName))).join(', ')}
+            </p>
+          )}
+        </div>
+      )}
+
+      {species && <MeasureSection plant={plant} species={species} name={plantName(plant)} />}
+
       <label className="field">
         <span>Notes</span>
         <textarea className="input" rows={3} value={plant.notes ?? ''} onChange={(e) => updatePlant(plant.id, { notes: e.target.value })} placeholder="Variété, où vous l’avez achetée, observations…" />
       </label>
 
       <div className="stack panel-actions">
-        <button className="btn" onClick={() => startMoving(plant.id)}>
-          <Icon name="move" size={16} /> Déplacer cette plante
-        </button>
         {!fiche && (
           <button className="btn" onClick={() => openScan('mesures', { kind: 'plant', plantId: plant.id })}>
             <Icon name="pin" size={16} /> Placer par mesures

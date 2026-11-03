@@ -434,3 +434,57 @@ describe('repères mémorisés (guide)', () => {
     expect(ui.getUi().guide.nudgeUntil - t0).toBe(7 * 86400000)
   })
 })
+
+describe('calques (modales, étapes, vues) et bouton Retour', () => {
+  it('Retour ferme le calque ouvert et laisse l’écran en place', async () => {
+    const { b, ui } = await load('#plantes')
+    ui.setUi({ tab: 'carte' })
+    const onPop = vi.fn()
+    ui.openLayer(onPop)
+    expect(b.length()).toBe(3)
+    b.back()
+    expect(onPop).toHaveBeenCalledTimes(1)
+    expect(ui.getUi().tab).toBe('carte')
+    b.back()
+    expect(ui.getUi().tab).toBe('plantes')
+  })
+
+  it('fermer le calque soi-même retire son entrée sans rien restituer', async () => {
+    const { b, ui } = await load('#plantes')
+    const onPop = vi.fn()
+    const id = ui.openLayer(onPop)
+    ui.closeLayer(id)
+    expect(onPop).not.toHaveBeenCalled()
+    expect(b.current().hash).toBe('#plantes')
+    expect(ui.getUi().tab).toBe('plantes')
+    b.back() // l'entrée initiale : rien avant
+    expect(ui.getUi().tab).toBe('plantes')
+  })
+
+  it('un changement d’écran pendant un calque remplace son entrée au lieu d’en ajouter une', async () => {
+    const { b, ui } = await load('#plantes')
+    const onPop = vi.fn()
+    const id = ui.openLayer(onPop)
+    const before = b.length()
+    ui.setUi({ tab: 'carte' })
+    expect(b.length()).toBe(before)
+    ui.closeLayer(id) // l'entrée n'est plus la sienne : on ne recule pas
+    expect(ui.getUi().tab).toBe('carte')
+    b.back()
+    expect(onPop).not.toHaveBeenCalled()
+    expect(ui.getUi().tab).toBe('plantes')
+  })
+
+  it('deux calques empilés se ferment un par un', async () => {
+    const { b, ui } = await load('#plantes')
+    const a = vi.fn()
+    const c = vi.fn()
+    ui.openLayer(a)
+    ui.openLayer(c)
+    b.back()
+    expect(c).toHaveBeenCalledTimes(1)
+    expect(a).not.toHaveBeenCalled()
+    b.back()
+    expect(a).toHaveBeenCalledTimes(1)
+  })
+})

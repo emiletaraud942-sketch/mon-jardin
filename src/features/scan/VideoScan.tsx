@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useWakeLock } from '../../components/useWakeLock'
 import { ErrorNote } from '../../components/ErrorNote'
 import { Icon } from '../../components/Icon'
 import { Modal } from '../../components/Modal'
@@ -30,8 +31,8 @@ const LIVE_EVERY_MS = 2000
 const LIVE_MAX_MS = 4 * 60 * 1000
 
 /** Ligne d'entrée dans l'écran « Scanner les plantes ». */
-export function VideoScanSection({ garden, onDone }: { garden: Garden; onDone: (firstId?: string) => void }) {
-  const [open, setOpen] = useState(false)
+export function VideoScanSection({ garden, onDone, autoOpen }: { garden: Garden; onDone: (firstId?: string) => void; autoOpen?: boolean }) {
+  const [open, setOpen] = useState(!!autoOpen)
   return (
     <>
       <button className="btn big" onClick={() => setOpen(true)}>
@@ -115,6 +116,9 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
     startedAt.current = Date.now()
     setStep('live')
   }
+
+  // L'écran reste allumé pendant le film.
+  useWakeLock(step === 'live')
 
   // Le flux est branché une fois l'écran « live » affiché.
   useEffect(() => {

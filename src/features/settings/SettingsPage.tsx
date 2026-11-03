@@ -2,11 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import type { SyncConflictError } from '../../lib/sync'
 import { ConfirmModal } from '../../components/ConfirmModal'
+import { SafetyCopyButton } from '../../components/StorageBanner'
 import { ErrorNote, TechDetails } from '../../components/ErrorNote'
 import { Fold } from '../../components/Fold'
 import { Icon } from '../../components/Icon'
+import { TextSizeButton } from '../../components/TextSizeButton'
 import { Segmented } from '../../components/Segmented'
 import { SavedNote, useFlash } from '../../components/useFlash'
+import { climateSummary } from '../../engine/climate'
 import { exportCurrentState, lastExportAt, REMIND_EVERY_DAYS } from '../../lib/backup'
 import { formatDay, frNumber } from '../../lib/format'
 import { friendlyError, type FriendlyError } from '../../lib/http'
@@ -17,7 +20,7 @@ import { readBackupFile } from '../../lib/security/import'
 import { getTheme, setTheme, THEME_LABEL, type Theme } from '../../lib/theme'
 import { getTextSize, setTextSize, TEXT_SIZE_LABEL, TEXT_SIZES, type TextSize } from '../../lib/textSize'
 import { showToast } from '../../lib/toast'
-import { restartOnboarding, setUi, useUi } from '../../lib/ui'
+import { openParcours, restartOnboarding, setUi, useUi } from '../../lib/ui'
 import { doyToLabel } from '../../lib/weather'
 import { lidarMessage, setLidarEnabled, useLidarScene } from '../../lib/useLidar'
 import { LIDAR_ATTRIBUTION } from '../../lib/lidar'
@@ -26,8 +29,11 @@ import { GardenCreator } from './GardenCreator'
 import { GardenDataBanner } from './GardenDataBanner'
 import { InstallCard } from '../../components/InstallButton'
 import { HelpSheet } from '../../components/HelpSheet'
-import { StepButton } from '../../components/StepButton'
+import { PlaceAction } from '../../components/PlaceAction'
 import { useProgress } from '../../components/useProgress'
+import { nextStep } from '../../lib/progress'
+import { isDemoGarden } from './demo'
+import { useTasks } from '../tasks/useTasks'
 import { InviteButton } from '../../components/InviteButton'
 import { PrivacyCard } from './PrivacyCard'
 import { hasConsent } from '../../lib/consent'
@@ -86,6 +92,7 @@ function GardenInfo({ garden }: { garden: Garden }) {
     }
   }
 
+  const climate = climateSummary(garden)
   const hasPhotos = plants.some((p) => p.photos.length > 0)
   const terrain = [garden.areaM2 ? `${frNumber(garden.areaM2, 0)} m²` : '', garden.altitudeM != null ? `altitude ${frNumber(garden.altitudeM, 0)} m` : ''].filter(Boolean).join(' · ')
 
@@ -104,6 +111,7 @@ function GardenInfo({ garden }: { garden: Garden }) {
             Nature du sol <SavedNote show={soilSaved} />
           </span>
           <select
+            id="garden-soil"
             className="input"
             value={garden.sol ?? ''}
             onChange={(e) => {
@@ -128,6 +136,7 @@ function GardenInfo({ garden }: { garden: Garden }) {
           Gel : {garden.lastFrostDoy ? `dernières gelées vers le ${doyToLabel(garden.lastFrostDoy)}` : 'dates inconnues'}
           {garden.firstFrostDoy ? `, premières vers le ${doyToLabel(garden.firstFrostDoy)}` : ''}
         </li>
+        {climate && <li>{climate}</li>}
         <li>
           {plants.length} plante{plants.length > 1 ? 's' : ''}
         </li>
@@ -300,14 +309,18 @@ function Backup() {
       {msg?.error && <ErrorNote error={msg.error} />}
       {msg?.text && (
         <p role="status" style={{ marginTop: 8 }}>
-          ✓ {msg.text}
+          <Icon name="check" size={16} /> {msg.text}
         </p>
       )}
       <details className="np-details">
-        <summary>Détails</summary>
+        <summary>Où ranger la sauvegarde ?</summary>
         <p className="small muted">Gardez-le en lieu sûr : ordinateur, clé USB, ou e-mail à vous-même.</p>
         <p className="small muted">Les photos ne sont pas dans la sauvegarde. Elles restent sur cet appareil.</p>
         {persistent === false && <p className="small muted">Si l’espace manque, cet appareil peut effacer vos données. Une sauvegarde les protège.</p>}
+        <div className="stack" style={{ gap: 6 }}>
+          <p className="small muted" style={{ margin: 0 }}>Avant un import ou une synchro, l’appli garde une copie de vos données sur cet appareil.</p>
+          <SafetyCopyButton className="btn" />
+        </div>
       </details>
       {pending && (
         <ImportDialog
@@ -387,7 +400,7 @@ function Sync() {
   const pull = () =>
     run(async (m) => {
       setConflict(undefined)
-      return (await m.pullSnapshot()) ? 'Votre copie en ligne est reprise sur cet appareil.' : 'Il n’y a pas encore de copie en ligne.'
+      return (await m.pullSnapshot()) ? 'Votre copie en ligne est reprise. Une copie de vos données actuelles est gardée sur cet appareil.' : 'Il n’y a pas encore de copie en ligne.'
     })
   const hasPhotos = getState().plants.some((p) => p.photos.length > 0)
 
@@ -454,7 +467,7 @@ function Sync() {
       {msg?.error && <ErrorNote error={msg.error} />}
       {msg?.text && (
         <p role="status" style={{ marginTop: 8 }}>
-          ✓ {msg.text}
+          <Icon name="check" size={16} /> {msg.text}
         </p>
       )}
       {pulling && (
@@ -557,11 +570,15 @@ function GardensCard({ garden, adding, setAdding, addRef }: { garden: Garden; ad
   )
 }
 
-/** Prochaine étape conseillée (ex-carte « Conseil » de l'accueil) et aide (ex-lien « Besoin d'aide ? »). */
+/** Prochaine étape conseillée (la même que sur l'accueil) et aide de l'écran. */
 function AdviceCard({ garden }: { garden: Garden }) {
   const progress = useProgress(garden)
+  const { tasks } = useTasks(garden)
   const [help, setHelp] = useState(false)
-  const tip = progress.next
+  const openTasks = tasks.filter((t) => !t.blockedBy && !t.done).length
+  const { guide } = useUi()
+  const tip = nextStep(progress, { demo: isDemoGarden(garden), openTasks, noTree: !!guide.noTree?.includes(garden.id) })
+  const refresh = useRefreshGarden(garden)
   return (
     <div className="card">
       <h2>Conseil et aide</h2>
@@ -569,16 +586,36 @@ function AdviceCard({ garden }: { garden: Garden }) {
         {tip && (
           <div className="next-step">
             <span className="small">
-              <span className="muted">Conseil :</span> <strong>{tip.label}</strong>
+              <span className="muted">Conseil :</span> <strong>{tip.title}</strong>
             </span>
-            <StepButton step={tip} garden={garden} />
+            {tip.kind === 'placer' ? (
+              <PlaceAction className="btn small">{tip.action}</PlaceAction>
+            ) : (
+              <button
+                className="btn small"
+                disabled={tip.kind === 'donnees' && refresh.busy}
+                onClick={() => {
+                  if (tip.kind === 'creer') openParcours('adresse')
+                  else if (tip.kind === 'taches') setUi({ tab: 'entretien' })
+                  else if (tip.kind === 'donnees') void refresh.refresh()
+                  else {
+                    const el = document.getElementById('garden-soil')
+                    el?.closest('details')?.setAttribute('open', '')
+                    el?.scrollIntoView({ block: 'center' })
+                    el?.focus()
+                  }
+                }}
+              >
+                {tip.action}
+              </button>
+            )}
           </div>
         )}
         <button className="btn" aria-haspopup="dialog" onClick={() => setHelp(true)}>
           Besoin d’aide ?
         </button>
       </div>
-      {help && <HelpSheet tab="accueil" onClose={() => setHelp(false)} />}
+      {help && <HelpSheet tab="reglages" onClose={() => setHelp(false)} />}
     </div>
   )
 }
@@ -614,6 +651,9 @@ export function SettingsPage({ garden }: { garden: Garden }) {
   return (
     <div className="page">
       <h1>Mon compte et réglages</h1>
+      <div className="settings-textsize">
+        <TextSizeButton />
+      </div>
       <div className="grid cols-2" style={{ alignItems: 'start' }}>
         <div className="stack" style={{ gap: 12 }}>
           <GardensCard garden={garden} adding={adding} setAdding={setAdding} addRef={addRef} />

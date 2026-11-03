@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Garden, Plant } from '../types'
-import { computeProgress, firstSteps, nextStep, suggestedMode, type ProgressOpts } from './progress'
+import { computeProgress, firstSteps, nextStep, suggestedMode, warmWord, type NextStepContext, type ProgressOpts } from './progress'
 
 const SPECIES: ProgressOpts['speciesById'] = {
   pommier: { strate: 'arbre-bas' },
@@ -127,7 +127,7 @@ describe('suggestedMode', () => {
 
 describe('nextStep : une seule prochaine étape', () => {
   const full = (): Garden => garden({ parcel: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }], buildings: [], sol: 'argileux' } as Partial<Garden>)
-  const ctx = { demo: false, openTasks: 0 }
+  const ctx: NextStepContext = { demo: false, openTasks: 0 }
   const next = (g: Garden, plants: Plant[], c = ctx) => nextStep(computeProgress(g, plants, opts()), c)
 
   it('jardin d’exemple : créer son vrai jardin, avant tout le reste', () => {
@@ -142,6 +142,13 @@ describe('nextStep : une seule prochaine étape', () => {
   it('un arbre placé : compte les plantes qui manquent pour arriver à 5', () => {
     expect(next(full(), [plant('pommier')])?.title).toBe('Placez 4 plantes de plus')
     expect(next(full(), [plant('pommier'), plant('tomate'), plant('tomate'), plant('tomate')])?.title).toBe('Placez 1 plante de plus')
+  })
+
+  it('« Je n’ai pas d’arbre » : le premier arbre est sauté, la suite est proposée', () => {
+    expect(next(full(), [], ctx)?.noTreeChoice).toBe(true)
+    const n = next(full(), [], { ...ctx, noTree: true })
+    expect(n?.title).toBe('Placez 5 plantes de plus')
+    expect(n?.noTreeChoice).toBeUndefined()
   })
 
   it('une plante sans arbre : le premier arbre reste proposé', () => {
@@ -159,5 +166,22 @@ describe('nextStep : une seule prochaine étape', () => {
   it('tout est fait et aucune tâche : rien à proposer', () => {
     const five = [plant('pommier'), plant('tomate'), plant('tomate'), plant('tomate'), plant('tomate')]
     expect(next(full(), five)).toBeUndefined()
+  })
+})
+
+describe('warmWord : un mot à la 1re et à la 5e plante', () => {
+  it('seulement à la première et à la cinquième plante en place', () => {
+    const list: Plant[] = []
+    const said: boolean[] = []
+    for (let i = 1; i <= 6; i++) {
+      list.push(plant('tomate'))
+      said.push(warmWord(list, 'g1') !== '')
+    }
+    expect(said).toEqual([true, false, false, false, true, false])
+    expect(warmWord(list.slice(0, 1), 'g1')).toContain('Première plante')
+    expect(warmWord(list.slice(0, 5), 'g1')).toContain('Cinq plantes')
+  })
+  it('les plantes prévues ne comptent pas', () => {
+    expect(warmWord([plant('tomate', { status: 'projet' })], 'g1')).toBe('')
   })
 })

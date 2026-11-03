@@ -645,9 +645,10 @@ label:focus-within:has(> input.sr-only) {
     flex-direction: column;
     gap: 3px;
     padding: 0;
-    font-size: calc(11 * var(--px));
-    line-height: normal;
-    white-space: nowrap;
+    font-size: min(calc(12 * var(--px)), 14px); /* 12 px au moins ; plafonné à 14 px pour que 5 noms tiennent à 360 px */
+    line-height: 1.15;
+    white-space: normal;
+    overflow-wrap: break-word;
     text-align: center;
     flex: 1;
     align-items: center;
@@ -658,6 +659,9 @@ label:focus-within:has(> input.sr-only) {
     background: transparent;
   }
   .navbtn {
+    color: var(--muted); /* noms des onglets : 4,9:1 ; les icônes inactives gardent le gris de la maquette */
+  }
+  .navbtn:not([aria-current='page']) svg {
     color: var(--tab-off);
   }
   .navbtn:hover,
@@ -3161,7 +3165,7 @@ html[data-immersive] body {
   user-select: none;
   -webkit-touch-callout: none;
 }
-@media (max-width: 760px), (pointer: coarse) and (max-height: 500px) {
+@media (max-width: 760px), (pointer: coarse) {
   html[data-immersive] .app > .main {
     position: fixed;
     inset: 0;
@@ -3943,24 +3947,21 @@ html[data-immersive] body {
 
 /* ---------- À faire : tuiles météo et cartes de tâches ---------- */
 .wx-days {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)); /* 7 jours en deux lignes sur téléphone : rien à faire défiler */
   gap: 10px;
   list-style: none;
-  margin: 14px -14px -14px;
-  padding: 4px 14px 14px;
-  overflow-x: auto;
-  scroll-snap-type: x proximity;
-  scroll-padding-left: 14px;
-  scrollbar-width: none;
+  margin: 14px 0 0;
+  padding: 0;
 }
-.wx-days::-webkit-scrollbar {
-  display: none;
+@media (min-width: 640px) {
+  .wx-days {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
 }
 .wx-day {
   position: relative; /* le texte caché pour les lecteurs d'écran reste dans la tuile */
-  flex: 0 0 calc((100% - 30px) / 4);
-  min-width: 64px;
-  scroll-snap-align: start;
+  min-width: 0;
   padding: 10px 0;
   border-radius: 20px;
   background: var(--surface);
@@ -3969,14 +3970,11 @@ html[data-immersive] body {
   box-shadow: var(--shadow-soft);
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
 .wx-day .wx-d {
   font-size: calc(12 * var(--px));
   line-height: normal;
-  opacity: 0.7; /* comme la maquette : vert du titre à 70 % (3,9:1 sur blanc : choix de fidélité) */
-}
-.wx-day:nth-child(4n) {
-  margin-right: 14px; /* la 5e tuile n'apparaît pas à moitié : on la découvre en faisant glisser */
 }
 .wx-day strong {
   margin: 2px 0;
@@ -3986,13 +3984,13 @@ html[data-immersive] body {
 .wx-day .wx-w {
   font-size: calc(12 * var(--px));
   line-height: normal;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
 .wx-day.hot {
   background: var(--btn-green);
   color: var(--on-btn-green);
-}
-.wx-day.hot .wx-d {
-  opacity: 0.7;
 }
 .tcards {
   display: flex;
@@ -4052,7 +4050,7 @@ html[data-immersive] body {
   line-height: normal;
   position: relative;
   flex: none;
-  height: 42px; /* pastille de 42 px comme la maquette ; la zone tactile fait 44 px (::after) */
+  height: 44px; /* cible de 44 px (la maquette dessine 42 px) */
   padding: 0 18px;
   border: 0;
   border-radius: 22px;
@@ -4487,4 +4485,69 @@ html[data-immersive] body {
 }
 .placing-banner .placing-dist {
   font-size: calc(13 * var(--px));
+}
+
+/* À faire : groupes « Urgent » et « Cette semaine », puis « Voir tout » */
+.afaire-group-title {
+  margin: 20px 0 0;
+  font-size: calc(18 * var(--px));
+  color: var(--title);
+}
+.afaire-group .tcards {
+  margin-top: 10px;
+}
+.afaire-all {
+  margin-top: 14px;
+  min-height: 44px;
+  align-self: flex-start;
+}
+.tcard-emoji {
+  font-size: calc(30 * var(--px));
+  line-height: 1;
+}
+
+/* Aides au placement : « Viser » seul d'abord, les autres sous « Aides ». */
+.map-aid-more {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.map-aid .aim-first {
+  gap: 6px;
+}
+
+/* Un message est affiché : la page garde de la place en bas, pour que « Fait » reste atteignable. */
+html[data-toast] .page {
+  padding-bottom: calc(112px + env(safe-area-inset-bottom));
+}
+
+/* Ordinateur (≥ 761 px) : les sous-onglets (Carte / Plantes / Vue 3D, Où planter ? / Catalogue) sont dans la colonne du contenu,
+   plus au-dessus de la barre latérale, qui monte jusque sous l'en-tête. */
+@media (min-width: 761px) {
+  .app > .modebar {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .app > .sidenav {
+    grid-column: 1;
+    grid-row: 2 / 4;
+  }
+  .app > .main {
+    grid-column: 2;
+    grid-row: 3;
+  }
+}
+.map-aid-more .map-aid-row {
+  flex-wrap: wrap;
+}
+.map-aid-more .map-aid-row .btn.small {
+  flex: 1 1 40%;
+  white-space: normal;
+  line-height: 1.15;
+}
+
+/* Ligne choisie (liste des plantes, catalogue) : fond teinté, donc gris plus foncé pour garder 4,5:1. */
+.plant-row[aria-current='true'],
+.catalogue-list .btn[aria-current='true'] {
+  --muted: var(--muted-2);
 }

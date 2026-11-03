@@ -30,6 +30,9 @@ const PATHS: Record<string, string> = {
   snow: 'M12 3v18M4.5 7.5l15 9M19.5 7.5l-15 9',
   back: 'M15 5l-7 7 7 7',
   forward: 'M9 5l7 7-7 7',
+  alert: 'M12 3.5 2.5 20h19ZM12 10v4.5M12 17.2v.01',
+  bell: 'M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15ZM10 21h4',
+  mountain: 'M3 19 9.5 7l4 7 2.5-4 5 9Z',
   move: 'M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20',
 }
 

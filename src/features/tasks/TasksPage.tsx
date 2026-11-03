@@ -12,7 +12,7 @@ import {
 import { enableNotifications, notificationsSupported } from "../../lib/notify";
 import { showToast } from "../../lib/toast";
 import { uid } from "../../lib/geo";
-import { setUi } from "../../lib/ui";
+import { openHelp, setUi } from "../../lib/ui";
 import { MONTH_NAMES } from "../../engine/calendar";
 import { waterBalance, yearPlan } from "../../engine/tasks";
 import type {
@@ -26,7 +26,10 @@ import { useTasks } from "./useTasks";
 import { doneOnLabel, doneTaskLabel } from "./taskLabel";
 import { rainWord, weatherSentences } from "./weatherText";
 import "../../styles/novice-pages.css";
-import { PlantPot, PlantScene } from "../../components/illustrations";
+import { PlantScene } from "../../components/illustrations";
+
+/** Tâches visibles avant « Voir tout ». */
+const TASKS_SHOWN = 3;
 
 /** Types de tâches dont la faisabilité dépend de la météo : grisés tant qu'elle n'est pas chargée. */
 const WEATHER_TYPES = new Set<TaskType>([
@@ -56,10 +59,18 @@ function WeatherDays({ weather }: { weather: WeatherBundle }) {
             <span className="wx-d">
               {label.charAt(0).toUpperCase() + label.slice(1)}
             </span>
-            <strong>{Math.round(d.tMax)}°</strong>
-            <span className="wx-w">{frost ? "❄ Gel" : rainWord(d.rainMm)}</span>
+            <strong>{Math.round(frost ? d.tMin : d.tMax)}°</strong>
+            <span className="wx-w">
+              {frost ? (
+                <>
+                  <Icon name="snow" size={14} /> Gel
+                </>
+              ) : (
+                rainWord(d.rainMm)
+              )}
+            </span>
             <span className="sr-only">
-              , {Math.round(d.tMin)} à {Math.round(d.tMax)} °C
+              , {Math.round(d.tMin)} à {Math.round(d.tMax)} °C{frost ? ", gel : température minimale affichée" : ""}
             </span>
           </li>
         );
@@ -77,7 +88,7 @@ function WeatherMore({ weather }: { weather: WeatherBundle }) {
         <p key={s}>{s}</p>
       ))}
       <details className="np-details">
-        <summary>Détails météo</summary>
+        <summary>Chiffres de la météo</summary>
         <p className="small" style={{ margin: 0 }}>
           Pluie tombée en 7 jours :{" "}
           {wb.rain7.toLocaleString("fr-FR", { maximumFractionDigits: 0 })} mm.
@@ -140,7 +151,7 @@ function TaskItem({
       }
     >
       <div className="tcard-tile" aria-hidden>
-        <PlantPot size={54} />
+        <span className="tcard-emoji">{TASK_ICON[task.type]}</span>
       </div>
       <div className="tcard-body">
         <strong className="tcard-title">{task.title}</strong>
@@ -178,7 +189,7 @@ function TaskItem({
         Fait
       </button>
       <details className="tcard-more np-details">
-        <summary>Détails</summary>
+        <summary>Comment faire ?</summary>
         <div className="small">{task.howTo}</div>
         {task.tool && <div className="small muted">Outil : {task.tool}.</div>}
         {task.detail && <div className="small muted">{task.detail}</div>}
@@ -215,8 +226,9 @@ function TaskItem({
 
 function YearPlan({ garden }: { garden: Garden }) {
   const plants = useGardenPlants(garden.id);
-  const plan = yearPlan(plants, SPECIES_BY_ID);
-  const current = new Date().getMonth() + 1;
+  const today = new Date();
+  const plan = yearPlan(plants, SPECIES_BY_ID, today);
+  const current = today.getMonth() + 1;
   return (
     <div className="grid cols-3">
       {plan.map((m) => (
@@ -265,7 +277,9 @@ export function TasksPage({ garden }: { garden: Garden }) {
   const [notif, setNotif] = useState(
     notificationsSupported() ? Notification.permission : "denied",
   );
-  const open = tasks.filter((t) => !t.blockedBy);
+  const open = [...tasks.filter((t) => !t.blockedBy)].sort((a, b) => Number(b.priority === "haute") - Number(a.priority === "haute"));
+  const [showAll, setShowAll] = useState(false);
+  const shown = showAll ? open : open.slice(0, TASKS_SHOWN);
   const blocked = tasks.filter((t) => t.blockedBy);
   const recent = done
     .filter((d) => Date.now() - new Date(d.doneAt).getTime() < 14 * 86400000)
@@ -278,6 +292,7 @@ export function TasksPage({ garden }: { garden: Garden }) {
         big
         compact
         home
+        onHelp={openHelp}
         kicker={
           view === "semaine" ? `Semaine du ${mondayLabel()}` : "Mois par mois"
         }
@@ -328,24 +343,38 @@ export function TasksPage({ garden }: { garden: Garden }) {
               </div>
             ) : (
               <>
-                <h2 className="sr-only">À faire maintenant ({open.length})</h2>
                 {open.length === 0 && (
                   <p className="muted afaire-none">
                     Rien d'urgent : profitez du jardin.
                   </p>
                 )}
-                <ul className="tcards">
-                  {open.map((t) => (
-                    <TaskItem
-                      key={t.key}
-                      garden={garden}
-                      task={t}
-                      weatherPending={
-                        !weather && weatherLoading && WEATHER_TYPES.has(t.type)
-                      }
-                    />
+                {[
+                  { id: "urgent", title: "Urgent", list: shown.filter((t) => t.priority === "haute") },
+                  { id: "semaine", title: "Cette semaine", list: shown.filter((t) => t.priority !== "haute") },
+                ]
+                  .filter((g) => g.list.length > 0)
+                  .map((g) => (
+                    <section key={g.id} className="afaire-group" aria-labelledby={"grp-" + g.id}>
+                      <h2 id={"grp-" + g.id} className="afaire-group-title">
+                        {g.title} ({g.list.length})
+                      </h2>
+                      <ul className="tcards">
+                        {g.list.map((t) => (
+                          <TaskItem
+                            key={t.key}
+                            garden={garden}
+                            task={t}
+                            weatherPending={!weather && weatherLoading && WEATHER_TYPES.has(t.type)}
+                          />
+                        ))}
+                      </ul>
+                    </section>
                   ))}
-                </ul>
+                {open.length > TASKS_SHOWN && (
+                  <button className="btn afaire-all" aria-expanded={showAll} onClick={() => setShowAll(!showAll)}>
+                    {showAll ? "Voir moins" : `Voir tout (${open.length})`}
+                  </button>
+                )}
                 {blocked.length > 0 && (
                   <details className="later">
                     <summary>
@@ -391,7 +420,7 @@ export function TasksPage({ garden }: { garden: Garden }) {
                   style={{ justifyContent: "space-between" }}
                 >
                   <span>
-                    ✓{" "}
+                    <Icon name="check" size={16} />{" "}
                     {doneTaskLabel(
                       d.taskKey,
                       (id) => SPECIES_BY_ID[id]?.nomCommun,
@@ -423,7 +452,9 @@ export function TasksPage({ garden }: { garden: Garden }) {
                 Les rappels ne marchent pas sur cet appareil.
               </p>
             ) : notif === "granted" ? (
-              <p className="small">🔔 Les rappels sont activés.</p>
+              <p className="small">
+                <Icon name="bell" size={16} /> Les rappels sont activés.
+              </p>
             ) : notif === "denied" ? (
               <p className="small muted">
                 Les rappels sont bloqués. Autorisez les notifications dans les
@@ -436,7 +467,7 @@ export function TasksPage({ garden }: { garden: Garden }) {
                   setNotif((await enableNotifications()) ? "granted" : "denied")
                 }
               >
-                🔔 Me prévenir quand il y a du travail
+                <Icon name="bell" size={18} /> Me prévenir quand il y a du travail
               </button>
             )}
           </div>

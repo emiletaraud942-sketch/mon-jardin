@@ -31,6 +31,7 @@ export function useRefreshGarden(garden: Garden) {
         altitudeM: g.altitudeM,
         lastFrostDoy: g.lastFrostDoy,
         firstFrostDoy: g.firstFrostDoy,
+        ...(g.climate ? { climate: g.climate } : {}),
       })
     } finally {
       running.current = false

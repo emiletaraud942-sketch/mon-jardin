@@ -4,6 +4,7 @@ import { noteWelcomed, setUi } from '../../lib/ui'
 import { INITIAL_STEPS, type Step } from '../settings/createGarden'
 import { StepList } from '../settings/GardenCreator'
 import { createDemoGarden } from './create'
+import { TextSizeButton } from '../../components/TextSizeButton'
 
 const SLIDES = [
   { title: 'PermaJardin', kicker: 'Votre jardin, pas à pas', text: 'Voyez votre jardin, placez vos plantes et sachez quoi faire chaque semaine.' },
@@ -78,6 +79,7 @@ export function Welcome({ onStart }: { onStart: () => void }) {
   return (
     <div className="parcours welcome">
       <div className="parcours-body welcome-body" onTouchStart={(e) => (touchX.current = e.touches[0].clientX)} onTouchEnd={(e) => swipe(e.changedTouches[0].clientX)}>
+        <TextSizeButton />
         <h1 tabIndex={-1}>{slide.title}</h1>
         <p className="welcome-kicker">{slide.kicker}</p>
         <Art i={i} />

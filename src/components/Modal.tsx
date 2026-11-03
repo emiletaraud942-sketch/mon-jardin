@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { Icon } from './Icon'
+import { closeLayer, openLayer } from '../lib/ui'
 
 /**
  * Boîte de dialogue native (`<dialog>`) : piège le focus, se ferme avec Échap, rend le focus à l'élément
@@ -16,7 +17,10 @@ export function Modal({ title, onClose, children, sheet, full }: { title: string
     const d = ref.current
     const opener = document.activeElement as HTMLElement | null
     if (d && !d.open) d.showModal()
+    // Retour (Android) ferme la boîte au lieu de quitter l'écran.
+    const layer = openLayer(() => ref.current?.close())
     return () => {
+      closeLayer(layer)
       // Le démontage retire le <dialog> du DOM : on rend le focus à l'élément d'origine.
       if (opener && opener.isConnected && typeof opener.focus === 'function') opener.focus()
     }

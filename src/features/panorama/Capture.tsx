@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useWakeLock } from '../../components/useWakeLock'
 import { Icon } from '../../components/Icon'
 import { uid } from '../../lib/geo'
 import { getPhoto, savePhoto } from '../../lib/photos'
@@ -67,6 +68,9 @@ export function Capture({ garden, spot, redoId }: { garden: Garden; spot: XY; re
     },
     [stopCamera],
   )
+
+  // L'écran reste allumé pendant la prise de vue.
+  useWakeLock(phase === 'live')
 
   // Branche le flux dès que l'écran de prise de vue est affiché.
   useEffect(() => {

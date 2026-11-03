@@ -113,6 +113,8 @@ export interface NextStep {
   title: string
   text: string
   action: string
+  /** Cette étape peut être sautée par « Je n'ai pas d'arbre ». */
+  noTreeChoice?: boolean
 }
 
 export interface NextStepContext {
@@ -120,6 +122,8 @@ export interface NextStepContext {
   demo: boolean
   /** Tâches de la semaine pas encore faites. */
   openTasks: number
+  /** L'utilisateur a dit « Je n'ai pas d'arbre » : l'étape du premier arbre est sautée. */
+  noTree?: boolean
 }
 
 /**
@@ -130,8 +134,8 @@ export interface NextStepContext {
 export function nextStep(p: Progress, ctx: NextStepContext): NextStep | undefined {
   if (ctx.demo) return { kind: 'creer', title: 'Créez votre vrai jardin', text: 'Vous visitez un jardin d’exemple. Tapez votre adresse pour avoir le vôtre.', action: 'Commencer' }
   const open = (id: StepId) => p.steps.find((s) => s.id === id && !s.done)
-  if (open('premier-arbre')) {
-    return { kind: 'placer', title: 'Placez votre premier arbre', text: 'Les grands arbres font de l’ombre : placez-les d’abord.', action: 'Ajouter une plante' }
+  if (open('premier-arbre') && !ctx.noTree) {
+    return { kind: 'placer', title: 'Placez votre premier arbre', text: 'Les grands arbres font de l’ombre : placez-les d’abord.', action: 'Ajouter une plante', noTreeChoice: true }
   }
   if (open('cinq-plantes')) {
     const left = Math.max(1, PLANTS_GOAL - p.placedCount)
@@ -143,4 +147,12 @@ export function nextStep(p: Progress, ctx: NextStepContext): NextStep | undefine
     return { kind: 'taches', title: ctx.openTasks === 1 ? '1 chose à faire cette semaine' : `${ctx.openTasks} choses à faire cette semaine`, text: 'Cochez-les au fur et à mesure.', action: 'Voir la liste' }
   }
   return undefined
+}
+
+/** Phrase discrète à la 1re et à la 5e plante en place du jardin (rien d'autre, jamais de bruit). */
+export function warmWord(plants: Plant[], gardenId: string): string {
+  const n = plants.filter((p) => p.gardenId === gardenId && p.status === 'en-place').length
+  if (n === 1) return ' Première plante : votre jardin est lancé.'
+  if (n === PLANTS_GOAL) return ' Cinq plantes : votre jardin prend forme.'
+  return ''
 }

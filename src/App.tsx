@@ -9,6 +9,7 @@ import { SubTabs } from './components/SubTabs'
 import { StorageBanner } from './components/StorageBanner'
 import { ToastHost } from './components/Toast'
 import { UpdateBanner } from './components/UpdateBanner'
+import { OfflineChip } from './components/OfflineChip'
 import { consumeExportReminder, exportCurrentState } from './lib/backup'
 import { getLoadWarnings, getState, useActiveGarden, useGardenPlants, useStore } from './lib/store'
 import { showToast } from './lib/toast'
@@ -36,6 +37,8 @@ import { useConsents } from './lib/consent'
 import { InviteButton } from './components/InviteButton'
 import { useScanUi } from './features/scan/scanUi'
 import { usePanoUi } from './features/panorama/panoUi'
+import { Garden3DGate } from './features/garden3d/Garden3DGate'
+import { preload3d } from './features/garden3d/preload3d'
 // En dernier : harmonisation Leafora (surcharge les feuilles de style des écrans ci-dessus), puis la navigation du téléphone (chantier D).
 import './styles/leafora.css'
 import './styles/mobile-nav.css'
@@ -54,7 +57,7 @@ const Loading = ({ label }: { label: string }) => (
 )
 
 /** Écrans qui, sur téléphone, ont l'en-tête minimal (titre en serif et une seule action : le profil, 52 px) à la place de la barre du haut.
- *  Plus de petite phrase ni de « ? » : l'aide est dans la feuille du jardin, les options de la carte et Réglages. */
+ *  Le « ? » ouvre l'aide de l'écran courant. */
 const PHEAD_TABS: Tab[] = ['carte', '3d', 'plantes', 'planter', 'catalogue', 'voisins', 'reglages']
 
 const RAYON_ICON: Record<Rayon, string> = { jardin: 'map', afaire: 'check', planter: 'leaf', voisins: 'users' }
@@ -118,6 +121,9 @@ export function App() {
     }
     // Une seule fois par chargement : plantCount ne doit pas relancer le choix.
   }, [loaded, gardenId]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Précharge la vue 3D quand le navigateur est inactif, une fois le jardin chargé.
+  const hasGarden = !!garden
+  useEffect(() => (loaded && hasGarden ? preload3d() : undefined), [loaded, hasGarden])
   // Mémorise les écrans déjà ouverts (alimente la jauge de conseil de l'accueil).
   useEffect(() => {
     if (loaded && gardenId) noteVisit(tab, gardenId)
@@ -216,7 +222,7 @@ export function App() {
       </header>
       {phead && (
         <div className="phead-slot">
-          <PageHead title={pheadTitle[tab]} compact home={tab !== 'reglages'} current={tab === 'reglages'} />
+          <PageHead title={pheadTitle[tab]} compact home={tab !== 'reglages'} current={tab === 'reglages'} onHelp={openHelp} />
         </div>
       )}
       <div className="modebar">
@@ -264,9 +270,11 @@ export function App() {
           )}
           {tab === '3d' && (
             <ErrorBoundary inline resetKey={tab}>
-              <Suspense fallback={<Loading label="Chargement de la Vue 3D…" />}>
-                <View3D garden={garden} />
-              </Suspense>
+              <Garden3DGate>
+                <Suspense fallback={<Loading label="Chargement de la Vue 3D…" />}>
+                  <View3D garden={garden} />
+                </Suspense>
+              </Garden3DGate>
             </ErrorBoundary>
           )}
           {tab === 'plantes' && <PlantsPage garden={garden} />}
@@ -281,6 +289,7 @@ export function App() {
           )}
         </ErrorBoundary>
       </main>
+      <OfflineChip />
       <div className="overlay-stack">
         <UpdateBanner />
         <StorageBanner />

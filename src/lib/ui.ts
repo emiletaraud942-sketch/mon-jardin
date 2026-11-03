@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react'
+import { useEffect, useRef, useSyncExternalStore } from 'react'
 import type { Category, XY } from '../types'
 import type { LegalId } from './legal'
 import { neighborsEnabled } from './neighbors/enabled'
@@ -71,6 +71,8 @@ export interface GuideState {
   /** Ids des jardins dont la vue 3D / l'écran Entretien ont déjà été ouverts. */
   opened3d: string[]
   openedEntretien: string[]
+  /** Ids des jardins où l'utilisateur a dit « Je n'ai pas d'arbre » (la prochaine étape passe à la suivante). */
+  noTree?: string[]
   /** Avancement du parcours d'accueil. `undefined` : rien d'enregistré, l'état de départ est déduit des jardins et des plantes. */
   onboarding?: OnboardingState
 }
@@ -92,6 +94,7 @@ function readGuide(): GuideState {
       opened3d: ids(raw.opened3d),
       openedEntretien: ids(raw.openedEntretien),
       onboarding: parseOnboarding(raw.onboarding),
+      ...(Array.isArray(raw.noTree) ? { noTree: ids(raw.noTree) } : {}),
     }
   } catch {
     return { ...DEFAULT_GUIDE }
@@ -180,6 +183,8 @@ interface NavSnap {
   speciesId?: string
 }
 interface HistoryState {
+  /** Identifiant du calque (modale, étape du parcours, vue Voisins) ouvert par cette entrée. */
+  layer?: string
   nav: NavSnap
   /** Entrée créée par l'ouverture d'une fiche plante (sans changer d'onglet) : le bouton Fermer peut revenir en arrière. */
   sheetOnly?: boolean
@@ -244,7 +249,11 @@ function syncHistory(prev: UiState, next: UiState, forcePush: boolean) {
   const tabChanged = a.tab !== b.tab
   const opened = !a.selectedPlantId && !!b.selectedPlantId
   const state: HistoryState = { nav: b, sheetOnly: opened && !tabChanged ? true : undefined }
-  if (tabChanged || opened || forcePush) history.pushState(state, '', '#' + b.tab)
+  // L'entrée courante est celle d'une modale ou d'une étape (calque) : on la remplace, sinon Retour referait un tour pour rien.
+  if ((tabChanged || opened || forcePush) && readState()?.layer) {
+    layers.length = 0
+    history.replaceState(state, '', '#' + b.tab)
+  } else if (tabChanged || opened || forcePush) history.pushState(state, '', '#' + b.tab)
   else history.replaceState({ nav: b, sheetOnly: readState()?.sheetOnly && b.selectedPlantId ? true : undefined } satisfies HistoryState, '', '#' + b.tab)
 }
 
@@ -268,6 +277,22 @@ export function setUi(patch: Partial<Omit<UiState, 'guide'>>, opts: { push?: boo
 
 // Bouton Retour (Android, navigateur) : on restitue l'écran mémorisé dans l'entrée d'historique.
 window.addEventListener('popstate', (e) => {
+  // Retour silencieux : un calque s'est fermé tout seul (on a retiré son entrée), rien à restituer.
+  if (silentBack && Date.now() < silentUntil) {
+    silentBack = false
+    return
+  }
+  // Retour sur une entrée plus basse que des calques ouverts : on ferme ces calques (modale, étape, vue) et rien d'autre.
+  if (layers.length > 0) {
+    const cur = (e.state as HistoryState | null)?.layer
+    let closed = false
+    while (layers.length > 0 && layers[layers.length - 1].id !== cur) {
+      const top = layers.pop()!
+      closed = true
+      top.onPop()
+    }
+    if (closed) return
+  }
   const s = (e.state as HistoryState | null)?.nav
   const tab = s?.tab && TABS.includes(s.tab) && tabAvailable(s.tab) ? s.tab : parseHash(location.hash) ?? 'accueil'
   let next: UiState = { ...ui, tab, rayon: rayonOfTab(tab) ?? ui.rayon, parcours: undefined, selectedPlantId: s?.selectedPlantId, speciesId: s ? s.speciesId : ui.speciesId }
@@ -276,6 +301,49 @@ window.addEventListener('popstate', (e) => {
   ui = next
   emit()
 })
+
+// ---------- Calques : modales, étapes du parcours, vues Voisins ----------
+// Chacun ajoute une entrée d'historique : le bouton Retour d'Android le ferme au lieu de quitter l'écran.
+interface Layer {
+  id: string
+  onPop: () => void
+}
+const layers: Layer[] = []
+let layerSeq = 0
+let silentBack = false
+let silentUntil = 0
+
+/** Ouvre un calque. `onPop` est appelée si l'utilisateur fait Retour. Renvoie l'identifiant à donner à `closeLayer`. */
+export function openLayer(onPop: () => void): string {
+  const id = 'l' + ++layerSeq
+  const cur = readState()
+  history.pushState({ nav: cur?.nav ?? snap(ui), layer: id } satisfies HistoryState, '', location.hash || '#' + ui.tab)
+  layers.push({ id, onPop })
+  return id
+}
+
+/** Ferme un calque ouvert par `openLayer` (sans passer par Retour) : retire son entrée d'historique si elle est encore la dernière. */
+export function closeLayer(id: string) {
+  const i = layers.findIndex((l) => l.id === id)
+  if (i < 0) return
+  layers.splice(i, 1)
+  if (readState()?.layer === id) {
+    silentBack = true
+    silentUntil = Date.now() + 600
+    history.back()
+  }
+}
+
+/** Ouvre un calque tant que `active` est vrai (étape du parcours, vue Voisins) ; `onPop` ramène à l'écran d'avant. */
+export function useBackLayer(active: boolean, onPop: () => void) {
+  const ref = useRef(onPop)
+  ref.current = onPop
+  useEffect(() => {
+    if (!active) return
+    const id = openLayer(() => ref.current())
+    return () => closeLayer(id)
+  }, [active])
+}
 
 /** Ouvre un rayon (barre du bas) : son écran d'arrivée, sauf si l'on y est déjà. */
 export function goRayon(rayon: Rayon) {

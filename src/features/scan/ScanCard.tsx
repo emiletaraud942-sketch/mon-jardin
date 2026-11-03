@@ -20,8 +20,9 @@ export function ScanCard({ garden }: { garden: Garden }) {
           <button
             className="btn"
             onClick={() => {
+              const before = garden.calibration
               updateGarden(garden.id, { calibration: undefined })
-              showToast({ message: 'Recalage effacé.' })
+              showToast({ message: 'Recalage effacé.', actionLabel: 'Annuler', onAction: () => updateGarden(garden.id, { calibration: before }) })
             }}
           >
             Effacer le recalage

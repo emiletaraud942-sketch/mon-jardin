@@ -11,6 +11,10 @@ import { aspectLabel, slopeAt } from '../../lib/terrain'
 import { doyToLabel } from '../../lib/weather'
 import { obstaclesFor, seasonalSunHours } from '../../engine/sun'
 import { recommendSpecies } from '../../engine/planting'
+import { plainReason } from '../../engine/plain'
+import { InvasiveBadge, RiskNote } from '../../components/RiskNote'
+import { Icon } from '../../components/Icon'
+import { MetroNote } from '../../components/MetroNote'
 import { MONTH_NAMES, whatToSowNow } from '../../engine/calendar'
 import type { Category, Garden, Month, Species, XY } from '../../types'
 import { placePlant } from '../map/placing'
@@ -50,7 +54,7 @@ function SowNow({ garden }: { garden: Garden }) {
         </select>
       </div>
       <details className="np-details">
-        <summary>Détails</summary>
+        <summary>Dates de gel chez vous</summary>
         {garden.lastFrostDoy ? (
           <p className="small muted">
             Chez vous, dernières gelées vers le {doyToLabel(garden.lastFrostDoy)}
@@ -101,16 +105,16 @@ function BestForSpot({ garden }: { garden: Garden }) {
     <>
       <div className="stack" style={{ gap: 6, margin: '8px 0' }}>
         <div>
-          ☀ {sunPhrase(analysis.sun.moyenne)}
+          <span className="np-line-ico"><Icon name="sun" size={18} /></span> {sunPhrase(analysis.sun.moyenne)}
         </div>
         {analysis.slope && (
           <div>
-            ⛰ {slopePhrase(analysis.slope.pct)}
+            <span className="np-line-ico"><Icon name="mountain" size={18} /></span> {slopePhrase(analysis.slope.pct)}
             {analysis.slope.pct > 2 ? `, orientée ${aspectLabel(analysis.slope.aspectDeg)}` : ''}
           </div>
         )}
         <details className="np-details">
-          <summary>Détails du soleil</summary>
+          <summary>Heures de soleil par saison</summary>
           <p className="small muted" style={{ margin: 0 }}>
             En juin : {analysis.sun.juin.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} h. En mars : {analysis.sun.mars.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} h. En décembre :{' '}
             {analysis.sun.decembre.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} h. Ombre des maisons voisines et des arbres comprise.
@@ -151,25 +155,27 @@ function BestForSpot({ garden }: { garden: Garden }) {
               <div className="row" style={{ justifyContent: 'space-between' }}>
                 <button className="btn ghost" style={{ padding: '0 4px' }} onClick={() => openSpecies(r.species.id)}>
                   <span className="dot" style={{ background: r.species.couleurAccent ?? r.species.couleur }} /> {r.species.nomCommun}
+                  <InvasiveBadge species={r.species} />
                 </button>
                 <span className={'np-fit ' + (label.tone === 'green' ? 'green' : label.tone === 'danger' ? 'danger' : '')}>
                   <span aria-hidden>{label.icon}</span> {label.text}
                 </span>
               </div>
-              {r.warnings.length > 0 && <div className="small warn-text">Attention : {r.warnings.join(' · ')}</div>}
+              <RiskNote species={r.species} />
+              {r.warnings.length > 0 && <div className="small warn-text">Attention : {r.warnings.map(plainReason).join(' · ')}</div>}
               <div className="row" style={{ marginTop: 6 }}>
                 <button className="btn" onClick={() => placePlant(garden, r.species.id, spot, 'projet', { tab: 'carte' })}>
                   Prévoir ici
                 </button>
               </div>
               <details className="np-details">
-                <summary>Pourquoi ?</summary>
+                <summary>Pourquoi ce score ?</summary>
                 <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>
                   {pros.map((f) => (
-                    <li key={'p' + f.label}>Pour : {f.label}</li>
+                    <li key={'p' + f.label}>Pour : {plainReason(f.label)}</li>
                   ))}
                   {cons.map((f) => (
-                    <li key={'c' + f.label}>Contre : {f.label}</li>
+                    <li key={'c' + f.label}>Contre : {plainReason(f.label)}</li>
                   ))}
                   {pros.length + cons.length === 0 && <li>Rien de particulier.</li>}
                 </ul>
@@ -222,7 +228,7 @@ function ModelHint({ garden }: { garden: Garden }) {
         <strong>Plus votre jardin est décrit, plus le conseil est précis.</strong>
       </p>
       <details className="np-details">
-        <summary>Détails</summary>
+        <summary>Pourquoi décrire le jardin ?</summary>
         <p className="small" style={{ margin: 0 }}>
           {noParcel ? 'Sans le contour du terrain, les distances aux voisins ne sont pas vérifiées. ' : ''}
           {noPlants ? 'Sans plantes placées, le soleil ignore l’ombre de vos arbres. ' : ''}
@@ -240,6 +246,7 @@ export function PlantingPage({ garden }: { garden: Garden }) {
   return (
     <div className="page np-page">
       <h1>Où planter ?</h1>
+      <MetroNote garden={garden} />
       <ModelHint garden={garden} />
       <div className="grid cols-2" style={{ alignItems: 'start' }}>
         <BestForSpot garden={garden} />

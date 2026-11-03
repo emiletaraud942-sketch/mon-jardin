@@ -9,7 +9,7 @@ import { useRefreshGarden } from '../settings/useRefreshGarden'
 import { badgeAria, badgeLabel } from '../../lib/neighbors/news'
 import { activeSteps, chezTitle, currentStep, settledCount, shouldShowRoute, stepStatus, STEP_HINT, STEP_TITLE, type OnboardingStepId } from '../../lib/onboarding'
 import { useGardenPlants } from '../../lib/store'
-import { goRayon, hideOnboardingRoute, openParcours, setUi, visibleRayons, RAYON_LABEL, type Rayon } from '../../lib/ui'
+import { goRayon, hideOnboardingRoute, openHelp, openParcours, setGuide, setUi, useUi, visibleRayons, RAYON_LABEL, type Rayon } from '../../lib/ui'
 import type { Garden } from '../../types'
 import { useOnboarding } from './useOnboarding'
 
@@ -100,7 +100,9 @@ function RouteCard({ garden }: { garden: Garden }) {
 function NextStepCard({ garden, openTasks }: { garden: Garden; openTasks: number }) {
   const progress = useProgress(garden)
   const refresh = useRefreshGarden(garden)
-  const step: NextStep | undefined = nextStep(progress, { demo: isDemoGarden(garden), openTasks })
+  const { guide } = useUi()
+  const noTree = !!guide.noTree?.includes(garden.id)
+  const step: NextStep | undefined = nextStep(progress, { demo: isDemoGarden(garden), openTasks, noTree })
   if (!step) return null
   const cls = 'btn small primary nextstep-btn'
   return (
@@ -129,6 +131,11 @@ function NextStepCard({ garden, openTasks }: { garden: Garden; openTasks: number
           {step.kind === 'donnees' && refresh.busy ? <span className="spinner" /> : null} {step.action}
         </button>
       )}
+      {step.noTreeChoice && (
+        <button className="nextstep-skip" onClick={() => setGuide({ noTree: [...(guide.noTree ?? []), garden.id] })}>
+          Je n’ai pas d’arbre
+        </button>
+      )}
     </section>
   )
 }
@@ -144,7 +151,7 @@ export function Accueil({ garden, openTasks, newsCount }: { garden: Garden; open
   return (
     <div className="page accueil">
       {route && <RouteCard garden={garden} />}
-      <PageHead compact kicker={who ? `Bonjour ${who}` : 'Bonjour'} title="Que voulez-vous faire ?" />
+      <PageHead compact kicker={who ? `Bonjour ${who}` : 'Bonjour'} title="Que voulez-vous faire ?" onHelp={openHelp} />
       <button className="chez" onClick={() => setUi({ tab: 'carte' })}>
         <span className="chez-title">{chezTitle(garden.name)}</span>
         <span className="chez-sum">

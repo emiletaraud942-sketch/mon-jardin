@@ -3,6 +3,7 @@ import { isoDate } from '../../lib/dates'
 import { addPlant, getState, removePlant, updatePlant } from '../../lib/store'
 import { deletePhoto } from '../../lib/photos'
 import { dismissToast, showToast } from '../../lib/toast'
+import { warmWord } from '../../lib/progress'
 import { getUi, setUi, type Tab } from '../../lib/ui'
 import { plantName } from '../plants/PlantPanel'
 import { uid } from '../../lib/geo'
@@ -32,11 +33,11 @@ export function moveWithUndo(plantId: string, before: XY, next: XY) {
     return pl ? plantName(pl) : 'Plante'
   }
   showToast({
-    message: `« ${name()} » déplacée.`,
+    message: `Plante déplacée : ${name()}.`,
     actionLabel: 'Annuler',
     onAction: () => {
       updatePlant(plantId, { position: before })
-      showToast({ message: `Déplacement de « ${name()} » annulé.`, actionLabel: 'Rétablir', onAction: () => updatePlant(plantId, { position: next }) })
+      showToast({ message: `Déplacement annulé : ${name()}.`, actionLabel: 'Rétablir', onAction: () => updatePlant(plantId, { position: next }) })
     },
   })
 }
@@ -91,7 +92,9 @@ export function placePlant(
     })
   } else {
     const placed = getState().plants.find((p) => p.id === id)
-    if (placed) showToast({ message: `« ${name} » placée.`, actionLabel: 'Annuler', onAction: () => undoPlacement(placed) })
+    if (placed) {
+      showToast({ message: `Plante placée : ${name}.${warmWord(getState().plants, garden.id)}`, actionLabel: 'Annuler', onAction: () => undoPlacement(placed) })
+    }
   }
   return id
 }

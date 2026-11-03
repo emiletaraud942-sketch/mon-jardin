@@ -1,3 +1,4 @@
+import { Icon } from './Icon'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 /** Court retour « Enregistré » : `flash()` l'allume, il s'éteint tout seul. */
@@ -17,7 +18,7 @@ export function useFlash(ms = 3000): [boolean, () => void] {
 export function SavedNote({ show }: { show: boolean }) {
   return (
     <span className="saved-note" role="status" aria-live="polite">
-      {show ? '✓ Enregistré' : ''}
+      {show ? <><Icon name="check" size={14} /> Enregistré</> : ''}
     </span>
   )
 }
