@@ -54,7 +54,7 @@ function emit() {
 function setStatus(patch: Partial<StorageStatus>) {
   const next = { ...status, ...patch }
   if (next.writeError === undefined) delete next.writeError
-  if (next.readFailure === undefined) delete next.readFailure
+  if (!next.readFailed || next.readFailure === undefined) delete next.readFailure
   if (next.persistent === status.persistent && next.readFailed === status.readFailed && next.readFailure === status.readFailure && next.writeError === status.writeError) return
   status = next
   emit()
