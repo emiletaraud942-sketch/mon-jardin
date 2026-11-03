@@ -88,7 +88,7 @@ export const DATA_INVENTORY: readonly DataItem[] = [
     finalite: 'Sauvegarder et retrouver ses jardins sur un autre appareil. Fonction facultative.',
     base: 'consentement',
     duree: 'Jusqu’à suppression du compte ou de l’instantané',
-    effacement: 'Réglages > Vie privée > Effacer toutes mes données, avec la case « Supprimer aussi ma sauvegarde en ligne » (supprime l’instantané). Pour supprimer aussi le compte (adresse e-mail), écrire à l’éditeur',
+    effacement: 'Réglages > Vie privée > Effacer toutes mes données > « Que supprimer en ligne ? » : « Cet appareil + ma sauvegarde en ligne » (supprime l’instantané) ou « Cet appareil + mon compte de synchronisation » (supprime aussi le compte et l’adresse e-mail)',
   },
   {
     id: 'entraide-compte',
@@ -229,10 +229,65 @@ export const PERMISSIONS: readonly PermissionInfo[] = [
   },
 ]
 
-/** Clés localStorage effacées par « Effacer toutes mes données ». */
-export const ERASABLE_LOCAL_KEY = /^(permajardin:|pj-|sb-)/
+/**
+ * Clés localStorage effacées par « Effacer toutes mes données ». Trois familles : `permajardin:*`, `pj.*` et `pj-*`
+ * (réglages d’affichage, caches météo), `sb-*` (jetons Supabase). Toute nouvelle clé de l’appli doit entrer dans
+ * l’une de ces familles ET dans `LOCAL_STORAGE_KEYS` : le test `security.test.ts` relit le code source pour le vérifier.
+ */
+export const ERASABLE_LOCAL_KEY = /^(permajardin:|pj\.|pj-|sb-)/
 /** Caches du service worker contenant des lieux consultés. Les caches du code de l’appli sont conservés. */
 export const ERASABLE_CACHE = /^ign-/
+
+export interface StorageKeyInfo {
+  /** Clé exacte, ou préfixe si `prefixe` est vrai (la clé réelle porte alors un suffixe : identifiant, coordonnées). */
+  cle: string
+  prefixe?: boolean
+  /** Ce que la clé contient, en une phrase. */
+  contenu: string
+}
+
+/** TOUTES les clés localStorage écrites par l’appli (liste tenue à la main, vérifiée contre le code source par un test). */
+export const LOCAL_STORAGE_KEYS: readonly StorageKeyInfo[] = [
+  { cle: 'permajardin:theme', contenu: 'Thème clair, sombre ou automatique' },
+  { cle: 'permajardin:text-size', contenu: 'Taille du texte choisie' },
+  { cle: 'permajardin:consent', contenu: 'Autorisations données (Pl@ntNet, synchronisation, entraide, alertes) et leur date' },
+  { cle: 'permajardin:last-export', contenu: 'Date de la dernière sauvegarde exportée' },
+  { cle: 'permajardin:last-export-reminder', contenu: 'Date du dernier rappel de sauvegarde' },
+  { cle: 'permajardin:first-use', contenu: 'Date de première utilisation' },
+  { cle: 'permajardin:last-notification', contenu: 'Jour du dernier rappel affiché' },
+  { cle: 'permajardin:offline-ready-shown', contenu: 'Message « utilisable sans connexion » déjà montré' },
+  { cle: 'permajardin:last-synced:', prefixe: true, contenu: 'Date de dernière synchronisation, par identifiant de compte' },
+  { cle: 'permajardin:voisins:rayon', contenu: 'Rayon de recherche de l’entraide' },
+  { cle: 'permajardin:voisins:regles', contenu: 'Règles de conduite de l’entraide acceptées' },
+  { cle: 'permajardin:voisins:visite:', prefixe: true, contenu: 'Date de dernière visite de l’entraide, par identifiant de compte' },
+  { cle: 'pj.rayon', contenu: 'Dernière rubrique ouverte (rayon de l’interface)' },
+  { cle: 'pj.mode', contenu: 'Ancien mode d’affichage (lu une fois pour retrouver le rayon)' },
+  { cle: 'pj.guide', contenu: 'Aides et repères mémorisés : étapes d’accueil, cartes repliées, identifiants des jardins dont la 3D et l’Entretien ont été ouverts' },
+  { cle: 'pj.lidar', contenu: 'Réglage du relevé LiDAR HD' },
+  { cle: 'pj.quality3d', contenu: 'Qualité de la vue 3D' },
+  { cle: 'pj.mapNames', contenu: 'Noms des plantes sur la carte affichés ou non' },
+  { cle: 'pj.snap', contenu: 'Aimantation de la carte activée ou non' },
+  { cle: 'pj.grid', contenu: 'Grille de la carte affichée ou non' },
+  { cle: 'pj.remeasure', contenu: 'Rappel « mesurer à nouveau » activé ou non' },
+  { cle: 'pj.scanQuota', contenu: 'Compteur du jour des identifications du scan' },
+  { cle: 'pj-meteo:', prefixe: true, contenu: 'Cache de prévisions, par coordonnées arrondies à 2 décimales' },
+  { cle: 'pj-climat:', prefixe: true, contenu: 'Cache de climat local, par coordonnées arrondies à 2 décimales' },
+  { cle: 'sb-', prefixe: true, contenu: 'Jetons de session Supabase (synchronisation : sb-<projet>-auth-token ; entraide : sb-neighbors-auth-token) et leur vérificateur PKCE' },
+]
+
+/** Clés IndexedDB (base par défaut de idb-keyval) : toutes sont supprimées par `wipeLocalData()` (`del` de chaque clé). */
+export const INDEXEDDB_KEYS: readonly StorageKeyInfo[] = [
+  { cle: 'permajardin:state:v1', contenu: 'État : jardins, plantes, tâches faites' },
+  { cle: 'permajardin:state:v1:avant-migration', contenu: 'Copie de l’état avant une correction au chargement ou une récupération' },
+  { cle: 'permajardin:scan-queue', contenu: 'File d’attente du scan des plantes' },
+  { cle: 'photo:', prefixe: true, contenu: 'Photos de plantes et du jardin (JPEG sans EXIF)' },
+  { cle: 'lidar:', prefixe: true, contenu: 'Relevé LiDAR HD d’un jardin (cache de 90 jours)' },
+]
+
+/** La clé fait-elle partie de la liste (exacte ou par préfixe) ? */
+export function isListedKey(list: readonly StorageKeyInfo[], key: string): boolean {
+  return list.some((i) => (i.prefixe ? key.startsWith(i.cle) : key === i.cle))
+}
 
 /** Inventaire des données personnelles (pur, sans effet de bord). */
 export function getDataInventory(): readonly DataItem[] {

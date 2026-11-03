@@ -2,9 +2,12 @@
 
 export async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit & { timeoutMs?: number } = {}): Promise<Response> {
   const { timeoutMs = 15000, signal, ...rest } = init
+  // Signal déjà abandonné : aucune requête n'est envoyée (un écouteur « abort » ne se déclenche plus après coup).
+  if (signal?.aborted) throw new DOMException('Requête annulée', 'AbortError')
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), timeoutMs)
-  signal?.addEventListener('abort', () => ctrl.abort(), { once: true })
+  const onAbort = () => ctrl.abort()
+  signal?.addEventListener('abort', onAbort, { once: true })
   try {
     return await fetch(input, { ...rest, signal: ctrl.signal })
   } catch (e) {
@@ -13,6 +16,8 @@ export async function fetchWithTimeout(input: RequestInfo | URL, init: RequestIn
     throw new Error('Connexion impossible. Vérifiez votre accès à Internet.')
   } finally {
     clearTimeout(timer)
+    // L'écouteur est retiré : un signal de longue durée ne garde plus une référence par appel.
+    signal?.removeEventListener('abort', onAbort)
   }
 }
 

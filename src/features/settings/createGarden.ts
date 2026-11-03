@@ -1,8 +1,8 @@
 import { fetchBuildings, fetchParcel, fetchTerrain, type GeocodeResult } from '../../lib/ign'
-import { fetchClimate } from '../../lib/weather'
+import { fetchClimate, type ClimateSummary } from '../../lib/weather'
 import { polygonArea, toLocal, uid } from '../../lib/geo'
 import { frNumber, plural } from '../../lib/format'
-import type { Garden, LonLat } from '../../types'
+import type { Garden, GardenClimate, LonLat } from '../../types'
 
 export type StepState = 'attente' | 'en-cours' | 'ok' | 'echec'
 export interface Step {
@@ -34,6 +34,15 @@ export function missingSources(g: Garden): Step['id'][] {
   if (g.buildings === undefined) out.push('batiments')
   if (!g.terrain) out.push('relief')
   return out
+}
+
+/** Ce que le moteur garde du climat : zone USDA (« 8a »), minimale absolue, pluie annuelle. */
+export function climateOf(c: Pick<ClimateSummary, 'zone' | 'minAbsC' | 'rainMmPerYear'>): GardenClimate {
+  return {
+    zone: c.zone.replace(/^Rusticité USDA\s+/, ''),
+    minAbsC: Math.round(c.minAbsC * 10) / 10,
+    rainMmPerYear: c.rainMmPerYear,
+  }
 }
 
 export const SCENE_HALF_SIZE = 40
@@ -102,6 +111,7 @@ export async function buildGarden(
         const c = await fetchClimate(center)
         garden.lastFrostDoy = c.lastFrostDoy ?? undefined
         garden.firstFrostDoy = c.firstFrostDoy ?? undefined
+        garden.climate = climateOf(c)
         onStep('climat', 'ok', `${frNumber(c.rainMmPerYear, 0)} mm de pluie par an · ${c.zone}`)
       } catch (e) {
         onStep('climat', 'echec', (e as Error).message)

@@ -16,6 +16,7 @@ import type {
 import { isoDate } from '../lib/dates'
 import { plantAgeYears } from './growth'
 import { MONTH_NAMES, formatDoy, frostGate, plantingCalendar } from './calendar'
+import { seasonEnded, seasonMonths } from './season'
 
 export interface TaskContext {
   garden: Garden
@@ -177,48 +178,6 @@ function ruleIds(sp: Species): string[] {
     seen.set(id, n)
     return n > 1 ? `${id}-${n}` : id
   })
-}
-
-const FREQUENT_PREFIX = /^(\d{4}-\d{2}-\d{2}|\d{4}-W\d{2})$/
-
-/**
- * Purge de l'historique des tâches faites (à appeler au chargement) :
- *  - supprime les entrées de plus de 400 jours ;
- *  - pour les tâches fréquentes (période = jour ou semaine), ne garde que la dernière entrée
- *    qui couvre chaque plante (les anciennes ne servent plus à rien) ;
- *  - garde les tâches saisonnières et les alertes de gel de moins de 400 jours.
- * Les entrées à date illisible sont conservées. Ne modifie pas l'entrée, garde l'ordre.
- */
-export function purgeTasksDone(done: TaskDone[], now: Date): TaskDone[] {
-  const limit = now.getTime() - 400 * DAY_MS
-  const timeOf = (t: TaskDone) => {
-    const at = new Date(t.doneAt).getTime()
-    return Number.isFinite(at) ? at : null
-  }
-  const fresh = done.filter((t) => {
-    const at = timeOf(t)
-    return at == null || at >= limit
-  })
-  const state = new Map<string, { all: boolean; tags: Set<string> }>()
-  const drop = new Set<TaskDone>()
-  const newestFirst = [...fresh].sort((a, b) => (timeOf(b) ?? -Infinity) - (timeOf(a) ?? -Infinity))
-  for (const t of newestFirst) {
-    const k = parseTaskKey(t.taskKey)
-    if (!FREQUENT_PREFIX.test(k.prefix) || k.base.startsWith('jardin:protection')) continue
-    const id = `${t.gardenId ?? ''}|${k.base}`
-    const st = state.get(id) ?? { all: false, tags: new Set<string>() }
-    state.set(id, st)
-    if (st.all) {
-      drop.add(t)
-    } else if (!k.tags) {
-      st.all = true
-    } else {
-      const added = k.tags.filter((x) => !st.tags.has(x))
-      if (!added.length) drop.add(t)
-      for (const x of added) st.tags.add(x)
-    }
-  }
-  return fresh.filter((t) => !drop.has(t))
 }
 
 // ---------- Noms ----------
@@ -451,6 +410,11 @@ export function generateTasks(ctx: TaskContext): GeneratedTask[] {
     const sp = speciesById[p.speciesId]
     return !!sp && (sp.eau === 'eleve' || !established(p, sp))
   }
+  // Plante qui génère encore des tâches : en place ou malade, et pas une annuelle dont la saison est finie.
+  const inSeason = (p: Plant) => {
+    const sp = speciesById[p.speciesId]
+    return isActive(p) && !!sp && !seasonEnded(p, sp, today)
+  }
   const plantById = new Map(plants.map((p) => [p.id, p]))
   const wateringPriority = (ids: string[]): GeneratedTask['priority'] =>
     ids.some((id) => {
@@ -470,7 +434,7 @@ export function generateTasks(ctx: TaskContext): GeneratedTask[] {
     const base = 'jardin:arrosage:meteo'
     const thirsty = plants.filter((p) => {
       const sp = speciesById[p.speciesId]
-      if (!sp || !isActive(p) || !meteoEligible(p)) return false
+      if (!sp || !inSeason(p) || !meteoEligible(p)) return false
       const planted = new Date(p.plantedAt).getTime()
       const young = Number.isFinite(planted) && today.getTime() - planted < 365.25 * DAY_MS
       return sp.eau === 'moyen' || sp.eau === 'eleve' || young
@@ -506,7 +470,7 @@ export function generateTasks(ctx: TaskContext): GeneratedTask[] {
     if (frostDays.length) {
       const first = frostDays[0]
       const coldest = frostDays.reduce((c, d) => (d.tMin < c.tMin ? d : c), first)
-      const atRisk = plants.filter((p) => isActive(p) && speciesById[p.speciesId] && speciesById[p.speciesId].rusticiteC > coldest.tMin)
+      const atRisk = plants.filter((p) => inSeason(p) && speciesById[p.speciesId].rusticiteC > coldest.tMin)
       const key = `${first.date}:jardin:protection:gel`
       if (atRisk.length && !doneKeys.has(key)) {
         const spNames = [...new Set(atRisk.map((p) => lowerFirst(speciesById[p.speciesId].nomCommun)))]
@@ -539,6 +503,8 @@ export function generateTasks(ctx: TaskContext): GeneratedTask[] {
       ...explicit,
       ...implicitRules(sp, garden, p.status).map(({ id, rule }) => ({ id, rule, months: rule.months, frostMonths: new Set<Month>() })),
     ]
+    // Annuelle dont la saison est finie (ou plante récoltée) : plus aucune tâche d'entretien ni de récolte.
+    if ((isActive(p) || p.status === 'recoltee') && !inSeason(p)) continue
     const age = plantAgeYears(p, today)
     for (const entry of rules) {
       const { rule } = entry
@@ -689,6 +655,7 @@ export function generateTasks(ctx: TaskContext): GeneratedTask[] {
 export function yearPlan(
   plants: Plant[],
   speciesById: Record<string, Species>,
+  today: Date = new Date(),
 ): { month: Month; tasks: { type: TaskType; speciesId: string; count: number }[] }[] {
   const out = Array.from({ length: 12 }, (_, i) => ({
     month: (i + 1) as Month,
@@ -697,10 +664,15 @@ export function yearPlan(
   const counts = out.map(() => new Map<string, { type: TaskType; speciesId: string; plants: Set<string> }>())
   for (const p of plants) {
     const sp = speciesById[p.speciesId]
-    if (!sp || p.status === 'mort') continue
+    if (!sp || p.status === 'mort' || p.status === 'recoltee') continue
+    // Annuelle en place : seulement de sa plantation à la fin de sa saison, et plus rien une fois la saison passée.
+    const active = isActive(p)
+    if (active && seasonEnded(p, sp, today)) continue
+    const span = active ? seasonMonths(p, sp) : undefined
     for (const rule of sp.taches) {
-      if (isSowing(rule.type) ? p.status !== 'projet' : !isActive(p)) continue
+      if (isSowing(rule.type) ? p.status !== 'projet' : !active) continue
       for (const m of new Set(rule.months)) {
+        if (span && !span.has(m)) continue
         const map = counts[m - 1]
         const id = `${rule.type}:${sp.id}`
         const e = map.get(id) ?? { type: rule.type, speciesId: sp.id, plants: new Set<string>() }

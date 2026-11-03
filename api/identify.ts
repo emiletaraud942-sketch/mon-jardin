@@ -119,9 +119,20 @@ const header = (h: Headers, name: string): string | undefined => {
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', '::1'])
 const hostnameOf = (hostWithPort: string) => hostWithPort.replace(/:\d+$/, '').toLowerCase()
 
-/** Refuse les appels venant d'un autre site (Sec-Fetch-Site: cross-site, ou Origin/Referer qui ne correspond pas au Host). */
+/**
+ * N'accepte que les appels que le NAVIGATEUR prouve venir de notre site. Un navigateur envoie toujours `Origin` sur un POST
+ * (fetch en mode cors, le défaut) et `Sec-Fetch-Site` ; il faut donc au moins l'un des deux :
+ *  - `Origin` présent ET de même hôte que le site ; ou
+ *  - `Sec-Fetch-Site: same-origin` / `same-site`.
+ * Refus : `cross-site`, `none` ou toute autre valeur de `Sec-Fetch-Site` ; `Origin` ou `Referer` d'un autre hôte (ou « null ») ;
+ * et surtout un appel sans aucun des deux (curl, script) : c'était le trou O6 de l'audit.
+ * Limite assumée : ces en-têtes sont falsifiables hors navigateur (curl -H "Origin: …"). Cette garde arrête le CSRF et les
+ * pages tierces, pas un script déterminé : pour cela, règle de limitation du pare-feu Vercel (docs/SECURITE.md §6).
+ */
 export function isAllowedOrigin(h: Headers): boolean {
-  if (header(h, 'sec-fetch-site') === 'cross-site') return false
+  const site = header(h, 'sec-fetch-site')?.trim().toLowerCase()
+  if (site !== undefined && site !== 'same-origin' && site !== 'same-site') return false
+  let proven = site !== undefined
   const host = header(h, 'x-forwarded-host') ?? header(h, 'host')
   for (const name of ['origin', 'referer']) {
     const v = header(h, name)
@@ -133,11 +144,17 @@ export function isAllowedOrigin(h: Headers): boolean {
       return false // « null » ou valeur illisible
     }
     if (!host) return false
-    if (other.toLowerCase() === host.toLowerCase()) continue
-    if (LOCAL_HOSTS.has(hostnameOf(other)) && LOCAL_HOSTS.has(hostnameOf(host))) continue // développement local (ports différents)
+    if (other.toLowerCase() === host.toLowerCase()) {
+      if (name === 'origin') proven = true
+      continue
+    }
+    if (LOCAL_HOSTS.has(hostnameOf(other)) && LOCAL_HOSTS.has(hostnameOf(host))) {
+      if (name === 'origin') proven = true
+      continue // développement local (ports différents)
+    }
     return false
   }
-  return true
+  return proven
 }
 
 /**
@@ -225,7 +242,11 @@ export function interpretPlantnet(status: number, text: string): { status: numbe
 // ---------- Fonction ----------
 
 const limiter = createRateLimiter(20, 10 * 60_000)
-/** Plafond global par instance : limite la consommation du quota Pl@ntNet (500/jour pour toute l'appli) si de nombreuses adresses attaquent. */
+/**
+ * Plafond global par instance : limite la consommation du quota Pl@ntNet (500/jour pour toute l'appli) si de nombreuses adresses
+ * attaquent. Il ne se consomme QU'APRÈS validation de la photo (type, taille, dimensions) et juste avant l'appel à Pl@ntNet :
+ * une requête invalide, qui ne coûte rien à Pl@ntNet, ne peut pas servir à épuiser ce plafond au détriment des autres.
+ */
 const globalLimiter = createRateLimiter(150, 10 * 60_000, Date.now, 1)
 /** Réponse Pl@ntNet : on n'en lit pas plus (réponse normale : quelques Ko). */
 const MAX_UPSTREAM_CHARS = 1_000_000
@@ -257,10 +278,10 @@ async function handle(req: VercelRequest, res: VercelResponse) {
   }
   if (!isAllowedOrigin(req.headers)) return res.status(403).json({ error: 'Origine non autorisée.' })
 
+  // Limite par réseau (consommée même pour une requête invalide : elle protège le CPU et la mémoire de la fonction).
   const limit = limiter.check(rateKey(clientIp(req.headers, req.socket?.remoteAddress)))
-  const globalLimit = limit.allowed ? globalLimiter.check('tous') : limit
-  if (!limit.allowed || !globalLimit.allowed) {
-    res.setHeader('Retry-After', String(Math.max(limit.retryAfterSec, globalLimit.retryAfterSec)))
+  if (!limit.allowed) {
+    res.setHeader('Retry-After', String(limit.retryAfterSec))
     return res.status(429).json({ error: 'Trop de demandes, réessayez dans quelques minutes.' })
   }
 
@@ -297,8 +318,9 @@ async function handle(req: VercelRequest, res: VercelResponse) {
   }
   if (total > MAX_BODY_BYTES) return res.status(413).json(tooBig)
 
-  const form = new FormData()
-  for (const [i, b64] of (images as string[]).entries()) {
+  // Validation de TOUTES les photos avant de toucher au plafond global ou à Pl@ntNet.
+  const parts: { bytes: Buffer; mime: 'image/jpeg' | 'image/png' | 'image/webp' }[] = []
+  for (const b64 of images as string[]) {
     const bytes = decodeBase64Image(b64)
     if (!bytes) return res.status(400).json({ error: 'Photo illisible.' })
     const mime = detectImageMime(bytes)
@@ -308,6 +330,18 @@ async function handle(req: VercelRequest, res: VercelResponse) {
     if (size.width > MAX_IMAGE_SIDE || size.height > MAX_IMAGE_SIDE || size.width * size.height > MAX_IMAGE_PIXELS) {
       return res.status(400).json({ error: 'Photo trop grande en dimensions (8 000 pixels maximum par côté). Réduisez-la.' })
     }
+    parts.push({ bytes, mime })
+  }
+
+  // Seule une requête valide, qui va réellement coûter une identification à Pl@ntNet, consomme le plafond global.
+  const globalLimit = globalLimiter.check('tous')
+  if (!globalLimit.allowed) {
+    res.setHeader('Retry-After', String(globalLimit.retryAfterSec))
+    return res.status(429).json({ error: 'Trop de demandes, réessayez dans quelques minutes.' })
+  }
+
+  const form = new FormData()
+  for (const [i, { bytes, mime }] of parts.entries()) {
     form.append('images', new Blob([bytes], { type: mime }), `photo-${i}.${mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg'}`)
     form.append('organs', organ)
   }

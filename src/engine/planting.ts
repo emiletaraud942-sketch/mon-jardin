@@ -34,7 +34,8 @@ export function sunCategory(hours: number): Sun {
   return 'ombre'
 }
 
-const living = (p: Plant) => p.status !== 'mort'
+/** Une plante morte ou déjà récoltée n'occupe plus la place. */
+const living = (p: Plant) => p.status !== 'mort' && p.status !== 'recoltee'
 
 /** Deux espèces sont amies si l'une cite l'autre comme compagnon (relation symétrisée). */
 function areFriends(a: Species, b: Species): boolean {
@@ -77,6 +78,28 @@ function estimatedWinterMinC(lastFrostDoy: number): number {
   return Math.max(-25, Math.min(-2, -3 - (lastFrostDoy - 45) * 0.15))
 }
 
+/**
+ * Froid hivernal du jardin : la minimale absolue observée (`garden.climate`) si elle est connue,
+ * sinon l'estimation d'après la dernière gelée (anciens jardins), sinon rien.
+ */
+export function winterMinC(garden: Garden): { tMin: number; observed: boolean } | undefined {
+  const observed = garden.climate?.minAbsC
+  if (observed != null && Number.isFinite(observed)) return { tMin: observed, observed: true }
+  if (garden.lastFrostDoy != null) return { tMin: estimatedWinterMinC(garden.lastFrostDoy), observed: false }
+  return undefined
+}
+
+/** Art. 671 : le texte place d'abord les règlements particuliers et les usages locaux ; les 2 m et 0,5 m ne valent qu'à défaut. */
+const ART_671 = 'Art. 671 du Code civil : les règlements particuliers et les usages locaux constants et reconnus passent en premier ; à défaut, '
+
+/** Rappels qui suivent toujours le calcul : mairie, espaliers, voirie, art. 672. Information générale, pas un conseil juridique. */
+const LEGAL_NOTES =
+  'Vérifiez auprès de votre mairie (usages locaux, PLU, règlement de lotissement). ' +
+  'Un espalier contre un mur séparatif n’a pas de distance minimale, à condition de ne pas dépasser la crête du mur. ' +
+  'Une limite en bordure de voirie n’est pas une limite séparative : l’art. 671 ne s’y applique pas. ' +
+  'Art. 672 : le voisin peut exiger l’arrachage ou la réduction d’un arbre trop proche, sauf titre, destination du père de famille ou prescription de 30 ans ; ' +
+  'un arbre mort ne se remplace qu’en respectant la distance. Information générale, pas un conseil juridique.'
+
 export function legalDistance(
   species: Species,
   spot: XY,
@@ -85,22 +108,20 @@ export function legalDistance(
   const tall = species.hauteurAdulteM > 2
   const requiredM = tall ? 2 : 0.5
   const rule = tall
-    ? `Art. 671 du Code civil : une plantation de plus de 2 m de haut doit être à au moins 2 m de la limite séparative`
-    : `Art. 671 du Code civil : une plantation de moins de 2 m doit être à au moins 0,5 m de la limite séparative`
-  const local =
-    'Des usages locaux, le PLU ou un règlement de lotissement peuvent imposer d’autres distances. Une limite en bordure de voirie n’est pas une limite séparative : l’art. 671 ne s’y applique pas.'
+    ? `${ART_671}une plantation de plus de 2 m de haut doit être à au moins 2 m de la limite séparative`
+    : `${ART_671}une plantation de 2 m de haut ou moins doit être à au moins 0,5 m de la limite séparative`
   if (!parcel || parcel.length < 3) {
-    return { requiredM, ok: true, message: `${rule} (limite de parcelle inconnue). ${local}` }
+    return { requiredM, ok: true, message: `${rule} (limite de parcelle inconnue). ${LEGAL_NOTES}` }
   }
   if (!pointInRing(spot, parcel)) {
-    return { requiredM, actualM: 0, ok: false, message: `Emplacement hors de votre parcelle. ${rule}. ${local}` }
+    return { requiredM, actualM: 0, ok: false, message: `Emplacement hors de votre parcelle. ${rule}. ${LEGAL_NOTES}` }
   }
   const actualM = distanceToRing(spot, parcel)
   const ok = actualM >= requiredM
   const prune = tall && !ok ? ' (ou la maintenir sous 2 m par la taille)' : ''
   const message = ok
-    ? `Distance à la limite : ${fmt(actualM)} m, conforme à l’art. 671 du Code civil (minimum ${fmt(requiredM)} m). ${local}`
-    : `${rule}${prune} : ici ${fmt(actualM)} m seulement. ${local}`
+    ? `Distance à la limite : ${fmt(actualM)} m, au-delà du minimum de ${fmt(requiredM)} m prévu à défaut d’usage local par l’art. 671 du Code civil. ${LEGAL_NOTES}`
+    : `${rule}${prune} : ici ${fmt(actualM)} m seulement. ${LEGAL_NOTES}`
   return { requiredM, actualM, ok, message }
 }
 
@@ -194,12 +215,13 @@ export function scoreSpecies(
     }
   }
 
-  // 4. Rusticité (seulement si on connaît les gelées locales, et pour les vivaces)
-  if (garden.lastFrostDoy != null && species.vivace) {
-    const tMin = estimatedWinterMinC(garden.lastFrostDoy)
+  // 4. Rusticité des vivaces : minimale observée sur 5 ans si le climat est connu, sinon estimation d'après les gelées.
+  const winter = winterMinC(garden)
+  if (winter && species.vivace) {
+    const { tMin, observed } = winter
     const margin = species.rusticiteC - tMin
     if (margin > 0) {
-      factors.push({ label: `Rusticité limite (${species.rusticiteC} °C, hivers ≈ ${Math.round(tMin)} °C estimés)`, points: margin > 5 ? -20 : -10 })
+      factors.push({ label: `Rusticité limite (${species.rusticiteC} °C, hivers ≈ ${Math.round(tMin)} °C ${observed ? 'observés' : 'estimés'})`, points: margin > 5 ? -20 : -10 })
       warnings.push(`${species.nomCommun} supporte ${species.rusticiteC} °C : prévoir une protection hivernale ou un pot rentré.`)
     } else if (margin <= -3) {
       factors.push({ label: 'Rustique dans votre climat', points: 5 })

@@ -147,11 +147,21 @@ export interface Garden {
   /** Date moyenne de dernière gelée (jour de l'année), calculée sur l'historique. */
   lastFrostDoy?: number
   firstFrostDoy?: number
+  /** Climat local calculé à la création (Open-Meteo, 5 ans). Absent sur les anciens jardins : le moteur se rabat alors sur une estimation. */
+  climate?: GardenClimate
   /** Recalage GPS (similitude 2D en mètres locaux), appliqué aux positions mesurées. */
   calibration?: Calibration
   /** Points de vue en photos (façon Street View). Métadonnées seulement : les photos sont dans IndexedDB (src/lib/photos.ts), jamais exportées ni synchronisées. */
   panoramas?: Panorama[]
   createdAt: string
+}
+
+/** Climat du jardin. `zone` : zone de rusticité USDA sans préfixe (« 8a »). */
+export interface GardenClimate {
+  zone?: string
+  /** Température la plus basse observée sur 5 ans (°C). */
+  minAbsC?: number
+  rainMmPerYear?: number
 }
 
 /** Une photo d'un point de vue : son cap (0 = nord, sens horaire) et sa largeur de champ (degrés). */
@@ -183,7 +193,8 @@ export interface TerrainGrid {
   heights: number[]
 }
 
-export type PlantStatus = 'projet' | 'en-place' | 'malade' | 'mort'
+/** 'recoltee' : la plante a fini sa saison (annuelle récoltée ou arrachée) ; elle ne génère plus de tâches. */
+export type PlantStatus = 'projet' | 'en-place' | 'malade' | 'mort' | 'recoltee'
 
 export interface Plant {
   id: string

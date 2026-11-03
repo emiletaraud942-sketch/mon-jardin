@@ -1,6 +1,6 @@
 // Validation et migration des données (stockage local, import JSON, synchronisation).
 // PROPRIÉTAIRE : dev-backend-supabase. La signature de `migrateState` est le contrat ; ne pas la changer.
-import type { Building, Garden, Panorama, PanoramaShot, Plant, PlantMeasurement, PlantStatus, SoilTexture, TaskDone, TerrainGrid, XY } from '../types'
+import type { Building, Garden, GardenClimate, Panorama, PanoramaShot, Plant, PlantMeasurement, PlantStatus, SoilTexture, TaskDone, TerrainGrid, XY } from '../types'
 import { isoDate } from './dates'
 import { isValidCalibration } from './calibration'
 import { uid } from './geo'
@@ -24,7 +24,7 @@ export interface SerializedState extends StateData {
   exportedAt: string
 }
 
-const STATUSES: ReadonlySet<string> = new Set<PlantStatus>(['projet', 'en-place', 'malade', 'mort'])
+const STATUSES: ReadonlySet<string> = new Set<PlantStatus>(['projet', 'en-place', 'malade', 'mort', 'recoltee'])
 const SOILS: ReadonlySet<string> = new Set<SoilTexture>(['argileux', 'limoneux', 'sableux', 'calcaire', 'humifere'])
 const DAY_MS = 86_400_000
 
@@ -36,7 +36,7 @@ const inRange = (n: number, max: number) => Math.abs(n) <= max
 /** Texte raccourci à `max` caractères (les données importées ne sont pas dignes de confiance). */
 const text = (v: string, max: number = LIMITS.shortText) => clipText(v, max)
 
-const GARDEN_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'address', 'center', 'altitudeM', 'parcel', 'parcelRefs', 'areaM2', 'buildings', 'terrain', 'sol', 'lastFrostDoy', 'firstFrostDoy', 'calibration', 'panoramas', 'createdAt'])
+const GARDEN_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'address', 'center', 'altitudeM', 'parcel', 'parcelRefs', 'areaM2', 'buildings', 'terrain', 'sol', 'lastFrostDoy', 'firstFrostDoy', 'climate', 'calibration', 'panoramas', 'createdAt'])
 const PLANT_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'speciesId', 'customName', 'position', 'plantedAt', 'ageAtPlanting', 'status', 'notes', 'photos', 'measurements'])
 const TASK_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'taskKey', 'doneAt'])
 
@@ -65,6 +65,19 @@ function validTerrain(v: unknown): TerrainGrid | undefined {
   if (!isRec(v) || !isNum(v.size) || v.size <= 0 || v.size > LIMITS.terrainSizeM || !isNum(v.n) || !Number.isInteger(v.n) || v.n < 2 || v.n > LIMITS.terrainN) return undefined
   if (!Array.isArray(v.heights) || v.heights.length !== v.n * v.n || !v.heights.every(isNum)) return undefined
   return { size: v.size, n: v.n, heights: v.heights as number[] }
+}
+
+/** Climat : zone USDA (« 8a », le préfixe « Rusticité USDA » est retiré), minimale absolue plausible, pluie annuelle plausible. */
+export function validClimate(v: unknown): GardenClimate | undefined {
+  if (!isRec(v)) return undefined
+  const out: GardenClimate = {}
+  if (typeof v.zone === 'string') {
+    const m = /^(?:Rusticité USDA\s+)?(\d{1,2}[ab])$/i.exec(v.zone.trim())
+    if (m) out.zone = m[1].toLowerCase()
+  }
+  if (isNum(v.minAbsC) && v.minAbsC >= -80 && v.minAbsC <= 20) out.minAbsC = v.minAbsC
+  if (isNum(v.rainMmPerYear) && v.rainMmPerYear >= 0 && v.rainMmPerYear <= 15_000) out.rainMmPerYear = v.rainMmPerYear
+  return Object.keys(out).length ? out : undefined
 }
 
 /** Accumule des compteurs et les transforme en phrases françaises. */
@@ -113,6 +126,14 @@ function sanitizeGarden(raw: unknown, report: Report): Garden | undefined {
   if (isNum(raw.areaM2) && raw.areaM2 >= 0 && raw.areaM2 <= 1e10) g.areaM2 = raw.areaM2
   if (isNum(raw.lastFrostDoy)) g.lastFrostDoy = raw.lastFrostDoy
   if (isNum(raw.firstFrostDoy)) g.firstFrostDoy = raw.firstFrostDoy
+  if (raw.climate !== undefined) {
+    const climate = validClimate(raw.climate)
+    if (climate) g.climate = climate
+    else {
+      delete g.climate
+      report.add('climat', 'Le climat de {n} jardin était invalide : il a été retiré (rechargez-le depuis les réglages).', 'Le climat de {n} jardins était invalide : il a été retiré (rechargez-le depuis les réglages).')
+    }
+  }
   if (typeof raw.sol === 'string' && SOILS.has(raw.sol)) g.sol = raw.sol as SoilTexture
   if (Array.isArray(raw.parcelRefs)) {
     g.parcelRefs = raw.parcelRefs

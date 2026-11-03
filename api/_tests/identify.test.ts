@@ -97,10 +97,28 @@ describe('imageSize / decodeBase64Image', () => {
 
 describe('isAllowedOrigin', () => {
   const host = 'permajardin.vercel.app'
-  it('accepte les appels du même site et ceux sans en-têtes de navigateur', () => {
-    expect(isAllowedOrigin({ host })).toBe(true)
+  it('accepte les appels dont le navigateur prouve qu’ils viennent du site (Origin cohérent, ou Sec-Fetch-Site same-origin/same-site)', () => {
     expect(isAllowedOrigin({ host, origin: 'https://permajardin.vercel.app', 'sec-fetch-site': 'same-origin' })).toBe(true)
-    expect(isAllowedOrigin({ host, referer: 'https://permajardin.vercel.app/#plantes' })).toBe(true)
+    expect(isAllowedOrigin({ host, origin: 'https://permajardin.vercel.app' })).toBe(true)
+    expect(isAllowedOrigin({ host, 'sec-fetch-site': 'same-origin' })).toBe(true)
+    expect(isAllowedOrigin({ host, 'sec-fetch-site': 'same-site' })).toBe(true)
+    expect(isAllowedOrigin({ host, 'sec-fetch-site': 'Same-Origin', referer: 'https://permajardin.vercel.app/#plantes' })).toBe(true)
+  })
+  it('refuse un appel sans Origin ni Sec-Fetch-Site (curl, script) : audit O6', () => {
+    expect(isAllowedOrigin({ host })).toBe(false)
+    expect(isAllowedOrigin({})).toBe(false)
+    expect(isAllowedOrigin({ host, 'user-agent': 'curl/8.5.0' })).toBe(false)
+    // Referer seul ne prouve rien (le navigateur peut l'omettre, un script peut l'écrire) : il faut Origin ou Sec-Fetch-Site.
+    expect(isAllowedOrigin({ host, referer: 'https://permajardin.vercel.app/#plantes' })).toBe(false)
+    expect(isAllowedOrigin({ host, origin: '' })).toBe(false)
+  })
+  it('refuse Sec-Fetch-Site « none » ou inconnu, et un Origin incohérent même avec same-origin', () => {
+    expect(isAllowedOrigin({ host, 'sec-fetch-site': 'none' })).toBe(false)
+    expect(isAllowedOrigin({ host, 'sec-fetch-site': 'bizarre' })).toBe(false)
+    expect(isAllowedOrigin({ host, 'sec-fetch-site': 'same-origin', origin: 'https://evil.example' })).toBe(false)
+    expect(isAllowedOrigin({ host, 'sec-fetch-site': 'same-site', origin: 'null' })).toBe(false)
+    expect(isAllowedOrigin({ host, 'sec-fetch-site': 'same-origin', referer: 'https://evil.example/' })).toBe(false)
+    expect(isAllowedOrigin({ 'sec-fetch-site': 'same-origin', origin: 'https://permajardin.vercel.app' })).toBe(false) // hôte inconnu
   })
   it('refuse cross-site, Origin ou Referer d’un autre hôte, Origin « null »', () => {
     expect(isAllowedOrigin({ host, 'sec-fetch-site': 'cross-site' })).toBe(false)
@@ -116,6 +134,10 @@ describe('isAllowedOrigin', () => {
   })
   it('utilise x-forwarded-host quand il est présent', () => {
     expect(isAllowedOrigin({ host: 'interne', 'x-forwarded-host': host, origin: 'https://permajardin.vercel.app' })).toBe(true)
+  })
+  it('développement local : un Origin local sans Sec-Fetch-Site suffit', () => {
+    expect(isAllowedOrigin({ host: 'localhost:3000', origin: 'http://localhost:5173' })).toBe(true)
+    expect(isAllowedOrigin({ host: 'localhost:3000' })).toBe(false)
   })
 })
 
@@ -205,8 +227,10 @@ describe('interpretPlantnet', () => {
 
 // ---------- Handler ----------
 
-function call(opts: { method?: string; headers?: Record<string, string>; body?: unknown; bodyThrows?: boolean } = {}) {
-  const headers: Record<string, string> = { host: 'permajardin.vercel.app', 'content-type': 'application/json', 'x-vercel-forwarded-for': `10.0.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}`, ...opts.headers }
+function call(opts: { method?: string; headers?: Record<string, string>; body?: unknown; bodyThrows?: boolean; noBrowser?: boolean } = {}) {
+  // Comme un navigateur : Origin et Sec-Fetch-Site sont toujours présents sur un POST de l'appli (`noBrowser` les retire, comme curl).
+  const browser: Record<string, string> = opts.noBrowser ? {} : { origin: 'https://permajardin.vercel.app', 'sec-fetch-site': 'same-origin' }
+  const headers: Record<string, string> = { host: 'permajardin.vercel.app', ...browser, 'content-type': 'application/json', 'x-vercel-forwarded-for': `10.0.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}`, ...opts.headers }
   const req = { method: opts.method ?? 'POST', headers, socket: { remoteAddress: '127.0.0.1' } } as Record<string, unknown>
   if (opts.bodyThrows) Object.defineProperty(req, 'body', { get: () => { throw new Error('Invalid JSON') } })
   else req.body = opts.body
@@ -423,5 +447,116 @@ describe('handler', () => {
     expect((await call({ headers: { origin: 'https://evil.example' } })).status).toBe(403)
     expect((await call({ headers: { 'content-type': 'text/plain' } })).status).toBe(415)
     expect((await call({ body: { images: [b64(JPEG)] } })).status).toBe(503)
+  })
+})
+
+describe('audit S1 : appel hors navigateur et plafond global', () => {
+  // Module neuf à chaque test : le plafond global (150 / 10 min) est un état de module, partagé avec les autres tests du fichier.
+  async function fresh() {
+    vi.resetModules()
+    const mod = await import('../identify')
+    return mod.default
+  }
+  function run(h: (req: VercelRequest, res: VercelResponse) => Promise<unknown>, opts: { headers?: Record<string, string>; body?: unknown; noBrowser?: boolean } = {}) {
+    const browser: Record<string, string> = opts.noBrowser ? {} : { origin: 'https://permajardin.vercel.app', 'sec-fetch-site': 'same-origin' }
+    const headers: Record<string, string> = { host: 'permajardin.vercel.app', ...browser, 'content-type': 'application/json', 'x-vercel-forwarded-for': `10.1.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}`, ...opts.headers }
+    const req = { method: 'POST', headers, socket: { remoteAddress: '127.0.0.1' }, body: opts.body } as unknown as VercelRequest
+    const out: { status?: number; json?: Record<string, unknown>; headers: Record<string, string> } = { headers: {} }
+    const res = {
+      setHeader: (k: string, v: string) => void (out.headers[k.toLowerCase()] = v),
+      status: (st: number) => {
+        out.status = st
+        return res
+      },
+      json: (j: Record<string, unknown>) => {
+        out.json = j
+        return res
+      },
+    } as unknown as VercelResponse
+    return h(req, res).then(() => out)
+  }
+  beforeEach(() => {
+    vi.stubEnv('PLANTNET_API_KEY', 'SECRET123')
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+  })
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('curl : un POST valide sans Origin ni Sec-Fetch-Site est refusé (403) et n’appelle jamais Pl@ntNet', async () => {
+    const fetchMock = vi.fn(async () => new Response('{"results":[]}', { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const h = await fresh()
+    const r = await run(h, { noBrowser: true, body: { images: [b64(JPEG)] } })
+    expect(r.status).toBe(403)
+    expect(fetchMock).not.toHaveBeenCalled()
+    // Referer seul ne suffit pas, user-agent de curl non plus.
+    expect((await run(h, { noBrowser: true, headers: { referer: 'https://permajardin.vercel.app/', 'user-agent': 'curl/8.5.0' }, body: { images: [b64(JPEG)] } })).status).toBe(403)
+    // Navigateur légitime : passe.
+    expect((await run(h, { body: { images: [b64(JPEG)] } })).status).toBe(200)
+    expect((await run(h, { noBrowser: true, headers: { 'sec-fetch-site': 'same-site' }, body: { images: [b64(JPEG)] } })).status).toBe(200)
+    expect((await run(h, { noBrowser: true, headers: { origin: 'https://permajardin.vercel.app' }, body: { images: [b64(JPEG)] } })).status).toBe(200)
+  })
+
+  it('un appel sans Origin ne consomme ni le plafond par réseau ni le plafond global', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{"results":[]}', { status: 200 })))
+    const h = await fresh()
+    for (let i = 0; i < 400; i++) expect((await run(h, { noBrowser: true, headers: { 'x-vercel-forwarded-for': '203.0.113.50' }, body: { images: [b64(JPEG)] } })).status).toBe(403)
+    // Même réseau, maintenant avec Origin : pas de 429 (le réseau n'a rien consommé).
+    expect((await run(h, { headers: { 'x-vercel-forwarded-for': '203.0.113.50' }, body: { images: [b64(JPEG)] } })).status).toBe(200)
+  })
+
+  it('une requête invalide (type, taille, dimensions, base64, JSON) ne consomme pas le plafond global', async () => {
+    const fetchMock = vi.fn(async () => new Response('{"results":[]}', { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const h = await fresh()
+    const invalid: unknown[] = [
+      { images: [Buffer.from('pas une image').toString('base64')] }, // type
+      { images: ['<script>alert(1)</script>'] }, // base64
+      { images: [b64(png(30000, 30000))] }, // dimensions
+      { images: [b64(Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 4, 0x4a, 0x46]))] }, // en-tête tronqué
+      { images: [b64(JPEG), Buffer.from('GIF89a......').toString('base64')] }, // une bonne photo puis une mauvaise
+      { images: [] },
+      { images: [b64(JPEG)], organ: 'racine' },
+      { images: ['A'.repeat(MAX_BODY_BYTES + 1)] }, // trop lourd
+    ]
+    // 200 requêtes invalides depuis 200 réseaux différents (chaque réseau reste sous ses 20 / 10 min) : bien plus que les 150 du plafond global.
+    for (let i = 0; i < 200; i++) {
+      const r = await run(h, { headers: { 'x-vercel-forwarded-for': `198.51.${i % 250}.${Math.floor(i / 250) + 1}` }, body: invalid[i % invalid.length] })
+      expect([400, 413]).toContain(r.status)
+    }
+    expect(fetchMock).not.toHaveBeenCalled()
+    // Une requête valide passe ensuite : le plafond global est intact (avant correctif : 429).
+    const ok = await run(h, { body: { images: [b64(JPEG)] } })
+    expect(ok.status).toBe(200)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('une requête valide consomme le plafond global : la 151e est refusée (429 + Retry-After), même depuis un autre réseau', async () => {
+    const fetchMock = vi.fn(async () => new Response('{"results":[]}', { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const h = await fresh()
+    for (let i = 0; i < 150; i++) {
+      // 10 requêtes par réseau : sous la limite par réseau (20).
+      const r = await run(h, { headers: { 'x-vercel-forwarded-for': `192.0.2.${Math.floor(i / 10) + 1}` }, body: { images: [b64(JPEG)] } })
+      expect(r.status).toBe(200)
+    }
+    const over = await run(h, { headers: { 'x-vercel-forwarded-for': '192.0.2.250' }, body: { images: [b64(JPEG)] } })
+    expect(over.status).toBe(429)
+    expect(Number(over.headers['retry-after'])).toBeGreaterThan(0)
+    expect(fetchMock).toHaveBeenCalledTimes(150) // la 151e n'a pas atteint Pl@ntNet
+    // Une requête invalide reste une erreur 400 (elle est jugée avant le plafond) et n'appelle rien.
+    expect((await run(h, { body: { images: [] } })).status).toBe(400)
+  })
+
+  it('le plafond par réseau reste consommé par une requête invalide (protège le CPU)', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{"results":[]}', { status: 200 })))
+    const h = await fresh()
+    const headers = { 'x-vercel-forwarded-for': '203.0.113.99' }
+    let last: Awaited<ReturnType<typeof run>> | undefined
+    for (let i = 0; i < 21; i++) last = await run(h, { headers, body: { images: [] } })
+    expect(last?.status).toBe(429)
   })
 })

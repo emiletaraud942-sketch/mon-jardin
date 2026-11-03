@@ -209,7 +209,7 @@ describe('échec de lecture', () => {
     const s = await freshStore()
     await s.loadState()
     s.addGarden(garden)
-    s.resumeSaving()
+    expect(await s.resumeSaving()).toEqual({ ok: true }) // rien n'est stocké : rien à protéger
     await vi.advanceTimersByTimeAsync(300)
     expect(s.getStorageStatus().readFailed).toBe(false)
     expect(db.has(KEY)).toBe(true)
@@ -236,16 +236,6 @@ describe('échec de lecture', () => {
     expect((db.get(KEY) as { version: number }).version).toBe(99)
   })
 
-  it('replaceData (import) est une action explicite qui lève le blocage', async () => {
-    idb.failGet = true
-    const s = await freshStore()
-    await s.loadState()
-    s.replaceData({ gardens: [garden], plants: [], tasksDone: [] })
-    await vi.advanceTimersByTimeAsync(300)
-    expect(s.getStorageStatus().readFailed).toBe(false)
-    expect(db.has(KEY)).toBe(true)
-  })
-
   it('ne supprime aucune photo quand la lecture a échoué', async () => {
     db.set('photo:orpheline', new Blob(['x']))
     idb.failGet = true
@@ -253,6 +243,146 @@ describe('échec de lecture', () => {
     await s.loadState()
     await s.purgeOrphanPhotos()
     expect(db.has('photo:orpheline')).toBe(true)
+  })
+})
+
+describe('échec de lecture : jamais d’écrasement sans copie', () => {
+  const abimee = { version: 2, gardens: 'pas un tableau', plants: 12 }
+
+  it('données abîmées : resumeSaving copie l’original dans la copie de sécurité AVANT d’écrire', async () => {
+    db.set(KEY, abimee)
+    const s = await freshStore()
+    await s.loadState()
+    expect(s.getStorageStatus()).toMatchObject({ readFailed: true, readFailure: 'unreadable' })
+    s.addGarden(garden)
+    await vi.advanceTimersByTimeAsync(500)
+    expect(db.get(KEY)).toEqual(abimee) // rien n'a été écrit
+    expect(await s.resumeSaving()).toEqual({ ok: true })
+    // la copie existe dès la fin de resumeSaving, avant la première écriture différée (200 ms)
+    expect(db.get(KEY + ':avant-migration')).toEqual(abimee)
+    expect(db.get(KEY)).toEqual(abimee)
+    await vi.advanceTimersByTimeAsync(300)
+    expect((db.get(KEY) as { gardens: unknown[] }).gardens).toHaveLength(1)
+    expect(db.get(KEY + ':avant-migration')).toEqual(abimee)
+    expect(s.getStorageStatus().readFailure).toBeUndefined()
+  })
+
+  it('si la copie échoue, resumeSaving refuse et rien n’est écrasé', async () => {
+    db.set(KEY, abimee)
+    const s = await freshStore()
+    await s.loadState()
+    idb.failSet = new Error('plein')
+    s.addGarden(garden)
+    expect(await s.resumeSaving()).toEqual({ ok: false, reason: 'no-copy' })
+    expect(s.getStorageStatus().readFailed).toBe(true)
+    idb.failSet = false
+    await vi.advanceTimersByTimeAsync(500)
+    expect(db.get(KEY)).toEqual(abimee)
+    expect(db.has(KEY + ':avant-migration')).toBe(false)
+  })
+
+  it('une copie de sécurité plus ancienne n’est pas détruite : elle passe en « précédente »', async () => {
+    const ancienne = { version: 2, gardens: [garden], plants: [], tasksDone: [] }
+    db.set(KEY + ':avant-migration', ancienne)
+    db.set(KEY, abimee)
+    const s = await freshStore()
+    await s.loadState()
+    await s.resumeSaving()
+    expect(db.get(KEY + ':avant-migration')).toEqual(abimee)
+    expect(db.get(KEY + ':avant-migration:precedente')).toEqual(ancienne)
+  })
+
+  it('lecture impossible (panne) alors que des données existent : resumeSaving refuse tant qu’on ne peut rien copier', async () => {
+    db.set(KEY, { version: 2, gardens: [garden], plants: [], tasksDone: [] })
+    idb.failGet = true
+    const s = await freshStore()
+    await s.loadState()
+    expect(s.getStorageStatus().readFailure).toBe('io')
+    expect(await s.resumeSaving()).toEqual({ ok: false, reason: 'no-copy' })
+    expect(s.getStorageStatus().readFailed).toBe(true)
+    // la panne cesse : resumeSaving relit et copie l'original
+    idb.failGet = false
+    expect(await s.resumeSaving()).toEqual({ ok: true })
+    expect((db.get(KEY + ':avant-migration') as { gardens: unknown[] }).gardens).toHaveLength(1)
+  })
+
+  it('version plus récente : jamais proposée à l’effacement, resumeSaving refuse, les données restent', async () => {
+    const future = { version: 99, gardens: [garden], plants: [] }
+    db.set(KEY, future)
+    const s = await freshStore()
+    await s.loadState()
+    const st = s.getStorageStatus()
+    expect(st).toMatchObject({ readFailed: true, readFailure: 'newer-version' })
+    const info = s.describeReadFailure(st.readFailure!)
+    expect(info.primary).toBe('update')
+    expect(info.primaryLabel).toBe('Mettre à jour l’appli')
+    expect(info.canStartOver).toBe(false)
+    expect(info.startOverWarning).toBeUndefined()
+    s.addGarden(garden)
+    expect(await s.resumeSaving()).toEqual({ ok: false, reason: 'newer-version' })
+    expect(s.RESUME_REFUSAL_TEXT['newer-version']).toMatch(/Mettez l’appli à jour/)
+    await vi.advanceTimersByTimeAsync(500)
+    expect(db.get(KEY)).toEqual(future)
+    expect(idb.sets).toEqual([])
+  })
+
+  it('textes pour les autres causes : « Repartir de zéro » proposé avec la mention de la copie', async () => {
+    const s = await freshStore()
+    for (const kind of ['unreadable', 'io'] as const) {
+      const info = s.describeReadFailure(kind)
+      expect(info.canStartOver).toBe(true)
+      expect(info.primary).toBe('retry')
+      expect(info.startOverWarning).toMatch(/copie/)
+      expect(info.startOverWarning).not.toMatch(/ne pourrez plus les retrouver/)
+    }
+  })
+
+  it('replaceData (import) après échec de lecture : copie d’abord, écrit ensuite', async () => {
+    db.set(KEY, abimee)
+    const s = await freshStore()
+    await s.loadState()
+    s.replaceData({ gardens: [garden], plants: [], tasksDone: [] })
+    await vi.advanceTimersByTimeAsync(300)
+    expect(s.getStorageStatus().readFailed).toBe(false)
+    expect(db.get(KEY + ':avant-migration')).toEqual(abimee)
+    expect((db.get(KEY) as { gardens: unknown[] }).gardens).toHaveLength(1)
+    // la copie a bien été faite avant l'écriture de l'état
+    expect(idb.sets.indexOf(KEY + ':avant-migration')).toBeLessThan(idb.sets.lastIndexOf(KEY))
+  })
+
+  it('replaceData après échec de lecture : si la copie échoue, le blocage reste et le dit', async () => {
+    db.set(KEY, abimee)
+    const s = await freshStore()
+    await s.loadState()
+    idb.failSet = new Error('plein')
+    s.replaceData({ gardens: [garden], plants: [], tasksDone: [] })
+    await vi.advanceTimersByTimeAsync(500)
+    expect(s.getStorageStatus().readFailed).toBe(true)
+    expect(s.getStorageStatus().writeError).toMatch(/copie/)
+    expect(db.get(KEY)).toEqual(abimee)
+  })
+
+  it('keepLocalSafetyCopy copie l’état courant ; les photos de la copie ne sont pas purgées', async () => {
+    db.set(KEY, { version: 2, gardens: [garden], plants: [plant], tasksDone: [] })
+    db.set('photo:a', new Blob(['x']))
+    const s = await freshStore()
+    await s.loadState()
+    expect(await s.keepLocalSafetyCopy()).toBe(true)
+    expect((db.get(KEY + ':avant-migration') as { plants: { id: string }[] }).plants[0].id).toBe('p1')
+    s.replaceData({ gardens: [garden], plants: [], tasksDone: [] }, { keepPhotos: true })
+    await vi.advanceTimersByTimeAsync(300)
+    expect(await s.purgeOrphanPhotos()).toBe(0)
+    expect(db.has('photo:a')).toBe(true)
+  })
+
+  it('keepLocalSafetyCopy : rien à protéger sur un état vide ; échec du stockage = false', async () => {
+    const s = await freshStore()
+    await s.loadState()
+    expect(await s.keepLocalSafetyCopy()).toBe(true)
+    expect(db.has(KEY + ':avant-migration')).toBe(false)
+    s.addGarden(garden)
+    idb.failSet = new Error('plein')
+    expect(await s.keepLocalSafetyCopy()).toBe(false)
   })
 })
 
