@@ -41,11 +41,14 @@ const filetOiseaux: TaskRule = {
   tool: 'filet anti-oiseaux',
 }
 
+const VERIF_NIDS = ' Avant de couper, vérifiez qu’aucun nid n’est occupé (nidification : 15 mars–31 juillet, recommandation OFB).'
+
 export const PETITS_FRUITS: Species[] = [
   {
     id: 'framboisier',
     nomCommun: 'Framboisier',
     nomLatin: 'Rubus idaeus',
+    alias: ['framboise', 'framboises', 'framboisier remontant'],
     famille: 'Rosaceae',
     categorie: 'petit-fruit',
     strate: 'arbuste',
@@ -86,7 +89,7 @@ export const PETITS_FRUITS: Species[] = [
       {
         type: 'taille',
         months: [4, 5],
-        howTo: 'Arracher les drageons qui sortent hors du rang et éclaircir les jeunes cannes trop serrées pour aérer.',
+        howTo: 'Arracher les drageons qui sortent hors du rang et éclaircir les jeunes cannes trop serrées pour aérer.' + VERIF_NIDS,
         tool: 'sécateur',
       },
       {
@@ -113,6 +116,7 @@ export const PETITS_FRUITS: Species[] = [
     id: 'ronce-sans-epines',
     nomCommun: 'Ronce fruitière sans épines',
     nomLatin: 'Rubus fruticosus',
+    alias: ['mure', 'mures', 'ronce', 'murier ronce', 'mure sans epines'],
     famille: 'Rosaceae',
     categorie: 'petit-fruit',
     strate: 'arbuste',
@@ -173,6 +177,7 @@ export const PETITS_FRUITS: Species[] = [
     id: 'groseillier',
     nomCommun: 'Groseillier à grappes',
     nomLatin: 'Ribes rubrum',
+    alias: ['groseille', 'groseilles', 'groseille rouge', 'groseille a grappes'],
     famille: 'Grossulariaceae',
     categorie: 'petit-fruit',
     strate: 'arbuste',
@@ -208,7 +213,7 @@ export const PETITS_FRUITS: Species[] = [
         months: [7, 8],
         condition: 'apres-recolte',
         minAgeYears: 3,
-        howTo: 'Taille en vert : raccourcir les pousses de l’année à 4–5 feuilles pour faire entrer la lumière et limiter l’oïdium.',
+        howTo: 'Taille en vert : raccourcir les pousses de l’année à 4–5 feuilles pour faire entrer la lumière et limiter l’oïdium.' + VERIF_NIDS,
         tool: 'sécateur',
       },
       filetOiseaux,
@@ -231,6 +236,7 @@ export const PETITS_FRUITS: Species[] = [
     id: 'cassissier',
     nomCommun: 'Cassissier',
     nomLatin: 'Ribes nigrum',
+    alias: ['cassis', 'cassis noir'],
     famille: 'Grossulariaceae',
     categorie: 'petit-fruit',
     strate: 'arbuste',
@@ -280,6 +286,7 @@ export const PETITS_FRUITS: Species[] = [
     id: 'groseillier-maquereau',
     nomCommun: 'Groseillier à maquereau',
     nomLatin: 'Ribes uva-crispa',
+    alias: ['groseille a maquereau', 'groseille epineuse'],
     famille: 'Grossulariaceae',
     categorie: 'petit-fruit',
     strate: 'arbuste',
@@ -314,7 +321,7 @@ export const PETITS_FRUITS: Species[] = [
         type: 'taille',
         months: [6, 7],
         minAgeYears: 3,
-        howTo: "Taille en vert : raccourcir les pousses de l'année à 5 feuilles et ôter les extrémités blanchies par l'oïdium américain.",
+        howTo: "Taille en vert : raccourcir les pousses de l'année à 5 feuilles et ôter les extrémités blanchies par l'oïdium américain." + VERIF_NIDS,
         tool: 'sécateur',
       },
       {
@@ -342,6 +349,7 @@ export const PETITS_FRUITS: Species[] = [
     id: 'myrtillier',
     nomCommun: 'Myrtillier arbustif',
     nomLatin: 'Vaccinium corymbosum',
+    alias: ['myrtille', 'myrtilles', 'bleuet', 'myrtille geante'],
     famille: 'Ericaceae',
     categorie: 'petit-fruit',
     strate: 'arbuste',
@@ -415,6 +423,7 @@ export const PETITS_FRUITS: Species[] = [
     id: 'casseillier',
     nomCommun: 'Casseillier',
     nomLatin: 'Ribes × nidigrolaria',
+    alias: ['josta', 'jostaberry', 'cassis groseille'],
     famille: 'Grossulariaceae',
     categorie: 'petit-fruit',
     strate: 'arbuste',
@@ -465,6 +474,7 @@ export const PETITS_FRUITS: Species[] = [
     id: 'goji',
     nomCommun: 'Goji',
     nomLatin: 'Lycium barbarum',
+    alias: ['baie de goji', 'lyciet'],
     famille: 'Solanaceae',
     categorie: 'petit-fruit',
     strate: 'arbuste',
@@ -504,7 +514,7 @@ export const PETITS_FRUITS: Species[] = [
       {
         type: 'taille',
         months: [6, 7],
-        howTo: 'Arracher les drageons qui partent des racines et pincer les rameaux trop longs.',
+        howTo: 'Arracher les drageons qui partent des racines et pincer les rameaux trop longs.' + VERIF_NIDS,
         tool: 'sécateur',
       },
       {
@@ -524,6 +534,7 @@ export const PETITS_FRUITS: Species[] = [
     id: 'aronia',
     nomCommun: 'Aronia',
     nomLatin: 'Aronia melanocarpa',
+    alias: ['aronie', "baie d'aronia"],
     famille: 'Rosaceae',
     categorie: 'petit-fruit',
     strate: 'arbuste',
@@ -573,6 +584,7 @@ export const PETITS_FRUITS: Species[] = [
     id: 'kiwi',
     nomCommun: 'Kiwi',
     nomLatin: 'Actinidia deliciosa',
+    alias: ['kiwis', 'actinidia'],
     famille: 'Actinidiaceae',
     categorie: 'petit-fruit',
     strate: 'grimpante',
@@ -646,6 +658,7 @@ export const PETITS_FRUITS: Species[] = [
     id: 'kiwai',
     nomCommun: 'Kiwaï',
     nomLatin: 'Actinidia arguta',
+    alias: ['kiwi mini', 'mini kiwi', 'kiwi rustique'],
     famille: 'Actinidiaceae',
     categorie: 'petit-fruit',
     strate: 'grimpante',
@@ -707,6 +720,7 @@ export const PETITS_FRUITS: Species[] = [
     id: 'vigne',
     nomCommun: 'Vigne',
     nomLatin: 'Vitis vinifera',
+    alias: ['raisin', 'raisins', 'raisin de table'],
     famille: 'Vitaceae',
     categorie: 'petit-fruit',
     strate: 'grimpante',
@@ -745,12 +759,12 @@ export const PETITS_FRUITS: Species[] = [
       {
         type: 'taille',
         months: [4, 5],
-        howTo: "Ébourgeonnage : quand les pousses atteignent 10 cm, supprimer à la main les doubles bourgeons et les gourmands sortant du vieux bois, en gardant une ou deux pousses par courson.",
+        howTo: "Ébourgeonnage : quand les pousses atteignent 10 cm, supprimer à la main les doubles bourgeons et les gourmands sortant du vieux bois, en gardant une ou deux pousses par courson." + VERIF_NIDS,
       },
       {
         type: 'taille',
         months: [6, 7],
-        howTo: 'Rognage : couper l’extrémité des rameaux à 2–3 feuilles au-dessus de la dernière grappe ; en août, effeuiller légèrement autour des grappes.',
+        howTo: 'Rognage : couper l’extrémité des rameaux à 2–3 feuilles au-dessus de la dernière grappe ; en août, effeuiller légèrement autour des grappes.' + VERIF_NIDS,
         tool: 'sécateur',
       },
       {
@@ -758,7 +772,7 @@ export const PETITS_FRUITS: Species[] = [
         months: [5, 6, 7],
         condition: 'temps-sec',
         frequencyDays: 14,
-        howTo: 'Contre le mildiou, pulvériser de la bouillie bordelaise à faible dose après les pluies (et du soufre contre l’oïdium), sans dépasser 4 kg de cuivre/ha/an.',
+        howTo: 'Contre le mildiou et l’oïdium, la prévention passe d’abord par des variétés résistantes, une bonne aération (palissage, ébourgeonnage, effeuillage) et un sol peu arrosé. En dernier recours, un produit cuivré préventif (type bouillie bordelaise) selon l’étiquette : le cuivre s’accumule dans le sol.',
         tool: 'pulvérisateur',
       },
       {
@@ -770,7 +784,7 @@ export const PETITS_FRUITS: Species[] = [
       },
     ],
     entretien:
-      "La vigne aime les sols pauvres, chauds et caillouteux : évitez de trop la nourrir. Tout se joue à la taille d'hiver courte puis à l'ébourgeonnage et au rognage au printemps et en été. Préférez des variétés résistantes au mildiou et à l'oïdium pour limiter les traitements au cuivre. Un enherbement fleuri au pied attire les auxiliaires.",
+      "La vigne aime les sols pauvres, chauds et caillouteux : évitez de trop la nourrir. Tout se joue à la taille d'hiver courte puis à l'ébourgeonnage et au rognage au printemps et en été. Préférez des variétés résistantes au mildiou et à l'oïdium et aérez bien la ramure : le cuivre, qui s'accumule dans le sol, ne doit rester qu'un dernier recours. Un enherbement fleuri au pied attire les auxiliaires.",
     couleur: '#5a8a3a',
     couleurAccent: '#4b2a5c',
   },
@@ -778,6 +792,7 @@ export const PETITS_FRUITS: Species[] = [
     id: 'camerisier',
     nomCommun: 'Camerisier',
     nomLatin: 'Lonicera caerulea var. kamtschatica',
+    alias: ['chevrefeuille bleu', 'baie de mai', 'haskap', 'chevrefeuille comestible'],
     famille: 'Caprifoliaceae',
     categorie: 'petit-fruit',
     strate: 'arbuste',

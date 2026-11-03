@@ -1,0 +1,8 @@
+[
+  {
+    "id": "GHSA-jrc7-96c5-q579",
+    "package": "maplibre-gl",
+    "reason": "XSS dans DOM.sanitize() de l'attribution : fonction absente de la 4.7.1 installée ; l'attribution de MapView est la constante « © IGN – Géoplateforme », aucun setHTML ni Popup. Correctif = montée majeure 6.x à planifier avec l'agent cartographie.",
+    "expires": "2027-02-01"
+  }
+]

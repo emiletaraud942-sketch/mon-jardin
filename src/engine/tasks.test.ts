@@ -162,7 +162,8 @@ const plant = (speciesId: string, extra: Partial<Plant> = {}): Plant => ({
   gardenId: 'g1',
   speciesId,
   position: { x: n, y: 0 },
-  plantedAt: '2020-03-01',
+  // Une annuelle date de la saison 2026 (sinon sa saison serait finie) ; une vivace ou un arbre, de 2020.
+  plantedAt: (speciesById[speciesId] ?? SPECIES_BY_ID[speciesId])?.vivace === false ? '2026-01-02' : '2020-03-01',
   status: 'en-place',
   photos: [],
   ...extra,
@@ -439,7 +440,7 @@ describe('récolte : données réelles (pas de règle implicite en doublon)', ()
     const real = SPECIES_BY_ID
     for (const [id, today] of [['tomate', new Date(2026, 7, 10, 9)], ['pommier', new Date(2026, 8, 10, 9)]] as const) {
       const tasks = generateTasks({
-        garden, speciesById: real, today, tasksDone: [], plants: [plant(id, { plantedAt: '2015-03-01' })],
+        garden, speciesById: real, today, tasksDone: [], plants: [plant(id, { plantedAt: id === 'tomate' ? '2026-05-15' : '2015-03-01' })],
       }).filter((t) => t.type === 'recolte')
       expect(tasks).toHaveLength(1)
       expect(tasks[0].key).not.toContain('cal-recolte')

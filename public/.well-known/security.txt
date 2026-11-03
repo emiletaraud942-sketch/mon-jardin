@@ -1,0 +1,7 @@
+# Politique de sécurité de PermaJardin (RFC 9116). Voir aussi SECURITY.md à la racine du dépôt.
+# Signalement privé GitHub (actif seulement quand le propriétaire a activé « Private vulnerability reporting »).
+Contact: https://github.com/emiletaraud942-sketch/mon-dressing-app/security/advisories/new
+# Adresse e-mail de sécurité : à compléter par le propriétaire (ajouter une ligne « Contact: mailto:… » ici ET dans SECURITY.md).
+Expires: 2027-10-27T00:00:00.000Z
+Preferred-Languages: fr
+Policy: https://github.com/emiletaraud942-sketch/mon-dressing-app/blob/main/SECURITY.md

@@ -43,6 +43,19 @@ describe('documents', () => {
     const cgu = toMarkdown(CGU)
     for (const m of ['671', 'indicatif', 'Ne consommez jamais', 'droit français']) expect(cgu).toContain(m)
   })
+  it('aucun texte ne promet une région d’hébergement non vérifiée (« Supabase, UE »)', () => {
+    for (const [id, t] of Object.entries(CONSENT_TEXT)) {
+      const text = t.paragraphes.join(' ')
+      expect(text, id).not.toMatch(/Supabase,\s*UE|serveur[^.]*\bUE\b|hébergé[^.]*(Union européenne|\bUE\b)/i)
+    }
+    for (const id of ['sync', 'voisins', 'notifications'] as const) expect(CONSENT_TEXT[id].paragraphes.join(' '), id).toContain('région d’hébergement à confirmer par l’éditeur')
+  })
+  it('champs « [à compléter] » : la liste du propriétaire est celle des 5 champs de LEGAL_FIELDS', () => {
+    expect(Object.keys(LEGAL_FIELDS).sort()).toEqual(['CONTACT_EMAIL', 'DIRECTEUR_PUBLICATION', 'EDITEUR_ADRESSE', 'EDITEUR_NOM', 'EDITEUR_STATUT'])
+    expect(getMissingFields().sort()).toEqual(['CONTACT_EMAIL', 'DIRECTEUR_PUBLICATION', 'EDITEUR_ADRESSE', 'EDITEUR_NOM', 'EDITEUR_STATUT'])
+    // Ce que l'utilisateur lit ne montre jamais le marqueur.
+    for (const d of LEGAL_DOCS) expect(legalText(toMarkdown(d))).not.toContain('[à compléter]')
+  })
   it('le texte de consentement de l’entraide dit l’essentiel', () => {
     const t = CONSENT_TEXT.voisins.paragraphes.join(' ')
     for (const m of ['e-mail', 'pseudo', 'environ 2 km', 'environ 5 km', '60 jours', 'jamais envoyées', 'messages']) expect(t).toContain(m)

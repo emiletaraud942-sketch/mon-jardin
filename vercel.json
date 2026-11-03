@@ -52,7 +52,7 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "accelerometer=(self), autoplay=(), camera=(self), display-capture=(), encrypted-media=(), geolocation=(self), gyroscope=(self), hid=(), magnetometer=(self), microphone=(), midi=(), payment=(), publickey-credentials-get=(), screen-wake-lock=(), serial=(), usb=(), xr-spatial-tracking=()"
+          "value": "accelerometer=(self), autoplay=(), camera=(self), display-capture=(), encrypted-media=(), geolocation=(self), gyroscope=(self), hid=(), magnetometer=(self), microphone=(), midi=(), payment=(), publickey-credentials-get=(), screen-wake-lock=(self), serial=(), usb=(), xr-spatial-tracking=()"
         },
         {
           "key": "X-Frame-Options",

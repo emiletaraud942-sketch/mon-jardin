@@ -7,9 +7,9 @@ import { DATA_INVENTORY, type LegalBasis } from './security/inventory'
 export const DRAFT_BANNER = 'BROUILLON À FAIRE VALIDER PAR UN PROFESSIONNEL'
 export const DRAFT_NOTE = 'Texte provisoire, à faire valider par un professionnel avant publication. Il ne constitue pas un avis juridique.'
 
-export const LEGAL_VERSION = '1.4'
+export const LEGAL_VERSION = '1.5'
 /** Dernière mise à jour (AAAA-MM-JJ). */
-export const LEGAL_UPDATED = '2026-10-25'
+export const LEGAL_UPDATED = '2026-11-03'
 
 // ---------- Champs à compléter par l'éditeur (aucune donnée personnelle pré-remplie) ----------
 export const TO_COMPLETE = '[à compléter]'
@@ -420,7 +420,7 @@ export const CONSENT_TEXT: Record<'plantnet' | 'sync' | 'voisins' | 'notificatio
   sync: {
     titre: 'Enregistrer vos données en ligne ?',
     paragraphes: [
-      'Vos jardins, plantes et tâches (sans les photos) seront enregistrés sur un serveur (Supabase, UE) lié à votre adresse e-mail, pour les retrouver sur un autre appareil.',
+      'Vos jardins, plantes et tâches (sans les photos) seront enregistrés sur un serveur (Supabase ; région d’hébergement à confirmer par l’éditeur) lié à votre adresse e-mail, pour les retrouver sur un autre appareil.',
       `Destinataire : ${(compte?.destinataires ?? []).join(' ; ')}.`,
       'Vous pouvez retirer votre autorisation et supprimer vos données en ligne à tout moment dans Réglages.',
     ],
@@ -429,7 +429,7 @@ export const CONSENT_TEXT: Record<'plantnet' | 'sync' | 'voisins' | 'notificatio
   voisins: {
     titre: 'Rejoindre l’entraide entre voisins ?',
     paragraphes: [
-      'Votre adresse e-mail (pour le lien de connexion), votre pseudo, votre quartier arrondi (une zone d’environ 2 km, ou d’environ 5 km si vous le choisissez), vos annonces, photos, réponses et messages privés seront enregistrés sur un serveur dédié (Supabase, UE). Votre adresse et votre position exacte ne sont jamais envoyées.',
+      'Votre adresse e-mail (pour le lien de connexion), votre pseudo, votre quartier arrondi (une zone d’environ 2 km, ou d’environ 5 km si vous le choisissez), vos annonces, photos, réponses et messages privés seront enregistrés sur un serveur dédié (Supabase ; région d’hébergement à confirmer par l’éditeur). Votre adresse et votre position exacte ne sont jamais envoyées.',
       'Votre pseudo, votre quartier, vos annonces et vos réponses sont visibles des autres membres. Vos messages ne sont lus que par votre correspondant. Les annonces disparaissent après 60 jours. Si vous devenez organisateur, le nom de votre organisation et vos événements sont visibles aussi.',
       'Vous pouvez retirer votre autorisation dans Réglages, et supprimer votre compte et vos annonces à tout moment dans l’entraide.',
     ],
@@ -440,7 +440,7 @@ export const CONSENT_TEXT: Record<'plantnet' | 'sync' | 'voisins' | 'notificatio
     paragraphes: [
       'Quand vous recevez un message privé, votre appareil peut afficher une alerte. Elle dit seulement « Vous avez un nouveau message ».',
       'Elle ne montre ni le texte du message, ni le pseudo de la personne.',
-      'Pour cela, une adresse technique de votre appareil est enregistrée sur notre serveur (Supabase, UE).',
+      'Pour cela, une adresse technique de votre appareil est enregistrée sur notre serveur (Supabase ; région d’hébergement à confirmer par l’éditeur).',
       'Elle est aussi connue du service d’alertes de votre programme internet : Google, Mozilla, Apple ou Microsoft. Ce service ne reçoit aucun texte.',
       'Votre programme internet vous demandera ensuite son accord. Vous pouvez tout arrêter dans Entraide, Profil, Mes notifications.',
     ],

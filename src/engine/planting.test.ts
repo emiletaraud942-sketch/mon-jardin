@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Garden, Plant, Species, XY } from '../types'
-import { companionReport, legalDistance, recommendSpecies, scoreSpecies, sunCategory, type SpotContext } from './planting'
+import { companionReport, legalDistance, recommendSpecies, scoreSpecies, sunCategory, winterMinC, type SpotContext } from './planting'
 
 const parcel: XY[] = [
   { x: -10, y: -10 },
@@ -234,5 +234,60 @@ describe('companionReport', () => {
     const r = companionReport(t, [t, b, f, loin, mort], speciesById)
     expect(r.amis.map((p) => p.id)).toEqual([b.id])
     expect(r.ennemis.map((p) => p.id)).toEqual([f.id])
+  })
+})
+
+describe('art. 671 et 672 : texte et ordre', () => {
+  it('les règlements et usages locaux passent avant les 2 m / 0,5 m, qui valent « à défaut »', () => {
+    const r = legalDistance(pommier, { x: 9, y: 0 }, parcel).message
+    const iUsages = r.search(/règlements particuliers et les usages locaux constants et reconnus/)
+    const iDefaut = r.indexOf('à défaut')
+    const iDeux = r.indexOf('2 m de la limite')
+    expect(iUsages).toBeGreaterThanOrEqual(0)
+    expect(iDefaut).toBeGreaterThan(iUsages)
+    expect(iDeux).toBeGreaterThan(iDefaut)
+    expect(legalDistance(tomate, { x: 9.9, y: 0 }, parcel).message).toMatch(/à défaut, une plantation de 2 m de haut ou moins .* 0,5 m/)
+  })
+
+  it('rappelle la mairie, les espaliers (crête du mur), la voirie et l’art. 672, sans prétendre être un avis juridique', () => {
+    for (const r of [legalDistance(pommier, { x: 9, y: 0 }, parcel), legalDistance(pommier, { x: 0, y: 0 }, parcel), legalDistance(pommier, { x: 0, y: 0 })]) {
+      expect(r.message).toMatch(/auprès de votre mairie/)
+      expect(r.message).toMatch(/espalier.*crête du mur/)
+      expect(r.message).toMatch(/voirie/)
+      expect(r.message).toMatch(/672.*arrachage ou la réduction.*titre, destination du père de famille ou prescription de 30 ans/)
+      expect(r.message).toMatch(/arbre mort ne se remplace qu’en respectant la distance/)
+      expect(r.message).toMatch(/pas un conseil juridique/)
+    }
+  })
+
+  it('reste non bloquant : le malus de limite ne bloque jamais', () => {
+    expect(scoreSpecies(pommier, ctx({ spot: { x: 9.5, y: 0 } })).blocking).toBe(false)
+  })
+})
+
+describe('rusticité : climat enregistré ou estimation', () => {
+  const froid = (extra: Partial<Garden>) => garden(extra)
+  it('utilise la minimale observée du climat quand elle est présente', () => {
+    const r = scoreSpecies(citronnier, ctx({ garden: froid({ climate: { minAbsC: -12 } }) }))
+    expect(pointsOf(r.factors, /Rusticité/)).toBeLessThan(0)
+    expect(r.factors.find((f) => /Rusticité/.test(f.label))!.label).toMatch(/observés/)
+    // Sans date de gelée : le climat suffit.
+    expect(garden({ climate: { minAbsC: -12 } }).lastFrostDoy).toBeUndefined()
+  })
+
+  it('le climat prime sur l’estimation par les gelées', () => {
+    // Gelées tardives (estimation très froide) mais minimale observée douce (-1 °C) : citronnier (-3 °C) non pénalisé.
+    const doux = scoreSpecies(citronnier, ctx({ garden: froid({ lastFrostDoy: 130, climate: { minAbsC: -1 } }) }))
+    expect(pointsOf(doux.factors, /Rusticité/)).not.toBeLessThan(0)
+    // Repli : sans climat, l'estimation s'applique encore.
+    const repli = scoreSpecies(citronnier, ctx({ garden: froid({ lastFrostDoy: 130 }) }))
+    expect(repli.factors.find((f) => /Rusticité/.test(f.label))!.label).toMatch(/estimés/)
+    expect(winterMinC(froid({}))).toBeUndefined()
+    expect(winterMinC(froid({ climate: { zone: '8a' } }))).toBeUndefined() // zone seule : pas de minimale
+  })
+
+  it('une plante récoltée ne compte plus comme voisine', () => {
+    const avec = scoreSpecies(tomate, ctx({ plants: [plant('tomate', 0.2, 0, 'recoltee')] }))
+    expect(pointsOf(avec.factors, /Espacement/)).toBe(0)
   })
 })

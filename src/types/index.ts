@@ -107,7 +107,15 @@ export interface Species {
   couleur: string
   /** Couleur de fleur ou de fruit (hex), optionnelle. */
   couleurAccent?: string
+  /** Autres noms recherchés (« pomme », « fraise », « tomate cerise »…), sans souci d'accents ni de casse. */
+  alias?: string[]
+  /** Risques pour les personnes, les animaux ou le milieu naturel. À afficher avec `risqueNote`. */
+  risque?: Risque[]
+  /** Avertissement court (20 mots au plus) qui accompagne `risque`. */
+  risqueNote?: string
 }
+
+export type Risque = 'toxique' | 'invasive' | 'allergene'
 
 // ---------- Jardin de l'utilisateur ----------
 

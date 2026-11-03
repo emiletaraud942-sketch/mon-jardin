@@ -6,11 +6,12 @@ with r as (
   select target_kind, target_id, count(*) as nb, count(distinct reporter) as personnes,
          min(created_at) as premier_signalement, max(created_at) as dernier_signalement,
          string_agg(distinct reason, ', ') as motifs,
-         string_agg(distinct nullif(details, ''), ' | ') as precisions
+         string_agg(distinct nullif(details, ''), ' | ') as precisions,
+         (array_agg(snapshot order by created_at) filter (where snapshot is not null))[1] as extrait   -- copie du contenu au moment du signalement (migration v7) : reste lisible si l'auteur supprime
   from public.reports
   group by target_kind, target_id
 )
-select r.target_kind as type, r.nb, r.personnes, r.motifs, r.precisions,
+select r.target_kind as type, r.nb, r.personnes, r.motifs, r.precisions, r.extrait,
        r.premier_signalement, r.dernier_signalement,
        coalesce(p.status, rp.status, ev.status, case when m.id is not null then 'message' end) as statut,
        coalesce(p.title, left(rp.body, 120), ev.title, left(m.body, 120), pr.pseudo) as contenu,
@@ -43,6 +44,9 @@ order by (select l.at from public.moderation_log l where l.target_kind = r.targe
 -- Lever un bannissement :      update public.profiles set banned_at = null where user_id = '<auteur_id>';
 -- Journal d'une décision (action : hide, restore, delete, warn, dismiss, legal_request, other) :
 --   insert into public.moderation_log (action, target_kind, target_id, reason) values ('hide', 'post', '<target_id>', 'motif court, sans recopier le contenu');
+
+-- 2 bis) AVERTISSEMENTS AUTOMATIQUES (migration v7) : seuil proche ou atteint, ou signalements de comptes récents/inactifs à examiner
+-- select at, target_kind, target_id, reason from public.moderation_log where actor = 'auto' and action = 'warn' order by at desc limit 50;
 
 -- 3) HISTORIQUE DES DÉCISIONS
 -- select at, actor, action, target_kind, target_id, reason from public.moderation_log order by at desc limit 100;

@@ -278,7 +278,8 @@ export const LOCAL_STORAGE_KEYS: readonly StorageKeyInfo[] = [
 /** Clés IndexedDB (base par défaut de idb-keyval) : toutes sont supprimées par `wipeLocalData()` (`del` de chaque clé). */
 export const INDEXEDDB_KEYS: readonly StorageKeyInfo[] = [
   { cle: 'permajardin:state:v1', contenu: 'État : jardins, plantes, tâches faites' },
-  { cle: 'permajardin:state:v1:avant-migration', contenu: 'Copie de l’état avant une correction au chargement ou une récupération' },
+  { cle: 'permajardin:state:v1:avant-migration', contenu: 'Copie de sécurité la plus récente : état avant une correction au chargement, avant un remplacement (synchro, import) ou données illisibles' },
+  { cle: 'permajardin:state:v1:avant-migration:precedente', contenu: 'Copie de sécurité d’avant (une nouvelle copie ne détruit jamais la précédente)' },
   { cle: 'permajardin:scan-queue', contenu: 'File d’attente du scan des plantes' },
   { cle: 'photo:', prefixe: true, contenu: 'Photos de plantes et du jardin (JPEG sans EXIF)' },
   { cle: 'lidar:', prefixe: true, contenu: 'Relevé LiDAR HD d’un jardin (cache de 90 jours)' },

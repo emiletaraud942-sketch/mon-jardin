@@ -1,12 +1,13 @@
 import type { Species, TaskRule } from '../../types'
 
 // Arbres et essences de haie champêtre (essences locales de France métropolitaine).
-// Rappel : ne jamais tailler haies et arbres du 15 mars au 31 juillet (nidification,
-// recommandation OFB ; la destruction de nids d'espèces protégées est interdite par la loi).
+// Rappel : l'OFB recommande d'éviter la taille des haies et des arbres du 15 mars au 31 juillet (nidification).
+// Ce n'est pas une interdiction générale pour un particulier (certains arrêtés préfectoraux en imposent une ; les
+// exploitants agricoles suivent la règle de la PAC), mais détruire un nid occupé d'une espèce protégée est interdit.
 
 const MOIS_TAILLE_HAIE: TaskRule['months'] = [9, 10, 11, 12, 1, 2]
 
-const RAPPEL_NIDIFICATION = 'Ne jamais tailler du 15 mars au 31 juillet : période de nidification (recommandation OFB, destruction de nids protégés interdite).'
+const RAPPEL_NIDIFICATION = 'Évitez de tailler du 15 mars au 31 juillet (nidification, recommandation OFB) : détruire un nid occupé d’une espèce protégée est interdit, et certains arrêtés préfectoraux imposent cette pause.'
 
 const plantationJeunesPlants: TaskRule = {
   type: 'plantation',
@@ -65,6 +66,7 @@ export const ARBRES_HAIES: Species[] = [
     id: 'chene',
     nomCommun: 'Chêne pédonculé',
     nomLatin: 'Quercus robur',
+    alias: ['chene commun', 'gland'],
     famille: 'Fagaceae',
     categorie: 'arbre',
     strate: 'canopee',
@@ -106,6 +108,7 @@ export const ARBRES_HAIES: Species[] = [
     id: 'hetre',
     nomCommun: 'Hêtre commun',
     nomLatin: 'Fagus sylvatica',
+    alias: ['fayard'],
     famille: 'Fagaceae',
     categorie: 'arbre',
     strate: 'canopee',
@@ -203,6 +206,7 @@ export const ARBRES_HAIES: Species[] = [
     id: 'erable-champetre',
     nomCommun: 'Érable champêtre',
     nomLatin: 'Acer campestre',
+    alias: ['erable'],
     famille: 'Sapindaceae',
     categorie: 'haie',
     strate: 'arbre-bas',
@@ -238,6 +242,7 @@ export const ARBRES_HAIES: Species[] = [
     id: 'charme',
     nomCommun: 'Charme commun',
     nomLatin: 'Carpinus betulus',
+    alias: ['charmille'],
     famille: 'Betulaceae',
     categorie: 'haie',
     strate: 'canopee',
@@ -286,6 +291,9 @@ export const ARBRES_HAIES: Species[] = [
     id: 'aulne-glutineux',
     nomCommun: 'Aulne glutineux',
     nomLatin: 'Alnus glutinosa',
+    alias: ['aulne', 'verne'],
+    risque: ['allergene'],
+    risqueNote: 'Pollen allergisant en fin d’hiver : à éviter près des fenêtres en cas d’allergie.',
     famille: 'Betulaceae',
     categorie: 'arbre',
     strate: 'canopee',
@@ -328,6 +336,9 @@ export const ARBRES_HAIES: Species[] = [
     id: 'robinier',
     nomCommun: 'Robinier faux-acacia',
     nomLatin: 'Robinia pseudoacacia',
+    alias: ['acacia', 'faux acacia'],
+    risque: ['invasive', 'toxique'],
+    risqueNote: 'Espèce exotique envahissante qui drageonne. Écorce, feuilles et graines toxiques ; seules les fleurs se mangent.',
     famille: 'Fabaceae',
     categorie: 'arbre',
     strate: 'canopee',
@@ -382,6 +393,9 @@ export const ARBRES_HAIES: Species[] = [
     id: 'bouleau',
     nomCommun: 'Bouleau verruqueux',
     nomLatin: 'Betula pendula',
+    alias: ['bouleau blanc'],
+    risque: ['allergene'],
+    risqueNote: 'Pollen très allergisant en mars-avril : à éviter près de la maison en cas d’allergie.',
     famille: 'Betulaceae',
     categorie: 'arbre',
     strate: 'canopee',
@@ -430,6 +444,7 @@ export const ARBRES_HAIES: Species[] = [
     id: 'saule-osier',
     nomCommun: 'Saule des vanniers (osier)',
     nomLatin: 'Salix viminalis',
+    alias: ['saule', 'osier', 'osier vannier'],
     famille: 'Salicaceae',
     categorie: 'haie',
     strate: 'arbre-bas',
@@ -476,6 +491,9 @@ export const ARBRES_HAIES: Species[] = [
     id: 'sureau-noir',
     nomCommun: 'Sureau noir',
     nomLatin: 'Sambucus nigra',
+    alias: ['sureau', 'sureau commun'],
+    risque: ['toxique'],
+    risqueNote: 'Baies crues, feuilles et tiges toxiques : ne consommer que fleurs et baies mûres cuites.',
     famille: 'Adoxaceae',
     categorie: 'haie',
     strate: 'arbre-bas',
@@ -531,6 +549,7 @@ export const ARBRES_HAIES: Species[] = [
     id: 'cornouiller-male',
     nomCommun: 'Cornouiller mâle',
     nomLatin: 'Cornus mas',
+    alias: ['cornouiller', 'cornouille'],
     famille: 'Cornaceae',
     categorie: 'haie',
     strate: 'arbre-bas',
@@ -573,6 +592,7 @@ export const ARBRES_HAIES: Species[] = [
     id: 'eleagnus',
     nomCommun: 'Éléagnus (chalef d’Ebbinge)',
     nomLatin: 'Elaeagnus × ebbingei',
+    alias: ['chalef', 'elaeagnus'],
     famille: 'Elaeagnaceae',
     categorie: 'haie',
     strate: 'arbuste',
@@ -627,6 +647,7 @@ export const ARBRES_HAIES: Species[] = [
     id: 'aubepine',
     nomCommun: 'Aubépine monogyne',
     nomLatin: 'Crataegus monogyna',
+    alias: ['epine blanche', 'cenelle'],
     famille: 'Rosaceae',
     categorie: 'haie',
     strate: 'arbre-bas',
@@ -684,6 +705,7 @@ export const ARBRES_HAIES: Species[] = [
     id: 'prunellier',
     nomCommun: 'Prunellier',
     nomLatin: 'Prunus spinosa',
+    alias: ['prunelle', 'epine noire'],
     famille: 'Rosaceae',
     categorie: 'haie',
     strate: 'arbuste',
@@ -725,6 +747,9 @@ export const ARBRES_HAIES: Species[] = [
     id: 'viorne-obier',
     nomCommun: 'Viorne obier',
     nomLatin: 'Viburnum opulus',
+    alias: ['viorne', 'boule de neige sauvage'],
+    risque: ['toxique'],
+    risqueNote: 'Baies toxiques crues pour l’homme : à éloigner des jeunes enfants.',
     famille: 'Adoxaceae',
     categorie: 'haie',
     strate: 'arbuste',

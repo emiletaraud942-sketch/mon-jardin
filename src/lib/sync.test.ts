@@ -109,10 +109,17 @@ function makeFake(): Fake {
 
 // ---------- Faux navigateur ----------
 
-const store = { replaceData: vi.fn(), state: { gardens: [{ id: 'g1' }], plants: [], tasksDone: [], loaded: true }, readFailed: false }
+const store = { replaceData: vi.fn(), keepCopy: vi.fn(async () => true), order: [] as string[], state: { gardens: [{ id: 'g1' }], plants: [], tasksDone: [], loaded: true }, readFailed: false }
 vi.mock('./store', () => ({
   getState: () => store.state,
-  replaceData: (d: unknown) => store.replaceData(d),
+  replaceData: (d: unknown, o?: unknown) => {
+    store.order.push('replace')
+    return store.replaceData(d, o)
+  },
+  keepLocalSafetyCopy: async () => {
+    store.order.push('copie')
+    return store.keepCopy()
+  },
   getStorageStatus: () => ({ persistent: undefined, readFailed: store.readFailed }),
 }))
 vi.mock('@supabase/supabase-js', () => ({
@@ -161,6 +168,9 @@ beforeEach(() => {
   clock = 0
   store.readFailed = false
   store.replaceData.mockClear()
+  store.keepCopy.mockReset()
+  store.keepCopy.mockResolvedValue(true)
+  store.order = []
   stubBrowser()
   vi.spyOn(console, 'warn').mockImplementation(() => undefined)
 })
@@ -357,6 +367,18 @@ describe('pushSnapshot', () => {
     await expect(s.pushSnapshot()).rejects.toBeInstanceOf(s.SyncConflictError)
   })
 
+  it('le plafond de 5 Mo est mesuré en octets UTF-8, pas en caractères', async () => {
+    const s = await load()
+    expect(s.jsonByteLength({ a: 'é' })).toBe(JSON.stringify({ a: 'é' }).length + 1)
+    expect(s.jsonByteLength('日')).toBe(5) // « "日" » : 2 guillemets + 3 octets
+    // 2,6 M de caractères (sous 4,8 M : l'ancien contrôle par .length laissait passer) = 5,2 Mo en UTF-8 (au-dessus du plafond)
+    const note = 'é'.repeat(1_300_000)
+    store.state = { gardens: [{ id: 'g1' }], plants: [{ id: 'p1', gardenId: 'g1', speciesId: 'pommier', position: { x: 0, y: 0 }, plantedAt: '2024-03-10', status: 'en-place', photos: [], notes: note + note }] as never, tasksDone: [], loaded: true }
+    await expect(s.pushSnapshot()).rejects.toThrow(/taille maximale/)
+    expect(fake.rows.size).toBe(0)
+    store.state = { gardens: [{ id: 'g1' }], plants: [], tasksDone: [], loaded: true }
+  })
+
   it('refuse d’envoyer si non connecté', async () => {
     const s = await load()
     fake.session = null
@@ -401,6 +423,24 @@ describe('pullSnapshot', () => {
     fake.rows.set('u1', { user_id: 'u1', data: { version: 99, gardens: [garden], plants: [] }, updated_at: fake.tick() })
     await expect(s.pullSnapshot()).rejects.toThrow(/plus récente/)
     expect(store.replaceData).not.toHaveBeenCalled()
+  })
+
+  it('fait une copie de sécurité locale AVANT de remplacer, et garde les photos', async () => {
+    const s = await load()
+    fake.rows.set('u1', { user_id: 'u1', data: validData, updated_at: fake.tick() })
+    expect(await s.pullSnapshot()).toBe(true)
+    expect(store.keepCopy).toHaveBeenCalledTimes(1)
+    expect(store.order).toEqual(['copie', 'replace'])
+    expect(store.replaceData.mock.calls[0][1]).toEqual({ keepPhotos: true })
+  })
+
+  it('si la copie de sécurité échoue, rien n’est remplacé et la date n’est pas mémorisée', async () => {
+    const s = await load()
+    store.keepCopy.mockResolvedValue(false)
+    fake.rows.set('u1', { user_id: 'u1', data: validData, updated_at: fake.tick() })
+    await expect(s.pullSnapshot()).rejects.toThrow(/copie de sécurité/)
+    expect(store.replaceData).not.toHaveBeenCalled()
+    expect(local.has('permajardin:last-synced:u1')).toBe(false)
   })
 
   it('un localStorage indisponible ne casse pas la synchro', async () => {

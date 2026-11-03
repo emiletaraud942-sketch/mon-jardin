@@ -350,3 +350,31 @@ describe('points de vue en photos (panoramas)', () => {
     expect(g).toHaveProperty('panoramas')
   })
 })
+
+describe('Garden.climate et statut « recoltee » (STATE_VERSION inchangé)', () => {
+  it('garde un climat valide, retire le préfixe de la zone', () => {
+    const r = ok({ gardens: [{ ...garden, climate: { zone: 'Rusticité USDA 8a', minAbsC: -9.4, rainMmPerYear: 650 } }], plants: [] })
+    expect(r.data.gardens[0].climate).toEqual({ zone: '8a', minAbsC: -9.4, rainMmPerYear: 650 })
+    expect(r.warnings).toEqual([])
+  })
+  it('jardin sans climat : rien n’est ajouté', () => {
+    expect(ok({ gardens: [garden], plants: [] }).data.gardens[0].climate).toBeUndefined()
+  })
+  it('écarte les valeurs absurdes, signale un climat entièrement invalide', () => {
+    const r = ok({ gardens: [{ ...garden, climate: { zone: '8a', minAbsC: -500, rainMmPerYear: 'beaucoup', extra: 1 } }], plants: [] })
+    expect(r.data.gardens[0].climate).toEqual({ zone: '8a' })
+    const bad = ok({ gardens: [{ ...garden, climate: 'chaud' }, { ...garden, id: 'g2', climate: { zone: 'x' } }], plants: [] })
+    expect(bad.data.gardens.every((g) => g.climate === undefined)).toBe(true)
+    expect(bad.warnings.join(' ')).toMatch(/climat de 2 jardins/)
+  })
+  it('le climat survit à l’export puis à l’import', () => {
+    const g = { ...garden, climate: { zone: '7b', minAbsC: -14, rainMmPerYear: 700 } }
+    const s = serializeState({ gardens: [g as never], plants: [], tasksDone: [] })
+    expect(s.version).toBe(STATE_VERSION)
+    expect(ok(JSON.parse(JSON.stringify(s))).data.gardens[0].climate).toEqual(g.climate)
+  })
+  it('accepte le statut « recoltee » et garde le refus des statuts inconnus', () => {
+    const r = ok({ gardens: [garden], plants: [{ ...plant, status: 'recoltee' }, { ...plant, id: 'p2', status: 'inconnu' }] })
+    expect(r.data.plants.map((p) => p.status)).toEqual(['recoltee', 'en-place'])
+  })
+})

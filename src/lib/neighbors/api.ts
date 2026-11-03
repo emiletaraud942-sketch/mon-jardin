@@ -96,6 +96,8 @@ export function translateError(e: unknown): string {
   const low = msg.toLowerCase()
   const quota = /quota_exceeded:(\w+)/.exec(msg)
   if (quota) return QUOTA_TEXT[quota[1]] ?? LIMIT_TEXT
+  if (low.includes('cell_change_too_soon')) return 'Vous ne pouvez changer de quartier qu’une fois par mois. Réessayez plus tard, ou écrivez-nous si vous avez déménagé.'
+  if (/_text_check/.test(low) && !low.includes('profiles_pseudo')) return 'Ce texte contient des caractères interdits (contrôles ou marques de direction). Retirez-les et réessayez.'
   if (low.includes('profiles_pseudo_key')) return 'Ce pseudo est déjà pris. Choisissez-en un autre.'
   if (low.includes('reports_reporter_target_kind_target_id_key')) return 'Vous avez déjà signalé ce contenu. Merci.'
   if (low.includes('blocks_pkey')) return 'Cette personne est déjà bloquée.'
