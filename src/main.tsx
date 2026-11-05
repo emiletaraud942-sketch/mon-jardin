@@ -1,6 +1,5 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import 'maplibre-gl/dist/maplibre-gl.css'
 import './styles/app.css'
 import { App } from './App'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -11,7 +10,13 @@ import { showToast } from './lib/toast'
 import { hasConsent } from './lib/consent'
 import { neighborsEnabled } from './lib/neighbors/enabled'
 import { setUi } from './lib/ui'
+import { installDiagnostics } from './lib/diagnostics'
+import { installChunkErrorHandler, NEW_VERSION_MESSAGE } from './lib/chunkError'
+import { updateApp } from './components/StorageBanner'
 
+installDiagnostics()
+// Nouvelle version déployée pendant que l'appli est ouverte : un morceau de code a disparu. On propose de recharger.
+installChunkErrorHandler(window, () => showToast({ message: NEW_VERSION_MESSAGE, actionLabel: 'Recharger', onAction: () => void updateApp(), tone: 'error' }))
 applyStoredTheme()
 applyStoredTextSize()
 

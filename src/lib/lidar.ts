@@ -10,7 +10,7 @@
 // - couverture progressive du territoire : hors zone, le service renvoie une erreur XML ou du « pas de donnée ».
 // À faire avant mise en production : un GetMap réel sur une adresse couverte, puis une fixture de test.
 import type { LonLat, TerrainGrid, XY } from '../types'
-import { pointInRing, toLocal, toLonLat } from './geo'
+import { pointInRing, toLonLat } from './geo'
 import { fetchWithTimeout } from './http'
 import { heightAt } from './terrain'
 
@@ -213,11 +213,6 @@ export function filterTrees(
     if (buildingRings.some((r) => r.length >= 3 && pointInRing(p, r))) return false
     return !plantPositions.some((q) => Math.hypot(q.x - t.x, q.y - t.y) <= Math.max(plantRadiusM, t.radiusM * 0.5))
   })
-}
-
-/** Anneaux de bâtiments en repère local, à partir de coordonnées lon/lat. */
-export function ringsToLocal(center: LonLat, rings: LonLat[][]): XY[][] {
-  return rings.map((r) => r.map((p) => toLocal(center, p)))
 }
 
 // ---------- cache IndexedDB ----------

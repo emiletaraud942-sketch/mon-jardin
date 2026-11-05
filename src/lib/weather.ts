@@ -76,11 +76,6 @@ const coordKey = (p: LonLat, providerId: string) => {
   return `${providerId}:${q.lat.toFixed(2)},${q.lon.toFixed(2)}`
 }
 
-/** Date du jour (YYYY-MM-DD) à Paris. Conservée pour compatibilité : préférer `todayLocal`. */
-export function todayParis(now = new Date()): string {
-  return now.toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' })
-}
-
 // ---------- prévisions ----------
 
 type Num = number | null

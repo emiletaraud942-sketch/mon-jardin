@@ -31,6 +31,8 @@ const WAIT_MS = 1800
 export function createSensor(onStatus?: (s: SensorStatus) => void): Sensor {
   let off: (() => void) | undefined
   let timer: ReturnType<typeof setTimeout> | undefined
+  /** Change à chaque arrêt : un démarrage qui attendait l'autorisation (iPhone) ne branche rien après la sortie de l'écran. */
+  let gen = 0
   const sensor: Sensor = {
     latest: { absolute: false, t: 0 },
     status: 'repos',
@@ -44,6 +46,7 @@ export function createSensor(onStatus?: (s: SensorStatus) => void): Sensor {
   }
 
   function stop() {
+    gen++
     off?.()
     off = undefined
     clearTimeout(timer)
@@ -53,6 +56,7 @@ export function createSensor(onStatus?: (s: SensorStatus) => void): Sensor {
 
   async function start(): Promise<SensorStatus> {
     if (off) return sensor.status
+    const g = gen
     if (typeof window === 'undefined' || !('DeviceOrientationEvent' in window)) {
       set('absent')
       return 'absent'
@@ -60,11 +64,14 @@ export function createSensor(onStatus?: (s: SensorStatus) => void): Sensor {
     const D = (window as unknown as { DeviceOrientationEvent: IosOrientation }).DeviceOrientationEvent
     if (typeof D.requestPermission === 'function') {
       try {
-        if ((await D.requestPermission()) !== 'granted') {
+        const answer = await D.requestPermission()
+        if (g !== gen) return sensor.status
+        if (answer !== 'granted') {
           set('refuse')
           return 'refuse'
         }
       } catch {
+        if (g !== gen) return sensor.status
         set('refuse')
         return 'refuse'
       }
@@ -105,6 +112,3 @@ export function createSensor(onStatus?: (s: SensorStatus) => void): Sensor {
   }
   return sensor
 }
-
-/** Le cap lu est-il rapporté au nord ? Utile pour décider d'afficher les noms de plantes. */
-export const compassReliable = (r: SensorReading) => r.heading !== undefined && r.absolute

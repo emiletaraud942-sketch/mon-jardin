@@ -23,11 +23,11 @@ export const HELP: Record<Tab, HelpContent> = {
     title: 'La carte',
     steps: [
       'Touchez « Ajouter une plante », puis choisissez la plante.',
-      'Touchez la carte à l’endroit où elle pousse (ou « Viser »), puis « Valider ». « Annuler » arrête ; un message permet de défaire après coup.',
-      'Touchez une plante pour ouvrir sa fiche : état, photos, soins.',
-      'Pour la déplacer, touchez « Déplacer cette plante », le nouvel endroit, puis « Valider ».',
-      'Pour zoomer, pincez avec deux doigts ou touchez + et −.',
-      'Le trait jaune montre les limites du terrain. Il est facultatif.',
+      'Touchez la carte à l’endroit où elle pousse (ou « Viser »), puis « Valider ». « Annuler » arrête.',
+      '« Aides » ouvre « Par mesures », « Je suis ici », « Coller aux bords », « Grille » et « Fond simple ».',
+      'Touchez une plante pour ouvrir sa fiche : état, photos, soins. Un message permet de défaire après coup.',
+      'Pour la déplacer, touchez « Déplacer cette plante », le nouvel endroit, puis « Valider ».',
+      'Pour zoomer, pincez avec deux doigts ou touchez + et −. Le trait jaune montre les limites du terrain.',
     ],
   },
   '3d': {

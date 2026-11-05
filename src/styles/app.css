@@ -51,15 +51,15 @@
   --cta-shadow: #8e3e20;
   --on-cta: #ffffff;
   --wheat: #e9c46a; /* blé : repères */
-  --warn: #b5651d;
+  --warn: #8f4f0f; /* 5,4:1 sur --warn-soft */
   --warn-soft: #fbebd0;
   --warn-text: #5a3a0c; /* 9:1 sur --warn-soft */
   --danger: #a33a2c;
   --danger-soft: #f6dcd7;
   --sun: #e2a72e;
   --parcel: #ffe066; /* limite de parcelle, dessinée sur la photo aérienne */
-  --cal-abri: #4a86bd; /* semis abrité : 3,8:1 sur --surface */
-  --cal-harvest: #b06f00; /* récolte : 4,0:1 sur --surface */
+  --cal-abri: #336a9e; /* semis abrité : 5,9:1 sur --surface, 4,9:1 sur --surface-2 */
+  --cal-harvest: #8f5800; /* récolte : 5,9:1 sur --surface, 5,1:1 sur --surface-2 */
   /* Étiquettes et tuiles colorées */
   --dry-bg: #e4e8d6;
   --dry-text: #2f5233;
@@ -581,6 +581,10 @@ label:focus-within:has(> input.sr-only) {
 .navbtn .badge {
   margin-left: auto;
 }
+/* Libellé court de la barre du bas (téléphone seulement) : « Planter » à la place de « Où planter ? ». */
+.navbtn .nav-short {
+  display: none;
+}
 .main {
   overflow: auto;
   position: relative;
@@ -664,6 +668,12 @@ label:focus-within:has(> input.sr-only) {
   .navbtn:not([aria-current='page']) svg {
     color: var(--tab-off);
   }
+  .navbtn .nav-long {
+    display: none;
+  }
+  .navbtn .nav-short {
+    display: inline;
+  }
   .navbtn:hover,
   .navbtn[aria-current='page'] {
     background: transparent;
@@ -675,7 +685,7 @@ label:focus-within:has(> input.sr-only) {
     top: -2px;
     left: calc(50% + 8px);
     margin: 0;
-    font-size: 0.75rem;
+    font-size: max(12px, 0.75rem);
     min-width: 20px;
     justify-content: center;
   }
@@ -1107,7 +1117,7 @@ label.field > span {
   display: grid;
   grid-template-columns: 110px repeat(12, minmax(0, 1fr));
   gap: 2px;
-  font-size: 0.75rem;
+  font-size: max(12px, 0.75rem);
   align-items: center;
 }
 .months .m {
@@ -1138,7 +1148,7 @@ label.field > span {
 @media (max-width: 400px) {
   .months {
     grid-template-columns: 84px repeat(12, minmax(0, 1fr));
-    font-size: 0.7rem;
+    font-size: max(12px, 0.7rem);
   }
 }
 .legend {
@@ -1367,7 +1377,7 @@ label.field > span {
   justify-content: center;
   align-items: center;
   width: 100%;
-  min-height: 40px;
+  min-height: var(--tap);
   padding: 0;
   border: 0;
   background: transparent;
@@ -2678,7 +2688,7 @@ details > summary {
 }
 .plants-ui h3 {
   font-family: var(--font-body);
-  font-size: 0.75rem;
+  font-size: max(12px, 0.75rem);
   font-weight: var(--fw-strong);
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2721,7 +2731,7 @@ details > summary {
   border-color: transparent;
 }
 .plants-ui .badge {
-  font-size: 0.72rem;
+  font-size: max(12px, 0.72rem);
   font-weight: var(--fw-strong);
   padding: 1px 9px;
   border-radius: 999px;
@@ -2758,7 +2768,7 @@ details > summary {
     font-size: 0.86rem;
   }
   .plants-ui .badge {
-    font-size: 0.72rem;
+    font-size: max(12px, 0.72rem);
     padding: 1px 7px;
   }
   .plants-ui h1 {
@@ -4461,7 +4471,7 @@ html[data-immersive] body {
   background: var(--surface);
   border: var(--border-w) solid var(--border-strong);
   color: var(--text);
-  font-size: 0.75rem;
+  font-size: max(12px, 0.75rem);
   font-weight: var(--fw-strong);
   line-height: 1.5;
   white-space: nowrap;

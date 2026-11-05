@@ -35,9 +35,6 @@ function readPref(): boolean {
 }
 let enabled = readPref()
 const prefListeners = new Set<() => void>()
-export function lidarEnabled(): boolean {
-  return enabled
-}
 export function setLidarEnabled(on: boolean): void {
   enabled = on
   try {

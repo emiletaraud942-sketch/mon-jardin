@@ -3,6 +3,7 @@ import { uid } from './geo'
 import { imageSize, sizeWithinLimits } from './security/image'
 import { LIMITS } from './security/limits'
 import { isPhotoId } from './security/sanitize'
+import { ensureRoom, writeWithRetry } from './space'
 
 export const PHOTO_PREFIX = 'photo:'
 /** Cible par image : 5 photos en base64 (×1,37) doivent tenir sous les 4,5 Mo d'une fonction Vercel. */
@@ -91,7 +92,8 @@ export async function compressToTarget(file: Blob, opts: { maxSide?: number; tar
 export async function savePhoto(file: Blob, opts?: { maxSide?: number; targetBytes?: number; qualities?: number[] }): Promise<string> {
   const blob = await compressToTarget(file, opts)
   const id = PHOTO_PREFIX + uid()
-  await set(id, blob)
+  await ensureRoom(blob.size)
+  await writeWithRetry(() => set(id, blob))
   return id
 }
 

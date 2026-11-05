@@ -13,7 +13,7 @@ import { OfflineChip } from './components/OfflineChip'
 import { consumeExportReminder, exportCurrentState } from './lib/backup'
 import { getLoadWarnings, getState, useActiveGarden, useGardenPlants, useStore } from './lib/store'
 import { showToast } from './lib/toast'
-import { RAYON_LABEL, TAB_LABEL, getUi, goRayon, noteVisit, openHelp, openParcours, rayonOfTab, setGuide, setHelpOpen, setUi, subTabs, useHelpOpen, useUi, visibleRayons, type Rayon, type Tab } from './lib/ui'
+import { RAYON_LABEL, RAYON_SHORT, TAB_LABEL, getUi, goRayon, noteVisit, openHelp, openParcours, rayonOfTab, setGuide, setHelpOpen, setUi, subTabs, useHelpOpen, useUi, visibleRayons, type Rayon, type Tab } from './lib/ui'
 import { useBanner } from './lib/banners'
 import { deriveOnboarding } from './lib/onboarding'
 import { Parcours } from './features/onboarding/Parcours'
@@ -24,6 +24,7 @@ import { isDemoGarden } from './features/settings/demo'
 import { PlantsPage } from './features/plants/PlantsPage'
 import { TasksPage } from './features/tasks/TasksPage'
 import { useTasks } from './features/tasks/useTasks'
+import { TasksProvider } from './features/tasks/TasksProvider'
 import { PlantingPage } from './features/planting/PlantingPage'
 import { CataloguePage } from './features/plants/CataloguePage'
 import { SettingsPage } from './features/settings/SettingsPage'
@@ -71,6 +72,15 @@ const NewsBadge = ({ count }: { count: number }) =>
   ) : null
 
 export function App() {
+  const garden = useActiveGarden()
+  return (
+    <TasksProvider garden={garden}>
+      <AppShell />
+    </TasksProvider>
+  )
+}
+
+function AppShell() {
   const loaded = useStore((s) => s.loaded)
   const garden = useActiveGarden()
   const { tab, guide, parcours, placingSpeciesId, movingPlantId } = useUi()
@@ -139,6 +149,8 @@ export function App() {
       firstPaint.current = false
       return
     }
+    // Après une flèche ←/→ dans les onglets, le focus reste sur l'onglet : on ne le prend pas.
+    if (document.activeElement?.closest('[role="tablist"]')) return
     mainRef.current?.focus({ preventScroll: true })
     // Seul le changement d'écran compte.
   }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -249,7 +261,14 @@ export function App() {
         {rayons.map((r) => (
           <button key={r} className="navbtn" aria-current={rayon === r ? 'page' : undefined} onClick={() => goRayon(r)}>
             <Icon name={RAYON_ICON[r]} />
-            {RAYON_LABEL[r]}
+            {RAYON_SHORT[r] ? (
+              <>
+                <span className="nav-long">{RAYON_LABEL[r]}</span>
+                <span className="nav-short">{RAYON_SHORT[r]}</span>
+              </>
+            ) : (
+              RAYON_LABEL[r]
+            )}
             {r === 'afaire' && open > 0 && (
               <span className="sr-only">{`, ${taskBadge}`}</span>
             )}

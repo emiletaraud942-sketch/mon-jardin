@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useWakeLock } from '../../components/useWakeLock'
 import { Icon } from '../../components/Icon'
 import { uid } from '../../lib/geo'
+import { requestCamera } from '../../lib/media'
 import { getPhoto, savePhoto } from '../../lib/photos'
 import { showToast } from '../../lib/toast'
 import type { Garden, Panorama, PanoramaShot, XY } from '../../types'
@@ -36,6 +37,7 @@ export function Capture({ garden, spot, redoId }: { garden: Garden; spot: XY; re
   const [startDeg, setStartDeg] = useState<number>()
   const [northKnown, setNorthKnown] = useState(true)
   const [manualAsked, setManualAsked] = useState(false)
+  const [starting, setStarting] = useState(false)
 
   const video = useRef<HTMLVideoElement>(null)
   const stream = useRef<MediaStream>()
@@ -43,6 +45,9 @@ export function Capture({ garden, spot, redoId }: { garden: Garden; spot: XY; re
   const shotsRef = useRef<Taken[]>([])
   shotsRef.current = shots
   const saved = useRef(false)
+  /** Faux une fois l'écran quitté : une réponse tardive de la caméra ne doit rien allumer. */
+  const alive = useRef(true)
+  const startingRef = useRef(false)
   const busyRef = useRef(false)
   const holdRef = useRef(0)
   const smooth = useRef<{ h?: number; speed: number; t: number }>({ speed: 0, t: 0 })
@@ -59,15 +64,16 @@ export function Capture({ garden, spot, redoId }: { garden: Garden; spot: XY; re
   }, [])
 
   // Sortie sans enregistrer : on libère la caméra, le capteur et les photos déjà stockées.
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    alive.current = true
+    return () => {
+      alive.current = false
       stopCamera()
       sensor.current?.stop()
       for (const s of shotsRef.current) URL.revokeObjectURL(s.url)
       if (!saved.current) discardPhotos(shotsRef.current.map((s) => s.photoId))
-    },
-    [stopCamera],
-  )
+    }
+  }, [stopCamera])
 
   // L'écran reste allumé pendant la prise de vue.
   useWakeLock(phase === 'live')
@@ -86,26 +92,41 @@ export function Capture({ garden, spot, redoId }: { garden: Garden; spot: XY; re
 
   /** Le geste de l'utilisateur lance tout : capteur d'abord (la demande iPhone doit partir d'ici), puis caméra. */
   async function begin() {
-    sensor.current ??= createSensor((s) => setSensorStatus(s))
-    void sensor.current.start()
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setCam('file')
-      setCamNote('La caméra n’est pas disponible dans l’appli. Prenez chaque photo avec l’appareil photo du téléphone.')
-      setPhase('live')
-      return
-    }
+    if (startingRef.current) return // un second appui ne doit pas ouvrir un second flux
+    startingRef.current = true
+    setStarting(true)
     try {
-      stream.current = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false })
-      setCam('live')
-    } catch (e) {
-      setCam('file')
-      setCamNote(
-        e instanceof DOMException && e.name === 'NotAllowedError'
-          ? 'La caméra est refusée. Vous pouvez prendre chaque photo avec l’appareil photo du téléphone.'
-          : 'La caméra ne répond pas. Prenez chaque photo avec l’appareil photo du téléphone.',
-      )
+      sensor.current ??= createSensor((s) => setSensorStatus(s))
+      void sensor.current.start()
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setCam('file')
+        setCamNote('La caméra n’est pas disponible dans l’appli. Prenez chaque photo avec l’appareil photo du téléphone.')
+        setPhase('live')
+        return
+      }
+      stopCamera()
+      try {
+        const s = await requestCamera(
+          () => navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false }),
+          () => alive.current,
+        )
+        if (!s) return // écran quitté pendant l'attente : le flux est déjà arrêté
+        stream.current = s
+        setCam('live')
+      } catch (e) {
+        if (!alive.current) return
+        setCam('file')
+        setCamNote(
+          e instanceof DOMException && e.name === 'NotAllowedError'
+            ? 'La caméra est refusée. Vous pouvez prendre chaque photo avec l’appareil photo du téléphone.'
+            : 'La caméra ne répond pas. Prenez chaque photo avec l’appareil photo du téléphone.',
+        )
+      }
+      if (alive.current) setPhase('live')
+    } finally {
+      startingRef.current = false
+      if (alive.current) setStarting(false)
     }
-    setPhase('live')
   }
 
   // Lecture de la boussole : lissage, vitesse de rotation, déclenchement automatique.
@@ -248,6 +269,7 @@ export function Capture({ garden, spot, redoId }: { garden: Garden; spot: XY; re
       kind: 'guide',
     }
     if (!northRef.current) pano.northOk = false
+    pano.bytes = shotsRef.current.reduce((n, x) => n + x.bytes, 0)
     saved.current = true
     savePoint(garden.id, pano)
     openPanorama('view', { pointId: pano.id, back: 'home' })
@@ -276,8 +298,8 @@ export function Capture({ garden, spot, redoId }: { garden: Garden; spot: XY; re
             <li>Environ 8 à 12 photos font le tour complet.</li>
           </ol>
           <p className="small muted">L’appli va demander la caméra, puis la boussole. Les photos restent sur ce téléphone.</p>
-          <button className="btn primary big" onClick={() => void begin()}>
-            <Icon name="camera" /> Ouvrir la caméra
+          <button className="btn primary big" disabled={starting} onClick={() => void begin()}>
+            <Icon name="camera" /> {starting ? 'Ouverture…' : 'Ouvrir la caméra'}
           </button>
         </div>
       </div>

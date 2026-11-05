@@ -38,7 +38,7 @@ export function Fallback3D({ verdict, detail, onForce, onRetry }: { verdict: Web
         )}
         {detail && (
           <details className="gate3d-details">
-            <summary>Détails</summary>
+            <summary>Informations techniques</summary>
             <code>{detail}</code>
           </details>
         )}

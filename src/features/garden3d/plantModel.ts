@@ -80,11 +80,6 @@ export function renderState(plant: Plant, species: Species | undefined, growthAt
   return { ...s, heightM: grown.heightM, spreadM: grown.spreadM, ageYears: grown.ageYears, stage: grown.stage }
 }
 
-export function plantSize(plant: Plant, species: Species | undefined, at: Date) {
-  const s = plantStateAt(plant, species, at)
-  return { heightM: Math.max(0.05, s.heightM), spreadM: Math.max(0.08, s.spreadM) }
-}
-
 export function lookOf(plant: Plant, sp: Species | undefined, st: PlantState): PlantLook {
   return {
     id: plant.id,

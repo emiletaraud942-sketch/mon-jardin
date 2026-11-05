@@ -193,6 +193,9 @@ function sanitizeGarden(raw: unknown, report: Report): Garden | undefined {
   return g
 }
 
+/** Poids maximal plausible des photos d'un point (octets) ; au-delà, la valeur notée est ignorée et recalculée. */
+const MAX_POINT_BYTES = 100 * 1024 * 1024
+
 /**
  * Points de vue en photos : un point sans position, sans date ou sans aucune photo valide est écarté ;
  * une photo à l'identifiant invalide ou au cap absurde est retirée. 6 points au plus, 12 photos par point.
@@ -232,6 +235,7 @@ export function sanitizePanoramas(raw: unknown, report: { add(id: string, one: s
     ids.add(r.id)
     const p: Panorama = { id: r.id, x: r.x, y: r.y, takenAt: r.takenAt, shots, kind: r.kind }
     if (r.northOk === false) p.northOk = false
+    if (isNum(r.bytes) && r.bytes >= 0 && r.bytes <= MAX_POINT_BYTES) p.bytes = Math.round(r.bytes)
     out.push(p)
   }
   return out
@@ -379,10 +383,13 @@ export function migrateState(raw: unknown): MigrateResult {
   return { ok: true, data: { gardens, plants, tasksDone }, warnings: report.toList() }
 }
 
-/** Format d'export JSON et de synchronisation. */
-export function serializeState(data: StateData): SerializedState {
-  // Les points de vue en photos restent sur l'appareil (comme les photos des plantes) : ni export, ni synchronisation.
-  const gardens = data.gardens.some((g) => g.panoramas) ? data.gardens.map(({ panoramas: _p, ...g }) => g) : data.gardens
+/**
+ * Format d'export JSON et de synchronisation.
+ * `panoramas: true` (sauvegarde complète) garde les points de vue en photos : leurs images voyagent alors dans le même fichier.
+ */
+export function serializeState(data: StateData, opts: { panoramas?: boolean } = {}): SerializedState {
+  // Par défaut, les points de vue en photos restent sur l'appareil (comme les photos des plantes) : ni export, ni synchronisation.
+  const gardens = !opts.panoramas && data.gardens.some((g) => g.panoramas) ? data.gardens.map(({ panoramas: _p, ...g }) => g) : data.gardens
   return { version: STATE_VERSION, exportedAt: new Date().toISOString(), gardens, plants: data.plants, tasksDone: data.tasksDone }
 }
 

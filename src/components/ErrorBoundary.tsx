@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from 'react'
 import { exportCurrentState } from '../lib/backup'
+import { recordError } from '../lib/diagnostics'
 import { getState } from '../lib/store'
 import { TechDetails } from './ErrorNote'
 
@@ -33,6 +34,7 @@ export class ErrorBoundary extends Component<Props, { error?: unknown }> {
 
   componentDidCatch(err: unknown) {
     console.error('[ErrorBoundary]', err)
+    recordError('ecran', err)
   }
 
   componentDidUpdate(prev: Props) {

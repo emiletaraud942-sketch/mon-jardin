@@ -4,6 +4,7 @@ import type { SyncConflictError } from '../../lib/sync'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { SafetyCopyButton } from '../../components/StorageBanner'
 import { ErrorNote, TechDetails } from '../../components/ErrorNote'
+import { DiagnosticButton } from '../../components/DiagnosticButton'
 import { Fold } from '../../components/Fold'
 import { Icon } from '../../components/Icon'
 import { TextSizeButton } from '../../components/TextSizeButton'
@@ -16,7 +17,9 @@ import { friendlyError, type FriendlyError } from '../../lib/http'
 import { deletePhoto } from '../../lib/photos'
 import { getLoadWarnings, getState, replaceData, setActiveGarden, setState, updateGarden, useGardenPlants, useStorageStatus, useStore } from '../../lib/store'
 import { type StateData } from '../../lib/migrate'
-import { readBackupFile } from '../../lib/security/import'
+import { readFullBackupFile, restorePhotos, sizeText } from '../../lib/fullBackup'
+import { isQuotaError, STORAGE_FULL_MESSAGE } from '../../lib/space'
+import { FullBackupSection, useUnsavedPhotos } from './FullBackup'
 import { getTheme, setTheme, THEME_LABEL, type Theme } from '../../lib/theme'
 import { getTextSize, setTextSize, TEXT_SIZE_LABEL, TEXT_SIZES, type TextSize } from '../../lib/textSize'
 import { showToast } from '../../lib/toast'
@@ -218,6 +221,9 @@ interface PendingImport {
   data: StateData
   warnings: string[]
   fileName: string
+  /** Images du fichier (sauvegarde complète) : rangées dans l'appareil avant de remplacer les données. */
+  photos: Map<string, Blob>
+  skipped: number
 }
 
 const countOf = (d: Pick<StateData, 'gardens' | 'plants'>) => ({ gardens: d.gardens.length, plants: d.plants.length })
@@ -226,24 +232,46 @@ function ImportDialog({ pending, onClose, onDone }: { pending: PendingImport; on
   const current = getState()
   const hasCurrent = current.gardens.length > 0 || current.plants.length > 0
   const hasPhotos = current.plants.some((p) => p.photos.length > 0)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const photoBytes = [...pending.photos.values()].reduce((n, b) => n + b.size, 0)
+
+  async function confirm() {
+    if (busy) return
+    setBusy(true)
+    setError('')
+    try {
+      // Les images d'abord : si la place manque, les données actuelles ne sont pas touchées.
+      const n = await restorePhotos(pending.photos)
+      replaceData(pending.data)
+      onDone(`Sauvegarde reprise : ${describeCounts(countOf(pending.data))}${n > 0 ? `, ${n} photo${n > 1 ? 's' : ''}` : ''}.`)
+    } catch (e) {
+      setBusy(false)
+      setError(isQuotaError(e) ? `${STORAGE_FULL_MESSAGE} Rien n’a été changé. Libérez de la place, puis recommencez.` : 'Les photos n’ont pas pu être rangées. Rien n’a été changé.')
+    }
+  }
 
   return (
     <ConfirmModal
       title="Reprendre cette sauvegarde ?"
-      confirmLabel={hasCurrent ? 'Remplacer mes données' : 'Reprendre la sauvegarde'}
+      confirmLabel={busy ? 'Reprise en cours…' : hasCurrent ? 'Remplacer mes données' : 'Reprendre la sauvegarde'}
       tone={hasCurrent ? 'danger' : 'primary'}
       photosNote={hasCurrent && hasPhotos}
       onBackup={hasCurrent ? () => exportCurrentState('permajardin-avant-reprise', false) : undefined}
       onCancel={onClose}
-      onConfirm={() => {
-        replaceData(pending.data)
-        onDone(`Sauvegarde reprise : ${describeCounts(countOf(pending.data))}.`)
-      }}
+      onConfirm={() => void confirm()}
     >
       <p>
         <strong>{importQuestion(countOf(current), countOf(pending.data))}</strong>
       </p>
       <p className="small muted">Fichier : {pending.fileName}</p>
+      {pending.photos.size > 0 && <p className="small">Le fichier contient {pending.photos.size} photo{pending.photos.size > 1 ? 's' : ''} ({sizeText(photoBytes)}). Elles seront rangées sur cet appareil.</p>}
+      {pending.skipped > 0 && <p className="small muted">{pending.skipped} image{pending.skipped > 1 ? 's' : ''} du fichier n’{pending.skipped > 1 ? 'ont' : 'a'} pas été reprise{pending.skipped > 1 ? 's' : ''} (format ou taille).</p>}
+      {error && (
+        <p className="alert error small" role="alert">
+          {error}
+        </p>
+      )}
       {pending.warnings.length > 0 && (
         <div className="alert small">
           <strong>Le fichier a été corrigé en le lisant :</strong>
@@ -266,6 +294,7 @@ function Backup() {
   const [last, setLast] = useState(lastExportAt())
   const overdue = !last || Date.now() - last > REMIND_EVERY_DAYS * 86400000
   const warnings = useRef(getLoadWarnings()).current
+  const unsavedPhotos = useUnsavedPhotos()
 
   function exportJson() {
     exportCurrentState()
@@ -279,13 +308,13 @@ function Backup() {
     input.value = '' // permet de reprendre le même fichier
     if (!file) return
     setMsg(undefined)
-    // Limite de taille, clés dangereuses retirées, plafonds et validation : tout est dans readBackupFile.
-    const r = await readBackupFile(file)
+    // Taille vérifiée avant la lecture, clés dangereuses retirées, plafonds et validation ; les images sont contrôlées une à une.
+    const r = await readFullBackupFile(file)
     if (!r.ok) {
       setMsg({ error: backupErrorNote(r.error) })
       return
     }
-    setPending({ data: r.data, warnings: r.warnings, fileName: file.name })
+    setPending({ data: r.data, warnings: r.warnings, fileName: file.name, photos: r.photos, skipped: r.skipped })
   }
 
   return (
@@ -297,6 +326,7 @@ function Backup() {
         {overdue && ' Pensez à en faire une.'}
       </p>
       {warnings.length > 0 && <p className="alert small">Certaines données ont été corrigées au démarrage : {warnings.join(' ')}</p>}
+      {unsavedPhotos && <p className="alert warn small" role="status">Vos photos ne sont dans aucune sauvegarde. Si vous perdez ce téléphone, elles sont perdues. Faites la sauvegarde complète.</p>}
       <div className="row">
         <button className="btn primary" onClick={exportJson}>
           <Icon name="download" /> Faire une sauvegarde
@@ -306,6 +336,7 @@ function Backup() {
           <input className="sr-only" type="file" accept="application/json,.json" onChange={(e) => void importJson(e.target)} />
         </label>
       </div>
+      <FullBackupSection />
       {msg?.error && <ErrorNote error={msg.error} />}
       {msg?.text && (
         <p role="status" style={{ marginTop: 8 }}>
@@ -315,7 +346,7 @@ function Backup() {
       <details className="np-details">
         <summary>Où ranger la sauvegarde ?</summary>
         <p className="small muted">Gardez-le en lieu sûr : ordinateur, clé USB, ou e-mail à vous-même.</p>
-        <p className="small muted">Les photos ne sont pas dans la sauvegarde. Elles restent sur cet appareil.</p>
+        <p className="small muted">La sauvegarde simple n’emporte pas les photos. La sauvegarde complète les emporte, dans un seul fichier.</p>
         {persistent === false && <p className="small muted">Si l’espace manque, cet appareil peut effacer vos données. Une sauvegarde les protège.</p>}
         <div className="stack" style={{ gap: 6 }}>
           <p className="small muted" style={{ margin: 0 }}>Avant un import ou une synchro, l’appli garde une copie de vos données sur cet appareil.</p>
@@ -614,6 +645,7 @@ function AdviceCard({ garden }: { garden: Garden }) {
         <button className="btn" aria-haspopup="dialog" onClick={() => setHelp(true)}>
           Besoin d’aide ?
         </button>
+        <DiagnosticButton />
       </div>
       {help && <HelpSheet tab="reglages" onClose={() => setHelp(false)} />}
     </div>

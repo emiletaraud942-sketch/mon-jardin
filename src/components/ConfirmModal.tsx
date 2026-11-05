@@ -31,7 +31,7 @@ export function ConfirmModal({
     <Modal title={title} onClose={onCancel}>
       <div className="stack confirm-body">
         {children}
-        {photosNote && <p className="alert small">Les photos ne sont pas dans la sauvegarde. Elles restent seulement sur cet appareil.</p>}
+        {photosNote && <p className="alert small">Cette sauvegarde n’emporte pas les photos. Pour les garder, faites la sauvegarde complète dans Réglages.</p>}
         {onBackup && (
           <div className="stack">
             <button

@@ -186,7 +186,7 @@
   pointer-events: none;
 }
 .g3d-compass-label {
-  font-size: 0.6875rem;
+  font-size: max(12px, 0.6875rem);
   font-weight: var(--fw-strong);
   line-height: 1;
 }
@@ -615,7 +615,7 @@
 }
 .g3d-attrib {
   display: block;
-  font-size: 0.6875rem;
+  font-size: max(12px, 0.6875rem);
   color: var(--g3d-text);
   text-shadow: 0 0 3px var(--g3d-surface), 0 0 3px var(--g3d-surface);
   pointer-events: none;
@@ -725,7 +725,7 @@
 .g3d-goto-kind {
   flex: none;
   min-width: 3.4em;
-  font-size: 0.75rem;
+  font-size: max(12px, 0.75rem);
   color: var(--g3d-muted);
   font-weight: var(--fw-text);
 }

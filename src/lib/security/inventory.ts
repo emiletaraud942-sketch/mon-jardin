@@ -252,6 +252,7 @@ export const LOCAL_STORAGE_KEYS: readonly StorageKeyInfo[] = [
   { cle: 'permajardin:text-size', contenu: 'Taille du texte choisie' },
   { cle: 'permajardin:consent', contenu: 'Autorisations données (Pl@ntNet, synchronisation, entraide, alertes) et leur date' },
   { cle: 'permajardin:last-export', contenu: 'Date de la dernière sauvegarde exportée' },
+  { cle: 'permajardin:last-full-export', contenu: 'Date de la dernière sauvegarde complète (avec photos)' },
   { cle: 'permajardin:last-export-reminder', contenu: 'Date du dernier rappel de sauvegarde' },
   { cle: 'permajardin:first-use', contenu: 'Date de première utilisation' },
   { cle: 'permajardin:last-notification', contenu: 'Jour du dernier rappel affiché' },

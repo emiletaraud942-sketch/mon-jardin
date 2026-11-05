@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useInertBehind } from '../../lib/inert'
 import { useActiveGarden } from '../../lib/store'
 import { Capture } from './Capture'
 import { Home } from './Home'
@@ -27,6 +28,9 @@ export default function PanoHost() {
     return () => window.removeEventListener('keydown', onKey)
   }, [screen])
 
+  // Plein écran : le reste de la page n'est plus atteignable (clavier, lecteur d'écran) tant qu'il est ouvert.
+  const shown = !!screen && !!garden
+  useInertBehind(shown, root)
   if (!screen || !garden) return null
   const spot = ui.spot ?? (ui.pointId ? panoramasOf(garden).find((p) => p.id === ui.pointId) : undefined)
   let body
@@ -36,7 +40,7 @@ export default function PanoHost() {
   else if (screen === 'import' && spot) body = <ImportPano key={ui.pointId ?? 'new'} garden={garden} spot={{ x: spot.x, y: spot.y }} redoId={ui.pointId} />
   else body = <Home garden={garden} />
   return (
-    <div ref={root} className="pano-overlay" role="dialog" aria-label="Photos du jardin" tabIndex={-1}>
+    <div ref={root} className="pano-overlay" role="dialog" aria-modal="true" aria-label="Photos du jardin" tabIndex={-1}>
       {body}
     </div>
   )

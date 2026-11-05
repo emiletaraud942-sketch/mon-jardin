@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import maplibregl, { type GeoJSONSource, type Map as MLMap } from 'maplibre-gl'
+import 'maplibre-gl/dist/maplibre-gl.css'
 import { SPECIES_BY_ID } from '../../data/species'
 import { Icon } from '../../components/Icon'
 import { CADASTRE_MAXZOOM, CADASTRE_TILES, IGN_ATTRIBUTION, ORTHO_MAXZOOM, ORTHO_TILES, PLAN_MAXZOOM, PLAN_TILES, TILE_SIZE } from '../../lib/ign'

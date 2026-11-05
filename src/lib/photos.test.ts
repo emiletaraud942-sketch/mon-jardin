@@ -94,4 +94,10 @@ describe('stockage', () => {
     await deletePhoto(id)
     expect(await getPhoto(id)).toBeUndefined()
   })
+
+  it('refuse avec le message dédié quand le téléphone est plein, sans rien écrire', async () => {
+    vi.stubGlobal('navigator', { storage: { estimate: async () => ({ quota: 10e6, usage: 9.9e6 }) } })
+    await expect(savePhoto(new Blob(['x']))).rejects.toThrow('Il n’y a plus assez de place sur ce téléphone.')
+    expect(await listPhotoIds()).toEqual([])
+  })
 })

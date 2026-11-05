@@ -120,7 +120,7 @@ function EraseDialog({ onClose }: { onClose: () => void }) {
         <p style={{ margin: 0 }}>
           Vos jardins, plantes, photos et réglages seront retirés de cet appareil. <strong>Cela ne peut pas être annulé.</strong>
         </p>
-        <p className="alert small" style={{ margin: 0 }}>Les photos ne sont pas dans la sauvegarde.</p>
+        <p className="alert small" style={{ margin: 0 }}>La sauvegarde simple n’emporte pas les photos. La sauvegarde complète les emporte.</p>
         <button
           className="btn"
           onClick={() => {

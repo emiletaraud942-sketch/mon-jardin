@@ -14,6 +14,8 @@ export type Tab = 'accueil' | 'carte' | '3d' | 'plantes' | 'entretien' | 'plante
 export type Rayon = 'jardin' | 'afaire' | 'planter' | 'voisins'
 export const RAYONS: Rayon[] = ['jardin', 'afaire', 'planter', 'voisins']
 export const RAYON_LABEL: Record<Rayon, string> = { jardin: 'Mon jardin', afaire: 'À faire', planter: 'Où planter ?', voisins: 'Voisins' }
+/** Libellé court de la barre du bas sur téléphone, quand le long passerait sur deux lignes. Le titre de la page ne change pas. */
+export const RAYON_SHORT: Partial<Record<Rayon, string>> = { planter: 'Planter' }
 export const RAYON_TABS: Record<Rayon, Tab[]> = {
   jardin: ['carte', 'plantes', '3d'],
   afaire: ['entretien'],

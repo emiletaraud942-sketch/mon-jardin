@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
+import 'maplibre-gl/dist/maplibre-gl.css'
 import { Modal } from '../../components/Modal'
 import { IGN_ATTRIBUTION, PLAN_TILES, TILE_SIZE } from '../../lib/ign'
 import type { GeocodeResult } from '../../lib/ign'

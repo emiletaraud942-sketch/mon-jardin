@@ -42,9 +42,3 @@ export function useBanner(id: BannerId, wants: boolean): boolean {
   )
   return wants && pickBanner(wanting, paused) === id
 }
-
-/** Pour les tests : vide la file. */
-export function resetBanners() {
-  wanting.clear()
-  emit()
-}

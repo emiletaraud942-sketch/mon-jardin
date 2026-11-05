@@ -511,21 +511,6 @@ export function updateGarden(id: string, patch: Partial<Garden>) {
   setState((s) => ({ gardens: s.gardens.map((g) => (g.id === id ? { ...g, ...patch } : g)) }))
 }
 
-export function removeGarden(id: string) {
-  const removed = state.plants.filter((p) => p.gardenId === id)
-  const removedGardens = state.gardens.filter((g) => g.id === id)
-  setState((s) => {
-    const gardens = s.gardens.filter((g) => g.id !== id)
-    return {
-      gardens,
-      plants: s.plants.filter((p) => p.gardenId !== id),
-      tasksDone: s.tasksDone.filter((t) => t.gardenId !== id),
-      activeGardenId: s.activeGardenId === id ? gardens[0]?.id : s.activeGardenId,
-    }
-  })
-  dropPhotos(removed, state.plants, removedGardens, state.gardens)
-}
-
 export function setActiveGarden(id: string) {
   setState(() => ({ activeGardenId: id }))
 }
