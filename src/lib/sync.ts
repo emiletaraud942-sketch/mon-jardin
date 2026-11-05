@@ -6,7 +6,7 @@
 // Le lien doit être ouvert dans le MÊME navigateur que celui où il a été demandé (le « code verifier » PKCE y est stocké).
 import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js'
 import { migrateState, serializeState } from './migrate'
-import { getState, getStorageStatus, replaceData } from './store'
+import { getState, getStorageStatus, keepLocalSafetyCopy, replaceData } from './store'
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
@@ -317,7 +317,12 @@ export async function deleteMyAccount(): Promise<void> {
   await signOutLocal()
 }
 
-/** Remplace les données locales par l'instantané en ligne. `false` s'il n'y en a pas. Refuse un instantané invalide. */
+/**
+ * Remplace les données locales par l'instantané en ligne. `false` s'il n'y en a pas. Refuse un instantané invalide.
+ * Une copie de sécurité de l'état local est faite AUTOMATIQUEMENT avant le remplacement (IndexedDB, voir `keepLocalSafetyCopy`,
+ * récupérable par `exportSafetyCopy()` de `backup.ts`) ; si elle échoue, rien n'est remplacé. Les photos locales sont conservées.
+ * Valable pour la synchro manuelle comme pour la synchro automatique (`autoSync.ts` appelle cette fonction).
+ */
 export async function pullSnapshot(): Promise<boolean> {
   const { sb, user } = await requireUser()
   const { data, error } = await withTimeout(sb.from(TABLE).select('data, updated_at').eq('user_id', user.id).maybeSingle())
@@ -327,7 +332,10 @@ export async function pullSnapshot(): Promise<boolean> {
   const migrated = migrateState(row.data)
   if (!migrated.ok) throw new Error(`La sauvegarde en ligne est inutilisable (${migrated.error.replace(/\.$/, '')}). Vos données locales n’ont pas été modifiées.`)
   if (migrated.warnings.length) console.warn('Synchro : données corrigées', migrated.warnings)
-  replaceData(migrated.data)
+  if (!(await keepLocalSafetyCopy())) {
+    throw new Error('Impossible de garder une copie de sécurité de vos données avant de les remplacer (stockage plein ou bloqué). Rien n’a été modifié : faites une sauvegarde puis réessayez.')
+  }
+  replaceData(migrated.data, { keepPhotos: true })
   writeLastSynced(user.id, row.updated_at)
   return true
 }
