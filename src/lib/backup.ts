@@ -1,6 +1,6 @@
 import { isoDate } from './dates'
-import { getState } from './store'
-import { serializeState } from './migrate'
+import { getState, readSafetyCopy } from './store'
+import { migrateState, serializeState } from './migrate'
 
 // Export de sauvegarde et rappel mensuel. Aucune donnée n'est envoyée nulle part.
 
@@ -137,6 +137,20 @@ export function markExported(now = Date.now(), fileName?: string) {
 /** Nom du dernier fichier de sauvegarde (pour dire à l'utilisateur quoi chercher). */
 export function lastExportName(): string | undefined {
   return read(LAST_EXPORT_NAME_KEY) ?? undefined
+}
+
+/**
+ * Télécharge la copie de sécurité gardée sur l'appareil (avant remplacement par la synchro, un import ou des données illisibles).
+ * Renvoie `false` s'il n'y en a pas. Une copie lisible est écrite au format de sauvegarde ; une copie illisible est écrite telle quelle.
+ * Les photos n'en font pas partie. Ne compte pas comme une sauvegarde faite (le rappel mensuel continue).
+ */
+export async function exportSafetyCopy(name = 'permajardin-copie-de-securite'): Promise<boolean> {
+  const raw = await readSafetyCopy()
+  if (raw === undefined) return false
+  const m = migrateState(raw)
+  const out = m.ok ? serializeState(m.data) : raw
+  downloadJson(JSON.stringify(out, null, 2), `${name}-${isoDate()}.json`)
+  return true
 }
 
 export function lastExportAt(): number | undefined {

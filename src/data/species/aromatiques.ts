@@ -562,7 +562,7 @@ export const AROMATIQUES: Species[] = [
     recolte: [8, 9],
     taches: [
       { type: 'plantation', months: [3, 4, 9, 10], howTo: "Plantez dans un sol drainé, à l'abri des vents froids. Arrosez régulièrement les deux premiers étés.", tool: 'bêche' },
-      { type: 'taille', months: [8, 9], condition: 'temps-sec', howTo: "Taillez au sécateur (pas au taille-haie qui déchire les feuilles) pour contenir la forme, dès août et avant les premiers froids. Ne taillez pas du 15 mars au 31 juillet : période de nidification.", tool: 'sécateur' },
+      { type: 'taille', months: [8, 9], condition: 'temps-sec', howTo: "Taillez au sécateur (pas au taille-haie qui déchire les feuilles) pour contenir la forme, dès août et avant les premiers froids. Évitez de tailler du 15 mars au 31 juillet (nidification, recommandation OFB) et vérifiez qu’aucun nid n’est occupé avant de couper.", tool: 'sécateur' },
       { type: 'traitement', months: [5, 6, 7], frequencyDays: 21, condition: 'temps-sec', howTo: "Contre la cochenille et la fumagine, pulvérisez du savon noir dilué (15 g/L) sur les rameaux atteints.", tool: 'pulvérisateur' },
       { type: 'recolte', months: [8, 9], minAgeYears: 3, howTo: "Prélevez les feuilles adultes, bien vertes et coriaces, en coupant des rameaux au sécateur, et faites-les sécher à plat quelques jours à l'ombre avant de les garder en bocal.", tool: 'sécateur' },
     ],

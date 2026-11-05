@@ -34,7 +34,8 @@ export function sunCategory(hours: number): Sun {
   return 'ombre'
 }
 
-const living = (p: Plant) => p.status !== 'mort'
+/** Une plante morte ou déjà récoltée n'occupe plus la place : ni voisine, ni compagne. */
+const living = (p: Plant) => p.status !== 'mort' && p.status !== 'recoltee'
 
 /** Deux espèces sont amies si l'une cite l'autre comme compagnon (relation symétrisée). */
 function areFriends(a: Species, b: Species): boolean {
@@ -87,10 +88,12 @@ export function legalDistance(
   // Art. 671 : les règlements particuliers et les usages locaux passent d'abord ; 2 m et 0,5 m ne valent qu'à défaut.
   const rule = tall
     ? `Art. 671 du Code civil : à défaut de règlement ou d’usage local, une plantation de plus de 2 m de haut doit être à au moins 2 m de la limite séparative`
-    : `Art. 671 du Code civil : à défaut de règlement ou d’usage local, une plantation de moins de 2 m doit être à au moins 0,5 m de la limite séparative`
+    : `Art. 671 du Code civil : à défaut de règlement ou d’usage local, une plantation de 2 m de haut ou moins doit être à au moins 0,5 m de la limite séparative`
   const local =
     'Des règlements particuliers (PLU, lotissement) ou des usages locaux constants et reconnus priment sur ces distances : renseignez-vous en mairie. Une limite en bordure de voirie n’est pas une limite séparative : l’art. 671 ne s’y applique pas.'
-  const espalier = 'En espalier contre un mur séparatif, aucune distance n’est exigée, mais la plante ne doit pas dépasser la crête du mur. Art. 672 : le voisin peut exiger l’arrachage ou la réduction d’une plantation trop proche, sauf si elle a plus de 30 ans.'
+  const espalier =
+    'En espalier contre un mur séparatif, aucune distance n’est exigée, mais la plante ne doit pas dépasser la crête du mur ; si le mur n’est pas mitoyen, seul son propriétaire peut y appuyer des espaliers. ' +
+    'Art. 672 : le voisin peut exiger que l’arbre soit arraché ou réduit à 2 m de haut, sauf titre, destination du père de famille ou prescription trentenaire. Un arbre mort, coupé ou arraché ne se remplace qu’à la distance légale.'
   if (!parcel || parcel.length < 3) {
     return { requiredM, ok: true, message: `${rule} (limite de parcelle inconnue). ${local}`, summary: 'Limite de parcelle inconnue : distance de l’art. 671 non vérifiée.' }
   }

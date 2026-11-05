@@ -331,13 +331,17 @@ const isActive = (p: Plant) => p.status === 'en-place' || p.status === 'malade'
 /** Mois de grâce après la fin de la récolte d'une annuelle (arrachage, nettoyage) avant qu'elle ne génère plus rien. */
 const ANNUAL_GRACE_DAYS = 30
 
+/** Une annuelle : ni vivace, ni plante qui met plus de 2 ans à mûrir (bisannuelle, arbuste). */
+export const isAnnualSpecies = (sp: Species) => !sp.vivace && sp.anneesMaturite <= 2
+
 /**
  * Une annuelle a fini sa saison : la fenêtre de récolte qui suit sa plantation est terminée depuis plus de 30 jours
  * (sans récolte connue : un an après la plantation). Elle ne génère alors plus de tâche (ni arrosage, ni désherbage,
- * ni alerte de gel) : à l'utilisateur de la retirer ou de la marquer « mort ». Les vivaces ne sont jamais concernées.
+ * ni alerte de gel) : à l'utilisateur de la retirer ou de la marquer « récoltée » (`canMarkHarvested`, annuelles.ts)
+ * ou « morte ». Les vivaces ne sont jamais concernées.
  */
 export function annualSeasonOver(p: Plant, sp: Species, today: Date): boolean {
-  if (sp.vivace || sp.anneesMaturite > 2 || !isActive(p)) return false
+  if (!isAnnualSpecies(sp) || !isActive(p)) return false
   const planted = localDate(p.plantedAt)
   if (!Number.isFinite(planted.getTime())) return false
   const harvest = new Set(sp.recolte ?? [])
@@ -579,7 +583,7 @@ export function generateTasks(ctx: TaskContext): GeneratedTask[] {
   const explicitCache = new Map<string, RuleEntry[]>()
   for (const p of plants) {
     const sp = speciesById[p.speciesId]
-    if (!sp || p.status === 'mort' || annualSeasonOver(p, sp, today)) continue
+    if (!sp || p.status === 'mort' || p.status === 'recoltee' || annualSeasonOver(p, sp, today)) continue
     let explicit = explicitCache.get(sp.id)
     if (!explicit) explicitCache.set(sp.id, (explicit = explicitRules(sp, garden)))
     const rules: RuleEntry[] = [
@@ -732,10 +736,14 @@ export function generateTasks(ctx: TaskContext): GeneratedTask[] {
   )
 }
 
-/** Calendrier annuel : pour chaque mois, les tâches prévues par (type, espèce) et le nombre de plantes concernées. */
+/**
+ * Calendrier annuel : pour chaque mois, les tâches prévues par (type, espèce) et le nombre de plantes concernées.
+ * Comme `generateTasks`, il écarte les plantes mortes ou récoltées et les annuelles qui ont fini leur saison à `today`.
+ */
 export function yearPlan(
   plants: Plant[],
   speciesById: Record<string, Species>,
+  today: Date = new Date(),
 ): { month: Month; tasks: { type: TaskType; speciesId: string; count: number }[] }[] {
   const out = Array.from({ length: 12 }, (_, i) => ({
     month: (i + 1) as Month,
@@ -744,7 +752,7 @@ export function yearPlan(
   const counts = out.map(() => new Map<string, { type: TaskType; speciesId: string; plants: Set<string> }>())
   for (const p of plants) {
     const sp = speciesById[p.speciesId]
-    if (!sp || p.status === 'mort') continue
+    if (!sp || p.status === 'mort' || p.status === 'recoltee' || annualSeasonOver(p, sp, today)) continue
     for (const rule of sp.taches) {
       if (isSowing(rule.type) ? p.status !== 'projet' : !isActive(p)) continue
       for (const m of new Set(rule.months)) {

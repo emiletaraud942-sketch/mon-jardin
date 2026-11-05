@@ -1,12 +1,13 @@
 import type { Species, TaskRule } from '../../types'
 
 // Arbres et essences de haie champêtre (essences locales de France métropolitaine).
-// Rappel : ne jamais tailler haies et arbres du 15 mars au 31 juillet (nidification,
-// recommandation OFB ; la destruction de nids d'espèces protégées est interdite par la loi).
+// Rappel : l'OFB recommande d'éviter la taille des haies et des arbres du 15 mars au 31 juillet (nidification).
+// Ce n'est pas une interdiction générale pour un particulier (certains arrêtés préfectoraux en imposent une ; les
+// exploitants agricoles suivent la règle de la PAC), mais détruire un nid occupé d'une espèce protégée est interdit.
 
 const MOIS_TAILLE_HAIE: TaskRule['months'] = [9, 10, 11, 12, 1, 2]
 
-const RAPPEL_NIDIFICATION = 'Ne jamais tailler du 15 mars au 31 juillet : période de nidification (recommandation OFB, destruction de nids protégés interdite).'
+const RAPPEL_NIDIFICATION = 'Évitez de tailler du 15 mars au 31 juillet (nidification, recommandation OFB). Détruire un nid occupé d’une espèce protégée est interdit ; certains arrêtés préfectoraux imposent cette pause.'
 
 const plantationJeunesPlants: TaskRule = {
   type: 'plantation',

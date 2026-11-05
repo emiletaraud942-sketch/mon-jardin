@@ -30,6 +30,7 @@ export const STATUS_LABEL: Record<PlantStatus, string> = {
   'en-place': 'Plantée',
   malade: 'Malade',
   mort: 'Morte',
+  recoltee: 'Récoltée',
 }
 
 export const TASK_LABEL: Record<TaskType, string> = {

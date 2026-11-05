@@ -47,7 +47,7 @@ const bouillieChuteFeuilles: TaskRule = {
   type: 'traitement',
   months: [10, 11],
   condition: 'temps-sec',
-  howTo: 'À la chute des feuilles, pulvériser de la bouillie bordelaise (20 g/L) sur tout l’arbre pour cicatriser les points d’attache et limiter chancres et tavelure. Ramasser et composter à chaud les feuilles et fruits momifiés.',
+  howTo: 'Prévention avant tout : ramasser et composter à chaud les feuilles et fruits momifiés, aérer la ramure par la taille, choisir des variétés résistantes. En dernier recours seulement, un produit cuivré (type bouillie bordelaise) à la chute des feuilles, selon l’étiquette : le cuivre s’accumule dans le sol.',
   tool: 'pulvérisateur',
 }
 
@@ -268,7 +268,7 @@ export const FRUITIERS: Species[] = [
         type: 'taille',
         months: [8, 9],
         condition: 'temps-sec',
-        howTo: "Taille d'été, juste après avoir cueilli vos fruits et par temps sec : éclaircir le centre, supprimer bois mort et branches mal placées, raccourcir les rameaux trop longs. Pas de taille d'automne ni d'hiver, qui favorise le plomb parasite et la gommose ; mastiquer les grosses plaies.",
+        howTo: "Taille d'été, dès que les fruits sont cueillis (variétés précoces) ou en août, par temps sec : éclaircir le centre, supprimer bois mort et branches mal placées, raccourcir les rameaux trop longs. Pas de taille d'automne ni d'hiver (octobre humide : plomb parasite, gommose) ; mastiquer les grosses plaies.",
         tool: 'sécateur',
       },
       {
@@ -295,7 +295,7 @@ export const FRUITIERS: Species[] = [
       arrosageJeunes,
     ],
     entretien:
-      "Le prunier est rustique et productif, peu exigeant sur le sol. Il se taille légèrement, après la récolte et par temps sec, pour éviter les maladies du bois. Éliminez régulièrement drageons et fruits momifiés. Certaines variétés sont autofertiles (Reine-Claude d'Oullins, Stanley), d'autres demandent un pollinisateur.",
+      "Le prunier est rustique et productif, peu exigeant sur le sol. Il se taille légèrement en été, une fois les fruits cueillis et par temps sec, pour éviter les maladies du bois. Éliminez régulièrement drageons et fruits momifiés. Certaines variétés sont autofertiles (Reine-Claude d'Oullins, Stanley), d'autres demandent un pollinisateur.",
     couleur: '#4a7d3a',
     couleurAccent: '#5b2c6f',
   },
@@ -330,7 +330,7 @@ export const FRUITIERS: Species[] = [
         type: 'taille',
         months: [8, 9],
         condition: 'temps-sec',
-        howTo: "Taille d'été légère, juste après avoir cueilli vos fruits et par temps sec : aérer le centre et supprimer bois mort et rameaux qui se croisent. Pas de taille d'automne ni d'hiver (plomb parasite).",
+        howTo: "Taille légère juste après la dernière cueillette (fin août, début septembre), par temps sec : aérer le centre et supprimer bois mort et rameaux qui se croisent. Pas de taille d'octobre ni d'hiver (plomb parasite, gommose).",
         tool: 'sécateur',
       },
       {
@@ -345,7 +345,7 @@ export const FRUITIERS: Species[] = [
       arrosageJeunes,
     ],
     entretien:
-      "Le mirabellier est autofertile, très rustique et peu sensible aux maladies, idéal dans le Nord-Est. Il se taille peu, en été après la récolte. Un paillage au pied, du compost à l'automne et l'élimination des fruits pourris suffisent.",
+      "Le mirabellier est autofertile, très rustique et peu sensible aux maladies, idéal dans le Nord-Est. Il se taille peu, en fin d'été juste après la récolte. Un paillage au pied, du compost à l'automne et l'élimination des fruits pourris suffisent.",
     couleur: '#4f8040',
     couleurAccent: '#e8b923',
   },
@@ -378,9 +378,9 @@ export const FRUITIERS: Species[] = [
       plantationRacinesNues,
       {
         type: 'taille',
-        months: [8, 9],
-        condition: 'apres-recolte',
-        howTo: "Jamais en hiver : tailler après la récolte, par temps sec, pour éviter gommose et dépérissement bactérien. Éclaircir le centre en gobelet, supprimer le bois mort et raccourcir légèrement les rameaux trop longs.",
+        months: [7, 8],
+        condition: 'temps-sec',
+        howTo: "Jamais en hiver : tailler en été, dès les derniers fruits cueillis (juillet-août), par temps sec, pour éviter gommose et dépérissement bactérien. Éclaircir le centre en gobelet, supprimer le bois mort et raccourcir légèrement les rameaux trop longs.",
         tool: 'sécateur',
       },
       {
@@ -408,7 +408,7 @@ export const FRUITIERS: Species[] = [
       arrosageJeunes,
     ],
     entretien:
-      "L'abricotier réclame chaleur, lumière et sol bien drainé ; au nord de la Loire, plantez-le contre un mur exposé au sud. Sa floraison précoce craint les gelées tardives. Taillez-le uniquement en été, après la récolte, et jamais en hiver. La plupart des variétés sont autofertiles.",
+      "L'abricotier réclame chaleur, lumière et sol bien drainé ; au nord de la Loire, plantez-le contre un mur exposé au sud. Sa floraison précoce craint les gelées tardives. Taillez-le uniquement en été (juillet-août), une fois les fruits cueillis, et jamais en hiver. La plupart des variétés sont autofertiles.",
     couleur: '#5a8a3c',
     couleurAccent: '#f28c28',
   },
@@ -457,7 +457,7 @@ export const FRUITIERS: Species[] = [
         type: 'traitement',
         months: [2, 11],
         condition: 'temps-sec',
-        howTo: "Contre la cloque, pulvériser de la bouillie bordelaise à la chute des feuilles puis au gonflement des bourgeons. Choisir de préférence une variété tolérante.",
+        howTo: "Contre la cloque, la meilleure parade est une variété tolérante, un arbre palissé sous abri de pluie (mur, auvent) et le ramassage des feuilles atteintes. Au besoin seulement, un produit cuivré préventif (type bouillie bordelaise) à la chute des feuilles puis au gonflement des bourgeons, selon l’étiquette : le cuivre s’accumule dans le sol.",
         tool: 'pulvérisateur',
       },
       {
@@ -477,7 +477,7 @@ export const FRUITIERS: Species[] = [
       arrosageJeunes,
     ],
     entretien:
-      "Le pêcher a une vie courte (15–20 ans) mais produit vite. Il doit être taillé chaque année car il ne fructifie que sur le bois d'un an. La cloque est sa principale maladie : variétés tolérantes, bouillie bordelaise à la chute des feuilles et au débourrement. Un sol drainé et une exposition chaude lui conviennent.",
+      "Le pêcher a une vie courte (15–20 ans) mais produit vite. Il doit être taillé chaque année car il ne fructifie que sur le bois d'un an. La cloque est sa principale maladie : variétés tolérantes, arbre palissé à l'abri de la pluie, ramassage des feuilles atteintes ; le cuivre reste un dernier recours. Un sol drainé et une exposition chaude lui conviennent.",
     couleur: '#4f8a3a',
     couleurAccent: '#f4a58a',
   },
@@ -519,7 +519,7 @@ export const FRUITIERS: Species[] = [
         type: 'traitement',
         months: [10, 11],
         condition: 'temps-sec',
-        howTo: "Contre l'entomosporiose (taches brunes), ramasser les feuilles tombées et pulvériser de la bouillie bordelaise à leur chute.",
+        howTo: "Contre l'entomosporiose (taches brunes), ramasser et composter à chaud les feuilles tombées, aérer par la taille. En dernier recours, un produit cuivré préventif (type bouillie bordelaise) selon l'étiquette : le cuivre s'accumule dans le sol.",
         tool: 'pulvérisateur',
       },
       {
@@ -789,16 +789,16 @@ export const FRUITIERS: Species[] = [
       plantationRacinesNues,
       {
         type: 'taille',
-        months: [9, 10],
-        condition: 'apres-recolte',
-        howTo: "Après la récolte, par temps sec : former un gobelet ouvert, supprimer bois mort et rameaux qui se croisent. Peu de taille ; jamais en hiver humide (gommose).",
+        months: [8, 9],
+        condition: 'temps-sec',
+        howTo: "Dès la récolte (fin d'été), par temps sec : former un gobelet ouvert, supprimer bois mort et rameaux qui se croisent. Peu de taille ; pas d'octobre humide ni d'hiver (gommose).",
         tool: 'sécateur',
       },
       {
         type: 'traitement',
         months: [1, 2, 11],
         condition: 'temps-sec',
-        howTo: 'Contre la cloque et la moniliose, pulvériser de la bouillie bordelaise à la chute des feuilles puis au gonflement des bourgeons.',
+        howTo: 'Contre la cloque et la moniliose : ramasser les feuilles et fruits momifiés, couper les rameaux desséchés, choisir une variété tolérante. En dernier recours, un produit cuivré préventif (type bouillie bordelaise) selon l’étiquette : le cuivre s’accumule dans le sol.',
         tool: 'pulvérisateur',
       },
       {
@@ -811,7 +811,7 @@ export const FRUITIERS: Species[] = [
       paillagePied,
     ],
     entretien:
-      "L'amandier aime le soleil, la sécheresse et les sols calcaires drainés. Sa floraison en février le rend sensible aux gelées : réservez-le au sud de la France ou aux situations abritées, ou choisissez des variétés tardives ('Ferragnès', 'Lauranne', autofertile). Taillez peu et après la récolte.",
+      "L'amandier aime le soleil, la sécheresse et les sols calcaires drainés. Sa floraison en février le rend sensible aux gelées : réservez-le au sud de la France ou aux situations abritées, ou choisissez des variétés tardives ('Ferragnès', 'Lauranne', autofertile). Taillez peu, en fin d'été après la récolte.",
     couleur: '#5c8a5a',
     couleurAccent: '#f7d9e3',
   },
@@ -1008,7 +1008,7 @@ export const FRUITIERS: Species[] = [
         type: 'traitement',
         months: [3, 10],
         condition: 'temps-sec',
-        howTo: "Contre l'œil de paon (taches rondes sur les feuilles), pulvériser de la bouillie bordelaise au printemps et à l'automne.",
+        howTo: "Contre l'œil de paon (taches rondes sur les feuilles), ramasser les feuilles atteintes et aérer la ramure. En dernier recours, un produit cuivré préventif (type bouillie bordelaise) au printemps ou à l'automne, selon l'étiquette : le cuivre s'accumule dans le sol.",
         tool: 'pulvérisateur',
       },
       {

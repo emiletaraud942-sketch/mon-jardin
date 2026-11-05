@@ -1,5 +1,6 @@
 import { fetchBuildings, fetchParcel, fetchTerrain, type GeocodeResult } from '../../lib/ign'
 import { fetchClimate } from '../../lib/weather'
+import { zoneCode } from '../../engine/climate'
 import { polygonArea, toLocal, uid } from '../../lib/geo'
 import { frNumber, plural } from '../../lib/format'
 import type { Garden, LonLat } from '../../types'
@@ -103,6 +104,8 @@ export async function buildGarden(
         garden.lastFrostDoy = c.lastFrostDoy ?? undefined
         garden.firstFrostDoy = c.firstFrostDoy ?? undefined
         garden.minAbsC = c.minAbsC
+        garden.climateZone = zoneCode(c.zone)
+        garden.rainMmPerYear = Number.isFinite(c.rainMmPerYear) ? Math.round(c.rainMmPerYear) : undefined
         onStep('climat', 'ok', `${frNumber(c.rainMmPerYear, 0)} mm de pluie par an · ${c.zone}`)
       } catch (e) {
         onStep('climat', 'echec', (e as Error).message)

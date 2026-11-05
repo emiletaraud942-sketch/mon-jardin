@@ -162,6 +162,10 @@ export interface Garden {
   firstFrostDoy?: number
   /** Température la plus basse observée sur 5 ans d'historique (°C), pour juger la rusticité des vivaces. */
   minAbsC?: number
+  /** Zone de rusticité USDA sans préfixe (« 8a »), calculée avec le climat. Absente sur les anciens jardins. */
+  climateZone?: string
+  /** Pluie moyenne annuelle (mm) sur 5 ans d'historique. Absente sur les anciens jardins. */
+  rainMmPerYear?: number
   /** Recalage GPS (similitude 2D en mètres locaux), appliqué aux positions mesurées. */
   calibration?: Calibration
   /** Points de vue en photos (façon Street View). Métadonnées seulement : les photos sont dans IndexedDB (src/lib/photos.ts), jamais synchronisées ; exportées seulement dans la sauvegarde complète (src/lib/backupFull.ts), fichier que la personne garde. */
@@ -198,7 +202,8 @@ export interface TerrainGrid {
   heights: number[]
 }
 
-export type PlantStatus = 'projet' | 'en-place' | 'malade' | 'mort'
+/** 'recoltee' : la plante a fini sa saison (annuelle récoltée ou arrachée) ; elle ne génère plus de tâches et ne compte plus comme voisine. */
+export type PlantStatus = 'projet' | 'en-place' | 'malade' | 'mort' | 'recoltee'
 
 /** Forme sous laquelle la plante a été achetée ou plantée. */
 export type PurchaseForm = 'graine' | 'godet' | 'motte' | 'racines-nues' | 'scion' | 'baliveau' | 'demi-tige' | 'haute-tige'

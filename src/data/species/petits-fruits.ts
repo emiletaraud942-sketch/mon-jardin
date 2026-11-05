@@ -2,6 +2,10 @@ import type { Species, TaskRule } from '../../types'
 
 // Petits fruits : arbustes et lianes fruitières, strate arbustive de la forêt-jardin.
 
+// Les tailles qui tombent dans la période de nidification (15 mars – 31 juillet) rappellent de regarder avant de couper.
+// C'est une recommandation de l'OFB ; détruire un nid occupé d'une espèce protégée est interdit.
+const VERIF_NIDS = ' Avant de couper, vérifiez qu’aucun nid n’est occupé (nidification : 15 mars–31 juillet, recommandation OFB).'
+
 const plantationRacinesNues: TaskRule = {
   type: 'plantation',
   months: [11, 12, 1, 2, 3],
@@ -86,7 +90,7 @@ export const PETITS_FRUITS: Species[] = [
       {
         type: 'taille',
         months: [4, 5],
-        howTo: 'Arracher les drageons qui sortent hors du rang et éclaircir les jeunes cannes trop serrées pour aérer.',
+        howTo: 'Arracher les drageons qui sortent hors du rang et éclaircir les jeunes cannes trop serrées pour aérer.' + VERIF_NIDS,
         tool: 'sécateur',
       },
       {
@@ -152,7 +156,7 @@ export const PETITS_FRUITS: Species[] = [
       {
         type: 'taille',
         months: [6, 7],
-        howTo: 'Pincer l’extrémité des jeunes cannes vers 2 m pour favoriser les ramifications fructifères.',
+        howTo: 'Pincer l’extrémité des jeunes cannes vers 2 m pour favoriser les ramifications fructifères.' + VERIF_NIDS,
         tool: 'sécateur',
       },
       {
@@ -208,7 +212,7 @@ export const PETITS_FRUITS: Species[] = [
         months: [7, 8],
         condition: 'apres-recolte',
         minAgeYears: 3,
-        howTo: 'Taille en vert : raccourcir les pousses de l’année à 4–5 feuilles pour faire entrer la lumière et limiter l’oïdium.',
+        howTo: 'Taille en vert : raccourcir les pousses de l’année à 4–5 feuilles pour faire entrer la lumière et limiter l’oïdium.' + VERIF_NIDS,
         tool: 'sécateur',
       },
       filetOiseaux,
@@ -314,7 +318,7 @@ export const PETITS_FRUITS: Species[] = [
         type: 'taille',
         months: [6, 7],
         minAgeYears: 3,
-        howTo: "Taille en vert : raccourcir les pousses de l'année à 5 feuilles et ôter les extrémités blanchies par l'oïdium américain.",
+        howTo: "Taille en vert : raccourcir les pousses de l'année à 5 feuilles et ôter les extrémités blanchies par l'oïdium américain." + VERIF_NIDS,
         tool: 'sécateur',
       },
       {
@@ -504,7 +508,7 @@ export const PETITS_FRUITS: Species[] = [
       {
         type: 'taille',
         months: [6, 7],
-        howTo: 'Arracher les drageons qui partent des racines et pincer les rameaux trop longs.',
+        howTo: 'Arracher les drageons qui partent des racines et pincer les rameaux trop longs.' + VERIF_NIDS,
         tool: 'sécateur',
       },
       {
@@ -613,7 +617,7 @@ export const PETITS_FRUITS: Species[] = [
         type: 'taille',
         months: [6, 7, 8],
         frequencyDays: 30,
-        howTo: "Taille d'été : pincer les rameaux fructifères à 4–6 feuilles au-dessus du dernier fruit et couper les gourmands non utiles.",
+        howTo: "Taille d'été : pincer les rameaux fructifères à 4–6 feuilles au-dessus du dernier fruit et couper les gourmands non utiles." + VERIF_NIDS,
         tool: 'sécateur',
       },
       {
@@ -686,7 +690,7 @@ export const PETITS_FRUITS: Species[] = [
         type: 'taille',
         months: [6, 7, 8],
         frequencyDays: 30,
-        howTo: 'Pincer les pousses à 5 feuilles au-dessus des fruits et supprimer les longues tiges stériles.',
+        howTo: 'Pincer les pousses à 5 feuilles au-dessus des fruits et supprimer les longues tiges stériles.' + VERIF_NIDS,
         tool: 'sécateur',
       },
       {
@@ -745,12 +749,12 @@ export const PETITS_FRUITS: Species[] = [
       {
         type: 'taille',
         months: [4, 5],
-        howTo: "Ébourgeonnage : quand les pousses atteignent 10 cm, supprimer à la main les doubles bourgeons et les gourmands sortant du vieux bois, en gardant une ou deux pousses par courson.",
+        howTo: "Ébourgeonnage : quand les pousses atteignent 10 cm, supprimer à la main les doubles bourgeons et les gourmands sortant du vieux bois, en gardant une ou deux pousses par courson." + VERIF_NIDS,
       },
       {
         type: 'taille',
         months: [6, 7],
-        howTo: 'Rognage : couper l’extrémité des rameaux à 2–3 feuilles au-dessus de la dernière grappe ; en août, effeuiller légèrement autour des grappes.',
+        howTo: 'Rognage : couper l’extrémité des rameaux à 2–3 feuilles au-dessus de la dernière grappe ; en août, effeuiller légèrement autour des grappes.' + VERIF_NIDS,
         tool: 'sécateur',
       },
       {
@@ -758,7 +762,7 @@ export const PETITS_FRUITS: Species[] = [
         months: [5, 6, 7],
         condition: 'temps-sec',
         frequencyDays: 14,
-        howTo: 'Contre le mildiou, pulvériser de la bouillie bordelaise à faible dose après les pluies (et du soufre contre l’oïdium), sans dépasser 4 kg de cuivre/ha/an.',
+        howTo: 'Contre le mildiou et l’oïdium, la prévention passe d’abord par des variétés résistantes, une bonne aération (palissage, ébourgeonnage, effeuillage) et un sol peu arrosé. En dernier recours, un produit cuivré préventif (type bouillie bordelaise) selon l’étiquette : le cuivre s’accumule dans le sol.',
         tool: 'pulvérisateur',
       },
       {
@@ -770,7 +774,7 @@ export const PETITS_FRUITS: Species[] = [
       },
     ],
     entretien:
-      "La vigne aime les sols pauvres, chauds et caillouteux : évitez de trop la nourrir. Tout se joue à la taille d'hiver courte puis à l'ébourgeonnage et au rognage au printemps et en été. Préférez des variétés résistantes au mildiou et à l'oïdium pour limiter les traitements au cuivre. Un enherbement fleuri au pied attire les auxiliaires.",
+      "La vigne aime les sols pauvres, chauds et caillouteux : évitez de trop la nourrir. Tout se joue à la taille d'hiver courte puis à l'ébourgeonnage et au rognage au printemps et en été. Préférez des variétés résistantes au mildiou et à l'oïdium et aérez bien la ramure : le cuivre, qui s'accumule dans le sol, ne doit rester qu'un dernier recours. Un enherbement fleuri au pied attire les auxiliaires.",
     couleur: '#5a8a3a',
     couleurAccent: '#4b2a5c',
   },

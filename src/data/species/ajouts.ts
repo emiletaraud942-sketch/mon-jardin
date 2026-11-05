@@ -2,9 +2,9 @@ import type { Species, TaskRule } from '../../types'
 
 // Ajouts de l'audit du 27 octobre 2026 : espèces courantes qui manquaient (haies et arbustes de jardin, vivaces, légumes).
 // Même contrat que les autres fichiers : mois 1 = janvier … 12 = décembre, textes en français simple.
-// Pour les haies : jamais de taille du 15 mars au 31 juillet (nidification, recommandation OFB).
+// Pour les haies : éviter la taille du 15 mars au 31 juillet (nidification, recommandation OFB ; détruire un nid occupé d'une espèce protégée est interdit).
 
-const RAPPEL_NIDIFICATION = 'Ne jamais tailler du 15 mars au 31 juillet : période de nidification (recommandation OFB, destruction de nids protégés interdite).'
+const RAPPEL_NIDIFICATION = 'Évitez de tailler du 15 mars au 31 juillet (nidification, recommandation OFB). Détruire un nid occupé d’une espèce protégée est interdit ; certains arrêtés préfectoraux imposent cette pause.'
 
 const plantationArbusteMotte: TaskRule = {
   type: 'plantation',

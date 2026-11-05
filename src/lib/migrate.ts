@@ -24,7 +24,7 @@ export interface SerializedState extends StateData {
   exportedAt: string
 }
 
-const STATUSES: ReadonlySet<string> = new Set<PlantStatus>(['projet', 'en-place', 'malade', 'mort'])
+const STATUSES: ReadonlySet<string> = new Set<PlantStatus>(['projet', 'en-place', 'malade', 'mort', 'recoltee'])
 const SOILS: ReadonlySet<string> = new Set<SoilTexture>(['argileux', 'limoneux', 'sableux', 'calcaire', 'humifere'])
 const DAY_MS = 86_400_000
 
@@ -36,7 +36,7 @@ const inRange = (n: number, max: number) => Math.abs(n) <= max
 /** Texte raccourci à `max` caractères (les données importées ne sont pas dignes de confiance). */
 const text = (v: string, max: number = LIMITS.shortText) => clipText(v, max)
 
-const GARDEN_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'address', 'center', 'altitudeM', 'parcel', 'parcelRefs', 'areaM2', 'buildings', 'terrain', 'sol', 'lastFrostDoy', 'firstFrostDoy', 'minAbsC', 'calibration', 'panoramas', 'createdAt'])
+const GARDEN_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'address', 'center', 'altitudeM', 'parcel', 'parcelRefs', 'areaM2', 'buildings', 'terrain', 'sol', 'lastFrostDoy', 'firstFrostDoy', 'minAbsC', 'climateZone', 'rainMmPerYear', 'calibration', 'panoramas', 'createdAt'])
 const PLANT_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'speciesId', 'customName', 'position', 'plantedAt', 'ageAtPlanting', 'purchase', 'status', 'notes', 'photos', 'measurements'])
 const TASK_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'taskKey', 'status', 'until', 'doneAt'])
 
@@ -114,6 +114,11 @@ function sanitizeGarden(raw: unknown, report: Report): Garden | undefined {
   if (isNum(raw.lastFrostDoy)) g.lastFrostDoy = raw.lastFrostDoy
   if (isNum(raw.firstFrostDoy)) g.firstFrostDoy = raw.firstFrostDoy
   if (isNum(raw.minAbsC) && raw.minAbsC >= -80 && raw.minAbsC <= 50) g.minAbsC = raw.minAbsC
+  if (typeof raw.climateZone === 'string') {
+    const m = /^(?:Rusticité USDA\s+)?(\d{1,2}[ab])$/i.exec(raw.climateZone.trim())
+    if (m) g.climateZone = m[1].toLowerCase()
+  }
+  if (isNum(raw.rainMmPerYear) && raw.rainMmPerYear >= 0 && raw.rainMmPerYear <= 15_000) g.rainMmPerYear = raw.rainMmPerYear
   if (typeof raw.sol === 'string' && SOILS.has(raw.sol)) g.sol = raw.sol as SoilTexture
   if (Array.isArray(raw.parcelRefs)) {
     g.parcelRefs = raw.parcelRefs
