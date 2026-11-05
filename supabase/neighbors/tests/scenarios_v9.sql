@@ -72,7 +72,7 @@ begin
    (select 'OK '||coalesce(string_agg(p.proname, ','), '') from pg_proc p where p.pronamespace = 'public'::regnamespace and has_function_privilege('anon', p.oid, 'execute')), 'OK ');
  perform t.expect('S6 fonctions publiques appelables par les connectés : la liste attendue, rien d''autre',
    (select 'OK '||string_agg(p.proname, ',' order by p.proname) from pg_proc p where p.pronamespace = 'public'::regnamespace and has_function_privilege('authenticated', p.oid, 'execute')),
-   'LISTE');
+   'OK delete_my_account,neighbors_can_see_cell,neighbors_is_member,neighbors_is_organizer,neighbors_my_photo_count,neighbors_species_valid');
  perform t.expect('S6 aucune politique ne mentionne encore une fonction publique supprimée',
    (select 'OK '||count(*) from pg_policies where coalesce(qual, '') || coalesce(with_check, '') ~ 'public\.neighbors_(is_blocked|can_contact|can_see_user)'), 'OK 0');
 
@@ -94,6 +94,9 @@ begin
  perform t.expect('S6 B n''ouvre pas de conversation avec lui-même', t.as(t.u9(2), format('insert into public.threads(user_a,user_b) values (%L,%L)', t.u9(2), t.u9(2))), 'ERR');
 
  -- Blocage : appliqué dans les deux sens par les politiques.
+ -- Réponses : bloquer l'auteur d'une réponse la masque.
+ perform t.expect('S6 B bloque F', t.as(t.u9(2), format('insert into public.blocks(blocked) values (%L)', t.u9(6))), 'OK rows=1');
+ perform t.expect('S6 ... B ne voit plus la réponse de F', t.as(t.u9(2), 'select count(*) from public.replies'), 'OK 0');
  perform t.expect('S6 B bloque C', t.as(t.u9(2), format('insert into public.blocks(blocked) values (%L)', t.u9(3))), 'OK rows=1');
  perform t.expect('S6 ... B ne voit plus les annonces de C', t.as(t.u9(2), format('select count(*) from public.posts where author = %L', t.u9(3))), 'OK 0');
  perform t.expect('S6 ... ni son profil', t.as(t.u9(2), format('select count(*) from public.profiles where user_id = %L', t.u9(3))), 'OK 0');
@@ -105,9 +108,6 @@ begin
  perform t.expect('S6 ... et E ne voit plus rien de B', t.as(t.u9(5), format('select count(*) from public.profiles where user_id = %L', t.u9(2))), 'OK 0');
  perform t.expect('S6 ... E ne peut pas non plus rouvrir (fil existant masqué)', t.as(t.u9(2), 'select count(*) from public.threads'), 'OK 0');
  perform t.expect('S6 F (non bloquée) voit encore le jardin de E', t.as(t.u9(6), format('select count(*) from public.garden_shares where user_id = %L', t.u9(5))), 'OK 1');
- -- Réponses : bloquer l'auteur d'une réponse la masque.
- perform t.expect('S6 B bloque F', t.as(t.u9(2), format('insert into public.blocks(blocked) values (%L)', t.u9(6))), 'OK rows=1');
- perform t.expect('S6 ... B ne voit plus la réponse de F', t.as(t.u9(2), 'select count(*) from public.replies'), 'OK 0');
  -- Bannissement : le jardin d'une personne bannie disparaît, le contact aussi.
  perform set_config('request.jwt.claim.sub', '', true);
  delete from public.blocks;
@@ -133,8 +133,8 @@ declare
                           chr(8288), chr(8294), chr(8295), chr(8296), chr(8297), chr(8300), chr(65279)];
   c1 text[] := array[chr(128), chr(133), chr(150), chr(159)];
   bidi text[] := array[chr(8206), chr(8207), chr(8234), chr(8235), chr(8236), chr(8237), chr(8238), chr(8294), chr(8295), chr(8296), chr(8297)];
-  v7class constant text := '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f­؜​-‏ -‮⁠-⁯﻿]';
-  v9class constant text := '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f­؜​-‏ -‮⁠-⁯﻿]';
+  v7class constant text := '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f\u00ad\u061c\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff]';
+  v9class constant text := '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u00ad\u061c\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff]';
   lost int; added int; pid uuid; th uuid; i int; r text;
 begin
  perform t.expect('S7 profil B (auteur)', t.mk9(2, 'Bernard', 48.86, 2.34), 'OK rows=1');

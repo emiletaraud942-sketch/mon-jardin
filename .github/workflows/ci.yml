@@ -48,3 +48,74 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: node scripts/audit-prod.mjs
+
+  secrets:
+    name: Détection de secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Motifs courants (clés privées, jetons JWT, clés sk-, jetons GitHub, URL Supabase réelles, variables secrètes) dans l'arbre
+    # de travail ET dans tout l'historique. Aucun service externe. Complète (ne remplace pas) « Secret scanning » et
+    # « Push protection » de GitHub, à activer par le propriétaire. Faux positifs tolérés : .github/secrets-allow.json (lignes exactes).
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: node .github/scripts/scan-secrets.mjs --history
+
+  sql:
+    name: Banc SQL de l'entraide (Postgres jetable)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Postgres 16 éphémère dans un conteneur de service : aucun projet Supabase réel, aucun secret.
+    # Le banc (supabase/neighbors/tests/run.sh) crée puis supprime la base « neighbors_test » et sort en erreur au premier FAIL.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - run: bash supabase/neighbors/tests/run.sh
+
+  codeql:
+    name: Analyse CodeQL (JavaScript et TypeScript)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Les résultats apparaissent dans l'onglet Security > Code scanning. Demande que « Code scanning » soit disponible
+    # (gratuit pour un dépôt public ; dépôt privé : GitHub Advanced Security). `continue-on-error` : NON bloquant tant que le
+    # propriétaire n'a pas confirmé que l'analyse fonctionne sur son dépôt (retirer cette ligne ensuite). Les pull requests venant
+    # d'un fork n'ont pas le droit d'écrire les résultats : elles sont ignorées.
+    continue-on-error: true
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: javascript-typescript
+          queries: security-extended
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:javascript-typescript"

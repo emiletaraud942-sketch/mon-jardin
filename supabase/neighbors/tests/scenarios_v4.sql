@@ -36,7 +36,7 @@ begin
  perform t.as(G,format('insert into public.profiles(user_id,pseudo,cell_lat,cell_lon) values (%L,%L,48.87,2.35)',G,'Gaelle'));
  perform t.as(H,format('insert into public.profiles(user_id,pseudo,cell_lat,cell_lon) values (%L,%L,48.88,2.35)',H,'Hugo'));
  perform t.as(I,format('insert into public.profiles(user_id,pseudo,cell_lat,cell_lon) values (%L,%L,48.86,2.36)',I,'Irene'));
- update public.profiles set created_at = now() - interval '2 days' where user_id in (F,G,H);   -- signaleurs de plus de 24 h
+ update public.profiles set created_at = now() - interval '8 days' where user_id in (F,G,H);   -- signaleurs de plus de 7 jours (v9)
  update public.profiles set banned_at = now() where user_id = I;
 
  ---------- 1. Devenir organisateur : sans validation, on ne publie pas ----------
@@ -287,6 +287,8 @@ begin
  delete from public.quotas;
 
  ---------- 6. Signalement et masquage automatique ----------
+ -- v9 : un signaleur qualifié a plus de 7 jours ET a déjà publié ; F, G et H publient une annonce (retirée après la section).
+ perform set_config('request.jwt.claim.sub', '', true); insert into public.posts(author, kind, title) select a9.uid9, 'don', 'activité v9' from unnest(array[F,G,H]) a9(uid9);
  perform t.expect('V4 B signale l''événement', t.as(B,format('insert into public.reports(target_kind,target_id,reason) values (''event'',%L,''commerce'')',e2)), 'OK rows=1');
  perform t.expect('V4 B signale deux fois : refus', t.as(B,format('insert into public.reports(target_kind,target_id,reason) values (''event'',%L,''spam'')',e2)), 'ERR 23505');
  perform t.expect('V4 A ne se signale pas lui-même', t.as(A,format('insert into public.reports(target_kind,target_id,reason) values (''event'',%L,''spam'')',e2)), 'ERR P0001 report_self');
@@ -303,6 +305,7 @@ begin
  perform t.expect('V4 masquage écrit au journal', (select 'OK '||count(*) from public.moderation_log where action = 'auto_hide' and target_kind = 'event' and target_id = e2), 'OK 1');
  perform t.expect('V4 B ne voit plus l''événement masqué', t.as(B,format('select count(*) from public.events where id = %L',e2)), 'OK 0');
  perform t.expect('V4 A ne le rouvre pas', t.as(A,format('update public.events set status = ''open'' where id = %L',e2)), 'OK rows=0');
+ perform set_config('request.jwt.claim.sub', '', true); delete from public.posts where title = 'activité v9';
  perform t.expect('V4 A ne lit ni signalements ni journal', t.as(A,'select count(*) from public.reports'), 'OK 0');
  perform t.expect('V4 A ne lit pas le journal', t.as(A,'select count(*) from public.moderation_log'), 'ERR 42501');
  perform t.expect('V4 le signalement est compté dans le quota', (select 'OK '||n from public.quotas where user_id = B and action = 'report' limit 1), 'OK 1');

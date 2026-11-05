@@ -24,6 +24,7 @@ describe('migration entraide : durcissement', () => {
     }
   })
   it('seules les aides de politiques et la suppression de compte sont appelables par les connectés', () => {
+    // Fichier v1 seul. La v9 déplace ensuite neighbors_is_blocked et neighbors_can_contact dans neighbors_private (voir migration-v9.test.ts).
     const granted = [...code.matchAll(/grant execute on function public\.(\w+)/g)].map((m) => m[1]).sort()
     expect(granted).toEqual(['delete_my_account', 'neighbors_can_contact', 'neighbors_can_see_cell', 'neighbors_is_blocked', 'neighbors_is_member', 'neighbors_my_photo_count'])
   })

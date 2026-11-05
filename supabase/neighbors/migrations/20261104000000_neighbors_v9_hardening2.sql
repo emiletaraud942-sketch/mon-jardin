@@ -176,37 +176,37 @@ drop function if exists public.neighbors_is_blocked(uuid);
 -- existantes est tentée plus bas, sans jamais faire échouer la migration.
 alter table public.posts drop constraint if exists posts_text_clean;
 alter table public.posts add constraint posts_text_clean check (
-  title !~ '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f­؜​-‏ -‮⁠-⁯﻿<>]'
-  and body !~ '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f­؜​-‏ -‮⁠-⁯﻿]'
+  title !~ '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u00ad\u061c\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff<>]'
+  and body !~ '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u00ad\u061c\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff]'
 ) not valid;
 
 alter table public.replies drop constraint if exists replies_text_clean;
 alter table public.replies add constraint replies_text_clean check (
-  body !~ '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f­؜​-‏ -‮⁠-⁯﻿]'
+  body !~ '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u00ad\u061c\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff]'
 ) not valid;
 
 alter table public.messages drop constraint if exists messages_text_clean;
 alter table public.messages add constraint messages_text_clean check (
-  body !~ '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f­؜​-‏ -‮⁠-⁯﻿]'
+  body !~ '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u00ad\u061c\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff]'
 ) not valid;
 
 alter table public.reports drop constraint if exists reports_text_clean;
 alter table public.reports add constraint reports_text_clean check (
-  details is null or details !~ '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f­؜​-‏ -‮⁠-⁯﻿]'
+  details is null or details !~ '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u00ad\u061c\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff]'
 ) not valid;
 
 alter table public.events drop constraint if exists events_text_clean;
 alter table public.events add constraint events_text_clean check (
-  title !~ '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f­؜​-‏ -‮⁠-⁯﻿<>]'
-  and description !~ '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f­؜​-‏ -‮⁠-⁯﻿]'
-  and place !~ '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f­؜​-‏ -‮⁠-⁯﻿<>]'
+  title !~ '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u00ad\u061c\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff<>]'
+  and description !~ '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u00ad\u061c\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff]'
+  and place !~ '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u00ad\u061c\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff<>]'
 ) not valid;
 
 -- Nouvelle : organisateurs (nom et description). Le nom garde aussi ses contrôles de la v4 (organizers_name_check).
 alter table public.organizers drop constraint if exists organizers_text_clean;
 alter table public.organizers add constraint organizers_text_clean check (
-  name !~ '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f­؜​-‏ -‮⁠-⁯﻿<>]'
-  and description !~ '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f­؜​-‏ -‮⁠-⁯﻿]'
+  name !~ '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u00ad\u061c\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff<>]'
+  and description !~ '[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u00ad\u061c\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff]'
 ) not valid;
 
 -- Validation des lignes existantes. Si l'une d'elles contient un caractère interdit, la contrainte reste « not valid »

@@ -231,6 +231,41 @@ describe('mouvement réduit : bonds', () => {
   })
 })
 
+describe('bonds et sous-pas : un mur fin ne se traverse jamais', () => {
+  const run: WalkInput = { forward: 1, strafe: 0, turn: 0, run: true }
+  const thin = (y: number, t: number) => makeColliders([{ id: 'mur', ring: [{ x: -40, y }, { x: 40, y }, { x: 40, y: y + t }, { x: -40, y: y + t }], heightM: 2 }])
+  it('bond de 3 m (courir) contre un mur de 5 cm : refusé, le promeneur reste devant', () => {
+    for (const [y0, wallY] of [[-1, 0.8], [0, 1], [0.4, 1.2], [-0.5, 2.2]] as const) {
+      const w = hopWalker({ x: 0, y: y0, yaw: 0 }, run, { colliders: thin(wallY, 0.05), bounds })!
+      expect(w.y, `départ ${y0}, mur ${wallY}`).toBeLessThanOrEqual(wallY - WALKER_RADIUS_M + 1e-3)
+    }
+  })
+  it('bonds répétés (12 bonds de 3 m) : on s’arrête au mur fin, même en biais', () => {
+    for (const yaw of [0, 0.4, -0.4]) {
+      let w: { x: number; y: number; yaw: number } = { x: 0, y: -3, yaw }
+      for (let i = 0; i < 12; i++) {
+        const r = hopWalker(w, run, { colliders: thin(2, 0.05), bounds })
+        if (r) w = r
+      }
+      expect(w.y).toBeLessThanOrEqual(2 - WALKER_RADIUS_M + 1e-3)
+    }
+  })
+  it('bond contre un tronc fin (rayon 15 cm) : refusé', () => {
+    const w = hopWalker({ x: 0, y: 0, yaw: 0 }, run, { colliders: [circleCollider(0, 1.5, 0.15)], bounds })!
+    expect(Math.hypot(w.x, w.y - 1.5)).toBeGreaterThanOrEqual(0.15 + WALKER_RADIUS_M - 1e-6)
+    expect(w.y).toBeLessThan(1.5)
+  })
+  it('sans obstacle, un bond fait toujours exactement sa longueur (sous-pas invisibles)', () => {
+    const w = hopWalker({ x: 0, y: 0, yaw: 0 }, run, { colliders: [], bounds })!
+    expect(w.y).toBeCloseTo(HOP_M * 2, 6)
+  })
+  it('stepWalker : pas de 0,1 s à 6 m/s contre un mur de 5 cm', () => {
+    let w = { x: 0, y: -1, yaw: 0 }
+    for (let i = 0; i < 60; i++) w = stepWalker(w, run, 0.1, { colliders: thin(2, 0.05), bounds })
+    expect(w.y).toBeLessThanOrEqual(2 - WALKER_RADIUS_M + 1e-3)
+  })
+})
+
 describe('téléportation', () => {
   const world: WalkWorld = { colliders: makeColliders([{ id: 'm', ring: [{ x: 0, y: 0 }, { x: 4, y: 0 }, { x: 4, y: 4 }, { x: 0, y: 4 }], heightM: 5 }]), bounds, parcel }
   it('arrive à l’endroit demandé et garde le regard', () => {

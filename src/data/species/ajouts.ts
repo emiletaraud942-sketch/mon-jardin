@@ -52,14 +52,21 @@ export const AJOUTS: Species[] = [
         months: [2, 3],
         condition: 'hors-gel',
         minAgeYears: 1,
-        howTo: 'Fin d’hiver, quand les bourgeons gonflent : enlever le bois mort, puis rabattre les tiges à 3 à 5 yeux, juste au-dessus d’un bourgeon tourné vers l’extérieur.',
+        howTo: 'Rosiers remontants : à la fin des fortes gelées (avant le 15 mars), quand les bourgeons gonflent, enlever le bois mort et les tiges fines. Rabattre les autres à 3 à 5 yeux, juste au-dessus d’un bourgeon tourné vers l’extérieur. Coupe nette en biseau, outil désinfecté.',
+        tool: 'sécateur',
+      },
+      {
+        type: 'taille',
+        months: [7, 8],
+        condition: 'temps-sec',
+        howTo: 'Rosiers à floraison unique (anciens, grimpants non remontants) : ne les rabattez pas en hiver, vous couperiez les fleurs. Taillez juste après la floraison : supprimez les branches de plus de 3 ans et raccourcissez les autres d’un tiers. Vérifiez qu’aucun nid n’est occupé.',
         tool: 'sécateur',
       },
       {
         type: 'taille',
         months: [6, 7, 8, 9],
         frequencyDays: 14,
-        howTo: 'Couper les fleurs fanées de rosiers remontants au-dessus d’une feuille à 5 folioles : cela relance la floraison.',
+        howTo: 'Rosiers remontants : couper les fleurs fanées au-dessus de la première feuille à 5 folioles pour relancer la floraison jusqu’aux gelées.',
         tool: 'sécateur',
       },
       { type: 'fertilisation', months: [3, 4], howTo: 'Griffer le sol et apporter du compost mûr au pied, ou un engrais organique pour rosiers.', tool: 'griffe' },
@@ -83,7 +90,7 @@ export const AJOUTS: Species[] = [
       },
     ],
     entretien:
-      'Le rosier aime le soleil, un sol riche et un peu de place. Plantez-le en hiver en racines nues, taillez-le à la fin de l’hiver et coupez les fleurs fanées pour qu’il refleurisse. Associé à la lavande, à l’ail et au souci, il a moins de pucerons. Évitez les feuilles mouillées le soir : c’est ce qui amène les taches noires.',
+      'Le rosier aime le soleil, un sol riche et un peu de place. Plantez-le en hiver en racines nues, taillez les remontants à la fin de l’hiver et les rosiers à floraison unique juste après leur floraison. Coupez les fleurs fanées des remontants pour qu’ils refleurissent. Associé à la lavande, à l’ail et au souci, il a moins de pucerons. Évitez les feuilles mouillées le soir : c’est ce qui amène les taches noires.',
     couleur: '#4f7a3c',
     couleurAccent: '#d6406a',
   },
@@ -116,7 +123,7 @@ export const AJOUTS: Species[] = [
         type: 'taille',
         months: [3, 4],
         condition: 'hors-gel',
-        howTo: 'Il fleurit sur le bois de l’an passé : au printemps seulement, couper les fleurs séchées juste au-dessus de la première paire de gros bourgeons, et retirer le bois mort. Pas de taille d’automne.',
+        howTo: 'Il fleurit sur le bois de l’an passé : au printemps seulement, couper les fleurs séchées juste au-dessus de la première paire de gros bourgeons, et retirer le bois mort. Pas de taille d’automne. Vérifiez qu’aucun nid n’est occupé.',
         tool: 'sécateur',
       },
       {
@@ -189,7 +196,7 @@ export const AJOUTS: Species[] = [
       },
     ],
     entretien:
-      'Le thuya fait une haie dense et persistante en quelques années. Plantez-le à 80 cm, arrosez bien les deux premiers étés et taillez une fois par an, jamais au printemps ni en été. Une haie d’une seule espèce abrite peu d’oiseaux : mêlez-la à quelques arbustes à baies ou à fleurs.',
+      'Le thuya fait une haie dense et persistante en quelques années. Plantez-le à 80 cm, arrosez bien les deux premiers étés et taillez une fois par an, en fin d’été ou à l’automne, en évitant le printemps et le début d’été (nidification). Une haie d’une seule espèce abrite peu d’oiseaux : mêlez-la à quelques arbustes à baies ou à fleurs.',
     couleur: '#2f5f3a',
   },
   {
@@ -249,7 +256,7 @@ export const AJOUTS: Species[] = [
       },
     ],
     entretien:
-      'Le laurier-palme pousse vite, même à l’ombre, et fait un écran épais. Il est toxique et ses graines sont semées par les oiseaux : ramassez les petits plants qui sortent ailleurs. Taillez-le au sécateur en fin d’été, jamais au printemps, et mêlez-le à d’autres arbustes pour les oiseaux.',
+      'Le laurier-palme pousse vite, même à l’ombre, et fait un écran épais. Il est toxique et ses graines sont semées par les oiseaux : ramassez les petits plants qui sortent ailleurs. Taillez-le au sécateur en fin d’été, en évitant le printemps et le début d’été (nidification), et mêlez-le à d’autres arbustes pour les oiseaux.',
     couleur: '#2d6a3e',
   },
   {
@@ -337,7 +344,7 @@ export const AJOUTS: Species[] = [
         type: 'plantation',
         months: [4, 5],
         condition: 'hors-gel',
-        howTo: 'Après les dernières gelées, planter le tubercule à 10 cm de profondeur, œil vers le haut, avec un tuteur posé avant. Arroser peu jusqu’à la sortie des pousses.',
+        howTo: 'Planter le tubercule à 10 cm de profondeur, œil vers le haut, après les Saints de glace (en pot sous abri dès avril). Poser le tuteur avant de reboucher. Arroser peu jusqu’à la sortie des pousses.',
         tool: 'bêche',
       },
       { type: 'tuteurage', months: [5, 6], howTo: 'Attacher la tige au tuteur en 8 sans serrer, et relier au fur et à mesure qu’elle grandit.', tool: 'raphia' },

@@ -99,6 +99,9 @@ describe('translateError', () => {
     [{ message: 'new row violates check constraint "posts_cherche_category_check"', code: '23514' }, 'ce que vous cherchez'],
     [{ message: 'new row violates check constraint "posts_kind_check"', code: '23514' }, 'pas encore ouverte'],
     [{ message: "Could not find the 'category' column of 'posts' in the schema cache", code: 'PGRST204' }, 'pas encore ouverte'],
+    [{ message: 'new row for relation "messages" violates check constraint "messages_text_clean"', code: '23514' }, 'caractères interdits'],
+    [{ message: 'new row for relation "organizers" violates check constraint "organizers_text_clean"', code: '23514' }, 'caractères interdits'],
+    [{ message: 'new row for relation "posts" violates check constraint "posts_text_clean"', code: '23514' }, 'caractères interdits'],
     [{ message: 'something obscure in english' }, 'Une erreur est survenue'],
   ])('%j', (e, expected) => {
     expect(api.translateError(e)).toContain(expected)

@@ -116,3 +116,36 @@ describe('en-têtes de sécurité', () => {
     for (const [k, v] of Object.entries(pp)) if (v !== '()') expect(['camera', 'geolocation', 'gyroscope', 'accelerometer', 'magnetometer', 'screen-wake-lock'], k).toContain(k)
   })
 })
+
+describe('/.well-known/security.txt (RFC 9116)', () => {
+  const file = join(root, 'public', '.well-known', 'security.txt')
+  const text = readFileSync(file, 'utf8')
+  const field = (name: string) => text.split('\n').filter((l) => l.startsWith(name + ':')).map((l) => l.slice(name.length + 1).trim())
+
+  it('est dans public/ : Vite le copie tel quel dans le site', () => {
+    expect(statSync(file).isFile()).toBe(true)
+  })
+
+  it('le rewrite « SPA » ne le capture pas (il répondrait avec index.html)', () => {
+    const spa = cfg.rewrites.find((r) => r.destination === '/index.html')
+    if (!spa) return // pas de rewrite SPA : rien à capturer
+    const re = new RegExp('^' + spa.source + '$')
+    expect(re.test('/.well-known/security.txt')).toBe(false)
+  })
+
+  it('contient Contact (https ou mailto), Expires (date ISO, pas échue, moins d’un an) et Preferred-Languages avec fr', () => {
+    expect(field('Contact').length).toBeGreaterThan(0)
+    for (const c of field('Contact')) expect(c).toMatch(/^(https:\/\/|mailto:)/)
+    const [expires] = field('Expires')
+    expect(expires).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/)
+    const t = Date.parse(expires)
+    // Échu = il faut le renouveler (voir docs/DEPLOIEMENT.md) : ce test échoue volontairement à l'échéance pour le rappeler.
+    expect(t, 'security.txt a expiré : renouveler « Expires »').toBeGreaterThan(Date.now())
+    expect(t).toBeLessThan(Date.now() + 366 * 86400000)
+    expect(field('Preferred-Languages')[0]).toMatch(/\bfr\b/)
+  })
+
+  it('ne dit rien de secret (aucune clé, aucun jeton)', () => {
+    expect(text).not.toMatch(/eyJ|sk-|api[_-]?key|service_role/i)
+  })
+})

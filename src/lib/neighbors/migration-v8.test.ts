@@ -16,6 +16,7 @@ describe('migration v8 : jardins partagés', () => {
     }
   })
   it('le déclencheur n’est appelable par personne ; les aides de politique le sont par les connectés', () => {
+    // Fichier v8 seul. La v9 déplace neighbors_can_contact et neighbors_can_see_user dans neighbors_private (voir migration-v9.test.ts).
     expect(code).toMatch(/revoke all on function public\.neighbors_garden_before_write\(\) from public, anon, authenticated/)
     const granted = [...code.matchAll(/grant execute on function public\.(\w+)/g)].map((m) => m[1]).sort()
     expect(granted).toEqual(['neighbors_can_contact', 'neighbors_can_see_user', 'neighbors_species_valid'])

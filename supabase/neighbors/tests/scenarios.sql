@@ -119,7 +119,8 @@ begin
  perform t.expect('S8 A débloque', t.as(A,'delete from public.blocks'), 'OK rows=1');
  perform t.expect('S8 fil de retour', t.as(A,'select count(*) from public.threads'), 'OK 1');
  -- S9 signalements
- update public.profiles set created_at = now() - interval '3 days' where user_id in (B,C,D,E);
+ update public.profiles set created_at = now() - interval '8 days' where user_id in (B,C,D,E);   -- v9 : signaleurs de plus de 7 jours ET déjà actifs
+ perform set_config('request.jwt.claim.sub', '', true); insert into public.posts(author, kind, title) select a9.uid9, 'don', 'activité v9' from unnest(array[B,C,E]) a9(uid9);   -- retirées après S9
  perform t.expect('S9 auto-signalement', t.as(A,'insert into public.reports(target_kind,target_id,reason) values (''post'','''||pid||''',''spam'')'), 'ERR P0001 report_self');
  perform t.expect('S9 signalement cible inconnue', t.as(B,'insert into public.reports(target_kind,target_id,reason) values (''post'',''00000000-0000-4000-8000-000000000001'',''spam'')'), 'ERR');
  perform t.expect('S9 D (hors zone) ne peut signaler', t.as(D,'insert into public.reports(target_kind,target_id,reason) values (''post'','''||pid||''',''spam'')'), 'ERR 42501');
@@ -143,6 +144,7 @@ begin
  perform t.expect('S9 reports non modifiables', t.as(B,'update public.reports set reason=''autre'''), 'ERR 42501');
  perform t.expect('S9 signaler un message d''un fil étranger', t.as(C,'insert into public.reports(target_kind,target_id,reason) select ''message'',id,''abus'' from public.messages'), 'OK rows=0');
  perform t.expect('S9 signaler un msg par participant', t.as(A,'insert into public.reports(target_kind,target_id,reason) values (''message'',(select id from public.messages limit 1),''abus'')'), 'OK rows=1');
+ perform set_config('request.jwt.claim.sub', '', true); delete from public.posts where title = 'activité v9';
  -- S14 profil quotas
  for i in 1..5 loop perform t.as(C,'update public.profiles set pseudo=''Carole'||i||''''); end loop;
  perform t.expect('S14 6e changement refusé', t.as(C,'update public.profiles set pseudo=''Carole9'''), 'ERR P0001 quota_exceeded:profile');

@@ -1,7 +1,7 @@
 // Détection WebGL, tactile, préchargement, obstacles des plantes, arbres des environs, ombres de contact.
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Building } from '../../types'
-import { classifyWebGL, isSoftwareRenderer, probeWebGL, resetWebGLCache, detectWebGL, webglExplanation, NO_3D_TITLE } from '../../lib/webgl'
+import { classifyWebGL, isSoftwareRenderer, probeWebGL, resetWebGLCache, resetWebgl2Cache, webgl2Supported, detectWebGL, webglExplanation, NO_3D_TITLE, force3dRequested, requestForce3d, clearForce3d } from '../../lib/webgl'
 import { isTouchPrimary } from './touch'
 import { shouldPreload3d } from './preload3d'
 import { plantColliders, treeColliders } from './obstacles'
@@ -51,6 +51,44 @@ describe('WebGL2 : verdict', () => {
   it('textes du repli', () => {
     expect(NO_3D_TITLE).toBe('Votre appareil ne peut pas afficher la 3D')
     expect(webglExplanation('none')).not.toBe(webglExplanation('software'))
+  })
+})
+
+describe('une seule source de vérité WebGL (carte et 3D)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    resetWebgl2Cache()
+  })
+  const gl = { getExtension: () => null, getParameter: () => 'SwiftShader', RENDERER: 1 }
+  const stubDoc = (getContext: (id: string, o?: unknown) => unknown) => vi.stubGlobal('document', { createElement: () => ({ getContext }) })
+  it('rendu logiciel : la carte (webgl2Supported) reste permise, la 3D dit « software »', () => {
+    resetWebgl2Cache()
+    stubDoc((_id, o) => (o ? null : gl))
+    expect(webgl2Supported()).toBe(true)
+    expect(detectWebGL()).toBe('software')
+  })
+  it('pas de WebGL 2 : la carte et la 3D disent non, avec la même réponse', () => {
+    resetWebgl2Cache()
+    stubDoc(() => null)
+    expect(webgl2Supported()).toBe(false)
+    expect(detectWebGL()).toBe('none')
+  })
+  it('GPU réel : ok partout', () => {
+    resetWebgl2Cache()
+    stubDoc(() => ({ ...gl, getParameter: () => 'Mali-G78' }))
+    expect(webgl2Supported()).toBe(true)
+    expect(detectWebGL()).toBe('ok')
+  })
+  it('« Essayer quand même » : clé de session pj.force3d, effaçable', () => {
+    const store = new Map<string, string>()
+    vi.stubGlobal('sessionStorage', { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v), removeItem: (k: string) => void store.delete(k) })
+    clearForce3d()
+    expect(force3dRequested()).toBe(false)
+    requestForce3d()
+    expect(store.get('pj.force3d')).toBe('1')
+    expect(force3dRequested()).toBe(true)
+    clearForce3d()
+    expect(force3dRequested()).toBe(false)
   })
 })
 
