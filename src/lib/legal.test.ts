@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { CGU, CONFIDENTIALITE, CONSENT_TEXT, DRAFT_BANNER, LEGAL_DOCS, LEGAL_FIELDS, MENTIONS, getMissingFields, isLegalReady, legalText, toMarkdown, TO_COMPLETE } from './legal'
+import { CGU, CONFIDENTIALITE, CONSENT_TEXT, DRAFT_BANNER, LEGAL_DOCS, LEGAL_FIELDS, LEGAL_UPDATED, LEGAL_VERSION, MENTIONS, getMissingFields, isLegalReady, legalText, toMarkdown, TO_COMPLETE } from './legal'
 
 const doc = (f: string) => readFileSync(new URL(`../../docs/${f}`, import.meta.url), 'utf8')
 
@@ -42,6 +42,25 @@ describe('documents', () => {
     for (const m of ['440 N Barranca Ave #4133', 'Licence Ouverte 2.0', 'CC BY 4.0']) expect(mentions).toContain(m)
     const cgu = toMarkdown(CGU)
     for (const m of ['671', 'indicatif', 'Ne consommez jamais', 'droit français']) expect(cgu).toContain(m)
+  })
+  it('aucun texte ne promet une région d’hébergement non vérifiée (« Supabase, UE »)', () => {
+    for (const [id, t] of Object.entries(CONSENT_TEXT)) {
+      const text = t.paragraphes.join(' ')
+      expect(text, id).not.toMatch(/Supabase,\s*UE|serveur[^.]*\bUE\b|hébergé[^.]*(Union européenne|\bUE\b)/i)
+    }
+    for (const id of ['sync', 'voisins', 'notifications'] as const) expect(CONSENT_TEXT[id].paragraphes.join(' '), id).toContain('région d’hébergement à confirmer par l’éditeur')
+    for (const d of LEGAL_DOCS) expect(toMarkdown(d), d.fichier).not.toMatch(/Supabase,\s*UE/)
+  })
+  it('la version des textes a été montée (1.5 ou plus) quand les formulations ont changé, et la date est valide', () => {
+    const [maj, min] = LEGAL_VERSION.split('.').map(Number)
+    expect(maj * 100 + min).toBeGreaterThanOrEqual(105)
+    expect(LEGAL_UPDATED).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    expect(Date.parse(LEGAL_UPDATED)).toBeLessThanOrEqual(Date.now())
+    for (const d of LEGAL_DOCS) expect(doc(d.fichier)).toContain(`Version ${LEGAL_VERSION}`)
+  })
+  it('conserve les textes « jardins partagés » de l’entraide', () => {
+    expect(CONSENT_TEXT.voisins.paragraphes.join(' ')).toContain('montrer votre jardin')
+    expect(toMarkdown(CONFIDENTIALITE)).toContain('Ne plus montrer mon jardin')
   })
   it('le texte de consentement de l’entraide dit l’essentiel', () => {
     const t = CONSENT_TEXT.voisins.paragraphes.join(' ')
