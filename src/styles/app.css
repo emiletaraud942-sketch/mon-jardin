@@ -4561,3 +4561,6 @@ html[data-toast] .page {
 .catalogue-list .btn[aria-current='true'] {
   --muted: var(--muted-2);
 }
+.fiche-overlay:focus {
+  outline: none;
+}

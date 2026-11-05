@@ -9,6 +9,8 @@ import { useIsMobile } from '../../components/useMedia'
 import { setUi, useUi } from '../../lib/ui'
 import type { Category, Garden } from '../../types'
 import { SpeciesSheet } from './SpeciesSheet'
+import { applyFilters, FILTERS, type FilterId } from './catalogueFilters'
+import type { Month } from '../../types'
 import '../../styles/novice-pages.css'
 
 export function CataloguePage({ garden }: { garden: Garden }) {
@@ -17,7 +19,10 @@ export function CataloguePage({ garden }: { garden: Garden }) {
   const [q, setQ] = useState('')
   const [cat, setCat] = useState<Category | ''>('')
   const sheetRef = useRef<HTMLDivElement>(null)
-  const list = useMemo(() => searchSpecies(q, cat), [q, cat])
+  const [filters, setFilters] = useState<FilterId[]>([])
+  const month = (new Date().getMonth() + 1) as Month
+  const list = useMemo(() => applyFilters(searchSpecies(q, cat), filters, garden, month), [q, cat, filters, garden, month])
+  const toggle = (id: FilterId) => setFilters((f) => (f.includes(id) ? f.filter((x) => x !== id) : [...f, id]))
   const selected = speciesId ? SPECIES_BY_ID[speciesId] : undefined
 
   // La fiche s'ouvre sous la liste (ou au-dessus sur mobile) : on la ramène à l'écran.
@@ -48,7 +53,19 @@ export function CataloguePage({ garden }: { garden: Garden }) {
             </button>
           </li>
         ))}
-        {list.length === 0 && <li className="muted" style={{ padding: 8 }}>Aucune plante ne correspond.</li>}
+        {list.length === 0 && (
+          <li className="muted" style={{ padding: 8 }}>
+            Aucune plante ne correspond.
+            {filters.length > 0 && (
+              <>
+                {' '}
+                <button className="btn small" onClick={() => setFilters([])}>
+                  Retirer les filtres
+                </button>
+              </>
+            )}
+          </li>
+        )}
       </ul>
     </div>
   )
@@ -94,6 +111,18 @@ export function CataloguePage({ garden }: { garden: Garden }) {
           ))}
         </select>
       </div>
+      <div className="row chip-filters" role="group" aria-label="Filtres">
+        {FILTERS.map((f) => (
+          <button key={f.id} className={'btn chip-filter' + (filters.includes(f.id) ? ' primary' : '')} aria-pressed={filters.includes(f.id)} title={f.help} onClick={() => toggle(f.id)}>
+            {filters.includes(f.id) && <Icon name="check" size={16} />}
+            {f.label}
+          </button>
+        ))}
+      </div>
+      <p className={filters.length > 0 ? 'small muted' : 'sr-only'} role="status" aria-live="polite" style={filters.length > 0 ? { margin: '0 0 8px' } : undefined}>
+        {list.length} plante{list.length > 1 ? 's' : ''}
+        {filters.length > 0 ? ' avec ces filtres.' : ''}
+      </p>
       <div className="grid catalogue-grid">
         {listCard}
         {!mobile && sheetCard}

@@ -5,6 +5,7 @@ import { Blob, PlantPot, PlantScene } from '../../components/illustrations'
 import { PhotoThumb } from '../../components/PhotoThumb'
 import { RiskNote } from '../../components/RiskNote'
 import { deletePhoto, savePhoto } from '../../lib/photos'
+import { isQuotaError, STORAGE_FULL_MESSAGE } from '../../lib/space'
 import { addPlant, getState, removePlant, updatePlant, useGardenPlants } from '../../lib/store'
 import { showToast } from '../../lib/toast'
 import { cleanCustomName } from '../../lib/customName'
@@ -57,16 +58,19 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
     setPhotoError(undefined)
     const ids: string[] = []
     let failed = 0
+    let full = false
     for (const f of files) {
       try {
         ids.push(await savePhoto(f))
       } catch (e) {
         failed++
+        if (isQuotaError(e)) full = true
         console.warn('Photo non enregistrée', e)
       }
     }
     if (ids.length) updatePlant(plant.id, { photos: [...(getState().plants.find((p) => p.id === plant.id)?.photos ?? plant.photos), ...ids] })
-    if (failed) setPhotoError(failed === files.length ? "La photo n’a pas pu être enregistrée. Essayez une autre photo, ou libérez de la place sur l’appareil." : `${failed} photo(s) sur ${files.length} n’ont pas pu être enregistrées.`)
+    if (failed && full) setPhotoError(`${STORAGE_FULL_MESSAGE} Libérez de la place, puis recommencez.`)
+    else if (failed) setPhotoError(failed === files.length ? "La photo n’a pas pu être enregistrée. Essayez une autre photo, ou libérez de la place sur l’appareil." : `${failed} photo(s) sur ${files.length} n’ont pas pu être enregistrées.`)
     setPhotoBusy(false)
   }
 

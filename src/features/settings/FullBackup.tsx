@@ -18,8 +18,8 @@ export function useUnsavedPhotos(): boolean {
   const [at, setAt] = useState(lastFullExportAt())
   useEffect(() => {
     const on = () => setAt(lastFullExportAt())
-    window.addEventListener('pj-full-backup', on)
-    return () => window.removeEventListener('pj-full-backup', on)
+    window.addEventListener('sauvegarde-complete-faite', on)
+    return () => window.removeEventListener('sauvegarde-complete-faite', on)
   }, [])
   void gardens
   void plants
@@ -59,7 +59,7 @@ export function FullBackupSection() {
       const built = await buildFullBackup({ gardens, plants, tasksDone }, { panoramas: plan.withPanoramas })
       downloadFullBackup(built)
       noteFullExport()
-      window.dispatchEvent(new Event('pj-full-backup'))
+      window.dispatchEvent(new Event('sauvegarde-complete-faite'))
       const text = `Sauvegarde complète faite : ${plural(built.photos, 'photo')}, ${sizeText(built.blob.size)}.${built.missing > 0 ? ` ${plural(built.missing, 'photo')} ${built.missing > 1 ? 'manquent' : 'manque'} sur cet appareil.` : ''}`
       setMsg({ ok: true, text })
       showToast({ message: 'Sauvegarde complète faite. Le fichier est dans vos téléchargements.' })
@@ -83,7 +83,7 @@ export function FullBackupSection() {
         {plan.ok ? ` Le fichier fera environ ${sizeText(plan.fileBytes)}.` : ''}
       </p>
       {hasPano && (
-        <label className="check" style={{ minHeight: 44, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <label className="check-row">
           <input type="checkbox" checked={wantPano} onChange={(e) => setWantPano(e.target.checked)} />
           <span>Inclure les photos du jardin ({sizeText(measure.panoramasBytes)})</span>
         </label>

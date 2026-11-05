@@ -24,7 +24,11 @@ import type {
 import { PlaceAction } from "../../components/PlaceAction";
 import { useTasks } from "./useTasks";
 import { doneOnLabel, doneTaskLabel } from "./taskLabel";
-import { rainWord, weatherSentences } from "./weatherText";
+import { frostSentence, rainWord, weatherSentences } from "./weatherText";
+import { buildIcs } from "../../lib/ics";
+import { downloadText } from "../../lib/backup";
+import { speak, speechSupported, stopSpeaking, useSpeakingKey, useStopSpeakingOnLeave } from "../../lib/speech";
+import { taskSpeech } from "../../lib/speech";
 import "../../styles/novice-pages.css";
 import { PlantScene } from "../../components/illustrations";
 
@@ -142,6 +146,7 @@ function TaskItem({
 }) {
   const plants = useGardenPlants(garden.id);
   const names = task.plantIds.length;
+  const speaking = useSpeakingKey() === task.key;
   return (
     <li
       className={
@@ -193,6 +198,16 @@ function TaskItem({
         <div className="small">{task.howTo}</div>
         {task.tool && <div className="small muted">Outil : {task.tool}.</div>}
         {task.detail && <div className="small muted">{task.detail}</div>}
+        {speechSupported() && (
+          <button
+            type="button"
+            className="btn small tcard-read"
+            aria-pressed={speaking}
+            onClick={() => (speaking ? stopSpeaking() : speak(task.key, taskSpeech(task)))}
+          >
+            <Icon name={speaking ? "x" : "bell"} size={16} /> {speaking ? "Arrêter la lecture" : "Lire"}
+          </button>
+        )}
         {names > 0 && (
           <div className="tcard-plants">
             {task.plantIds.slice(0, 8).map((id) => {
@@ -281,6 +296,8 @@ export function TasksPage({ garden }: { garden: Garden }) {
   const [showAll, setShowAll] = useState(false);
   const shown = showAll ? open : open.slice(0, TASKS_SHOWN);
   const blocked = tasks.filter((t) => t.blockedBy);
+  const frost = weather ? frostSentence(weather.forecast) : undefined;
+  useStopSpeakingOnLeave();
   const recent = done
     .filter((d) => Date.now() - new Date(d.doneAt).getTime() < 14 * 86400000)
     .slice(-10)
@@ -323,6 +340,11 @@ export function TasksPage({ garden }: { garden: Garden }) {
                 })}
                 .
               </div>
+            )}
+            {frost && (
+              <p className="afaire-frost" role="status">
+                <Icon name="snow" size={18} /> {frost}
+              </p>
             )}
             {weather && <WeatherDays weather={weather} />}
             {weatherError && (
@@ -436,6 +458,30 @@ export function TasksPage({ garden }: { garden: Garden }) {
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+        {view === "annee" && (
+          <div className="stack afaire-ics" style={{ gap: 6 }}>
+            <button
+              className="btn"
+              onClick={() => {
+                const ics = buildIcs({
+                  plan: yearPlan(plants, SPECIES_BY_ID, new Date()),
+                  week: open.map((t) => ({ title: t.title, reason: t.reason })),
+                  now: new Date(),
+                  gardenName: garden.name,
+                  typeLabel: (t) => TASK_LABEL[t],
+                  speciesName: (id) => SPECIES_BY_ID[id]?.nomCommun ?? id,
+                });
+                downloadText(ics, "permajardin-calendrier.ics", "text/calendar");
+                showToast({ message: "Calendrier téléchargé. Ouvrez le fichier pour l’ajouter à votre agenda." });
+              }}
+            >
+              <Icon name="calendar" size={20} /> Ajouter à mon agenda
+            </button>
+            <p className="small muted" style={{ margin: 0 }}>
+              Un fichier .ics avec un rappel à 9 h. Il reste sur votre téléphone, rien n’est envoyé.
+            </p>
           </div>
         )}
         <button

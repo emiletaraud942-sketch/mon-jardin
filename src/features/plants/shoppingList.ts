@@ -44,9 +44,10 @@ export function buildShoppingList(plants: Plant[], speciesById: Record<string, S
 }
 
 /** Une ligne par espèce : « 3 × Tomate : semis sous abri en mars ; plantation en mai. » */
+export const itemWhen = (i: ShoppingItem): string => (i.windows.length ? i.windows.join(' ; ') : 'période : voir la fiche')
+
 export function itemLine(i: ShoppingItem): string {
-  const when = i.windows.length ? i.windows.join(' ; ') : 'période : voir la fiche'
-  return `${i.count} × ${i.name} : ${when}.${i.now ? ' À faire ce mois-ci.' : ''}`
+  return `${i.count} × ${i.name} : ${itemWhen(i)}.${i.now ? ' À faire ce mois-ci.' : ''}`
 }
 
 /** Texte à copier ou partager. */

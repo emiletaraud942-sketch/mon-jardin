@@ -369,3 +369,43 @@
   vertical-align: middle;
   color: var(--accent);
 }
+
+/* Catalogue : filtres en pastilles (cible de 44 px) */
+.chip-filters {
+  gap: 8px;
+  margin: 0 0 12px;
+  flex-wrap: wrap;
+}
+.chip-filter {
+  min-height: var(--tap);
+}
+
+/* Liste de courses et de semis */
+.shop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.shop-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 0;
+}
+
+/* Alerte de gel en tête de la liste « À faire » */
+.afaire-frost {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-btn-lg);
+  background: var(--frost-bg);
+  color: var(--frost-text);
+  font-weight: var(--fw-strong);
+}
+.tcard-read,
+.afaire-ics .btn {
+  min-height: var(--tap);
+}

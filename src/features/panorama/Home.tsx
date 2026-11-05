@@ -121,7 +121,7 @@ export function Home({ garden }: { garden: Garden }) {
               <br />
             </>
           )}
-          Ces photos restent sur ce téléphone. Elles ne sont pas dans la sauvegarde et ne sont jamais envoyées.
+          Ces photos restent sur ce téléphone. Seule la sauvegarde complète les emporte. Elles ne sont jamais envoyées.
         </p>
       </div>
     </div>

@@ -11,6 +11,7 @@ import { closePlantSheet, setUi, startPlacing, useUi } from '../../lib/ui'
 import type { Garden, PlantStatus } from '../../types'
 import { PlantPanel, plantName } from './PlantPanel'
 import { IdentifyDialog } from './IdentifyDialog'
+import { ShoppingListDialog } from './ShoppingListDialog'
 import { openScan } from '../scan/scanUi'
 import { PlantScene } from '../../components/illustrations'
 import { useIsMobile } from '../../components/useMedia'
@@ -22,6 +23,8 @@ export function PlantsPage({ garden }: { garden: Garden }) {
   const [status, setStatus] = useState<PlantStatus | ''>('')
   const [picking, setPicking] = useState(false)
   const [identifying, setIdentifying] = useState(false)
+  const [shopping, setShopping] = useState(false)
+  const planned = plants.filter((p) => p.status === 'projet').length
   const selected = plants.find((p) => p.id === selectedPlantId)
   const mobile = useIsMobile()
   // Sur téléphone la fiche s'ouvre sous la liste : on y amène l'écran, sinon rien ne semble se passer.
@@ -67,6 +70,11 @@ export function PlantsPage({ garden }: { garden: Garden }) {
           <button className="btn" onClick={() => setIdentifying(true)}>
             <Icon name="camera" /> Identifier par photo
           </button>
+          {planned > 0 && (
+            <button className="btn" aria-haspopup="dialog" onClick={() => setShopping(true)}>
+              <Icon name="leaf" /> Liste de courses et de semis ({planned})
+            </button>
+          )}
         </div>
       </details>
       <div className="row" style={{ margin: '8px 0 16px' }}>
@@ -136,6 +144,7 @@ export function PlantsPage({ garden }: { garden: Garden }) {
           </div>
         )}
       </div>
+      {shopping && <ShoppingListDialog garden={garden} plants={plants} onClose={() => setShopping(false)} />}
       {picking && (
         <SpeciesPicker
           title="Quelle plante ajouter ?"
