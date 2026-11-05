@@ -771,3 +771,10 @@
   min-width: 118px;
   justify-content: flex-start;
 }
+
+/* Promenade immersive : le gros bouton « Ajouter une plante » de la feuille du jardin (.add-fab) passerait derrière le joystick et l'aide. */
+@media (max-width: 760px), (pointer: coarse) {
+  html[data-immersive] .add-fab {
+    display: none;
+  }
+}

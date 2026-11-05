@@ -411,3 +411,34 @@ Les neuf demandes Dependabot ouvertes ont été traitées une par une (typecheck
 - **Vérifié** dans Chromium (téléphone) avec un faux serveur Supabase : mauvais code refusé, bon code accepté, ouverture suivante toujours connectée, second appareil vide : « J'ai déjà un compte », code, les deux plantes reprises. **Non essayé** avec le vrai projet (il faut d'abord modifier le modèle d'e-mail) ni avec une vraie appli épinglée sur iPhone.
 - **Pas encore fait** : la connexion de l'entraide (projet Supabase distinct, pas encore ouvert) utilise toujours un lien ; elle aura le même défaut sur iPhone et devra passer au code de la même façon.
 
+
+## 24. Reprise des durcissements de la branche parallèle (5 novembre 2026)
+
+Une autre branche (`backup-vague13`) avait développé des durcissements en parallèle de `main`. Ce lot reprend **seulement les écarts** (le reste existait déjà). Les §14 à §23 ne sont pas modifiés.
+
+**Données locales (`store.ts`, `sync.ts`, `backup.ts`, `StorageBanner.tsx`)**
+- **Copies de sécurité en deux niveaux** : avant d'être écrasée, l'ancienne copie `permajardin:state:v1:avant-migration` passe en `…:avant-migration:precedente` ; il en va de même pour `…:illisible` (clé gardée telle quelle) et `…:illisible:precedente`. Une copie identique ne pousse pas la précédente. Test : `store.test.ts` (« copies de sécurité »).
+- **Version plus récente = jamais effacée** : `getStorageStatus().readFailure` vaut `'newer-version'`, `'unreadable'` ou `'io'`. Pour `'newer-version'`, `describeReadFailure()` donne `canStartOver: false` et l'action « Mettre à jour l'appli » ; `resumeSaving()` refuse (`{ ok: false, reason: 'newer-version' }`, texte `RESUME_REFUSAL_TEXT`). Les données ne sont ni copiées-puis-remplacées ni écrasées. La copie de secours synchrone (`:miroir`) n'est plus jamais préférée à des données d'une version plus récente (elle les aurait fait écraser). Le test de main « Repartir de zéro garde d'abord une copie » utilisait des données de version 99 : il utilise maintenant des données abîmées, car ce comportement est précisément ce qui est interdit.
+- **Rien n'est remplacé sans copie** : `keepLocalSafetyCopy()` est appelée par `pullSnapshot()` (donc la synchro manuelle **et** la synchro automatique, qui passe par la même fonction) et par l'import d'une sauvegarde (`SettingsPage.tsx`, avant la reprise des photos). Si la copie échoue, rien n'est remplacé, la date de synchro n'est pas mémorisée et l'erreur est dite. `replaceData(…, { keepPhotos: true })` ne supprime pas les photos des plantes remplacées. Tests : `sync.test.ts`, `store.test.ts`.
+- **Photos des copies protégées** : `purgeOrphanPhotos()` garde les photos citées par les quatre copies (lecture prudente, copie abîmée tolérée). Conséquence : ces photos restent sur l'appareil tant que la copie existe (jusqu'à la copie suivante) ; « Effacer toutes mes données » les supprime avec le reste.
+- **Données illisibles remplacées par la copie de secours** : l'original est copié (`:illisible`) avant la réécriture.
+- **Récupération** : `exportSafetyCopy()` (`backup.ts`) télécharge la copie ; pendant un échec de lecture, ce sont les données illisibles elles-mêmes. Bouton « Récupérer la copie de sécurité » dans `StorageBanner` (pas encore dans Réglages : à brancher par l'interface). Les photos n'en font pas partie.
+- **Réseau** (`http.ts`) : un signal déjà abandonné n'envoie plus de requête ; l'écouteur d'abandon est retiré à la fin. Tests : `http.test.ts` (4).
+
+**Effacement (`inventory.ts`, `erase.ts`)**
+- `LOCAL_STORAGE_KEYS`, `SESSION_STORAGE_KEYS`, `INDEXEDDB_KEYS` : liste de toutes les clés de l'appli. Le test de main (regex sur les préfixes) est conservé et **étendu** (`security.test.ts`) : il relit le code source et échoue si une clé est écrite sans figurer dans les listes, si une entrée n'est plus écrite nulle part, ou si l'effacement l'oublierait ; il suit aussi les clés construites (`KEY + ':miroir'`), les constantes sans préfixe connu et `sessionStorage`. « Effacer toutes mes données » vide aussi `sessionStorage`. Le test a déjà trouvé `pj.force3d` (session) à l'écriture de ce lot.
+
+**CI (`.github/workflows/ci.yml`, actions @v7 conservées)**
+- Job `secrets` : `.github/scripts/scan-secrets.mjs --history` (arbre et historique, sans service externe). Lancé sur l'arbre et tout l'historique actuels (`git log --all`) : **0 résultat** avec la liste `.github/secrets-allow.json`, qui ne tolère que deux valeurs factices de tests (`service-role-key-de-test`, `SERVICE-KEY-DE-TEST`) ; sans cette liste, 3 lignes de tests d'entraide, aucun vrai secret.
+- Job `sql` : `supabase/neighbors/tests/run.sh` de main (v1 à v9) sur `postgres:16` jetable, sans mot de passe en clair. **Non exécuté ici** (pas de serveur Postgres dans le conteneur) : première exécution dans GitHub.
+- Job `codeql` : JavaScript/TypeScript, `security-extended`, `github/codeql-action@v4`, `continue-on-error: true` (documenté dans le fichier : à retirer quand le propriétaire a confirmé que « Code scanning » fonctionne).
+- L'audit reste `scripts/audit-prod.mjs` (high et critical, liste d'exceptions vide, 0 alerte avec MapLibre 6) ; l'exception « maplibre-gl 4.7.1 » de la branche n'est **pas** reportée. Tests : `ci-config.test.ts`, `audit-script.test.ts`.
+
+**Documents**
+- `legal.ts` : les textes de consentement (synchro, entraide, alertes) disent « région d'hébergement à confirmer par l'éditeur » au lieu de laisser croire à une région ; `LEGAL_VERSION` 1.5 (2026-11-05) ; `docs/CGU.md`, `CONFIDENTIALITE.md`, `MENTIONS-LEGALES.md` régénérés. Les textes « jardins partagés » sont conservés. Tests : `legal.test.ts`.
+- `SECURITY.md`, `.env.example` (table unique de toutes les variables, secrets des fonctions Edge en mémoire seulement), `README.md` (alertes poussées de l'entraide, bandeau « Mettre à jour »), `docs/DEPLOIEMENT.md` (migrations de l'entraide v1 à v9, §4 bis hôtes exacts à la place du joker de la CSP, §4 ter pare-feu Vercel, §4 quater alertes et purge, §10 informations légales, §11 retour arrière Vercel et restauration Supabase). Tests : `env-docs.test.ts`, `deploy-docs.test.ts`.
+- `security.txt` : test d'expiration (`vercel-config.test.ts`) : il **échoue à l'échéance** (`Expires: 2027-10-27`) pour rappeler de le renouveler.
+
+**À faire par le propriétaire** (le dépôt ne peut pas) : voir `docs/DEPLOIEMENT.md` §4 bis, 4 ter, 10, 11 ; activer « Secret scanning », « Push protection » et « Private vulnerability reporting » sur GitHub ; fournir l'adresse e-mail de sécurité (`SECURITY.md`, `security.txt`) ; vérifier l'adresse du dépôt citée par `security.txt` (`…/mon-jardin`, alors que le dépôt local pointe vers `…/mon-dressing-app`).
+
+**Non vérifié** : banc SQL et CodeQL dans GitHub ; `updateApp()` (bouton « Mettre à jour l'appli » du bandeau) sur un vrai navigateur avec service worker ; essai sur téléphone de la copie de sécurité téléchargée.
