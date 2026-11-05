@@ -9,10 +9,13 @@ import type { Bounds } from './framing'
 import type { HeightSampler } from './terrain'
 import type { PlantVisual } from './plantModel'
 import { DEBUG_3D } from './debug'
+import { isTouchDevice } from './touch'
+import { createAnnouncer, describeAhead, formatAhead } from './walkNav'
 import {
   EYE_SETTLE_M,
   lookDelta,
-  WALK_FOV_DEG,
+  horizontalFovDeg,
+  walkFovFor,
   createFramePacer,
   entrancePose,
   eyeHeightAt,
@@ -20,6 +23,10 @@ import {
   pickLabelIds,
   poseNearPlant,
   stepWalker,
+  hopWalker,
+  teleportPose,
+  HOP_INTERVAL_S,
+  isWalkMoving,
   walkKeyBlocked,
   walkNeedsFrames,
   type KeyTarget,
@@ -37,7 +44,7 @@ const SLOW_TICK_S = 0.25
 /** Plafond d'images par seconde en mouvement : 60, ou 45 sur écran tactile (économie de batterie). */
 const MAX_FPS = 60
 const MAX_FPS_COARSE = 45
-const COARSE = typeof window !== 'undefined' && (!!window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0)
+const COARSE = isTouchDevice()
 
 const KEY_MAP: Record<string, 'forward' | 'back' | 'left' | 'right' | 'turnLeft' | 'turnRight'> = {
   z: 'forward',
@@ -70,13 +77,19 @@ export interface WalkRigProps {
   onLod: (lod: Record<string, DetailLevel>) => void
   /** Vrai tant que la limite du jardin retient le promeneur. */
   onLimit?: (limited: boolean) => void
+  /** Mouvement réduit : la marche se fait par bonds (1,5 m, rotations de 30°) au lieu de glisser. */
+  hop?: boolean
+  /** Phrase à lire (région vocale) : ce qu'on a devant soi, au plus toutes les 2 s. */
+  onAnnounce?: (text: string) => void
 }
 
-export function WalkRig({ shared, parcel, bounds, colliders, sample, visuals, selectedPlantId, resetToken, gotoToken, halfSizeM, compassRef, onLod, onLimit }: WalkRigProps) {
+export function WalkRig({ shared, parcel, bounds, colliders, sample, visuals, selectedPlantId, resetToken, gotoToken, halfSizeM, compassRef, onLod, onLimit, hop = false, onAnnounce }: WalkRigProps) {
   const camRef = useRef<THREE.PerspectiveCamera>(null)
   const gl = useThree((s) => s.gl)
   const invalidate = useThree((s) => s.invalidate)
   const size = useThree((s) => s.size)
+  // Champ de vision selon la forme de l'écran (≈ 60° de large) ; la caméra se remet à jour à chaque rotation / redimensionnement.
+  const fovDeg = useMemo(() => walkFovFor(size.width / Math.max(1, size.height)), [size.width, size.height])
   const keys = useRef({ forward: false, back: false, left: false, right: false, turnLeft: false, turnRight: false, shift: false })
   const look = useRef<{ id: number; x: number; y: number } | null>(null)
   const lodRef = useRef<Record<string, DetailLevel>>({})
@@ -95,6 +108,12 @@ export function WalkRig({ shared, parcel, bounds, colliders, sample, visuals, se
   const limitShown = useRef(false)
   const onLimitRef = useRef(onLimit)
   onLimitRef.current = onLimit
+  const onAnnounceRef = useRef(onAnnounce)
+  onAnnounceRef.current = onAnnounce
+  const hopRef = useRef(hop)
+  hopRef.current = hop
+  const hopCool = useRef(0)
+  const announcer = useMemo(() => createAnnouncer(2000), [])
   useEffect(() => {
     shared.wake = invalidate // le joystick réveille la boucle
     return () => {
@@ -144,6 +163,18 @@ export function WalkRig({ shared, parcel, bounds, colliders, sample, visuals, se
     if (!v) return
     applyPose(poseNearPlant({ x: v.base[0], y: -v.base[2] }, { x: shared.pose.x, y: shared.pose.y }, 3, cols), 0.04)
   }, [gotoToken, shared, applyPose])
+
+  // Téléportation (liste « Aller à », mini-carte) : hors obstacles et limites, comme la marche.
+  useEffect(() => {
+    shared.teleport = (to, look) => {
+      const l = live.current
+      const res = teleportPose(shared.pose, to, { colliders: l.colliders, bounds: l.bounds, groundHalfM: halfSizeM - 1, parcel: l.parcel }, look)
+      applyPose({ x: res.x, y: res.y, yaw: res.yaw }, look ? 0.04 : shared.pose.pitch)
+    }
+    return () => {
+      shared.teleport = undefined
+    }
+  }, [shared, applyPose, halfSizeM])
 
   // Clavier. Seuls les champs de texte gardent leurs touches ; un curseur (range) garde ses flèches, mais ZQSD marchent.
   useEffect(() => {
@@ -242,7 +273,7 @@ export function WalkRig({ shared, parcel, bounds, colliders, sample, visuals, se
   useEffect(() => () => invalidate(), [invalidate])
 
   const input = useRef<WalkInput>({ forward: 0, strafe: 0, turn: 0, run: false })
-  const targets = useRef<{ id: string; x: number; y: number }[]>([])
+  const targets = useRef<{ id: string; x: number; y: number; label: string }[]>([])
 
   useFrame((_, delta) => {
     const cam = camRef.current
@@ -257,11 +288,23 @@ export function WalkRig({ shared, parcel, bounds, colliders, sample, visuals, se
     // Après un arrêt, la première image arrive longtemps après la précédente : pas de saut.
     const dt = wasActive.current ? delta : Math.min(delta, 1 / 30)
     const p = shared.pose
-    const next = stepWalker(p, inp, dt, { colliders: cols, bounds: b, groundHalfM: halfSizeM - 1 })
-    p.x = next.x
-    p.y = next.y
-    p.yaw = next.yaw
-    if (next.limited) limitHit.current = true
+    const world = { colliders: cols, bounds: b, groundHalfM: halfSizeM - 1, parcel: live.current.parcel }
+    let next: ReturnType<typeof stepWalker> | null
+    if (hopRef.current) {
+      // Mouvement réduit : un bond à chaque commande, puis une pause avant le suivant tant que la commande reste tenue.
+      hopCool.current = isWalkMoving(inp) ? hopCool.current - dt : 0
+      next = hopCool.current <= 0 ? hopWalker(p, inp, world) : null
+      if (next) {
+        hopCool.current = HOP_INTERVAL_S
+        tick.current = SLOW_TICK_S // détails et étiquettes à jour tout de suite
+      }
+    } else next = stepWalker(p, inp, dt, world)
+    if (next) {
+      p.x = next.x
+      p.y = next.y
+      p.yaw = next.yaw
+      if (next.limited) limitHit.current = true
+    }
 
     // Hauteur des yeux : relief + 1,65 m, légèrement lissée pour gommer les arêtes de la grille d'altitudes.
     const target = eyeHeightAt(smp, p)
@@ -290,7 +333,7 @@ export function WalkRig({ shared, parcel, bounds, colliders, sample, visuals, se
         const v = vis[id]
         const vx = v.base[0]
         const vy = -v.base[2]
-        list.push({ id, x: vx, y: vy })
+        list.push({ id, x: vx, y: vy, label: v.label })
         const lvl = lodFor(Math.hypot(vx - p.x, vy - p.y), prev[id] ?? 0)
         if (lvl > 0) {
           nextLod[id] = lvl
@@ -302,9 +345,17 @@ export function WalkRig({ shared, parcel, bounds, colliders, sample, visuals, se
         lodRef.current = nextLod
         onLod(nextLod)
       }
-      const halfFov = Math.min(1.25, Math.atan(Math.tan((WALK_FOV_DEG * Math.PI) / 360) * (size.width / Math.max(1, size.height))) + 0.15)
+      const halfFov = Math.min(1.25, (horizontalFovDeg(fovDeg, size.width / Math.max(1, size.height)) * Math.PI) / 360 + 0.15)
       const ids = pickLabelIds(p, p.yaw, list, { rangeM: 8, max: 8, halfFovRad: halfFov })
       setLabelIds((old) => (old.length === ids.length && old.every((v, i) => v === ids[i]) ? old : ids))
+      const spoken = announcer.next(
+        (() => {
+          const a = describeAhead(p, p.yaw, list)
+          return a ? formatAhead(a) : undefined
+        })(),
+        performance.now(),
+      )
+      if (spoken) onAnnounceRef.current?.(spoken)
       if (limitHit.current !== limitShown.current) {
         limitShown.current = limitHit.current
         onLimitRef.current?.(limitHit.current)
@@ -344,7 +395,7 @@ export function WalkRig({ shared, parcel, bounds, colliders, sample, visuals, se
       <PerspectiveCamera
         ref={camRef}
         makeDefault
-        fov={WALK_FOV_DEG}
+        fov={fovDeg}
         near={0.05}
         far={halfSizeM * 20}
         rotation-order="YXZ"

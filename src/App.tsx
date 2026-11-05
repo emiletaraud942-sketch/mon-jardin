@@ -38,6 +38,8 @@ import { useConsents } from './lib/consent'
 import { InviteButton } from './components/InviteButton'
 import { useScanUi } from './features/scan/scanUi'
 import { usePanoUi } from './features/panorama/panoUi'
+import { Garden3DGate } from './features/garden3d/Garden3DGate'
+import { preload3d } from './features/garden3d/preload3d'
 // En dernier : harmonisation Leafora (surcharge les feuilles de style des écrans ci-dessus), puis la navigation du téléphone (chantier D).
 import './styles/leafora.css'
 import './styles/mobile-nav.css'
@@ -126,6 +128,9 @@ export function App() {
     }
     // Une seule fois par chargement : plantCount ne doit pas relancer le choix.
   }, [loaded, gardenId]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Précharge la vue 3D quand le navigateur est inactif, une fois le jardin chargé (jamais si saveData ou 2g/3g).
+  const hasGarden = !!garden
+  useEffect(() => (loaded && hasGarden ? preload3d() : undefined), [loaded, hasGarden])
   // Mémorise les écrans déjà ouverts (alimente la jauge de conseil de l'accueil).
   useEffect(() => {
     if (loaded && gardenId) noteVisit(tab, gardenId)
@@ -272,9 +277,11 @@ export function App() {
           )}
           {tab === '3d' && (
             <ErrorBoundary inline resetKey={tab}>
-              <Suspense fallback={<Loading label="Chargement de la Vue 3D…" />}>
-                <View3D garden={garden} />
-              </Suspense>
+              <Garden3DGate>
+                <Suspense fallback={<Loading label="Chargement de la Vue 3D…" />}>
+                  <View3D garden={garden} />
+                </Suspense>
+              </Garden3DGate>
             </ErrorBoundary>
           )}
           {tab === 'plantes' && <PlantsPage garden={garden} />}

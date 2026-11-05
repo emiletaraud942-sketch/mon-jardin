@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { migrateState } from '../migrate'
 import { importSizeError, parseBackupText, readBackupFile } from './import'
 import { imageSize, jpegMetadataSegments, sizeWithinLimits } from './image'
-import { DATA_INVENTORY, ERASABLE_CACHE, ERASABLE_LOCAL_KEY, getDataInventory, PERMISSIONS } from './inventory'
+import { DATA_INVENTORY, ERASABLE_CACHE, ERASABLE_LOCAL_KEY, getDataInventory, INDEXEDDB_KEYS, isListedKey, LOCAL_STORAGE_KEYS, PERMISSIONS, SESSION_STORAGE_KEYS } from './inventory'
 import { LIMITS } from './limits'
 import { cleanJson, clipText, isPhotoId, isSafeId } from './sanitize'
 import { clearLocalKeys, clearPlaceCaches } from './erase'
@@ -336,6 +336,88 @@ describe('effacement', () => {
     expect(found.size).toBeGreaterThan(3)
     for (const k of found) expect(ERASABLE_LOCAL_KEY.test(k), k).toBe(true)
     expect(ERASABLE_CACHE.test('ign-tuiles')).toBe(true)
+  })
+
+  /** Tous les fichiers source (hors tests). */
+  const sourceFiles = () => {
+    const files: string[] = []
+    const walk = (d: string) => {
+      for (const f of readdirSync(d)) {
+        const p = join(d, f)
+        if (statSync(p).isDirectory()) walk(p)
+        else if (/\.(ts|tsx)$/.test(f) && !/\.test\./.test(f)) files.push(p)
+      }
+    }
+    walk(join(__dirname, '..', '..'))
+    return files
+  }
+
+  it('toute clé de stockage écrite par le code source (même sans préfixe connu, sessionStorage, concaténée) est dans la liste ET effaçable', () => {
+    const found = new Map<string, string>()
+    for (const f of sourceFiles()) {
+      if (f.endsWith(join('security', 'inventory.ts'))) continue // la liste elle-même
+      const src = readFileSync(f, 'utf8')
+      // 1. Toute chaîne qui ressemble à une clé de l'appli (préfixes permajardin:, pj., pj-, sb-).
+      for (const m of src.matchAll(/['"`]((?:permajardin:|pj\.|pj-|sb-)[^'"`$\s]*)/g)) found.set(m[1], f)
+      // 2. Toute constante « …KEY… = 'littéral' » (une clé SANS ces préfixes serait oubliée par l'effacement).
+      const consts = new Map<string, string>()
+      for (const m of src.matchAll(/\b(?:const|let)\s+([A-Za-z_]*KEY[A-Za-z_]*)\s*(?::[^=]+)?=\s*['"`]([^'"`$]+)['"`]/g)) {
+        found.set(m[2], f)
+        consts.set(m[1], m[2])
+      }
+      // 3. Clés construites : « const COPIE_KEY = KEY + ':suffixe' » (copie de secours, copies de sécurité).
+      for (let pass = 0; pass < 3; pass++) {
+        for (const m of src.matchAll(/\b(?:const|let)\s+([A-Za-z_]*KEY[A-Za-z_]*)\s*(?::[^=]+)?=\s*([A-Za-z_]*KEY[A-Za-z_]*)\s*\+\s*['"`]([^'"`$]+)['"`]/g)) {
+          const base = consts.get(m[2])
+          if (base === undefined) continue
+          consts.set(m[1], base + m[3])
+          found.set(base + m[3], f)
+        }
+      }
+      // 4. Tout littéral passé directement à localStorage/sessionStorage.getItem/setItem/removeItem.
+      for (const m of src.matchAll(/(?:local|session)Storage\.(?:get|set|remove)Item\(\s*['"`]([^'"`$]+)['"`]/g)) found.set(m[1], f)
+    }
+    // Clés IndexedDB transitoires construites sur place (essai d'écriture du démarrage).
+    expect([...found.keys()]).toContain('permajardin:state:v1:miroir')
+    expect([...found.keys()]).toContain('permajardin:state:v1:avant-migration:precedente')
+    // Noms d'événements et de messages (pas des clés de stockage) qui partagent le préfixe « permajardin: ».
+    for (const evt of ['permajardin:voisins-news', 'permajardin:open-messages', 'permajardin:nouveau-message', 'permajardin:ouvrir-messages']) found.delete(evt)
+    expect(found.size).toBeGreaterThan(20)
+    const listed = [...LOCAL_STORAGE_KEYS, ...SESSION_STORAGE_KEYS, ...INDEXEDDB_KEYS]
+    for (const [k, f] of found) {
+      expect(isListedKey(listed, k), `${k} (${f}) absente de LOCAL_STORAGE_KEYS / INDEXEDDB_KEYS`).toBe(true)
+      // Les clés IndexedDB (photo:, lidar:, copies de sécurité) sont vidées par wipeLocalData ; les autres doivent passer par clearLocalKeys.
+      if (!isListedKey(INDEXEDDB_KEYS, k) || isListedKey(LOCAL_STORAGE_KEYS, k)) expect(ERASABLE_LOCAL_KEY.test(k), `${k} (${f}) non couverte par ERASABLE_LOCAL_KEY`).toBe(true)
+    }
+    // La liste ne contient pas de clé fantôme : chaque entrée localStorage apparaît dans le code.
+    const all = [...found.keys()]
+    for (const i of [...LOCAL_STORAGE_KEYS, ...SESSION_STORAGE_KEYS]) {
+      expect(all.some((k) => (i.prefixe ? k.startsWith(i.cle) : k === i.cle)), `${i.cle} n’est écrite nulle part dans le code`).toBe(true)
+    }
+  })
+
+  it('chaque clé de la liste localStorage est retirée par clearLocalKeys (avec un suffixe pour les préfixes), sessionStorage comprise', () => {
+    for (const list of [LOCAL_STORAGE_KEYS, SESSION_STORAGE_KEYS]) {
+      const data = new Map<string, string>(list.map((i) => [i.prefixe ? i.cle + 'x:1,2' : i.cle, 'v']))
+      data.set('autre-site', 'garde')
+      const storage = {
+        get length() { return data.size },
+        key: (i: number) => [...data.keys()][i] ?? null,
+        removeItem: (k: string) => void data.delete(k),
+      } as unknown as Storage
+      clearLocalKeys(storage)
+      expect([...data.keys()]).toEqual(['autre-site'])
+    }
+  })
+
+  it('le code ne cite que des clés sessionStorage listées (aucune clé de session oubliée)', () => {
+    for (const f of sourceFiles()) {
+      if (f.endsWith(join('security', 'inventory.ts'))) continue
+      const src = readFileSync(f, 'utf8')
+      for (const m of src.matchAll(/sessionStorage\.(?:get|set|remove)Item\(\s*['"`]([^'"`$]+)['"`]/g)) {
+        expect(isListedKey(SESSION_STORAGE_KEYS, m[1]), `${m[1]} (${f})`).toBe(true)
+      }
+    }
   })
 })
 

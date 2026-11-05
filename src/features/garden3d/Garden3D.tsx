@@ -5,7 +5,7 @@ import { Canvas, type RootState } from '@react-three/fiber'
 import type { Garden, Plant, Species, TerrainGrid, XY } from '../../types'
 import { Scene } from './Scene'
 import { dateFromDoy, dayOfYear, daysInYearOf, doyOf, formatInGarden, sunState, zonedParts } from './sun'
-import { EMPTY_GARDEN_TEXT, ERROR_3D_TEXT, ERROR_3D_TITLE, describeSunShort, formatClock, gardenSummary, walkHelpShort, yearsLabel } from './labels'
+import { EMPTY_GARDEN_TEXT, describeSunShort, formatClock, gardenSummary, walkHelpShort, yearsLabel } from './labels'
 import { disposeBuildingMaterial, heatmapRange, rampColor } from './Ground'
 import { disposePlantMaterials } from './Plants'
 import { disposePartGeometries } from './plantModel'
@@ -13,9 +13,14 @@ import { disposeGrassDetailTexture } from './groundDetail'
 import { NO_INSETS, gardenFrame, type Insets, type Rect, type ViewMode } from './framing'
 import { createWalkShared } from './walk'
 import { disposeNeighborTrees } from './NeighborTrees'
+import { disposeContactShadows } from './ContactShadows'
+import { isTouchDevice } from './touch'
 import type { DetectedTree } from '../../lib/lidar'
 import { LIDAR_ATTRIBUTION } from '../../lib/lidar'
-import { Joystick, MiniMap, WalkButtons } from './WalkUI'
+import { GotoPanel, Joystick, MiniMap, WalkButtons } from './WalkUI'
+import { Fallback3D } from './Garden3DGate'
+import { HELP_SEEN_KEY, HOP_PREF_KEY, parseHopPref } from './walkNav'
+import { plantLabel } from './plantModel'
 import { QUALITY_PREFS, TIER_LABEL, useQuality3D } from './quality'
 import { SeasonPicker } from '../../components/SeasonPicker'
 import { seasonDate, type SeasonChoice } from '../../engine/season'
@@ -60,6 +65,7 @@ function disposeSharedResources() {
   disposeBuildingMaterial()
   disposeGrassDetailTexture()
   disposeNeighborTrees()
+  disposeContactShadows()
 }
 
 /** Repli si la 3D ne peut pas démarrer (WebGL absent, mémoire insuffisante) : message utile et « Réessayer ». */
@@ -77,24 +83,7 @@ class CanvasErrorBoundary extends Component<{ children: ReactNode; onFail: (fail
     this.setState({ error: false, detail: '' })
   }
   render() {
-    if (this.state.error)
-      return (
-        <div className="g3d-error" role="alert">
-          <div className="g3d-error-box">
-            <strong>{ERROR_3D_TITLE}</strong>
-            <p>{ERROR_3D_TEXT}</p>
-            {this.state.detail && (
-              <details className="g3d-error-details">
-                <summary>Détails</summary>
-                <code>{this.state.detail}</code>
-              </details>
-            )}
-            <button type="button" className="g3d-btn" onClick={this.retry}>
-              Réessayer
-            </button>
-          </div>
-        </div>
-      )
+    if (this.state.error) return <Fallback3D verdict="error" detail={this.state.detail} onRetry={this.retry} />
     return this.props.children
   }
 }
@@ -112,14 +101,27 @@ function usePrefersReducedMotion(): boolean {
   return reduced
 }
 
-const MODES: { id: ViewMode; label: string; full: string; title: string }[] = [
-  { id: 'dessus', label: 'Dessus', full: 'Vue de dessus', title: 'Voir le jardin d’en haut, comme un plan' },
-  { id: 'perspective', label: 'Perspective', full: 'Vue en perspective', title: 'Voir le jardin en biais, comme en volant' },
-  { id: 'promenade', label: 'Se promener', full: 'Se promener', title: 'Se promener dans le jardin, à hauteur d’yeux' },
+// Le nom accessible d'un bouton est son texte visible (étiquette dans le nom) ; la description détaillée va dans `title`.
+const MODES: { id: ViewMode; label: string; title: string }[] = [
+  { id: 'dessus', label: 'Dessus', title: 'Vue de dessus : voir le jardin d’en haut, comme un plan' },
+  { id: 'perspective', label: 'Perspective', title: 'Vue en perspective : voir le jardin en biais, comme en volant' },
+  { id: 'promenade', label: 'Se promener', title: 'Se promener dans le jardin, à hauteur d’yeux' },
 ]
 
-/** Durée (ms) de la bulle d'aide de la Promenade. */
-const WALK_HELP_MS = 6000
+function readPref(key: string): string | null {
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+function writePref(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value)
+  } catch {
+    /* mémoire indisponible : le choix ne dure que pour cette session */
+  }
+}
 
 const formatHour = formatClock
 
@@ -207,10 +209,20 @@ export function Garden3D({
   const [canvasKey, setCanvasKey] = useState(0)
   const ctxCleanup = useRef<(() => void) | null>(null)
   const [walkHelpOpen, setWalkHelpOpen] = useState(false)
+  const [gotoOpen, setGotoOpen] = useState(false)
+  const [announcement, setAnnouncement] = useState('')
   const rootRef = useRef<HTMLDivElement>(null)
   const walkShared = useMemo(() => createWalkShared(), [])
   const reducedMotion = usePrefersReducedMotion()
-  const coarse = useMemo(() => typeof window !== 'undefined' && (!!window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0), [])
+  // Mouvement réduit (bonds) : choix enregistré, sinon la préférence « réduire les animations » du système.
+  const [hop, setHop] = useState(() => parseHopPref(readPref(HOP_PREF_KEY), reducedMotion))
+  const toggleHop = useCallback(() => {
+    setHop((h) => {
+      writePref(HOP_PREF_KEY, h ? '0' : '1')
+      return !h
+    })
+  }, [])
+  const coarse = useMemo(() => isTouchDevice(), [])
   const [running, setRunning] = useState(false)
   const walking = mode === 'promenade'
 
@@ -285,25 +297,26 @@ export function Garden3D({
     }
   }, [])
 
-  // Aide de la Promenade : bulle courte à l'entrée, qui disparaît seule après quelques secondes ; le « ? » la rouvre.
+  // Aide de la Promenade : s'ouvre à la première visite et reste affichée jusqu'à « Compris » (ou « ? »). Ensuite, seul « Aide » la rouvre.
   const [hourOpen, setHourOpen] = useState(false)
   const [panelOpen, setPanelOpen] = useState(false)
   useEffect(() => {
     if (!walking) {
       setWalkHelpOpen(false)
       setHourOpen(false)
+      setGotoOpen(false)
       setAtLimit(false)
+      setAnnouncement('')
       walkShared.run = false
       setRunning(false)
       return
     }
-    setWalkHelpOpen(true)
+    setWalkHelpOpen(readPref(HELP_SEEN_KEY) !== '1')
   }, [walking, walkShared])
-  useEffect(() => {
-    if (!walkHelpOpen) return
-    const t = window.setTimeout(() => setWalkHelpOpen(false), WALK_HELP_MS)
-    return () => window.clearTimeout(t)
-  }, [walkHelpOpen])
+  const closeWalkHelp = useCallback(() => {
+    setWalkHelpOpen(false)
+    writePref(HELP_SEEN_KEY, '1')
+  }, [])
   // Promenade immersive : l'application cache ses bandeaux (voir app.css) et la page ne défile ni ne zoome pendant les gestes.
   useEffect(() => {
     if (!walking) return
@@ -410,6 +423,10 @@ export function Garden3D({
   }, [showHeatmap, doy, year])
 
   const summary = useMemo(() => gardenSummary(garden.name, plants.length, garden.buildings?.length ?? 0), [garden.name, plants.length, garden.buildings])
+  // Points de photos du jardin (Photos du jardin) : destinations de « Aller à » et repères de la mini-carte.
+  const panoIds = useMemo(() => (garden.panoramas ?? []).filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y)).map((p) => p.id), [garden.panoramas])
+  const photoPoints = useMemo(() => (garden.panoramas ?? []).filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y)).map((p) => ({ x: p.x, y: p.y })), [garden.panoramas])
+  const gotoPoints = useMemo(() => photoPoints.map((p, i) => ({ ...p, id: panoIds[i], label: `Point photo ${i + 1}` })), [photoPoints, panoIds])
   const placingName = placingSpeciesId ? speciesById[placingSpeciesId]?.nomCommun ?? 'la plante' : undefined
   const selectedPlant = selectedPlantId ? plants.find((p) => p.id === selectedPlantId) : undefined
   const selectedName = selectedPlant ? selectedPlant.customName || speciesById[selectedPlant.speciesId]?.nomCommun || 'Plante' : ''
@@ -523,6 +540,8 @@ export function Garden3D({
             canopy={canopy}
             compassRef={compassRef}
             neighborTrees={treesShown ? neighborTrees : undefined}
+            hop={hop}
+            onAnnounce={setAnnouncement}
           />
         </Canvas>
       </CanvasErrorBoundary>
@@ -540,34 +559,38 @@ export function Garden3D({
                   className="g3d-btn g3d-datepill"
                   aria-expanded={hourOpen}
                   aria-controls="g3d-hour-panel"
-                  title="Régler l’heure : le soleil et les ombres suivent"
+                  title={`Régler l’heure : le soleil et les ombres suivent (${dateShort})`}
                   onClick={() => setHourOpen((v) => !v)}
                 >
                   <ClockIcon />
-                  <span className="g3d-sr-hide">{dateShort} · </span>
-                  <b>{formatHour(hour)}</b>
-                  <span className="g3d-sr-only"> Heure</span>
+                  Heure <b>{formatHour(hour)}</b>
                 </button>
               </div>
               {hourOpen && <div className="g3d-panel g3d-panel--walk" id="g3d-hour-panel">{hourRow(false)}</div>}
-              <MiniMap
-                shared={walkShared}
-                parcel={garden.parcel}
-                buildings={garden.buildings}
-                plants={plants}
-                speciesById={speciesById}
-                selectedPlantId={selectedPlantId}
-                bounds={frame.bounds}
-                size={76}
-              />
+              <button type="button" className="g3d-minibtn" aria-expanded={gotoOpen} aria-controls="g3d-goto" aria-label="Aller à : ouvrir la carte et la liste des endroits" title="Toucher la carte pour aller quelque part" onClick={() => setGotoOpen((v) => !v)}>
+                <MiniMap
+                  shared={walkShared}
+                  parcel={garden.parcel}
+                  buildings={garden.buildings}
+                  plants={plants}
+                  speciesById={speciesById}
+                  selectedPlantId={selectedPlantId}
+                  bounds={frame.bounds}
+                  size={76}
+                  points={photoPoints}
+                />
+              </button>
             </div>
             <div className="g3d-tools">
               {compass}
-              <button type="button" className="g3d-btn g3d-btn--icon" aria-label="Aide" aria-expanded={walkHelpOpen} aria-controls="g3d-walk-help" title="Comment se promener ?" onClick={() => setWalkHelpOpen((v) => !v)}>
-                <b aria-hidden="true">?</b>
+              <button type="button" className="g3d-btn g3d-btn--label" aria-expanded={gotoOpen} aria-controls="g3d-goto" title="Aller à une plante, à un point photo, ou toucher la carte" onClick={() => setGotoOpen((v) => !v)}>
+                <PinIcon /> Aller à
               </button>
-              <button type="button" className="g3d-btn g3d-btn--icon" aria-label="Recentrer : revenir à l’entrée du jardin" title="Revenir à l’entrée du jardin" onClick={() => setFitNonce((n) => n + 1)}>
-                <RecenterIcon />
+              <button type="button" className="g3d-btn g3d-btn--label" aria-expanded={walkHelpOpen} aria-controls="g3d-walk-help" title="Comment se promener ?" onClick={() => (walkHelpOpen ? closeWalkHelp() : setWalkHelpOpen(true))}>
+                <b aria-hidden="true">?</b> Aide
+              </button>
+              <button type="button" className="g3d-btn g3d-btn--label" title="Revenir à l’entrée du jardin" onClick={() => setFitNonce((n) => n + 1)}>
+                <RecenterIcon /> Recentrer
               </button>
             </div>
           </div>
@@ -594,6 +617,28 @@ export function Garden3D({
               {treesShown && <span className="g3d-attrib">Arbres des environs : {LIDAR_ATTRIBUTION.replace(' (Licence Ouverte)', '')}</span>}
             </div>
             <div className="g3d-tools">{compass}</div>
+          </div>
+        )}
+
+        {walking && gotoOpen && (
+          <GotoPanel
+            shared={walkShared}
+            parcel={garden.parcel}
+            buildings={garden.buildings}
+            plants={plants}
+            speciesById={speciesById}
+            selectedPlantId={selectedPlantId}
+            bounds={frame.bounds}
+            labelOf={(p) => plantLabel(p, speciesById[p.speciesId])}
+            points={gotoPoints}
+            hop={hop}
+            onToggleHop={toggleHop}
+            onClose={() => setGotoOpen(false)}
+          />
+        )}
+        {walking && (
+          <div className="g3d-sr-only" role="status" aria-live="polite" aria-atomic="true">
+            {announcement}
           </div>
         )}
 
@@ -643,8 +688,11 @@ export function Garden3D({
                 </div>
               )}
               {walkHelpOpen && (
-                <div className="g3d-chip g3d-hint g3d-hint--walk" id="g3d-walk-help" role="status">
-                  {walkHelpShort(coarse)}
+                <div className="g3d-chip g3d-hint g3d-hint--walk g3d-helpchip" id="g3d-walk-help" role="status">
+                  <span>{walkHelpShort(coarse)}</span>
+                  <button type="button" className="g3d-btn g3d-btn--small" onClick={closeWalkHelp}>
+                    Compris
+                  </button>
                 </div>
               )}
               {selectedPlant && (
@@ -733,7 +781,7 @@ export function Garden3D({
               <div className="g3d-bar">
                 <div className="g3d-seg" role="group" aria-label="Mode de vue">
                   {MODES.map((m) => (
-                    <button key={m.id} type="button" className="g3d-seg-btn" aria-pressed={mode === m.id} aria-label={m.full} title={m.title} onClick={() => setMode(m.id)}>
+                    <button key={m.id} type="button" className="g3d-seg-btn" aria-pressed={mode === m.id} title={m.title} onClick={() => setMode(m.id)}>
                       {m.label}
                     </button>
                   ))}

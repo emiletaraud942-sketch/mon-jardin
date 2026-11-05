@@ -1,8 +1,9 @@
 // Interface de la Promenade : joystick virtuel, boutons Tourner / Courir et mini-carte (canvas 2D).
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import type { Building, Plant, Species, XY } from '../../types'
 import type { Bounds } from './framing'
 import { forwardOf, joystickVector, type WalkShared } from './walk'
+import { formatDistance, gotoItems, minimapProjection, type GotoItem } from './walkNav'
 
 const STICK_TRAVEL_PX = 58
 
@@ -153,10 +154,14 @@ interface MiniMapProps {
   bounds: Bounds
   /** Diamètre (px). */
   size?: number
+  /** Points de photos du jardin (repères sur la carte). */
+  points?: XY[]
+  /** Toucher la carte : endroit choisi (mètres). Sans cette fonction, la carte ne réagit pas au toucher. */
+  onPick?: (p: XY) => void
 }
 
 /** Petit plan rond vu du dessus (nord en haut) : parcelle, bâtiments, plantes, position et direction du promeneur. */
-export function MiniMap({ shared, parcel, buildings, plants, speciesById, selectedPlantId, bounds, size: SIZE = 84 }: MiniMapProps) {
+export function MiniMap({ shared, parcel, buildings, plants, speciesById, selectedPlantId, bounds, size: SIZE = 84, points, onPick }: MiniMapProps) {
   const ref = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -174,11 +179,7 @@ export function MiniMap({ shared, parcel, buildings, plants, speciesById, select
     const accent = col('--g3d-accent')
     const border = col('--g3d-border')
 
-    const cx = (bounds.minX + bounds.maxX) / 2
-    const cy = (bounds.minY + bounds.maxY) / 2
-    const worldR = Math.max(10, 0.5 * Math.hypot(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY) * 1.1)
-    const s = (SIZE / 2 - 6) / worldR
-    const toPx = (p: XY): [number, number] => [SIZE / 2 + (p.x - cx) * s, SIZE / 2 - (p.y - cy) * s]
+    const { toPx } = minimapProjection(bounds, SIZE)
 
     // Couche statique, redessinée seulement quand les données changent.
     const back = document.createElement('canvas')
@@ -233,6 +234,16 @@ export function MiniMap({ shared, parcel, buildings, plants, speciesById, select
       b.strokeStyle = sel ? text : surface
       b.stroke()
     }
+    // Points de photos : petit carré à bord clair.
+    for (const pt of points ?? []) {
+      const [x, y] = toPx(pt)
+      const k = SIZE > 120 ? 4.5 : 3.2
+      b.fillStyle = accent
+      b.fillRect(x - k, y - k, 2 * k, 2 * k)
+      b.lineWidth = 1.2
+      b.strokeStyle = surface
+      b.strokeRect(x - k, y - k, 2 * k, 2 * k)
+    }
     b.restore()
     b.beginPath()
     b.arc(SIZE / 2, SIZE / 2, SIZE / 2 - 1, 0, Math.PI * 2)
@@ -283,17 +294,117 @@ export function MiniMap({ shared, parcel, buildings, plants, speciesById, select
       if (!document.hidden) draw()
     }, 100)
     return () => window.clearInterval(timer)
-  }, [shared, parcel, buildings, plants, speciesById, selectedPlantId, bounds, SIZE])
+  }, [shared, parcel, buildings, plants, speciesById, selectedPlantId, bounds, SIZE, points])
 
+  const pick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!onPick) return
+    const r = e.currentTarget.getBoundingClientRect()
+    // Le canvas peut être affiché à une autre taille que SIZE (mise à l'échelle CSS).
+    const p = minimapProjection(bounds, SIZE).fromPx(((e.clientX - r.left) / r.width) * SIZE, ((e.clientY - r.top) / r.height) * SIZE)
+    if (p) onPick(p)
+  }
   return (
     <canvas
       ref={ref}
-      className="g3d-minimap"
+      className={'g3d-minimap' + (onPick ? ' g3d-minimap--pick' : '')}
       width={SIZE}
       height={SIZE}
       style={{ width: SIZE, height: SIZE }}
       role="img"
+      onClick={onPick ? pick : undefined}
       aria-label="Mini-carte du jardin, vue du dessus, nord en haut. Le triangle indique votre position et la direction de votre regard."
     />
+  )
+}
+
+interface GotoPanelProps {
+  shared: WalkShared
+  parcel?: XY[]
+  buildings?: Building[]
+  plants: Plant[]
+  speciesById: Record<string, Species>
+  selectedPlantId?: string
+  bounds: Bounds
+  /** Étiquette de chaque plante (nom choisi ou nom de l'espèce). */
+  labelOf: (p: Plant) => string
+  points: { id: string; label: string; x: number; y: number }[]
+  hop: boolean
+  onToggleHop: () => void
+  onClose: () => void
+}
+
+/**
+ * Panneau « Aller à » : grande mini-carte (toucher un endroit pour s'y rendre), points de photos et plantes proches,
+ * et l'option « Mouvement réduit ». Tous les boutons font au moins 44 px.
+ */
+export function GotoPanel({ shared, parcel, buildings, plants, speciesById, selectedPlantId, bounds, labelOf, points, hop, onToggleHop, onClose }: GotoPanelProps) {
+  // La liste est figée à l'ouverture : elle ne se réordonne pas sous le doigt.
+  const items = useMemo(
+    () =>
+      gotoItems(
+        { x: shared.pose.x, y: shared.pose.y },
+        plants.map((p) => ({ id: p.id, label: labelOf(p), x: p.position.x, y: p.position.y })),
+        points,
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [plants, points],
+  )
+  const markers = useMemo(() => points.map((p) => ({ x: p.x, y: p.y })), [points])
+  const go = (it: GotoItem) => {
+    shared.teleport?.(it.stand, it.look)
+    onClose()
+  }
+  const mapSize = Math.max(180, Math.min(260, (typeof window !== 'undefined' ? window.innerWidth : 360) - 64))
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    ref.current?.querySelector<HTMLElement>('button')?.focus()
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+  return (
+    <div className="g3d-panel g3d-goto" id="g3d-goto" role="dialog" aria-label="Aller à" ref={ref}>
+      <div className="g3d-goto-head">
+        <strong>Aller à</strong>
+        <button type="button" className="g3d-btn" onClick={onClose}>
+          <span aria-hidden="true">✕</span> Fermer
+        </button>
+      </div>
+      <div className="g3d-goto-map">
+        <MiniMap
+          shared={shared}
+          parcel={parcel}
+          buildings={buildings}
+          plants={plants}
+          speciesById={speciesById}
+          selectedPlantId={selectedPlantId}
+          bounds={bounds}
+          size={mapSize}
+          points={markers}
+          onPick={(p) => {
+            shared.teleport?.(p)
+            onClose()
+          }}
+        />
+        <span className="g3d-help">Touchez la carte pour y aller.</span>
+      </div>
+      <ul className="g3d-goto-list">
+        {items.map((it) => (
+          <li key={it.kind + it.id}>
+            <button type="button" className="g3d-btn g3d-goto-item" onClick={() => go(it)}>
+              <span className="g3d-goto-kind">{it.kind === 'photo' ? 'Photo' : 'Plante'}</span>
+              <span className="g3d-goto-name">{it.label}</span>
+              <span className="g3d-goto-dist">{formatDistance(it.distM)}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <button type="button" className="g3d-btn g3d-goto-hop" aria-pressed={hop} onClick={onToggleHop}>
+        Mouvement réduit
+      </button>
+      <span className="g3d-help">{hop ? 'Activé : vous avancez par bonds de 1,5 m et tournez de 30°.' : 'Désactivé. Activé, vous avancez par bonds de 1,5 m au lieu de glisser.'}</span>
+    </div>
   )
 }

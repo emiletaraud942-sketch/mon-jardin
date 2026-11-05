@@ -64,7 +64,7 @@ begin
  perform set_config('request.jwt.claims', '', false);
 
  -- Fonctions : seules les aides de politiques sont appelables, et elles ne parlent que de l'appelant.
- perform t.expect('A6 anon: neighbors_can_contact', t.as(null,'select public.neighbors_can_contact('''||B||''')'), 'ERR 42501');
- perform t.expect('A6 membre: neighbors_can_contact(X) faux', t.as(A,'select public.neighbors_can_contact('''||X||''')'), 'OK false');
- perform t.expect('A6 membre: neighbors_can_contact(B) vrai avant blocage ... ', t.as(X,'select public.neighbors_can_contact('''||B||''')'), 'OK true');
+ perform t.expect('A6 anon: neighbors_can_contact', t.as(null,'select neighbors_private.neighbors_can_contact('''||B||''')'), 'ERR 42501');
+ perform t.expect('A6 membre: neighbors_can_contact(X) faux', t.as(A,'select neighbors_private.neighbors_can_contact('''||X||''')'), 'OK false');
+ perform t.expect('A6 membre: neighbors_can_contact(B) vrai avant blocage ... ', t.as(X,'select neighbors_private.neighbors_can_contact('''||B||''')'), 'OK true');
 end $$;

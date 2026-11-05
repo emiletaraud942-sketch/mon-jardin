@@ -127,7 +127,7 @@ begin
  perform t.expect('V6 G à 0,60° au nord (67 km) ne voit plus C', t.as(G,'select count(*) from public.posts where author = '||quote_literal(C)), 'OK 0');
  perform t.expect('V6 ... ni son profil', t.as(G,'select count(*) from public.profiles where user_id = '||quote_literal(C)), 'OK 0');
  perform t.expect('V6 ... ni l''événement', t.as(G,'select count(*) from public.events'), 'OK 0');
- perform t.expect('V6 G ne peut pas écrire à C', t.as(G, format('select public.neighbors_can_contact(%L)', C)), 'OK false');
+ perform t.expect('V6 G ne peut pas écrire à C', t.as(G, format('select neighbors_private.neighbors_can_contact(%L)', C)), 'OK false');
  -- Un standard au bord de la fenêtre (0,50° exactement) voit encore ; au-delà, non.
  perform t.as(G, 'update public.profiles set cell_lat = 49.34, cell_lon = 2.37, cell_size = ''standard''');
  perform t.expect('V6 G standard à 0,49° (54,6 km) voit C', t.as(G,'select count(*) from public.posts where author = '||quote_literal(C)), 'OK 1');

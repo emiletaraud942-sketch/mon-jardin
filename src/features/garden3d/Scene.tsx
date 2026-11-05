@@ -1,6 +1,9 @@
 // Contenu du canvas : lumière solaire, caméra, sol, bâtiments, plantes et interactions.
 import type { DetectedTree } from '../../lib/lidar'
 import { NeighborTrees } from './NeighborTrees'
+import { ContactShadows } from './ContactShadows'
+import { plantColliders, treeColliders } from './obstacles'
+import { isTouchDevice } from './touch'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentRef, type RefObject } from 'react'
 import * as THREE from 'three'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
@@ -61,6 +64,10 @@ export interface SceneProps {
   compassRef: RefObject<HTMLDivElement>
   /** Arbres des environs (LiDAR HD) à dessiner ; absent ou vide = rien. */
   neighborTrees?: DetectedTree[]
+  /** Promenade : mouvement réduit (bonds). */
+  hop?: boolean
+  /** Promenade : phrase à lire (région vocale). */
+  onAnnounce?: (text: string) => void
 }
 
 type OrbitControlsImpl = ComponentRef<typeof OrbitControls>
@@ -70,7 +77,7 @@ const TOP_TOUCH = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN }
 
 // ---------- Soleil, ciel, ambiance ----------
 
-const COARSE_POINTER = typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches
+const COARSE_POINTER = isTouchDevice()
 /** Seuil de glisser d'une plante : 12 px en tactile, 6 px à la souris. */
 const DRAG_THRESHOLD_PX = dragThresholdPx(COARSE_POINTER)
 
@@ -335,6 +342,8 @@ export function Scene(props: SceneProps) {
     canopy,
     compassRef,
     neighborTrees,
+    hop,
+    onAnnounce,
   } = props
   const walking = mode === 'promenade'
   const get = useThree((s) => s.get)
@@ -358,7 +367,7 @@ export function Scene(props: SceneProps) {
   useEffect(() => {
     if (!walking) setLod({})
   }, [walking])
-  const colliders = useMemo(() => makeColliders(garden.buildings), [garden.buildings])
+  const buildingColliders = useMemo(() => makeColliders(garden.buildings), [garden.buildings])
 
   const builds = useRef(0)
   const { parts, visuals, triangles, tiers } = useMemo(
@@ -377,6 +386,11 @@ export function Scene(props: SceneProps) {
     },
     // `rebuild` n'est pas lu : il force un nouveau calcul après un glisser (voir plus haut).
     [plants, speciesById, growthTime, seasonTime, sample, lod, walking, tier, rebuild],
+  )
+  // Obstacles de la Promenade : bâtiments, troncs et haies des plantes, troncs des arbres des environs.
+  const colliders = useMemo(
+    () => (walking ? [...buildingColliders, ...plantColliders(visuals), ...treeColliders(neighborTrees)] : buildingColliders),
+    [walking, buildingColliders, visuals, neighborTrees],
   )
   const planStats = useRef({ triangles, tiers })
   planStats.current = { triangles, tiers }
@@ -609,6 +623,8 @@ export function Scene(props: SceneProps) {
           compassRef={compassRef}
           onLod={setLod}
           onLimit={onWalkLimit}
+          hop={hop}
+          onAnnounce={onAnnounce}
         />
       ) : (
         <CameraRig
@@ -638,7 +654,9 @@ export function Scene(props: SceneProps) {
       {garden.parcel && garden.parcel.length > 2 && <ParcelOutline ring={garden.parcel} sample={sample} />}
       {garden.buildings && garden.buildings.length > 0 && <Buildings buildings={garden.buildings} sample={sample} canopy={canopy} />}
 
-      {neighborTrees && neighborTrees.length > 0 && <NeighborTrees trees={neighborTrees} sample={sample} />}
+      {neighborTrees && neighborTrees.length > 0 && <NeighborTrees trees={neighborTrees} sample={sample} seasonTime={seasonTime} />}
+
+      <ContactShadows visuals={visuals} trees={neighborTrees} buildings={garden.buildings} sample={sample} />
 
       <Plants ref={plantsRef} parts={parts} handlers={handlers} cardShadows={tier === 2} />
 

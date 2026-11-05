@@ -369,13 +369,33 @@ describe('generateTasks : météo', () => {
 })
 
 describe('yearPlan', () => {
+  const today = new Date(2026, 0, 13, 9)
   it('vue annuelle par mois', () => {
-    const plan = yearPlan([plant('pommier'), plant('pommier'), plant('tomate', { status: 'projet' }), plant('laitue')], speciesById)
+    const plan = yearPlan([plant('pommier'), plant('pommier'), plant('tomate', { status: 'projet' }), plant('laitue', { plantedAt: '2025-12-01' })], speciesById, today)
     expect(plan).toHaveLength(12)
     const janvier = plan[0].tasks
     expect(janvier.find((t) => t.type === 'taille' && t.speciesId === 'pommier')?.count).toBe(2)
     expect(plan[4].tasks.find((t) => t.type === 'desherbage')?.count).toBe(1)
     expect(plan[6].tasks.find((t) => t.speciesId === 'tomate')).toBeUndefined() // en projet
+  })
+  it('écarte les annuelles qui ont fini leur saison, comme generateTasks', () => {
+    const fini = plant('laitue', { plantedAt: '2020-03-01' }) // plus d'un an : saison finie
+    const frais = plant('laitue', { plantedAt: '2025-12-01' })
+    const annuelles = { ...speciesById, laitue: { ...laitue, anneesMaturite: 1 } } // la fiche de test a 3 ans de maturité : pas une annuelle
+    const desherbage = (plants: Plant[]) => yearPlan(plants, annuelles, today)[4].tasks.find((t) => t.speciesId === 'laitue')?.count
+    expect(desherbage([fini])).toBeUndefined()
+    expect(desherbage([fini, frais])).toBe(1)
+    expect(run({ plants: [fini], speciesById: annuelles, today: new Date(2026, 4, 12, 9) })).toEqual([])
+  })
+  it('même filtre pour une annuelle plantée au printemps : encore suivie en août, plus l’été suivant', () => {
+    const t = plant('tomate', { plantedAt: '2026-05-10' })
+    const tomateAnnuelle = { ...speciesById, tomate: { ...tomate, anneesMaturite: 1 } }
+    expect(yearPlan([t], tomateAnnuelle, new Date(2026, 7, 1)).flatMap((m) => m.tasks).length).toBeGreaterThan(0)
+    expect(yearPlan([t], tomateAnnuelle, new Date(2027, 6, 15)).flatMap((m) => m.tasks)).toEqual([])
+  })
+  it('les plantes récoltées n’y figurent plus', () => {
+    const plan = yearPlan([plant('pommier', { status: 'recoltee' })], speciesById, today)
+    expect(plan.flatMap((m) => m.tasks)).toEqual([])
   })
 })
 
@@ -899,6 +919,23 @@ describe('annuelles hors saison', () => {
     const avec = run({ ...annuelle, plants: [vieille, neuve], today, weather: chaud })
     for (const t of avec) expect(t.plantIds).not.toContain(vieille.id)
     expect(avec.some((t) => t.plantIds.includes(neuve.id))).toBe(true)
+  })
+})
+
+describe('plante récoltée', () => {
+  it('ne génère plus aucune tâche, même en pleine saison, avec météo et gel', () => {
+    const today = new Date(2026, 6, 15, 9)
+    const chaud = weather(today, Array.from({ length: 7 }, () => ({ et0Mm: 4, rainMm: 0 })), [{ tMin: -1 }])
+    const annuelle = { speciesById: { ...speciesById, tomate: { ...tomate, anneesMaturite: 1 } } }
+    const encore = plant('tomate', { plantedAt: '2026-05-10' })
+    const recoltee = plant('tomate', { plantedAt: '2026-05-10', status: 'recoltee' })
+    expect(run({ ...annuelle, plants: [encore], today, weather: chaud }).length).toBeGreaterThan(0)
+    expect(run({ ...annuelle, plants: [recoltee], today, weather: chaud })).toEqual([])
+    const avec = run({ ...annuelle, plants: [encore, recoltee], today, weather: chaud })
+    for (const t of avec) expect(t.plantIds).not.toContain(recoltee.id)
+  })
+  it('même une vivace marquée récoltée ne génère rien (statut explicite de la personne)', () => {
+    expect(run({ plants: [plant('pommier', { status: 'recoltee' })] })).toEqual([])
   })
 })
 

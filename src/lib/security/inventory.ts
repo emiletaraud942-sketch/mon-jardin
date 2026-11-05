@@ -23,7 +23,7 @@ export const DATA_INVENTORY: readonly DataItem[] = [
   {
     id: 'jardins',
     donnee: 'Jardins : nom, adresse, position du centre, contour de parcelle, bâtiments, relief, plantes (position au mètre près, notes, informations d’achat facultatives : forme, hauteur, lieu et prix), tâches faites',
-    stockage: 'IndexedDB du navigateur (clé permajardin:state:v1) ; copie « avant migration » en cas de correction au chargement ; copie de secours dans le localStorage (clé permajardin:state:v1:miroir) qui évite de perdre la dernière modification si le navigateur se ferme trop vite',
+    stockage: 'IndexedDB du navigateur (clé permajardin:state:v1) ; copies de sécurité (« avant migration », « précédente », « illisible ») : l’état d’avant une correction au chargement, un remplacement par la synchro ou l’import, ou des données illisibles ; copie de secours dans le localStorage (clé permajardin:state:v1:miroir) qui évite de perdre la dernière modification si le navigateur se ferme trop vite',
     destinataires: [],
     finalite: 'Fournir le service : carte, 3D, calendrier d’entretien',
     base: 'execution',
@@ -249,6 +249,76 @@ export const PERMISSIONS: readonly PermissionInfo[] = [
 export const ERASABLE_LOCAL_KEY = /^(permajardin:|pj[-.]|sb-)/
 /** Caches du service worker contenant des lieux consultés. Les caches du code de l’appli sont conservés. */
 export const ERASABLE_CACHE = /^ign-/
+
+export interface StorageKeyInfo {
+  /** Clé exacte, ou préfixe si `prefixe` est vrai (la clé réelle porte alors un suffixe : identifiant, coordonnées). */
+  cle: string
+  prefixe?: boolean
+  /** Ce que la clé contient, en une phrase. */
+  contenu: string
+}
+
+/**
+ * TOUTES les clés localStorage écrites par l'appli (liste tenue à la main). Ajouter une clé = l'ajouter ici ET dans
+ * `ERASABLE_LOCAL_KEY` (si elle ne commence pas déjà par permajardin:, pj., pj- ou sb-) : le test `security.test.ts` relit le code source
+ * et échoue si une clé du code manque ici, si une entrée d'ici n'est plus écrite nulle part, ou si « Effacer toutes mes données » l'oublierait.
+ */
+export const LOCAL_STORAGE_KEYS: readonly StorageKeyInfo[] = [
+  { cle: 'permajardin:state:v1:miroir', contenu: 'Copie de secours synchrone de l’état (jardins, plantes), reprise si la fermeture a coupé l’écriture dans IndexedDB' },
+  { cle: 'permajardin:theme', contenu: 'Thème clair, sombre ou automatique' },
+  { cle: 'permajardin:text-size', contenu: 'Taille du texte choisie' },
+  { cle: 'permajardin:consent', contenu: 'Autorisations données (Pl@ntNet, synchronisation, entraide, alertes) et leur date' },
+  { cle: 'permajardin:last-export', contenu: 'Date de la dernière sauvegarde exportée' },
+  { cle: 'permajardin:last-export-name', contenu: 'Nom du dernier fichier de sauvegarde (pour dire quoi chercher)' },
+  { cle: 'permajardin:last-export-reminder', contenu: 'Date du dernier rappel de sauvegarde' },
+  { cle: 'permajardin:first-use', contenu: 'Date de première utilisation' },
+  { cle: 'permajardin:last-notification', contenu: 'Jour du dernier rappel affiché' },
+  { cle: 'permajardin:offline-ready-shown', contenu: 'Message « utilisable sans connexion » déjà montré' },
+  { cle: 'permajardin:sync-dirty', contenu: 'Indicateur « des modifications attendent d’être synchronisées » (synchro automatique)' },
+  { cle: 'permajardin:last-synced:', prefixe: true, contenu: 'Date de dernière synchronisation, par identifiant de compte' },
+  { cle: 'permajardin:voisins:rayon', contenu: 'Rayon de recherche de l’entraide' },
+  { cle: 'permajardin:voisins:regles', contenu: 'Règles de conduite de l’entraide acceptées' },
+  { cle: 'permajardin:voisins:visite:', prefixe: true, contenu: 'Date de dernière visite de l’entraide, par identifiant de compte' },
+  { cle: 'pj.rayon', contenu: 'Dernière rubrique ouverte (rayon de l’interface)' },
+  { cle: 'pj.mode', contenu: 'Ancien mode d’affichage (lu une fois pour retrouver le rayon)' },
+  { cle: 'pj.guide', contenu: 'Aides et repères mémorisés : étapes d’accueil, cartes repliées, identifiants des jardins dont la 3D et l’Entretien ont été ouverts' },
+  { cle: 'pj.lidar', contenu: 'Réglage du relevé LiDAR HD' },
+  { cle: 'pj.quality3d', contenu: 'Qualité de la vue 3D' },
+  { cle: 'pj.walkHop', contenu: 'Promenade 3D : « Mouvement réduit » (bonds) activé ou non' },
+  { cle: 'pj.walkHelpSeen', contenu: 'Promenade 3D : aide de la première visite déjà lue' },
+  { cle: 'pj.mapNames', contenu: 'Noms des plantes sur la carte affichés ou non' },
+  { cle: 'pj.snap', contenu: 'Aimantation de la carte activée ou non' },
+  { cle: 'pj.grid', contenu: 'Grille de la carte affichée ou non' },
+  { cle: 'pj.remeasure', contenu: 'Rappel « mesurer à nouveau » activé ou non' },
+  { cle: 'pj.askPurchase', contenu: 'Question « informations d’achat » après un placement : posée ou non' },
+  { cle: 'pj.scanQuota', contenu: 'Compteur du jour des identifications du scan' },
+  { cle: 'pj-meteo:', prefixe: true, contenu: 'Cache de prévisions, par coordonnées arrondies' },
+  { cle: 'pj-climat:', prefixe: true, contenu: 'Cache de climat local, par coordonnées arrondies' },
+  { cle: 'sb-', prefixe: true, contenu: 'Jetons de session Supabase (synchronisation : sb-<projet>-auth-token ; entraide : sb-neighbors-auth-token) et leur vérificateur PKCE' },
+]
+
+/** Clés sessionStorage (effacées à la fermeture de l'onglet ; « Effacer toutes mes données » les retire aussi). */
+export const SESSION_STORAGE_KEYS: readonly StorageKeyInfo[] = [
+  { cle: 'pj.force3d', contenu: '« Essayer quand même » choisi pour la 3D (session seulement)' },
+]
+
+/** Clés IndexedDB (base par défaut de idb-keyval) : toutes sont supprimées par `wipeLocalData()` (`del` de chaque clé). */
+export const INDEXEDDB_KEYS: readonly StorageKeyInfo[] = [
+  { cle: 'permajardin:state:v1', contenu: 'État : jardins, plantes, tâches faites' },
+  { cle: 'permajardin:state:v1:avant-migration', contenu: 'Copie de sécurité la plus récente : état avant une correction au chargement, avant un remplacement (synchro, import)' },
+  { cle: 'permajardin:state:v1:avant-migration:precedente', contenu: 'Copie de sécurité d’avant (une nouvelle copie ne détruit jamais la précédente)' },
+  { cle: 'permajardin:state:v1:illisible', contenu: 'Copie des données illisibles ou d’une version plus récente, avant tout remplacement' },
+  { cle: 'permajardin:state:v1:illisible:precedente', contenu: 'Copie illisible d’avant' },
+  { cle: 'permajardin:scan-queue', contenu: 'File d’attente du scan des plantes' },
+  { cle: 'permajardin:probe', contenu: 'Essai d’écriture au démarrage (retiré aussitôt)' },
+  { cle: 'photo:', prefixe: true, contenu: 'Photos de plantes et du jardin (JPEG sans EXIF)' },
+  { cle: 'lidar:', prefixe: true, contenu: 'Relevé LiDAR HD d’un jardin (cache de 90 jours)' },
+]
+
+/** La clé fait-elle partie de la liste (exacte ou par préfixe) ? */
+export function isListedKey(list: readonly StorageKeyInfo[], key: string): boolean {
+  return list.some((i) => (i.prefixe ? key.startsWith(i.cle) : key === i.cle))
+}
 
 /** Inventaire des données personnelles (pur, sans effet de bord). */
 export function getDataInventory(): readonly DataItem[] {

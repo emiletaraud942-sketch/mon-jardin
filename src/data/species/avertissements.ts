@@ -72,4 +72,14 @@ export const AVERTISSEMENTS: Record<string, Avertissement[]> = {
   hemerocalle: [T('Très toxique pour les chats (reins), même en petite quantité. Ne la plantez pas si un chat sort au jardin.')],
   pivoine: [T('Racines, graines et feuilles toxiques si on les mange.')],
   'courge-spaghetti': [T(COURGE_AMERE)],
+
+  // Ajouts de la vague 13
+  buis: [T('Toutes les parties sont toxiques (chiens, chevaux, enfants). La pyrale le menace : surveillez-le dès avril.')],
+  if: [T('Très toxique (taxine) : feuilles, écorce et graines peuvent tuer personnes, chiens et chevaux. Ramassez les tailles.')],
+  troene: [T('Les baies et les feuilles sont toxiques pour les personnes et les animaux. Ne les mangez pas.'), A('Son pollen peut gêner les personnes allergiques en juin.')],
+  narcisse: [T('Les bulbes sont toxiques, parfois pris pour de l’oignon : gardez-les loin des enfants, chiens et chats.')],
+  tulipe: [T('Les bulbes sont toxiques pour les chiens, les chats et les chevaux : gardez-les hors de leur portée.')],
+  citronnier: [P('Rameaux épineux, surtout les jeunes : gants pour la taille et la cueillette.')],
+  patisson: [T(COURGE_AMERE)],
+  ciboule: [T(ALLIACEES)],
 }

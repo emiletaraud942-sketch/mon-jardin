@@ -33,7 +33,7 @@ begin
  perform t.expect('V8 la ligne est bien au nom de A', (select 'OK '||(user_id = A) from public.garden_shares limit 1), 'OK true');
  perform t.expect('V8 anon ne lit rien', t.as(null,'select count(*) from public.garden_shares'), 'ERR 42501');
  perform t.expect('V8 anon n''écrit rien', t.as(null,'insert into public.garden_shares(species) values (array[''pommier''])'), 'ERR 42501');
- perform t.expect('V8 anon n''exécute pas la fonction de visibilité', t.as(null,'select public.neighbors_can_see_user('''||A||''')'), 'ERR 42501');
+ perform t.expect('V8 anon n''exécute pas la fonction de visibilité', t.as(null,'select neighbors_private.neighbors_can_see_user('''||A||''')'), 'ERR 42501');
 
  -- ===== Qui voit quoi =====
  perform t.expect('V8 B (même quartier) voit le jardin de A', t.as(B,'select species::text from public.garden_shares'), 'OK {pommier,romarin}');

@@ -12,10 +12,17 @@ MIG5=../migrations/20261025030000_neighbors_v5_push.sql
 MIG6=../migrations/20261025040000_neighbors_v6_cell_size.sql
 MIG7=../migrations/20261027000000_neighbors_v7_hardening.sql
 MIG8=../migrations/20261029000000_neighbors_v8_gardens.sql
+MIG9=../migrations/20261104000000_neighbors_v9_hardening2.sql
 export PGDATABASE=postgres
 psql -q -c 'drop database if exists neighbors_test' -c 'create database neighbors_test' || exit 2
 export PGDATABASE=neighbors_test
 OUT=$(mktemp)
+PRE=$(mktemp); POST=$(mktemp)
+# Politiques (public et storage) normalisées : le nom du schéma des fonctions d'aide est retiré pour comparer avant/après la v9.
+dump_policies() {
+  psql -At -c "select schemaname||'.'||tablename||' | '||policyname||' | '||permissive||' | '||cmd||' | '||roles::text||' | '||coalesce(qual,'')||' | '||coalesce(with_check,'') from pg_policies where schemaname in ('public','storage') order by 1" \
+    | sed -e 's/neighbors_private\.//g' -e 's/public\.//g'
+}
 {
   psql -q -v ON_ERROR_STOP=1 -f stub.sql &&
   psql -q -v ON_ERROR_STOP=1 -f "$MIG" &&
@@ -31,6 +38,8 @@ OUT=$(mktemp)
   psql -q -v pass=2 -f scenarios_v6_migration.sql &&
   psql -q -v ON_ERROR_STOP=1 -f "$MIG7" &&
   psql -q -v ON_ERROR_STOP=1 -f "$MIG8" &&
+  dump_policies >"$PRE" &&
+  psql -q -v ON_ERROR_STOP=1 -f "$MIG9" &&   # v9 juste après la v8, puis rejeu de tout, puis v9 de nouveau en dernier
   psql -q -v ON_ERROR_STOP=1 -f "$MIG" &&   # idempotence : deuxième application de chaque fichier
   psql -q -v ON_ERROR_STOP=1 -f "$MIG2" &&
   psql -q -v ON_ERROR_STOP=1 -f "$MIG3" &&
@@ -38,7 +47,11 @@ OUT=$(mktemp)
   psql -q -v ON_ERROR_STOP=1 -f "$MIG5" &&
   psql -q -v ON_ERROR_STOP=1 -f "$MIG6" &&   # v6 puis v7 en dernier : un ancien fichier rejoué remet l'ancien arrondi ou l'ancien déclencheur
   psql -q -v ON_ERROR_STOP=1 -f "$MIG7" &&
-  psql -q -v ON_ERROR_STOP=1 -f "$MIG8" &&   # v8 tout à la fin : elle remplace neighbors_can_contact et profiles_select de la v1
+  psql -q -v ON_ERROR_STOP=1 -f "$MIG8" &&   # v8 : elle remplace neighbors_can_contact et profiles_select de la v1
+  psql -q -v ON_ERROR_STOP=1 -f "$MIG9" &&   # v9 TOUT À LA FIN : elle remet les fonctions d'aide dans neighbors_private et ré-écrase les anciennes versions rejouées
+  psql -q -v ON_ERROR_STOP=1 -f "$MIG9" &&   # et elle est elle-même rejouable
+  dump_policies >"$POST" &&
+  { if diff -q "$PRE" "$POST" >/dev/null; then echo "NOTICE:  PASS  V9 politiques RLS identiques avant/après hors nom de schéma ($(wc -l <"$PRE") politiques)"; else echo "NOTICE:  FAIL  V9 politiques RLS différentes après la v9"; diff "$PRE" "$POST"; fi; } &&
   psql -q -f scenarios.sql &&
   psql -q -f scenarios_audit.sql &&
   psql -q -f scenarios_v2.sql &&
@@ -47,11 +60,12 @@ OUT=$(mktemp)
   psql -q -f scenarios_v5.sql &&
   psql -q -f scenarios_v6.sql &&
   psql -q -f scenarios_v7.sql &&
-  psql -q -f scenarios_v8.sql
+  psql -q -f scenarios_v8.sql &&
+  psql -q -f scenarios_v9.sql
 } >"$OUT" 2>&1
 grep -E "PASS|FAIL|ERROR" "$OUT" | sed 's/^psql:[^ ]* //'
 FAILS=$(grep -c "FAIL\|ERROR" "$OUT"); PASSES=$(grep -c "PASS" "$OUT")
 echo "== $PASSES PASS, $FAILS FAIL/ERROR"
 PGDATABASE=postgres psql -q -c 'drop database neighbors_test'
-rm -f "$OUT"
+rm -f "$OUT" "$PRE" "$POST"
 [ "$FAILS" -eq 0 ]

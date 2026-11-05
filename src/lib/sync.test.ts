@@ -111,10 +111,17 @@ function makeFake(): Fake {
 
 // ---------- Faux navigateur ----------
 
-const store = { replaceData: vi.fn(), state: { gardens: [{ id: 'g1' }], plants: [], tasksDone: [], loaded: true }, readFailed: false }
+const store = { replaceData: vi.fn(), keepCopy: vi.fn(async () => true), order: [] as string[], state: { gardens: [{ id: 'g1' }], plants: [], tasksDone: [], loaded: true }, readFailed: false }
 vi.mock('./store', () => ({
   getState: () => store.state,
-  replaceData: (d: unknown) => store.replaceData(d),
+  replaceData: (d: unknown, o?: unknown) => {
+    store.order.push('replace')
+    return store.replaceData(d, o)
+  },
+  keepLocalSafetyCopy: async () => {
+    store.order.push('copie')
+    return store.keepCopy()
+  },
   getStorageStatus: () => ({ persistent: undefined, readFailed: store.readFailed }),
 }))
 vi.mock('@supabase/supabase-js', () => ({
@@ -163,6 +170,9 @@ beforeEach(() => {
   clock = 0
   store.readFailed = false
   store.replaceData.mockClear()
+  store.keepCopy.mockReset()
+  store.keepCopy.mockResolvedValue(true)
+  store.order = []
   stubBrowser()
   vi.spyOn(console, 'warn').mockImplementation(() => undefined)
 })
@@ -463,6 +473,32 @@ describe('pullSnapshot', () => {
     fake.rows.set('u1', { user_id: 'u1', data: { version: 99, gardens: [garden], plants: [] }, updated_at: fake.tick() })
     await expect(s.pullSnapshot()).rejects.toThrow(/plus récente/)
     expect(store.replaceData).not.toHaveBeenCalled()
+  })
+
+  it('fait une copie de sécurité locale AVANT de remplacer, et garde les photos', async () => {
+    const s = await load()
+    fake.rows.set('u1', { user_id: 'u1', data: validData, updated_at: fake.tick() })
+    expect(await s.pullSnapshot()).toBe(true)
+    expect(store.keepCopy).toHaveBeenCalledTimes(1)
+    expect(store.order).toEqual(['copie', 'replace'])
+    expect(store.replaceData.mock.calls[0][1]).toEqual({ keepPhotos: true })
+  })
+
+  it('si la copie de sécurité échoue, rien n’est remplacé et la date n’est pas mémorisée', async () => {
+    const s = await load()
+    store.keepCopy.mockResolvedValue(false)
+    fake.rows.set('u1', { user_id: 'u1', data: validData, updated_at: fake.tick() })
+    await expect(s.pullSnapshot()).rejects.toThrow(/copie de sécurité/)
+    expect(store.replaceData).not.toHaveBeenCalled()
+    expect(local.has('permajardin:last-synced:u1')).toBe(false)
+  })
+
+  it('pas de copie quand il n’y a rien à récupérer ou que l’instantané est invalide', async () => {
+    const s = await load()
+    expect(await s.pullSnapshot()).toBe(false)
+    fake.rows.set('u1', { user_id: 'u1', data: { foo: 'bar' }, updated_at: fake.tick() })
+    await expect(s.pullSnapshot()).rejects.toThrow()
+    expect(store.keepCopy).not.toHaveBeenCalled()
   })
 
   it('un localStorage indisponible ne casse pas la synchro', async () => {

@@ -2,11 +2,11 @@
 // produites par les générateurs procéduraux de plantGen.ts, dans un plafond de triangles.
 import * as THREE from 'three'
 import type { Plant, Species, XY } from '../../types'
-import { plantStateAt, type PlantState } from '../../engine/growth'
+import type { PlantState } from '../../engine/growth'
 import { stateAtSeason } from '../../engine/season'
 import type { HeightSampler } from './terrain'
 import type { DetailLevel } from './walk'
-import { archetypeOf, generatePlant, type GenTier, type PlantLook } from './plantGen'
+import { archetypeOf, generatePlant, type Archetype, type GenTier, type PlantLook } from './plantGen'
 import { disposePartGeometries as disposeGeometries, estimateTriangles, type PlantPart } from './plantParts'
 
 export { PART_KINDS, partGeometries, estimateTriangles, partTriangles, type PartKind, type PlantPart } from './plantParts'
@@ -21,6 +21,10 @@ export interface PlantVisual {
   spreadM: number
   base: [number, number, number]
   label: string
+  /** Gabarit du modèle (haie taillée, conifère…) : sert aux obstacles de la Promenade. */
+  archetype: Archetype
+  /** Plante en projet : pas encore plantée, on peut la traverser. */
+  ghost: boolean
 }
 
 const GENERIC = new THREE.Color('#5f9a45')
@@ -53,11 +57,6 @@ export function plantLabel(plant: Plant, species: Species | undefined): string {
 
 /** État de la plante pour le rendu (voir `stateAtSeason` : l'âge suit `growthAt`, la saison suit `seasonAt`). */
 export const renderState = stateAtSeason
-
-export function plantSize(plant: Plant, species: Species | undefined, at: Date) {
-  const s = plantStateAt(plant, species, at)
-  return { heightM: Math.max(0.05, s.heightM), spreadM: Math.max(0.08, s.spreadM) }
-}
 
 export function lookOf(plant: Plant, sp: Species | undefined, st: PlantState): PlantLook {
   return {
@@ -139,7 +138,7 @@ export function buildPlantScene({ plants, speciesById, at, seasonAt, sample, ove
     const st = renderState(plant, sp, at, seasonAt)
     const look = lookOf(plant, sp, st)
     const origin: [number, number, number] = [pos.x, sample(pos.x, pos.y), -pos.y]
-    visuals[plant.id] = { id: plant.id, shape: shapeOf(sp), heightM: look.H, spreadM: look.S, base: origin, label: plantLabel(plant, sp) }
+    visuals[plant.id] = { id: plant.id, shape: shapeOf(sp), heightM: look.H, spreadM: look.S, base: origin, label: plantLabel(plant, sp), archetype: look.archetype, ghost: look.ghost }
     looks.push({ look, origin, weight: look.H * look.S })
   }
   // 1) tout au niveau simple ; 2) la Promenade monte les plantes proches ; 3) on monte les plus visibles tant que le plafond tient.

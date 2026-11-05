@@ -64,4 +64,3 @@ export function walkHelpShort(touch: boolean): string {
 export const EMPTY_GARDEN_TEXT = 'Aucune plante pour l’instant — ajoutez-en depuis la carte'
 
 export const ERROR_3D_TITLE = 'La vue 3D ne fonctionne pas sur cet appareil.'
-export const ERROR_3D_TEXT = 'Vous pouvez continuer avec la carte.'

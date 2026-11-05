@@ -1,84 +1,110 @@
-// Arbres des environs détectés par le LiDAR HD (IGN) : formes simples, deux maillages instanciés (troncs, houppiers).
-// Légers pour les téléphones modestes : 2 appels de dessin, 80 arbres au plus, géométries de 60 à 100 triangles.
+// Arbres des environs détectés par le LiDAR HD (IGN) : trois maillages instanciés (troncs, masses de feuillage, branches d'hiver).
+// Légers pour les téléphones modestes : 3 appels de dessin, 80 arbres au plus ; masses = « touffe » bruitée de plantModel (80 triangles),
+// 1 à 3 par arbre, teintes variées par instance (instanceColor), couleur de la saison, branches nues l'hiver (voir neighborLayout.ts).
 // Non cliquables (raycast désactivé) : ils ne gênent ni la sélection des plantes ni le placement.
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { useThree } from '@react-three/fiber'
 import type { DetectedTree } from '../../lib/lidar'
 import type { HeightSampler } from './terrain'
+import { partGeometries } from './plantParts'
+import { MAX_NEIGHBOR_TREES, deciduousSeason, layoutNeighborTrees } from './neighborLayout'
 
-/** Plafond d'arbres dessinés (le détecteur en renvoie déjà 80 au plus). */
-export const MAX_NEIGHBOR_TREES = 80
+export { MAX_NEIGHBOR_TREES, treeShape } from './neighborLayout'
+
 /** Couleurs de scène (exception assumée : la 3D n'utilise pas les variables CSS). */
-const CROWN_COLOR = '#58814a'
 const TRUNK_COLOR = '#6e5a46'
+const BRANCH_COLOR = '#5d4d3c'
+/** Une masse par arbre au plus 3 ; une branche nue : 5 par arbre. */
+const MAX_LOBES = MAX_NEIGHBOR_TREES * 3
+const MAX_BRANCHES = MAX_NEIGHBOR_TREES * 5
 
-let shared: { trunk: THREE.CylinderGeometry; crown: THREE.SphereGeometry; trunkMat: THREE.MeshLambertMaterial; crownMat: THREE.MeshLambertMaterial } | null = null
+let shared: { trunk: THREE.CylinderGeometry; trunkMat: THREE.MeshLambertMaterial; crownMat: THREE.MeshLambertMaterial; branchMat: THREE.MeshLambertMaterial } | null = null
 function getShared() {
   if (!shared)
     shared = {
       trunk: new THREE.CylinderGeometry(0.6, 1, 1, 6),
-      crown: new THREE.SphereGeometry(1, 10, 8),
       trunkMat: new THREE.MeshLambertMaterial({ color: TRUNK_COLOR }),
-      crownMat: new THREE.MeshLambertMaterial({ color: CROWN_COLOR }),
+      // Les géométries de masse et de branche viennent de plantModel (partagées, libérées avec elles) : ici, seulement les matériaux.
+      crownMat: new THREE.MeshLambertMaterial({ color: '#ffffff', vertexColors: true }),
+      branchMat: new THREE.MeshLambertMaterial({ color: BRANCH_COLOR, vertexColors: true, side: THREE.DoubleSide }),
     }
   return shared
 }
 export function disposeNeighborTrees(): void {
   if (!shared) return
   shared.trunk.dispose()
-  shared.crown.dispose()
   shared.trunkMat.dispose()
   shared.crownMat.dispose()
+  shared.branchMat.dispose()
   shared = null
 }
 
-/** Dimensions dessinées d'un arbre : tronc jusqu'à la moitié de la hauteur, houppier ellipsoïde au-dessus (même modèle que l'ombre calculée). */
-export function treeShape(t: DetectedTree) {
-  const h = Math.max(2, t.heightM)
-  const r = Math.max(0.5, t.radiusM)
-  const crownBottom = h * 0.35
-  return { trunkH: h * 0.55, trunkR: Math.min(0.5, Math.max(0.12, r * 0.07)), crownR: r, crownHalfH: (h - crownBottom) / 2, crownY: crownBottom + (h - crownBottom) / 2 }
-}
+const WHITE = new THREE.Color('#ffffff')
 
-export function NeighborTrees({ trees, sample }: { trees: DetectedTree[]; sample: HeightSampler }) {
-  const list = useMemo(() => trees.filter((t) => [t.x, t.y, t.heightM, t.radiusM].every(Number.isFinite)).slice(0, MAX_NEIGHBOR_TREES), [trees])
+export function NeighborTrees({ trees, sample, seasonTime }: { trees: DetectedTree[]; sample: HeightSampler; seasonTime: number }) {
   const invalidate = useThree((s) => s.invalidate)
   const trunkRef = useRef<THREE.InstancedMesh>(null)
   const crownRef = useRef<THREE.InstancedMesh>(null)
+  const branchRef = useRef<THREE.InstancedMesh>(null)
   const g = getShared()
+  const geos = partGeometries()
+  const layout = useMemo(() => layoutNeighborTrees(trees, deciduousSeason(new Date(seasonTime)), sample), [trees, seasonTime, sample])
 
   useLayoutEffect(() => {
     const trunk = trunkRef.current
     const crown = crownRef.current
-    if (!trunk || !crown) return
+    const branch = branchRef.current
+    if (!trunk || !crown || !branch) return
     const o = new THREE.Object3D()
-    list.forEach((t, i) => {
-      const s = treeShape(t)
-      const y0 = sample(t.x, t.y)
+    const col = new THREE.Color()
+    layout.trunks.forEach((t, i) => {
       o.rotation.set(0, 0, 0)
-      o.position.set(t.x, y0 + s.trunkH / 2, -t.y)
-      o.scale.set(s.trunkR, s.trunkH, s.trunkR)
+      o.position.set(t.x, t.y + t.h / 2, t.z)
+      o.scale.set(t.r, t.h, t.r)
       o.updateMatrix()
       trunk.setMatrixAt(i, o.matrix)
-      o.position.set(t.x, y0 + s.crownY, -t.y)
-      o.scale.set(s.crownR, s.crownHalfH, s.crownR)
+    })
+    layout.lobes.forEach((l, i) => {
+      o.rotation.set(0, l.rotY, 0)
+      o.position.set(l.x, l.y, l.z)
+      o.scale.set(l.rx, l.ry, l.rz)
       o.updateMatrix()
       crown.setMatrixAt(i, o.matrix)
+      crown.setColorAt(i, col.set(l.color))
     })
-    trunk.count = crown.count = list.length
-    trunk.instanceMatrix.needsUpdate = crown.instanceMatrix.needsUpdate = true
+    if (!crown.instanceColor) crown.setColorAt(0, WHITE) // crée le tampon de couleurs avant la compilation du shader, même sans masse
+    const up = new THREE.Vector3(0, 1, 0)
+    const a = new THREE.Vector3()
+    const b = new THREE.Vector3()
+    layout.branches.forEach((br, i) => {
+      a.set(...br.from)
+      b.set(...br.to).sub(a)
+      const len = b.length() || 1
+      o.position.copy(a)
+      o.quaternion.setFromUnitVectors(up, b.normalize())
+      o.scale.set(br.r, len, br.r)
+      o.updateMatrix()
+      branch.setMatrixAt(i, o.matrix)
+    })
+    trunk.count = layout.trunks.length
+    crown.count = layout.lobes.length
+    branch.count = layout.branches.length
+    trunk.instanceMatrix.needsUpdate = crown.instanceMatrix.needsUpdate = branch.instanceMatrix.needsUpdate = true
+    if (crown.instanceColor) crown.instanceColor.needsUpdate = true
     trunk.computeBoundingSphere()
     crown.computeBoundingSphere()
+    branch.computeBoundingSphere()
     invalidate()
-  }, [list, sample, invalidate])
+  }, [layout, invalidate])
 
-  if (list.length === 0) return null
+  if (layout.trees === 0) return null
   const noRay = () => null
   return (
     <group name="arbres-environs">
       <instancedMesh ref={trunkRef} args={[g.trunk, g.trunkMat, MAX_NEIGHBOR_TREES]} castShadow raycast={noRay} frustumCulled={false} />
-      <instancedMesh ref={crownRef} args={[g.crown, g.crownMat, MAX_NEIGHBOR_TREES]} castShadow raycast={noRay} frustumCulled={false} />
+      <instancedMesh ref={crownRef} args={[geos.clump, g.crownMat, MAX_LOBES]} castShadow receiveShadow raycast={noRay} frustumCulled={false} />
+      <instancedMesh ref={branchRef} args={[geos.branch, g.branchMat, MAX_BRANCHES]} raycast={noRay} frustumCulled={false} />
     </group>
   )
 }

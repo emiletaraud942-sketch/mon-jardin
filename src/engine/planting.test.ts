@@ -121,6 +121,47 @@ describe('legalDistance (art. 671) : ordre des règles', () => {
   })
 })
 
+describe('legalDistance : formulations exactes des art. 671 et 672', () => {
+  const basse: Species = { ...tomate, hauteurAdulteM: 2 } // exactement 2 m : « autres plantations »
+  it('2 m ou moins : « les autres plantations », 0,5 m ; plus de 2 m : 2 m', () => {
+    expect(legalDistance(basse, { x: 0, y: 0 }, parcel).requiredM).toBe(0.5)
+    const pres = legalDistance(basse, { x: 9.8, y: 0 }, parcel) // 0,2 m de la limite : non conforme, la règle est citée
+    expect(pres.ok).toBe(false)
+    expect(pres.message).toMatch(/de 2 m de haut ou moins doit être à au moins 0,5 m/)
+    expect(pres.message).not.toMatch(/moins de 2 m/)
+    expect(legalDistance({ ...basse, hauteurAdulteM: 2.1 }, { x: 0, y: 0 }, parcel).requiredM).toBe(2)
+  })
+  it('art. 672 : titre, destination du père de famille, prescription trentenaire, remplacement à distance légale', () => {
+    const m = legalDistance(pommier, { x: 9, y: 0 }, parcel).message
+    expect(m).toMatch(/sauf titre, destination du père de famille ou prescription trentenaire/)
+    expect(m).toMatch(/arraché ou réduit à 2 m de haut/)
+    expect(m).toMatch(/mort, coupé ou arraché ne se remplace qu’à la distance légale/)
+    expect(m).not.toMatch(/plus de 30 ans/)
+  })
+  it('espalier : crête du mur, et mur non mitoyen réservé à son propriétaire', () => {
+    const m = legalDistance(pommier, { x: 9, y: 0 }, parcel).message
+    expect(m).toMatch(/crête du mur/)
+    expect(m).toMatch(/mur n’est pas mitoyen, seul son propriétaire/)
+  })
+  it('le résumé court ne change pas', () => {
+    expect(legalDistance(pommier, { x: 9, y: 0 }, parcel).summary).toBe('Trop près de la limite : 1 m au lieu de 2 m au minimum (art. 671).')
+  })
+})
+
+describe('plante récoltée', () => {
+  it('ne compte plus comme voisine : ni compagne, ni ennemie, ni espacement, ni fixateur', () => {
+    const t = plant('tomate', 0, 0)
+    const b = plant('basilic', 1, 0, 'recoltee')
+    const f = plant('fenouil', 1, 0, 'recoltee')
+    expect(companionReport(t, [t, b, f], speciesById)).toEqual({ amis: [], ennemis: [] })
+    const sc = scoreSpecies(tomate, ctx({ plants: [plant('tomate', 0.1, 0, 'recoltee'), plant('feve', 1, 0, 'recoltee'), b, f] }))
+    expect(sc.factors.map((x) => x.label).join(' ')).not.toMatch(/Espacement|Compagnons|Mauvais voisins|Fixateur/)
+    expect(sc.warnings.join(' ')).not.toMatch(/Trop près : /)
+    const vivant = scoreSpecies(tomate, ctx({ plants: [plant('tomate', 0.1, 0)] }))
+    expect(vivant.factors.map((x) => x.label).join(' ')).toMatch(/Espacement/)
+  })
+})
+
 describe('legalDistance (art. 671)', () => {
   it('arbre de plus de 2 m à 1 m de la limite : non conforme', () => {
     const r = legalDistance(pommier, { x: 9, y: 0 }, parcel)

@@ -3161,7 +3161,7 @@ html[data-immersive] body {
   user-select: none;
   -webkit-touch-callout: none;
 }
-@media (max-width: 760px), (pointer: coarse) and (max-height: 500px) {
+@media (max-width: 760px), (pointer: coarse) {
   html[data-immersive] .app > .main {
     position: fixed;
     inset: 0;

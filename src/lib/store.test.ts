@@ -225,28 +225,51 @@ describe('échec de lecture', () => {
   })
 
   it('« Repartir de zéro » garde d’abord une copie des données illisibles', async () => {
-    const newer = { version: 99, gardens: [garden], plants: [] }
-    db.set(KEY, newer)
+    const broken = { version: 2, gardens: 'oups', plants: 12 }
+    db.set(KEY, broken)
     const s = await freshStore()
     await s.loadState()
-    expect(s.getStorageStatus().readFailed).toBe(true)
+    expect(s.getStorageStatus()).toMatchObject({ readFailed: true, readFailure: 'unreadable' })
     s.addGarden({ ...garden, id: 'g2' })
-    await s.resumeSaving()
+    expect(await s.resumeSaving()).toEqual({ ok: true })
     await vi.advanceTimersByTimeAsync(500)
-    expect(db.get(KEY + ':illisible')).toEqual(newer)
+    expect(db.get(KEY + ':illisible')).toEqual(broken)
     expect(s.getStorageStatus().readFailed).toBe(false)
     expect((db.get(KEY) as { gardens: unknown[] }).gardens).toHaveLength(1)
   })
 
   it('« Repartir de zéro » ne remplace rien si la copie échoue', async () => {
-    db.set(KEY, { version: 99, gardens: [garden], plants: [] })
+    const broken = { version: 2, gardens: 'oups' }
+    db.set(KEY, broken)
     const s = await freshStore()
     await s.loadState()
     idb.failSet = new Error('écriture KO')
-    await s.resumeSaving()
+    expect(await s.resumeSaving()).toEqual({ ok: false, reason: 'no-copy' })
     await vi.advanceTimersByTimeAsync(500)
     expect(s.getStorageStatus().readFailed).toBe(true)
-    expect((db.get(KEY) as { version: number }).version).toBe(99)
+    expect(db.get(KEY)).toEqual(broken)
+  })
+
+  it('une nouvelle copie illisible ne détruit pas la précédente (:precedente)', async () => {
+    db.set(KEY + ':illisible', { ancienne: true })
+    db.set(KEY, { version: 2, gardens: 'oups' })
+    const s = await freshStore()
+    await s.loadState()
+    await s.resumeSaving()
+    expect(db.get(KEY + ':illisible')).toEqual({ version: 2, gardens: 'oups' })
+    expect(db.get(KEY + ':illisible:precedente')).toEqual({ ancienne: true })
+  })
+
+  it('lecture impossible (IndexedDB en panne) : cause « io », et rien n’est remplacé si l’état de la clé est invérifiable', async () => {
+    db.set(KEY, { gardens: [garden], plants: [], tasksDone: [] })
+    idb.failGet = true
+    const s = await freshStore()
+    await s.loadState()
+    expect(s.getStorageStatus().readFailure).toBe('io')
+    expect(s.describeReadFailure('io').canStartOver).toBe(true)
+    // La clé est présente (keys) : la lecture reste impossible, donc pas de copie, donc pas de reprise.
+    expect(await s.resumeSaving()).toEqual({ ok: false, reason: 'no-copy' })
+    expect(s.getStorageStatus().readFailed).toBe(true)
   })
 
   it('retryLoadState() relit et lève le blocage si la lecture réussit', async () => {
@@ -260,14 +283,50 @@ describe('échec de lecture', () => {
     expect(s.getState().gardens).toHaveLength(1)
   })
 
-  it('une donnée plus récente que l’appli est traitée comme illisible (jamais écrasée)', async () => {
-    db.set(KEY, { version: 99, gardens: [garden], plants: [] })
+  it('une donnée plus récente que l’appli n’est jamais écrasée ni effacée par « Repartir de zéro »', async () => {
+    const newer = { version: 99, gardens: [garden], plants: [] }
+    db.set(KEY, newer)
     const s = await freshStore()
     await s.loadState()
+    expect(s.getStorageStatus()).toMatchObject({ readFailed: true, readFailure: 'newer-version' })
+    s.addGarden({ ...garden, id: 'g2' })
+    expect(await s.resumeSaving()).toEqual({ ok: false, reason: 'newer-version' })
+    await vi.advanceTimersByTimeAsync(500)
     expect(s.getStorageStatus().readFailed).toBe(true)
+    expect(db.get(KEY)).toEqual(newer)
+    expect(db.has(KEY + ':illisible')).toBe(false)
+    expect(s.RESUME_REFUSAL_TEXT['newer-version']).toMatch(/jamais effacées/)
+  })
+
+  it('describeReadFailure : « Mettre à jour l’appli » sans « Repartir de zéro » pour une version plus récente', async () => {
+    const s = await freshStore()
+    expect(s.describeReadFailure('newer-version')).toMatchObject({ primary: 'update', primaryLabel: 'Mettre à jour l’appli', canStartOver: false })
+    expect(s.describeReadFailure('newer-version').startOverWarning).toBeUndefined()
+    expect(s.describeReadFailure('unreadable')).toMatchObject({ primary: 'retry', canStartOver: true })
+    expect(s.describeReadFailure('unreadable').startOverWarning).toMatch(/copie/)
+  })
+
+  it('la copie de secours (miroir) ne remplace jamais des données d’une version plus récente', async () => {
+    const newer = { version: 99, gardens: [garden], plants: [], savedAt: 1 }
+    db.set(KEY, newer)
+    ls.set(
+      KEY + ':miroir',
+      JSON.stringify({ savedAt: 5000, data: { version: 2, gardens: [{ ...garden, id: 'vieux' }], plants: [], tasksDone: [] } }),
+    )
+    const s = await freshStore()
+    await s.loadState()
+    expect(s.getStorageStatus().readFailure).toBe('newer-version')
     s.addGarden({ ...garden, id: 'g2' })
     await vi.advanceTimersByTimeAsync(500)
-    expect((db.get(KEY) as { version: number }).version).toBe(99)
+    expect(db.get(KEY)).toEqual(newer)
+  })
+
+  it('bandeau : les données illisibles sont récupérables telles quelles (readSafetyCopy)', async () => {
+    const newer = { version: 99, gardens: [garden], plants: [] }
+    db.set(KEY, newer)
+    const s = await freshStore()
+    await s.loadState()
+    expect(await s.readSafetyCopy()).toEqual(newer)
   })
 
   it('replaceData (import) est une action explicite qui lève le blocage', async () => {
@@ -576,5 +635,97 @@ describe('essai d’écriture au démarrage', () => {
     s.addGarden(garden)
     await vi.advanceTimersByTimeAsync(300)
     expect(s.getStorageStatus().savedAt).toBeGreaterThan(0)
+  })
+})
+
+describe('copies de sécurité (:precedente) et photos protégées', () => {
+  it('la correction au chargement garde l’original, et la copie d’avant passe en :precedente', async () => {
+    db.set(KEY + ':avant-migration', { ancienne: 'copie' })
+    db.set(KEY, { gardens: [garden, { id: 'x' }], plants: [plant], tasksDone: 'oops' })
+    const s = await freshStore()
+    await s.loadState()
+    expect((db.get(KEY + ':avant-migration') as { gardens: unknown[] }).gardens).toHaveLength(2)
+    expect(db.get(KEY + ':avant-migration:precedente')).toEqual({ ancienne: 'copie' })
+  })
+
+  it('une copie identique ne pousse pas la précédente', async () => {
+    const s = await freshStore()
+    db.set(KEY, { gardens: [garden], plants: [plant], tasksDone: [] })
+    await s.loadState()
+    await s.keepLocalSafetyCopy()
+    db.set(KEY + ':avant-migration:precedente', { garde: true })
+    await s.keepLocalSafetyCopy()
+    expect(db.get(KEY + ':avant-migration:precedente')).toEqual({ garde: true })
+  })
+
+  it('keepLocalSafetyCopy : copie de l’état courant ; rien à protéger si vide ; false si le stockage refuse', async () => {
+    const s = await freshStore()
+    await s.loadState()
+    expect(await s.keepLocalSafetyCopy()).toBe(true)
+    expect(db.has(KEY + ':avant-migration')).toBe(false)
+    s.addGarden(garden)
+    s.addPlant(plant)
+    expect(await s.keepLocalSafetyCopy()).toBe(true)
+    expect((db.get(KEY + ':avant-migration') as { plants: unknown[] }).plants).toHaveLength(1)
+    idb.failSet = new Error('plein')
+    s.addGarden({ ...garden, id: 'g2' })
+    expect(await s.keepLocalSafetyCopy()).toBe(false)
+  })
+
+  it('replaceData({ keepPhotos }) garde les photos des plantes remplacées ; la purge protège celles des copies', async () => {
+    db.set('photo:a', new Blob(['a']))
+    db.set('photo:libre', new Blob(['x']))
+    db.set(KEY, { gardens: [garden], plants: [plant], tasksDone: [] })
+    const s = await freshStore()
+    await s.loadState()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(await s.keepLocalSafetyCopy()).toBe(true)
+    s.replaceData({ gardens: [garden], plants: [], tasksDone: [] }, { keepPhotos: true })
+    await vi.advanceTimersByTimeAsync(300)
+    expect(db.has('photo:a')).toBe(true)
+    await s.purgeOrphanPhotos()
+    expect(db.has('photo:a')).toBe(true) // dans la copie de sécurité
+    expect(db.has('photo:libre')).toBe(false)
+  })
+
+  it('la purge tolère une copie illisible (pas un objet, plantes abîmées)', async () => {
+    db.set('photo:z', new Blob(['z']))
+    db.set(KEY + ':illisible', 'du texte')
+    db.set(KEY + ':avant-migration', { plants: [null, { photos: [3, 'photo:keep'] }], gardens: 'x' })
+    db.set('photo:keep', new Blob(['k']))
+    const s = await freshStore()
+    await s.loadState()
+    await s.purgeOrphanPhotos()
+    expect(db.has('photo:keep')).toBe(true)
+    expect(db.has('photo:z')).toBe(false)
+  })
+
+  it('replaceData sur un blocage de lecture : copie des données illisibles d’abord, sinon le blocage reste', async () => {
+    const broken = { version: 2, gardens: 'oups' }
+    db.set(KEY, broken)
+    const s = await freshStore()
+    await s.loadState()
+    idb.failSet = new Error('plein')
+    s.replaceData({ gardens: [garden], plants: [], tasksDone: [] })
+    await vi.advanceTimersByTimeAsync(500)
+    expect(s.getStorageStatus().readFailed).toBe(true)
+    expect(s.getStorageStatus().writeError).toMatch(/copie/)
+    expect(db.get(KEY)).toEqual(broken)
+    idb.failSet = false
+    s.replaceData({ gardens: [garden], plants: [], tasksDone: [] })
+    await vi.advanceTimersByTimeAsync(500)
+    expect(db.get(KEY + ':illisible')).toEqual(broken)
+    expect(s.getStorageStatus().readFailed).toBe(false)
+  })
+
+  it('IndexedDB illisible remplacée par la copie de secours : l’original est copié avant réécriture', async () => {
+    const broken = { version: 2, gardens: 'oups', savedAt: 1 }
+    db.set(KEY, broken)
+    ls.set(KEY + ':miroir', JSON.stringify({ savedAt: 9, data: { version: 2, gardens: [garden], plants: [], tasksDone: [] } }))
+    const s = await freshStore()
+    await s.loadState()
+    await vi.advanceTimersByTimeAsync(300)
+    expect(s.getStorageStatus().readFailed).toBe(false)
+    expect(db.get(KEY + ':illisible')).toEqual(broken)
   })
 })

@@ -38,7 +38,7 @@ function storageKeys(storage: Storage): string[] {
   return out
 }
 
-/** Supprime les clés localStorage de l'appli (permajardin:*, caches météo pj-*, jetons Supabase sb-*). Renvoie les clés retirées. */
+/** Supprime les clés localStorage (ou sessionStorage) de l'appli : permajardin:*, réglages pj.*, caches météo pj-*, jetons Supabase sb-*. Renvoie les clés retirées. */
 export function clearLocalKeys(storage: Storage): string[] {
   const removed: string[] = []
   for (const k of storageKeys(storage)) {
@@ -94,6 +94,11 @@ export async function eraseAllData(opts: EraseOptions = {}): Promise<EraseReport
   await run('indexeddb', () => wipeLocalData())
   await run('localstorage', () => {
     clearLocalKeys(localStorage)
+    try {
+      if (typeof sessionStorage !== 'undefined') clearLocalKeys(sessionStorage)
+    } catch {
+      /* sessionStorage bloqué : il disparaît de toute façon à la fermeture de l'onglet */
+    }
   })
   await run('caches', async () => {
     if (typeof caches !== 'undefined') await clearPlaceCaches(caches)

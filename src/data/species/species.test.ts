@@ -4,10 +4,11 @@ import { SPECIES, SPECIES_BY_ID, matchesSpecies } from './index'
 import { ALIAS } from './alias'
 import { AVERTISSEMENTS } from './avertissements'
 import { AJOUTS } from './ajouts'
+import { ARBRES_HAIES } from './arbres-haies'
 
 describe('base espèces', () => {
-  it('contient au moins 160 espèces aux ids uniques', () => {
-    expect(SPECIES.length).toBeGreaterThanOrEqual(160)
+  it('contient au moins 173 espèces aux ids uniques', () => {
+    expect(SPECIES.length).toBeGreaterThanOrEqual(173)
     expect(new Set(SPECIES.map((s) => s.id)).size).toBe(SPECIES.length)
   })
 
@@ -146,12 +147,53 @@ describe('calendriers cohérents (audit du 27 octobre 2026)', () => {
     }
   })
 
-  it('une haie ne se taille jamais du 15 mars au 31 juillet (sauf avant le 15 mars : février)', () => {
+  it('abricotier et amandier se taillent en été (juillet-août, août-septembre), jamais en automne ni en hiver', () => {
+    const mois = (id: string) => SPECIES_BY_ID[id].taches.filter((r) => r.type === 'taille').flatMap((r) => r.months)
+    expect(mois('abricotier').every((m) => m >= 7 && m <= 8), 'abricotier').toBe(true)
+    expect(mois('amandier').every((m) => m >= 8 && m <= 9), 'amandier').toBe(true)
+  })
+
+  it('les haies évitent la taille du 15 mars au 31 juillet (recommandation OFB, pas une interdiction) et le disent', () => {
     const fautes: string[] = []
-    for (const s of AJOUTS.filter((x) => x.categorie === 'haie')) {
-      for (const t of s.taches.filter((r) => r.type === 'taille')) if (t.months.some((m) => m >= 3 && m <= 7)) fautes.push(`${s.id} [${t.months}]`)
+    for (const s of [...ARBRES_HAIES, ...AJOUTS].filter((x) => x.categorie === 'haie')) {
+      for (const t of s.taches.filter((r) => r.type === 'taille')) {
+        // Avril à juillet : toute la fenêtre. Une taille de haie qui y tombe doit demander de vérifier l'absence de nid.
+        if (t.months.some((m) => m >= 4 && m <= 7) && !/nid/i.test(t.howTo)) fautes.push(`${s.id} [${t.months}] sans mention des nids`)
+        // Et toute taille de haie rappelle la recommandation.
+        if (!/15 mars/.test(t.howTo)) fautes.push(`${s.id} [${t.months}] sans rappel de la période`)
+      }
     }
     expect(fautes).toEqual([])
+  })
+
+  it('ne présente pas la pause de nidification comme une interdiction générale', () => {
+    for (const s of SPECIES) {
+      for (const t of s.taches) {
+        expect(t.howTo, s.id).not.toMatch(/ne jamais tailler du 15 mars|ne taillez pas du 15 mars/i)
+        if (/15 mars/.test(t.howTo) && /31 juillet/.test(t.howTo)) expect(t.howTo, s.id).toMatch(/évitez|vérifiez/i)
+      }
+    }
+  })
+
+  it('les tailles de petits fruits et de laurier-sauce dans la période demandent de vérifier qu’aucun nid n’est occupé', () => {
+    for (const id of ['framboisier', 'groseillier', 'groseillier-maquereau', 'goji', 'vigne']) {
+      const dedans = SPECIES_BY_ID[id].taches.filter((r) => r.type === 'taille' && r.months.some((m) => m >= 4 && m <= 7))
+      expect(dedans.length, id).toBeGreaterThan(0)
+      for (const t of dedans) expect(t.howTo, `${id} [${t.months}]`).toMatch(/nid/)
+    }
+    const laurier = SPECIES_BY_ID['laurier-sauce'].taches.filter((r) => r.type === 'taille')
+    for (const t of laurier) expect(t.howTo).toMatch(/nid/)
+  })
+
+  it('ne donne aucun dosage de cuivre ni de bouillie bordelaise : prévention d’abord, étiquette en dernier recours', () => {
+    for (const s of SPECIES) {
+      for (const texte of [s.entretien, ...s.taches.map((t) => t.howTo)]) {
+        expect(texte, s.id).not.toMatch(/kg de cuivre/i)
+        expect(texte, s.id).not.toMatch(/\d+\s*g ?\/ ?L[^.]*bordelaise|bordelaise[^.]*\d+\s*g ?\/ ?L/i)
+        expect(texte, s.id).not.toMatch(/bouillie bordelaise \(20/i)
+        if (/bordelaise|cuivr/i.test(texte) && /pulv[ée]ris/i.test(texte)) expect(texte, s.id).toMatch(/étiquette/)
+      }
+    }
   })
 })
 
@@ -159,6 +201,16 @@ describe('ajouts', () => {
   it('apporte au moins 15 espèces nouvelles, dont rosier, hortensia, thuya, laurier-palme et chou rouge', () => {
     expect(AJOUTS.length).toBeGreaterThanOrEqual(15)
     for (const id of ['rosier', 'hortensia', 'thuya', 'laurier-palme', 'chou-rouge']) expect(SPECIES_BY_ID[id], id).toBeDefined()
+  })
+  it('contient les onze fiches de la vague 13 (haies, bulbes, légumes, aromatiques, citronnier)', () => {
+    for (const id of ['buis', 'ciboule', 'citronnier', 'if', 'marjolaine', 'narcisse', 'patisson', 'photinia', 'radis-noir', 'troene', 'tulipe']) expect(SPECIES_BY_ID[id], id).toBeDefined()
+    const a = (id: string) => (SPECIES_BY_ID[id].avertissements ?? []).map((x) => x.type)
+    for (const id of ['buis', 'if', 'troene', 'narcisse', 'tulipe', 'patisson', 'ciboule']) expect(a(id), id).toContain('toxique')
+    // Le buis est menacé par la pyrale : la lutte passe par le biocontrôle (Bacillus thuringiensis) et jamais par la chimie de synthèse.
+    const traitement = SPECIES_BY_ID.buis.taches.find((t) => t.type === 'traitement')
+    expect(traitement?.howTo).toMatch(/pyrale/i)
+    expect(traitement?.howTo).toMatch(/Bacillus thuringiensis/)
+    expect(traitement?.howTo).toMatch(/étiquette/)
   })
   it('chaque ajout a une fiche d’entretien et des couleurs valides', () => {
     for (const s of AJOUTS) {
@@ -185,6 +237,13 @@ describe('noms usuels (alias)', () => {
     expect(trouve('salade')).toEqual(expect.arrayContaining(['laitue', 'chicoree', 'mache', 'roquette']))
     expect(trouve('mûre')).toEqual(expect.arrayContaining(['murier-noir', 'ronce-sans-epines']))
     expect(trouve('laurier')).toEqual(expect.arrayContaining(['laurier-sauce', 'laurier-palme']))
+    expect(trouve('citron')).toContain('citronnier')
+    expect(trouve('pyrale')).toContain('buis')
+    expect(trouve('buxus')).toContain('buis')
+    expect(trouve('patisson')).toContain('patisson')
+    expect(trouve('radis noir')).toContain('radis-noir')
+    expect(trouve('jonquille')).toContain('narcisse')
+    expect(trouve('ciboule')).toEqual(expect.arrayContaining(['ciboule', 'ciboulette']))
     expect(trouve('')).toHaveLength(SPECIES.length)
     expect(trouve('zzzz')).toEqual([])
   })

@@ -26,6 +26,25 @@ describe('migrateState', () => {
     expect(ok({ gardens: [{ ...garden, minAbsC: '-14' }], plants: [] }).data.gardens[0].minAbsC).toBeUndefined()
   })
 
+  it('accepte le statut « recoltee » et refuse un statut inconnu', () => {
+    expect(ok({ gardens: [garden], plants: [{ ...plant, status: 'recoltee' }] }).data.plants[0].status).toBe('recoltee')
+    const r = ok({ gardens: [garden], plants: [{ ...plant, status: 'recoltée' }] })
+    expect(r.data.plants[0].status).toBe('en-place') // statut inconnu : corrigé, avec avertissement
+    expect(r.warnings.length).toBeGreaterThan(0)
+  })
+
+  it('garde la zone et la pluie du climat (champs plats) et écarte les valeurs absurdes', () => {
+    const g = ok({ gardens: [{ ...garden, climateZone: '8a', rainMmPerYear: 647 }], plants: [] }).data.gardens[0]
+    expect(g.climateZone).toBe('8a')
+    expect(g.rainMmPerYear).toBe(647)
+    expect(ok({ gardens: [{ ...garden, climateZone: 'Rusticité USDA 9B' }], plants: [] }).data.gardens[0].climateZone).toBe('9b')
+    for (const bad of [{ climateZone: 'zone 8', rainMmPerYear: -5 }, { climateZone: 8, rainMmPerYear: '650' }, { climateZone: '<script>', rainMmPerYear: 1e9 }]) {
+      const r = ok({ gardens: [{ ...garden, ...bad }], plants: [] }).data.gardens[0]
+      expect(r.climateZone).toBeUndefined()
+      expect(r.rainMmPerYear).toBeUndefined()
+    }
+  })
+
   it('accepte un export version 1 explicite', () => {
     expect(ok({ version: 1, exportedAt: 'x', gardens: [garden], plants: [plant], tasksDone: [] }).data.plants).toHaveLength(1)
   })

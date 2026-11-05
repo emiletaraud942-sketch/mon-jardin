@@ -14,7 +14,7 @@ import { downloadFullBackup, estimateFullBackup, formatMo, FULL_EXTENSION, HEAVY
 import { formatDay, frNumber } from '../../lib/format'
 import { friendlyError, type FriendlyError } from '../../lib/http'
 import { deletePhoto } from '../../lib/photos'
-import { getLoadWarnings, getState, replaceData, setActiveGarden, setState, updateGarden, useGardenPlants, useStorageStatus, useStore } from '../../lib/store'
+import { getLoadWarnings, getState, keepLocalSafetyCopy, replaceData, setActiveGarden, setState, updateGarden, useGardenPlants, useStorageStatus, useStore } from '../../lib/store'
 import { type StateData } from '../../lib/migrate'
 import { readBackupFile } from '../../lib/security/import'
 import { getTheme, setTheme, THEME_LABEL, type Theme } from '../../lib/theme'
@@ -235,6 +235,11 @@ function ImportDialog({ pending, onClose, onDone }: { pending: PendingImport; on
       onCancel={onClose}
       onConfirm={() => {
         void (async () => {
+          // Copie de sécurité de l'état actuel AVANT tout remplacement ; si elle échoue, rien n'est touché.
+          if (!(await keepLocalSafetyCopy())) {
+            onDone('Impossible de garder une copie de sécurité de vos données actuelles (espace plein ou bloqué). Rien n’a été remplacé : faites une sauvegarde, puis réessayez.')
+            return
+          }
           let photoNote = ''
           if (pending.photos?.length) {
             try {
@@ -246,7 +251,7 @@ function ImportDialog({ pending, onClose, onDone }: { pending: PendingImport; on
               return
             }
           }
-          replaceData(pending.data)
+          replaceData(pending.data, { keepPhotos: true })
           onDone(`Sauvegarde reprise : ${describeCounts(countOf(pending.data))}.${photoNote}`)
         })()
       }}
