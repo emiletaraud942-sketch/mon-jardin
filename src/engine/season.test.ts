@@ -85,4 +85,7 @@ describe('seasonSummary', () => {
     expect(seasonSummary([], by, 'ete', NOW)).toBe('En été : aucune plante en place.')
     expect(seasonSummary([plant('pommier', { status: 'projet' }), plant('poirier', { status: 'mort' })], by, 'ete', NOW)).toBe('En été : aucune plante en place.')
   })
+  it('une plante récoltée ne compte plus comme vivante', () => {
+    expect(seasonSummary([plant('tomate', { status: 'recoltee' })], by, 'ete', NOW)).toBe('En été : aucune plante en place.')
+  })
 })

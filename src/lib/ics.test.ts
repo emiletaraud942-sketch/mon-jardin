@@ -10,7 +10,7 @@ const NOW = new Date(Date.UTC(2026, 9, 27, 12, 0, 0))
 
 describe('icsEscape / icsFold', () => {
   it('échappe virgule, point-virgule, antislash et retour à la ligne', () => {
-    expect(icsEscape('a,b;c\\d\ne')).toBe('a\\,b\;c\\\\d\\ne')
+    expect(icsEscape('a,b;c\\d\ne')).toBe('a\\,b\\;c\\\\d\\ne')
   })
   it('coupe à 75 octets, sans couper un caractère multi-octets', () => {
     const long = 'é'.repeat(100)
@@ -31,7 +31,7 @@ describe('buildIcs', () => {
     expect(ics.startsWith('BEGIN:VCALENDAR\r\nVERSION:2.0\r\n')).toBe(true)
     expect(ics.endsWith('END:VCALENDAR\r\n')).toBe(true)
     expect(ics).not.toMatch(/[^\r]\n/)
-    expect(ics).toContain('X-WR-CALNAME:Jardin : Mon jardin\; test')
+    expect(ics).toContain('X-WR-CALNAME:Jardin : Mon jardin\\; test')
   })
   it('crée des événements « journée entière » répétés chaque année', () => {
     expect(events.length).toBeGreaterThan(3)
@@ -55,6 +55,13 @@ describe('buildIcs', () => {
     const vide = buildIcs([plant('p9', 'pommier', 'mort'), plant('p8', 'inconnue')], SPECIES_BY_ID, { gardenName: 'Vide', year: 2026, now: NOW })
     expect(vide).not.toContain('BEGIN:VEVENT')
     expect(vide).toContain('END:VCALENDAR')
+  })
+  it('ignore une plante récoltée et une annuelle qui a fini sa saison', () => {
+    const recoltee = buildIcs([plant('p7', 'pommier', 'recoltee')], SPECIES_BY_ID, { gardenName: 'R', year: 2026, now: NOW })
+    expect(recoltee).not.toContain('BEGIN:VEVENT')
+    const vieille: Plant = { ...plant('p6', 'tomate'), plantedAt: '2024-05-01' }
+    const fini = buildIcs([vieille], SPECIES_BY_ID, { gardenName: 'A', year: 2026, now: NOW, today: new Date(2026, 9, 27) })
+    expect(fini).not.toContain('BEGIN:VEVENT')
   })
   it('ne contient aucune adresse, coordonnée ni identifiant de plante', () => {
     expect(ics).not.toMatch(/\bp1\b|\bg1\b|GEO:|LOCATION:/)

@@ -5,6 +5,10 @@ import { ConfirmModal } from '../../components/ConfirmModal'
 import { ErrorNote, TechDetails } from '../../components/ErrorNote'
 import { Fold } from '../../components/Fold'
 import { Icon } from '../../components/Icon'
+import { SafetyCopyButton } from '../../components/StorageBanner'
+import { DiagnosticButton } from '../../components/DiagnosticButton'
+import { TextSizeButton } from '../../components/TextSizeButton'
+import { climateSummary } from '../../engine/climate'
 import { Segmented } from '../../components/Segmented'
 import { SavedNote, useFlash } from '../../components/useFlash'
 import { backupCurrentState, canShareFile, exportCurrentState, lastExportAt, lastExportName, REMIND_EVERY_DAYS, saveBackupBlob, saveOutcomeText, shareFile, type SaveOutcome } from '../../lib/backup'
@@ -18,7 +22,7 @@ import { getLoadWarnings, getState, keepLocalSafetyCopy, replaceData, setActiveG
 import { type StateData } from '../../lib/migrate'
 import { readBackupFile } from '../../lib/security/import'
 import { getTheme, setTheme, THEME_LABEL, type Theme } from '../../lib/theme'
-import { getTextSize, setTextSize, TEXT_SIZE_LABEL, TEXT_SIZES, type TextSize } from '../../lib/textSize'
+import { setTextSize, useTextSize, TEXT_SIZE_LABEL, TEXT_SIZES } from '../../lib/textSize'
 import { showToast } from '../../lib/toast'
 import { restartOnboarding, setUi, useUi } from '../../lib/ui'
 import { doyToLabel } from '../../lib/weather'
@@ -90,6 +94,7 @@ function GardenInfo({ garden }: { garden: Garden }) {
   }
 
   const hasPhotos = plants.some((p) => p.photos.length > 0)
+  const climate = climateSummary(garden)
   const terrain = [garden.areaM2 ? `${frNumber(garden.areaM2, 0)} m²` : '', garden.altitudeM != null ? `altitude ${frNumber(garden.altitudeM, 0)} m` : ''].filter(Boolean).join(' · ')
 
   return (
@@ -131,6 +136,7 @@ function GardenInfo({ garden }: { garden: Garden }) {
           Gel : {garden.lastFrostDoy ? `dernières gelées vers le ${doyToLabel(garden.lastFrostDoy)}` : 'dates inconnues'}
           {garden.firstFrostDoy ? `, premières vers le ${doyToLabel(garden.firstFrostDoy)}` : ''}
         </li>
+        {climate && <li>{climate}</li>}
         <li>
           {plants.length} plante{plants.length > 1 ? 's' : ''}
         </li>
@@ -271,7 +277,7 @@ function ImportDialog({ pending, onClose, onDone }: { pending: PendingImport; on
           </ul>
         </div>
       )}
-      {hasCurrent && <p className="small muted">Vos données actuelles seront remplacées. Cela ne peut pas être annulé.</p>}
+      {hasCurrent && <p className="small muted">Vos données actuelles seront remplacées. Une copie de sécurité reste sur cet appareil.</p>}
     </ConfirmModal>
   )
 }
@@ -419,10 +425,14 @@ function Backup() {
         </div>
       )}
       <details className="np-details">
-        <summary>Détails</summary>
+        <summary>Détails et copie de sécurité</summary>
         <p className="small muted">Gardez-le en lieu sûr : ordinateur, clé USB, ou e-mail à vous-même.</p>
         <p className="small muted">La sauvegarde simple n’a pas les photos : elles restent sur cet appareil. « Sauvegarde avec photos » les met dans le fichier, qui est plus lourd. « Reprendre une sauvegarde » lit les deux.</p>
         {persistent === false && <p className="small muted">Si l’espace manque, cet appareil peut effacer vos données. Une sauvegarde les protège.</p>}
+        <p className="small muted">Avant de remplacer vos données, l’appli en garde une copie sur cet appareil. Vous pouvez la télécharger.</p>
+        <div className="row">
+          <SafetyCopyButton className="btn" />
+        </div>
       </details>
       {pending && (
         <ImportDialog
@@ -655,7 +665,7 @@ function Sync() {
             void pull()
           }}
         >
-          <p>Les jardins et plantes de cet appareil seront remplacés par ceux de la copie en ligne. Cela ne peut pas être annulé.</p>
+          <p>Les jardins et plantes de cet appareil seront remplacés par ceux de la copie en ligne. Une copie de sécurité reste sur cet appareil.</p>
         </ConfirmModal>
       )}
       {asking && (
@@ -676,7 +686,7 @@ function Sync() {
 
 function ReadingCard() {
   const [theme, setThemeState] = useState<Theme>(getTheme())
-  const [size, setSizeState] = useState<TextSize>(getTextSize())
+  const size = useTextSize()
   const [saved, flash] = useFlash()
   return (
     <div className="card">
@@ -692,7 +702,6 @@ function ReadingCard() {
             options={TEXT_SIZES.map((t) => ({ id: t, label: TEXT_SIZE_LABEL[t] }))}
             onChange={(t) => {
               setTextSize(t)
-              setSizeState(t)
               flash()
             }}
           />
@@ -764,6 +773,9 @@ function AdviceCard({ garden }: { garden: Garden }) {
         <button className="btn" aria-haspopup="dialog" onClick={() => setHelp(true)}>
           Besoin d’aide ?
         </button>
+        <div className="stack diag-box">
+          <DiagnosticButton />
+        </div>
       </div>
       {help && <HelpSheet tab="accueil" onClose={() => setHelp(false)} />}
     </div>
@@ -801,6 +813,9 @@ export function SettingsPage({ garden }: { garden: Garden }) {
   return (
     <div className="page">
       <h1>Mon compte et réglages</h1>
+      <div className="settings-textsize">
+        <TextSizeButton />
+      </div>
       <div className="grid cols-2" style={{ alignItems: 'start' }}>
         <div className="stack" style={{ gap: 12 }}>
           <GardensCard garden={garden} adding={adding} setAdding={setAdding} addRef={addRef} />

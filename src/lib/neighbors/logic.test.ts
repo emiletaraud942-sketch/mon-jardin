@@ -402,6 +402,7 @@ describe('jardins partagés (v8)', () => {
       { speciesId: 'pommier', status: 'en-place' },
       { speciesId: 'cerisier', status: 'projet' },
       { speciesId: 'poirier', status: 'mort' },
+      { speciesId: 'tomate', status: 'recoltee' },
     ]
     expect(speciesToShare(plants)).toEqual(['pommier', 'romarin'])
   })

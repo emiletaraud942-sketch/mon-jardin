@@ -116,7 +116,7 @@ export function seasonSummary(plants: Plant[], speciesById: Record<string, Speci
   const at = seasonDate(choice, now)
   const counts = new Map<Phase, number>()
   for (const p of plants) {
-    if (p.status === 'mort' || p.status === 'projet') continue
+    if (p.status === 'mort' || p.status === 'projet' || p.status === 'recoltee') continue // une plante récoltée n'est plus en place
     const st = stateAtSeason(p, speciesById[p.speciesId], now, at)
     const ph = phaseOf(st)
     counts.set(ph, (counts.get(ph) ?? 0) + 1)

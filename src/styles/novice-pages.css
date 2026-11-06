@@ -315,3 +315,35 @@
 .catalogue-filters {
   gap: 12px;
 }
+
+/* Hors de France métropolitaine : les conseils ne sont pas calibrés (MetroNote). */
+.metro-note {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--muted-2, var(--muted));
+  font-size: 0.875rem;
+}
+
+/* Annuelle finie : bouton « Marquer comme récoltée » et carte « Ces plantes ont fini leur saison ». */
+.harvest-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+.harvest-box p {
+  margin: 0;
+}
+.harvest-box .btn,
+.season-over .btn {
+  min-height: var(--tap);
+}
+.season-over .list li {
+  min-height: var(--tap);
+  align-items: center;
+}

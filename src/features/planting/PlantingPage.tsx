@@ -11,6 +11,9 @@ import { aspectLabel, slopeAt } from '../../lib/terrain'
 import { doyToLabel } from '../../lib/weather'
 import { obstaclesFor, seasonalSunHours } from '../../engine/sun'
 import { recommendSpecies } from '../../engine/planting'
+import { plainReason } from '../../engine/plain'
+import { RiskNotes } from '../../components/RiskNotes'
+import { MetroNote } from '../../components/MetroNote'
 import { MONTH_NAMES, whatToSowNow } from '../../engine/calendar'
 import type { Category, Garden, Month, Species, XY } from '../../types'
 import { placePlant } from '../map/placing'
@@ -156,7 +159,8 @@ function BestForSpot({ garden }: { garden: Garden }) {
                   <span aria-hidden>{label.icon}</span> {label.text}
                 </span>
               </div>
-              {r.warnings.length > 0 && <div className="small warn-text">Attention : {r.warnings.join(' · ')}</div>}
+              <RiskNotes species={r.species} />
+              {r.warnings.length > 0 && <div className="small warn-text">Attention : {r.warnings.map(plainReason).join(' · ')}</div>}
               <div className="row" style={{ marginTop: 6 }}>
                 <button className="btn" onClick={() => placePlant(garden, r.species.id, spot, 'projet', { tab: 'carte' })}>
                   Prévoir ici
@@ -166,10 +170,10 @@ function BestForSpot({ garden }: { garden: Garden }) {
                 <summary>Pourquoi ?</summary>
                 <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>
                   {pros.map((f) => (
-                    <li key={'p' + f.label}>Pour : {f.label}</li>
+                    <li key={'p' + f.label}>Pour : {plainReason(f.label)}</li>
                   ))}
                   {cons.map((f) => (
-                    <li key={'c' + f.label}>Contre : {f.label}</li>
+                    <li key={'c' + f.label}>Contre : {plainReason(f.label)}</li>
                   ))}
                   {pros.length + cons.length === 0 && <li>Rien de particulier.</li>}
                 </ul>
@@ -240,6 +244,7 @@ export function PlantingPage({ garden }: { garden: Garden }) {
   return (
     <div className="page np-page">
       <h1>Où planter ?</h1>
+      <MetroNote garden={garden} />
       <ModelHint garden={garden} />
       <div className="grid cols-2" style={{ alignItems: 'start' }}>
         <BestForSpot garden={garden} />

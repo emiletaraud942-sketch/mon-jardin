@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Fold } from '../../components/Fold'
+import { useBackLayer } from '../../lib/ui'
 import { Tabs, TabPanel } from '../../components/Tabs'
 import { getMyOrganizer, getProfile, getSession, onSessionChange, resyncPushDevice } from '../../lib/neighbors/api'
 import { notifyNewsChanged, writeVisit, type NewsTarget } from '../../lib/neighbors/news'
@@ -172,6 +173,8 @@ function Main({ userId, profile, email, garden, online, onProfile }: { userId: s
   // Un clic sur une alerte « nouveau message » ouvre directement les messages.
   const [section, setSection] = useState<Section>(() => (consumeOpenMessages() ? 'messages' : 'accueil'))
   const [view, setView] = useState<View>({ k: 'tabs' })
+  // Retour (Android) ferme la vue ouverte et revient aux onglets.
+  useBackLayer(view.k !== 'tabs', () => setView({ k: 'tabs' }))
   const [kind, setKind] = useState<KindFilter>('all')
   const [category, setCategory] = useState<CategoryFilter>('all')
   const [radius, setRadius] = useState(readRadius)

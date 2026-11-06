@@ -355,13 +355,13 @@ export function localDateTimeToIso(date: string, time: string): string | null {
 export const SPECIES_ID = /^[a-z0-9-]{2,40}$/
 
 /**
- * Liste à partager : les espèces des plantes en place (ni projets ni plantes mortes), sans doublon, triées, limitées à 80.
+ * Liste à partager : les espèces des plantes en place (ni projets, ni plantes mortes, ni plantes récoltées), sans doublon, triées, limitées à 80.
  * Jamais de position, de nombre ni de nom personnel : seulement l'identifiant de la fiche.
  */
 export function speciesToShare(plants: { speciesId: string; status: string }[], known: (id: string) => boolean = () => true): string[] {
   const ids = new Set<string>()
   for (const p of plants) {
-    if (p.status === 'projet' || p.status === 'mort') continue
+    if (p.status === 'projet' || p.status === 'mort' || p.status === 'recoltee') continue
     if (SPECIES_ID.test(p.speciesId) && known(p.speciesId)) ids.add(p.speciesId)
   }
   return [...ids].sort().slice(0, L.gardenSpeciesMax)

@@ -5,6 +5,7 @@ import { INITIAL_STEPS, type Step } from '../settings/createGarden'
 import { StepList } from '../settings/GardenCreator'
 import { createDemoGarden } from './create'
 import { RestoreAccount } from './RestoreAccount'
+import { TextSizeButton } from '../../components/TextSizeButton'
 
 const syncConfigured = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY
 
@@ -82,6 +83,7 @@ export function Welcome({ onStart }: { onStart: () => void }) {
   return (
     <div className="parcours welcome">
       <div className="parcours-body welcome-body" onTouchStart={(e) => (touchX.current = e.touches[0].clientX)} onTouchEnd={(e) => swipe(e.changedTouches[0].clientX)}>
+        <TextSizeButton />
         <h1 tabIndex={-1}>{slide.title}</h1>
         <p className="welcome-kicker">{slide.kicker}</p>
         <Art i={i} />

@@ -4,6 +4,7 @@ import { CATEGORY_LABEL, SUN_LABEL } from '../../data/labels'
 import { filterSpecies } from '../../components/SpeciesPicker'
 import { RiskBadges } from '../../components/RiskNotes'
 import { BottomSheet, type SheetSnap } from '../../components/BottomSheet'
+import { MetroNote } from '../../components/MetroNote'
 import { useIsMobile } from '../../components/useMedia'
 import { setUi, useUi } from '../../lib/ui'
 import type { Category, Garden, Sun } from '../../types'
@@ -79,6 +80,7 @@ export function CataloguePage({ garden }: { garden: Garden }) {
   return (
     <div className="page np-page plants-ui">
       <h1>Catalogue des plantes ({list.length})</h1>
+      <MetroNote garden={garden} />
       <div className="row" style={{ margin: '8px 0 16px' }}>
         <input
           className="input"

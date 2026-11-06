@@ -13,6 +13,8 @@ import { openScan } from '../scan/scanUi'
 import { closePlantSheet, openSpecies, setUi, startMoving, startPlacing } from '../../lib/ui'
 import { plantAgeYears, plantSizeAt } from '../../engine/growth'
 import { companionReport, legalDistance } from '../../engine/planting'
+import { canMarkHarvested } from '../../engine/annuelles'
+import { markHarvested } from './harvest'
 import type { Garden, Plant, PlantStatus } from '../../types'
 import { Fragment, useEffect, useState, type ComponentType, type ReactNode } from 'react'
 import { MeasureSection } from './MeasureSection'
@@ -59,6 +61,7 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
   const now = new Date()
   const size = species ? plantSizeAt(plant, species, now) : undefined
   const report = species ? companionReport(plant, plants, SPECIES_BY_ID) : { amis: [], ennemis: [] }
+  const harvest = canMarkHarvested(plant, species, now)
   const legal = species ? legalDistance(species, plant.position, garden.parcel) : undefined
 
   const [name, setName] = useState(plant.customName ?? '')
@@ -128,12 +131,14 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
     <div className="grid cols-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 11rem), 1fr))', gap: 8 }}>
       <label className="field">
         <span>Où en est-elle ?</span>
-        <select className="input" value={plant.status} onChange={(e) => updatePlant(plant.id, { status: e.target.value as PlantStatus })}>
-          {Object.entries(STATUS_LABEL).map(([k, v]) => (
-            <option key={k} value={k}>
-              {v}
-            </option>
-          ))}
+        <select className="input" value={plant.status} onChange={(e) => (e.target.value === 'recoltee' ? markHarvested([plant], plantName(plant)) : updatePlant(plant.id, { status: e.target.value as PlantStatus }))}>
+          {Object.entries(STATUS_LABEL)
+            .filter(([k]) => k !== 'recoltee' || plant.status === 'recoltee' || harvest.ok)
+            .map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
         </select>
       </label>
       <label className="field">
@@ -251,6 +256,18 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
       {nameField}
       {!fiche && now_}
       {legal && <PositionNote legal={legal} />}
+
+      {harvest.ok && (
+        <div className="harvest-box">
+          <button className="btn" onClick={() => markHarvested([plant], plantName(plant))} aria-describedby={'harvest-why-' + plant.id}>
+            <Icon name="check" size={16} /> Marquer comme récoltée
+          </button>
+          <p className="small muted" id={'harvest-why-' + plant.id}>
+            {harvest.reason}
+          </p>
+        </div>
+      )}
+      {plant.status === 'recoltee' && <p className="small muted">Plante récoltée : elle ne génère plus de tâches. Changez son état dans « Détails » pour la remettre en place.</p>}
 
       {myTasks.length > 0 && (
         <div>

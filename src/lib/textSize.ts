@@ -1,5 +1,7 @@
 // Taille du texte choisie par l'utilisateur (Réglages). Mémorisée sur l'appareil ; appliquée à <html>
 // par un attribut : toute l'interface est en `rem`, elle suit.
+import { useSyncExternalStore } from 'react'
+
 export type TextSize = 'normal' | 'grand' | 'tres-grand'
 export const TEXT_SIZES: TextSize[] = ['normal', 'grand', 'tres-grand']
 export const TEXT_SIZE_LABEL: Record<TextSize, string> = { normal: 'Normal', grand: 'Grand', 'tres-grand': 'Très grand' }
@@ -24,6 +26,20 @@ export function applyTextSize(size: TextSize) {
   else root.setAttribute('data-text-size', size)
 }
 
+const CHANGE_EVENT = 'permajardin:text-size-change' // nom d'événement, pas une clé de stockage
+
+/** La taille du texte vue par l'interface : suit le bouton « Agrandir le texte » comme le choix de Réglages. */
+export function useTextSize(): TextSize {
+  return useSyncExternalStore(
+    (cb) => {
+      window.addEventListener(CHANGE_EVENT, cb)
+      return () => window.removeEventListener(CHANGE_EVENT, cb)
+    },
+    getTextSize,
+    () => 'normal' as TextSize,
+  )
+}
+
 export function setTextSize(size: TextSize) {
   try {
     if (size === 'normal') localStorage.removeItem(KEY)
@@ -32,6 +48,7 @@ export function setTextSize(size: TextSize) {
     /* mémorisation impossible : le choix vaut pour cette session */
   }
   applyTextSize(size)
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(CHANGE_EVENT))
 }
 
 export function applyStoredTextSize() {

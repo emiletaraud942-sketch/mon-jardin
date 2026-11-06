@@ -7,7 +7,7 @@ import { yearPlan } from '../engine/tasks'
 
 /** Échappe un texte de propriété iCalendar (RFC 5545 §3.3.11). */
 export function icsEscape(s: string): string {
-  return s.replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n')
+  return s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n')
 }
 
 /** Coupe une ligne à 75 octets UTF-8 (RFC 5545 §3.1) : les lignes suivantes commencent par une espace. */
@@ -55,13 +55,15 @@ export interface IcsOptions {
   /** Année du premier événement (les suivants se répètent chaque année). */
   year: number
   now?: Date
+  /** Jour de référence du plan (les annuelles qui ont fini leur saison sont écartées). Défaut : `now`. */
+  today?: Date
 }
 
 /** Texte .ics du calendrier de l'année pour ces plantes. Vide de toute tâche : un calendrier sans événement. */
 export function buildIcs(plants: Plant[], speciesById: Record<string, Species>, opts: IcsOptions): string {
   const now = opts.now ?? new Date()
   const stamp = `${now.getUTCFullYear()}${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}T${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}${pad(now.getUTCSeconds())}Z`
-  const plan = yearPlan(plants, speciesById)
+  const plan = yearPlan(plants, speciesById, opts.today ?? now)
   // (type, espèce) → mois et nombre de plantes
   const byTask = new Map<string, { type: TaskType; speciesId: string; months: Month[]; count: number }>()
   for (const m of plan) {

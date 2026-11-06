@@ -11,6 +11,9 @@ import { showToast } from './lib/toast'
 import { hasConsent } from './lib/consent'
 import { neighborsEnabled } from './lib/neighbors/enabled'
 import { setUi } from './lib/ui'
+import { installDiagnostics } from './lib/diagnostics'
+
+installDiagnostics()
 
 applyStoredTheme()
 applyStoredTextSize()

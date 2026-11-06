@@ -4,6 +4,7 @@ import { addPlant, getState, removePlant, updatePlant } from '../../lib/store'
 import { dismissToast, showToast } from '../../lib/toast'
 import { recordAction, recordWithToast, undoWithToast } from '../../lib/history'
 import { askPurchaseEnabled } from '../../lib/purchase'
+import { warmWord } from '../../lib/progress'
 import { getUi, setUi, type Tab } from '../../lib/ui'
 import { plantName } from '../plants/PlantPanel'
 import { uid } from '../../lib/geo'
@@ -86,7 +87,7 @@ export function placePlant(
     })
   } else {
     const placed = getState().plants.find((p) => p.id === id)
-    if (placed) recordWithToast(placementEntry(placed), `« ${name} » placée.`)
+    if (placed) recordWithToast(placementEntry(placed), `« ${name} » placée.${warmWord(getState().plants, garden.id)}`)
     // Comment l'avez-vous achetée ? Une fois, juste après le placement ; passable, et désactivable.
     if (placed && askPurchaseEnabled()) setUi({ purchasePlantId: id })
   }

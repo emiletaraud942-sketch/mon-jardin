@@ -14,9 +14,11 @@ import { enableNotifications, notificationsSupported } from "../../lib/notify";
 import { showToast } from "../../lib/toast";
 import { downloadBlob } from "../../lib/backup";
 import { buildIcs } from "../../lib/ics";
-import { setUi } from "../../lib/ui";
+import { openHelp, setUi } from "../../lib/ui";
 import { MONTH_NAMES } from "../../engine/calendar";
 import { waterBalance, yearPlan } from "../../engine/tasks";
+import { seasonOverPlants } from "../../engine/annuelles";
+import { markHarvested } from "../plants/harvest";
 import type {
   Garden,
   GeneratedTask,
@@ -260,11 +262,12 @@ function TaskItem({
 
 function YearPlan({ garden }: { garden: Garden }) {
   const plants = useGardenPlants(garden.id);
-  const plan = yearPlan(plants, SPECIES_BY_ID);
-  const current = new Date().getMonth() + 1;
+  const today = new Date();
+  const plan = yearPlan(plants, SPECIES_BY_ID, today);
+  const current = today.getMonth() + 1;
   const hasTasks = plan.some((m) => m.tasks.length > 0);
   function exportAgenda() {
-    const text = buildIcs(plants, SPECIES_BY_ID, { gardenName: garden.name, year: new Date().getFullYear() });
+    const text = buildIcs(plants, SPECIES_BY_ID, { gardenName: garden.name, year: today.getFullYear(), today });
     downloadBlob(new Blob([text], { type: "text/calendar;charset=utf-8" }), "calendrier-jardin.ics");
     showToast({ message: "Calendrier enregistré. Ouvrez le fichier pour l’ajouter à votre agenda." });
   }
@@ -331,6 +334,7 @@ export function TasksPage({ garden }: { garden: Garden }) {
     .filter((d) => Date.now() - new Date(d.doneAt).getTime() < 14 * 86400000)
     .slice(-10)
     .reverse();
+  const finished = useMemo(() => seasonOverPlants(plants, SPECIES_BY_ID, new Date()), [plants]);
   const aside = useMemo(() => activeChoices(allDone, garden.id, new Date()), [allDone, garden.id]);
 
   // Retour visuel : la tâche validée ne disparaît pas d'un coup, elle reste quelques secondes en vert, avec « Annuler ».
@@ -359,6 +363,7 @@ export function TasksPage({ garden }: { garden: Garden }) {
         big
         compact
         home
+        onHelp={openHelp}
         kicker={
           view === "semaine" ? `Semaine du ${mondayLabel()}` : "Mois par mois"
         }
@@ -465,6 +470,26 @@ export function TasksPage({ garden }: { garden: Garden }) {
         )}
       </div>
       <div className="afaire-extra">
+        {view === "semaine" && finished.length > 0 && (
+          <div className="card season-over">
+            <h3>Ces plantes ont fini leur saison</h3>
+            <p className="small muted">Elles ne génèrent plus de tâches. Marquez-les récoltées quand elles sont arrachées.</p>
+            <ul className="list small">
+              {finished.slice(0, 8).map((p) => (
+                <li key={p.id} className="row" style={{ justifyContent: "space-between" }}>
+                  <span>{p.customName || SPECIES_BY_ID[p.speciesId]?.nomCommun || "Plante"}</span>
+                  <button className="btn small ghost" onClick={() => markHarvested([p], p.customName || SPECIES_BY_ID[p.speciesId]?.nomCommun || "Plante")}>
+                    Récoltée
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {finished.length > 8 && <p className="small muted">+ {finished.length - 8} autres</p>}
+            <button className="btn" onClick={() => markHarvested(finished, "Fin de saison")}>
+              <Icon name="check" size={16} /> Tout marquer récolté ({finished.length})
+            </button>
+          </div>
+        )}
         {view === "semaine" && weather && <WeatherMore weather={weather} />}
         {view === "semaine" && aside.length > 0 && (
           <div className="card">
