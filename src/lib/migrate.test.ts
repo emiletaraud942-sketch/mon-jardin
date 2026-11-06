@@ -361,6 +361,12 @@ describe('points de vue en photos (panoramas)', () => {
     expect(withPanos([pano('p1', { northOk: true })])![0]).not.toHaveProperty('northOk')
   })
 
+  it('garde le poids noté à la prise (arrondi) et ignore une valeur absurde', () => {
+    expect(withPanos([pano('p1', { bytes: 2_500_000.4 })])![0].bytes).toBe(2_500_000)
+    expect(withPanos([pano('p1', { bytes: 0 })])![0].bytes).toBe(0)
+    for (const bad of [-1, '12', null, Infinity, 1e12]) expect(withPanos([pano('p1', { bytes: bad })])![0]).not.toHaveProperty('bytes')
+  })
+
   it('un champ panoramas qui n’est pas une liste est retiré', () => {
     const r = ok({ gardens: [{ ...garden, panoramas: { a: 1 } }], plants: [] })
     expect(r.data.gardens[0]).not.toHaveProperty('panoramas')

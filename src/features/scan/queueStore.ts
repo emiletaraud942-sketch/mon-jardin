@@ -11,7 +11,6 @@ import { applyResults, dueItems, markFailed, markNeedsConsent, sanitizeQueue, ty
 // Seule la photo part (vers /api/identify), jamais la position.
 
 let queue: Queue = []
-let loaded = false
 let loading: Promise<void> | undefined
 let version = 0
 const listeners = new Set<() => void>()
@@ -42,14 +41,12 @@ export function loadQueue(): Promise<void> {
     })
     .catch((e) => console.warn('File d’attente du scan illisible', e))
     .finally(() => {
-      loaded = true
       emit()
     })
   return loading
 }
 
 export const getQueue = () => queue
-export const isQueueLoaded = () => loaded
 
 /** Applique un changement à la file, l'enregistre et prévient l'interface. */
 export function updateQueue(f: (q: Queue) => Queue) {

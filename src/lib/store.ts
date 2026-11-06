@@ -661,10 +661,6 @@ export function removeTaskDoneById(id: string) {
   setState((s) => ({ tasksDone: s.tasksDone.filter((t) => t.id !== id) }))
 }
 
-export function unmarkTask(gardenId: string, taskKey: string) {
-  setState((s) => ({ tasksDone: s.tasksDone.filter((t) => !(t.gardenId === gardenId && t.taskKey === taskKey)) }))
-}
-
 /**
  * Remplace tout l'état (import d'une sauvegarde ou synchro ; données déjà passées par `migrateState`).
  * Action explicite : lève aussi le blocage d'écriture après un échec de lecture, mais seulement APRÈS une copie des

@@ -13,3 +13,14 @@ describe('message d’erreur météo', () => {
     vi.unstubAllGlobals()
   })
 })
+
+import { canShare } from './useTasks'
+
+describe('partage des tâches', () => {
+  it('réutilise le calcul de l’appli seulement pour le même jardin', () => {
+    expect(canShare('g1', 'g1')).toBe(true)
+    expect(canShare('g1', 'g2')).toBe(false)
+    expect(canShare(undefined, undefined)).toBe(false)
+    expect(canShare('g1', undefined)).toBe(false)
+  })
+})

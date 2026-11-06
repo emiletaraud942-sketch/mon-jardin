@@ -49,12 +49,14 @@ export const HELP: Record<Tab, HelpContent> = {
       '« Identifier » reconnaît une plante grâce à une photo.',
       'Touchez une plante pour ouvrir sa fiche et ajouter des photos.',
       '« Voir sur la carte » montre où elle se trouve.',
+      '« Liste de courses et de semis » regroupe les plantes prévues, avec la bonne période.',
     ],
   },
   entretien: {
     title: 'À faire',
     steps: [
-      'La liste dit quoi faire cette semaine : tailler, désherber, arroser, récolter.',
+      'La liste dit quoi faire cette semaine : tailler, désherber, arroser, récolter. « Urgent » passe en premier.',
+      '« Voir tout » montre toutes les tâches et celles mises de côté.',
       'La météo et la saison sont prises en compte.',
       'Cochez une tâche quand elle est faite. « Annuler » la remet dans la liste.',
       'Touchez le nom d’une plante pour la voir sur la carte.',
@@ -74,10 +76,11 @@ export const HELP: Record<Tab, HelpContent> = {
   catalogue: {
     title: 'Le catalogue',
     steps: [
-      'Cherchez une plante par son nom ou son type.',
+      'Cherchez une plante par son nom ou son type. Les pastilles trient : comestible, mellifère, ombre, facile, ce mois-ci.',
       'Sa fiche dit le soleil, l’eau, le sol et les bonnes plantes voisines.',
       'Le calendrier montre quand semer, planter et récolter.',
       'Le bouton sous la fiche la pose sur la carte de votre jardin.',
+      '« Retour à la liste » ferme la fiche.',
     ],
   },
   reglages: {

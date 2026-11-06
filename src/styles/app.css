@@ -1553,20 +1553,21 @@ label.field > span {
   justify-content: flex-start;
 }
 /* Boutons + et − de MapLibre : 44 px, bien séparés. */
-.maplibregl-ctrl-top-right {
+/* Préfixe .maplibregl-map : la feuille de MapLibre arrive après la nôtre (chargée avec la carte) et gagnerait à égalité. */
+.maplibregl-map .maplibregl-ctrl-top-right {
   top: 4px;
   right: 4px;
 }
-.maplibregl-ctrl-group button {
+.maplibregl-map .maplibregl-ctrl-group button {
   width: var(--tap);
   height: var(--tap);
 }
-.maplibregl-ctrl-group {
+.maplibregl-map .maplibregl-ctrl-group {
   border-radius: 22px !important;
   overflow: hidden;
   box-shadow: var(--shadow-float) !important;
 }
-.maplibregl-ctrl-group button + button {
+.maplibregl-map .maplibregl-ctrl-group button + button {
   border-top: 1px solid var(--border-strong);
 }
 .map-top .legend {
@@ -1597,7 +1598,8 @@ label.field > span {
 .data-banner .btn {
   flex: none;
 }
-.map {
+.map,
+.maplibregl-map.map {
   position: absolute;
   inset: 0;
 }
@@ -1662,7 +1664,7 @@ label.field > span {
   opacity: 0.6;
   border-style: dashed;
 }
-.maplibregl-popup-content {
+.maplibregl-map .maplibregl-popup-content {
   background: var(--surface);
   color: var(--text);
   font-family: var(--font-body);
@@ -2813,7 +2815,8 @@ dialog.modal.full .modal-body {
   display: flex;
   flex-direction: column;
 }
-.scan-map {
+.scan-map,
+.maplibregl-map.scan-map {
   position: sticky;
   top: 0;
   z-index: 2;
@@ -4770,4 +4773,9 @@ html[data-immersive] body {
 /* Un message est affiché : la page garde de la place en bas, pour que « Fait » reste atteignable. */
 html[data-toast] .page {
   padding-bottom: calc(112px + env(safe-area-inset-bottom));
+}
+.map-aid-row .history-btns .btn.small {
+  flex: none;
+  min-width: 44px;
+  padding-inline: 0;
 }

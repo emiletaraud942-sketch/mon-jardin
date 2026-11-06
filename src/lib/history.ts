@@ -42,8 +42,6 @@ export function useHistory(): HistoryView {
     getHistory,
   )
 }
-export const historyVersion = () => version
-
 /** Mémorise une action déjà faite. Une nouvelle action efface ce qu'on pouvait rétablir. */
 export function recordAction(entry: HistoryEntry) {
   past.push(entry)

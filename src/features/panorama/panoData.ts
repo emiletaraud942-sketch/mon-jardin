@@ -14,10 +14,22 @@ export async function pointBytes(p: Panorama): Promise<number> {
   return n
 }
 
-export async function usedBytes(list: Panorama[]): Promise<number> {
-  let n = 0
-  for (const p of list) n += await pointBytes(p)
-  return n
+/** Poids total noté dans les métadonnées ; `missing` : points anciens sans valeur (à relire une fois). */
+export function metaBytes(list: Panorama[]): { total: number; missing: Panorama[] } {
+  let total = 0
+  const missing: Panorama[] = []
+  for (const p of list) {
+    if (typeof p.bytes === 'number') total += p.bytes
+    else missing.push(p)
+  }
+  return { total, missing }
+}
+
+/** Note le poids d'un point ancien (sans relancer d'historique ni toucher aux photos). */
+export function noteBytes(gardenId: string, pointId: string, bytes: number) {
+  const list = currentOf(gardenId)
+  if (!list.some((p) => p.id === pointId && p.bytes === undefined)) return
+  write(gardenId, list.map((p) => (p.id === pointId && p.bytes === undefined ? { ...p, bytes } : p)))
 }
 
 function write(gardenId: string, list: Panorama[]) {

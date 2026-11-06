@@ -114,5 +114,3 @@ export function createSensor(onStatus?: (s: SensorStatus) => void): Sensor {
   return sensor
 }
 
-/** Le cap lu est-il rapporté au nord ? Utile pour décider d'afficher les noms de plantes. */
-export const compassReliable = (r: SensorReading) => r.heading !== undefined && r.absolute

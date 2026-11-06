@@ -255,6 +255,7 @@ export function Capture({ garden, spot, redoId }: { garden: Garden; spot: XY; re
       kind: 'guide',
     }
     if (!northRef.current) pano.northOk = false
+    pano.bytes = shotsRef.current.reduce((n, x) => n + x.bytes, 0)
     saved.current = true
     savePoint(garden.id, pano)
     openPanorama('view', { pointId: pano.id, back: 'home' })

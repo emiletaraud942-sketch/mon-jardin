@@ -12,7 +12,8 @@ vi.mock('idb-keyval', () => ({
   keys: async () => [...db.keys()],
 }))
 
-import { compressToTarget, deletePhoto, getPhoto, isQuotaError, listPhotoIds, MESSAGE_FULL, restorePhoto, savePhoto, TARGET_BYTES } from './photos'
+import { compressToTarget, deletePhoto, getPhoto, listPhotoIds, restorePhoto, savePhoto, TARGET_BYTES } from './photos'
+import { isQuotaError, STORAGE_FULL_MESSAGE as MESSAGE_FULL } from './space'
 
 let close: ReturnType<typeof vi.fn>
 let canvas: { width: number; height: number; getContext: () => unknown; toBlob: (cb: (b: Blob | null) => void, type: string, q: number) => void }

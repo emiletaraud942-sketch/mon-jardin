@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
+import 'maplibre-gl/dist/maplibre-gl.css'
 import '../../lib/mapWorker'
 import { HistoryButtons } from '../../components/HistoryButtons'
 import { webgl2Supported } from '../../lib/webgl'

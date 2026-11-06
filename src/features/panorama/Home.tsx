@@ -4,7 +4,7 @@ import { PlantScene } from '../../components/illustrations'
 import { getPhoto } from '../../lib/photos'
 import type { Garden } from '../../types'
 import { canAddPoint, MAX_BYTES, MAX_POINTS, photoDateLabel, pointName, refusalMessage, sizeLabel } from './geometry'
-import { pointBytes, panoramasOf } from './panoData'
+import { metaBytes, noteBytes, panoramasOf, pointBytes } from './panoData'
 import { closePanorama, openPanorama } from './panoUi'
 
 interface Info {
@@ -28,7 +28,9 @@ export function Home({ garden }: { garden: Garden }) {
     void (async () => {
       const next: Record<string, Info> = {}
       for (const p of points) {
-        const bytes = await pointBytes(p)
+        const bytes = p.bytes ?? (await pointBytes(p))
+        // Point ancien : on note son poids une fois, le plafond se calcule ensuite sans relire les photos.
+        if (p.bytes === undefined) noteBytes(garden.id, p.id, bytes)
         let url: string | undefined
         for (const s of p.shots) {
           const blob = await getPhoto(s.photoId)
@@ -48,7 +50,11 @@ export function Home({ garden }: { garden: Garden }) {
     }
   }, [key]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const total = useMemo(() => points.reduce((s, p) => s + (info[p.id]?.bytes ?? 0), 0), [points, info])
+  // Le plafond se calcule tout de suite avec le poids noté à la prise ; les points anciens attendent la lecture.
+  const total = useMemo(() => {
+    const { total: known, missing } = metaBytes(points)
+    return known + missing.reduce((s, p) => s + (info[p.id]?.bytes ?? 0), 0)
+  }, [points, info])
 
   function start(mode: 'guide' | 'import') {
     const ok = canAddPoint(points.length, total)

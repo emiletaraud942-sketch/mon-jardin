@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import '../../lib/mapWorker'
+import 'maplibre-gl/dist/maplibre-gl.css'
 import type { Map as MLMap } from 'maplibre-gl'
 import { toLonLat } from '../../lib/geo'
 import type { Garden } from '../../types'

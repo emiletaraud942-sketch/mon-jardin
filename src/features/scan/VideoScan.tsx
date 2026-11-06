@@ -6,6 +6,7 @@ import { Modal } from '../../components/Modal'
 import { hasConsent } from '../../lib/consent'
 import { uid } from '../../lib/geo'
 import { savePhoto } from '../../lib/photos'
+import { ensureRoom, isQuotaError, STORAGE_FULL_MESSAGE } from '../../lib/space'
 import type { Garden } from '../../types'
 import { ConsentDialog } from '../legal/ConsentDialog'
 import { gpsSupport, type GpsProblem } from './gps'
@@ -28,6 +29,8 @@ interface Kept {
 }
 
 const LIVE_EVERY_MS = 2000
+/** Poids estimé d'une image gardée une fois enregistrée (JPEG réduit). */
+const FRAME_BYTES = 250 * 1024
 const LIVE_MAX_MS = 4 * 60 * 1000
 
 /** Ligne d'entrée dans l'écran « Scanner les plantes ». */
@@ -71,6 +74,8 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
   const [located, setLocated] = useState(true)
   const [compass, setCompass] = useState(true)
   const [asking, setAsking] = useState(false)
+  const [lost, setLost] = useState(0)
+  const [fullStop, setFullStop] = useState(false)
   const all = useScanQueue()
   const videoRef = useRef<HTMLVideoElement>(null)
   const stream = useRef<MediaStream>()
@@ -111,6 +116,12 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
     setProblem(undefined)
     if (!navigator.mediaDevices?.getUserMedia) {
       setError(new Error('Cet appareil ne permet pas de filmer depuis l’appli. Choisissez une vidéo déjà filmée.'))
+      return
+    }
+    try {
+      await ensureRoom(cap * FRAME_BYTES)
+    } catch (e) {
+      setError(e)
       return
     }
     try {
@@ -188,6 +199,7 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
     setStep('tri')
     setProgress({ label: 'Lecture de la vidéo…', done: 0, total: 1 })
     try {
+      await ensureRoom(cap * FRAME_BYTES)
       const r = await extractFrames(file, { max: cap, onProgress: (done, total) => setProgress({ label: 'Choix des images…', done, total }) })
       setSkipped(r.skipped)
       setLocated(false)
@@ -211,6 +223,8 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
     setStep('tri')
     const chosen = list.slice(0, cap)
     const ids: string[] = []
+    let failed = 0
+    let full = false
     setKept(chosen.length)
     for (let n = 0; n < chosen.length; n++) {
       setProgress({ label: 'Enregistrement des images…', done: n, total: chosen.length })
@@ -223,9 +237,18 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
         ids.push(id)
         updateQueue((q) => enqueue(q, newItem({ id, gardenId: garden.id, photoId, position, accuracyM: p?.accuracyM ?? 99, from: 'video' })))
       } catch (e) {
+        failed++
+        if (isQuotaError(e)) {
+          // Plus de place : inutile d'insister sur les images suivantes.
+          full = true
+          failed += chosen.length - n - 1
+          break
+        }
         console.warn('Image non enregistrée', e)
       }
     }
+    setLost(failed)
+    setFullStop(full)
     setQuota(addUsed(ids.length))
     setBatch(ids)
     setProgress(undefined)
@@ -329,7 +352,15 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
             <>
               {mine.length === 0 ? (
                 <div className="alert small" role="status">
-                  <strong>Aucune image utilisable.</strong> Elles étaient floues ou sans plante. Filmez plus lentement, plus près du feuillage.
+                  {lost > 0 ? (
+                    <>
+                      <strong>{fullStop ? STORAGE_FULL_MESSAGE : 'Les images n’ont pas pu être enregistrées.'}</strong> Libérez de la place, puis filmez à nouveau.
+                    </>
+                  ) : (
+                    <>
+                      <strong>Aucune image utilisable.</strong> Elles étaient floues ou sans plante. Filmez plus lentement, plus près du feuillage.
+                    </>
+                  )}
                 </div>
               ) : (
                 <>
@@ -346,6 +377,11 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
                     {doubles > 0 && ` ${doubles} doublon${doubles > 1 ? 's' : ''} regroupé${doubles > 1 ? 's' : ''}.`}
                   </p>
                   {waiting && <p className="small muted" style={{ margin: 0 }}>Les images qui restent seront envoyées dès que possible. Vous pouvez fermer cet écran.</p>}
+                  {lost > 0 && (
+                    <p className="alert warn small" role="alert">
+                      {fullStop ? STORAGE_FULL_MESSAGE : 'Une image n’a pas pu être enregistrée.'} {lost} image{lost > 1 ? 's' : ''} perdue{lost > 1 ? 's' : ''}. Libérez de la place, puis filmez à nouveau.
+                    </p>
+                  )}
                   {!located && <p className="alert small">Pas de trace de marche. Glissez chaque plante à sa place sur la carte.</p>}
                   {located && !compass && <p className="alert small">La boussole ne répond pas. Chaque plante est placée à votre position, sans décalage devant vous.</p>}
                 </>

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from '../../components/Icon'
 import { uid } from '../../lib/geo'
-import { savePhoto } from '../../lib/photos'
+import { getPhoto, savePhoto } from '../../lib/photos'
 import type { Garden, Panorama, XY } from '../../types'
 import { compassWord, defaultSpan, IMPORT_BYTES, IMPORT_SIDE, normDeg, sizeLabel } from './geometry'
 import { discardPhotos, savePoint } from './panoData'
@@ -82,6 +82,7 @@ export function ImportPano({ garden, spot, redoId }: { garden: Garden; spot: XY;
       photoId = await savePhoto(file, { maxSide: IMPORT_SIDE, targetBytes: IMPORT_BYTES })
       const pano: Panorama = { id: redoId ?? uid(), x: spot.x, y: spot.y, takenAt: new Date().toISOString(), shots: [{ photoId, headingDeg: normDeg(heading), fovDeg: span }], kind: 'import' }
       if (!known) pano.northOk = false
+      pano.bytes = (await getPhoto(photoId))?.size ?? 0
       savePoint(garden.id, pano)
       openPanorama('view', { pointId: pano.id, yaw: heading, back: 'home' })
     } catch (e) {
