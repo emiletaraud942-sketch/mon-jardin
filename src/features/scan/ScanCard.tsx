@@ -1,7 +1,6 @@
 import { Icon } from '../../components/Icon'
-import { updateGarden } from '../../lib/store'
-import { showToast } from '../../lib/toast'
 import type { Garden } from '../../types'
+import { clearCalibration } from './calibration'
 import { openScan } from './scanUi'
 import { precisionText } from './trilat'
 
@@ -17,13 +16,7 @@ export function ScanCard({ garden }: { garden: Garden }) {
           <Icon name="camera" /> Scanner mon jardin
         </button>
         {c && (
-          <button
-            className="btn"
-            onClick={() => {
-              updateGarden(garden.id, { calibration: undefined })
-              showToast({ message: 'Recalage effacé.' })
-            }}
-          >
+          <button className="btn" onClick={() => clearCalibration(garden)}>
             Effacer le recalage
           </button>
         )}

@@ -11,6 +11,7 @@ import { closePlantSheet, setUi, startPlacing, useUi } from '../../lib/ui'
 import type { Garden, PlantStatus } from '../../types'
 import { PlantPanel, plantName } from './PlantPanel'
 import { IdentifyDialog } from './IdentifyDialog'
+import { ShoppingListDialog } from './ShoppingListDialog'
 import { openScan } from '../scan/scanUi'
 import { PlantScene } from '../../components/illustrations'
 import { useIsMobile } from '../../components/useMedia'
@@ -22,6 +23,8 @@ export function PlantsPage({ garden }: { garden: Garden }) {
   const [status, setStatus] = useState<PlantStatus | ''>('')
   const [picking, setPicking] = useState(false)
   const [identifying, setIdentifying] = useState(false)
+  const [shopping, setShopping] = useState(false)
+  const planned = plants.filter((p) => p.status === 'projet').length
   const selected = plants.find((p) => p.id === selectedPlantId)
   const mobile = useIsMobile()
   // Sur téléphone la fiche s'ouvre sous la liste : on y amène l'écran, sinon rien ne semble se passer.
@@ -61,6 +64,11 @@ export function PlantsPage({ garden }: { garden: Garden }) {
           </button>
         </div>
       </div>
+      {planned > 0 && (
+        <button className="btn shop-open" aria-haspopup="dialog" onClick={() => setShopping(true)}>
+          <Icon name="leaf" /> Liste de courses et de semis ({planned})
+        </button>
+      )}
       <details className="np-details plants-more">
         <summary>Autres façons d’ajouter</summary>
         <div className="row" style={{ marginBottom: 8 }}>
@@ -107,6 +115,7 @@ export function PlantsPage({ garden }: { garden: Garden }) {
                       <button
                         className="btn ghost plant-row"
                         style={{ width: '100%', justifyContent: 'flex-start', gap: 10, background: p.id === selectedPlantId ? 'var(--accent-soft)' : undefined }}
+                        aria-current={p.id === selectedPlantId ? 'true' : undefined}
                         onClick={() => setUi({ selectedPlantId: p.id })}
                       >
                         <span className="plant-tile">
@@ -135,6 +144,7 @@ export function PlantsPage({ garden }: { garden: Garden }) {
           </div>
         )}
       </div>
+      {shopping && <ShoppingListDialog garden={garden} plants={plants} onClose={() => setShopping(false)} />}
       {picking && (
         <SpeciesPicker
           title="Quelle plante ajouter ?"

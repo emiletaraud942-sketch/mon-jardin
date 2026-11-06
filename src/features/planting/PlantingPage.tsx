@@ -53,7 +53,7 @@ function SowNow({ garden }: { garden: Garden }) {
         </select>
       </div>
       <details className="np-details">
-        <summary>Détails</summary>
+        <summary>Dates de gel chez vous</summary>
         {garden.lastFrostDoy ? (
           <p className="small muted">
             Chez vous, dernières gelées vers le {doyToLabel(garden.lastFrostDoy)}
@@ -113,7 +113,7 @@ function BestForSpot({ garden }: { garden: Garden }) {
           </div>
         )}
         <details className="np-details">
-          <summary>Détails du soleil</summary>
+          <summary>Heures de soleil par saison</summary>
           <p className="small muted" style={{ margin: 0 }}>
             En juin : {analysis.sun.juin.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} h. En mars : {analysis.sun.mars.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} h. En décembre :{' '}
             {analysis.sun.decembre.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} h. Ombre des maisons voisines et des arbres comprise.
@@ -167,7 +167,7 @@ function BestForSpot({ garden }: { garden: Garden }) {
                 </button>
               </div>
               <details className="np-details">
-                <summary>Pourquoi ?</summary>
+                <summary>Pourquoi ce score ?</summary>
                 <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>
                   {pros.map((f) => (
                     <li key={'p' + f.label}>Pour : {plainReason(f.label)}</li>
@@ -226,7 +226,7 @@ function ModelHint({ garden }: { garden: Garden }) {
         <strong>Plus votre jardin est décrit, plus le conseil est précis.</strong>
       </p>
       <details className="np-details">
-        <summary>Détails</summary>
+        <summary>Pourquoi décrire le jardin ?</summary>
         <p className="small" style={{ margin: 0 }}>
           {noParcel ? 'Sans le contour du terrain, les distances aux voisins ne sont pas vérifiées. ' : ''}
           {noPlants ? 'Sans plantes placées, le soleil ignore l’ombre de vos arbres. ' : ''}

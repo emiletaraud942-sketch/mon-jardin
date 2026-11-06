@@ -160,6 +160,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
   const tileNoticeTurn = useBanner('carte', tileProblem)
   const [legendOpen, setLegendOpen] = useState(false)
   const [optionsOpen, setOptionsOpen] = useState(false)
+  const [aidsOpen, setAidsOpen] = useState(false)
   const [names, setNames] = useState(() => readNames(plants.length))
   const namesRef = useRef(names)
   namesRef.current = names
@@ -925,27 +926,37 @@ function MapViewInner({ garden }: { garden: Garden }) {
             <div className="floating map-aid" role="toolbar" aria-label="Aides au placement">
               <div className="map-aid-row">
                 <button className={'btn small aim-first' + (aim ? ' primary' : '')} aria-pressed={!!aim} onClick={() => setUi({ aim: !aim })}>
-                  {aim ? '✓ ' : ''}Viser
+                  <Icon name={aim ? 'check' : 'pin'} size={16} />
+                  Viser
                 </button>
-                <button className="btn small" onClick={() => openScan('mesures', movingPlantId ? { kind: 'plant', plantId: movingPlantId } : { kind: 'new' })}>
-                  Par mesures
-                </button>
-                <button className="btn small" disabled={gpsBusy} onClick={() => void placeHere()}>
-                  Je suis ici
+                <button className={'btn small' + (aidsOpen ? ' on' : '')} aria-expanded={aidsOpen} aria-controls="map-aids" onClick={() => setAidsOpen((o) => !o)}>
+                  Aides <span aria-hidden>{aidsOpen ? '▴' : '▾'}</span>
                 </button>
                 <HistoryButtons />
               </div>
-              <div className="map-aid-row">
-                <button className={'btn small' + (snapOn ? ' primary' : '')} aria-pressed={snapOn} onClick={() => setSnapPref(!snapOn)}>
-                  {snapOn ? '✓ ' : ''}Aimanter
-                </button>
-                <button className={'btn small' + (gridOn ? ' primary' : '')} aria-pressed={gridOn} onClick={() => setGridPref(!gridOn)}>
-                  {gridOn ? '✓ ' : ''}Grille
-                </button>
-                <button className={'btn small' + (schema ? ' primary' : '')} aria-pressed={schema} aria-label="Fond schématique" onClick={() => setSchema((v) => !v)}>
-                  {schema ? '✓ ' : ''}Schéma
-                </button>
-              </div>
+              {aidsOpen && (
+                <div id="map-aids" className="map-aid-more">
+                  <div className="map-aid-row">
+                    <button className="btn small" onClick={() => openScan('mesures', movingPlantId ? { kind: 'plant', plantId: movingPlantId } : { kind: 'new' })}>
+                      Par mesures
+                    </button>
+                    <button className="btn small" disabled={gpsBusy} onClick={() => void placeHere()}>
+                      Je suis ici
+                    </button>
+                  </div>
+                  <div className="map-aid-row">
+                    <button className={'btn small' + (snapOn ? ' primary' : '')} aria-pressed={snapOn} onClick={() => setSnapPref(!snapOn)}>
+                      {snapOn ? <Icon name="check" size={16} /> : null}Coller aux bords
+                    </button>
+                    <button className={'btn small' + (gridOn ? ' primary' : '')} aria-pressed={gridOn} onClick={() => setGridPref(!gridOn)}>
+                      {gridOn ? <Icon name="check" size={16} /> : null}Grille
+                    </button>
+                    <button className={'btn small' + (schema ? ' primary' : '')} aria-pressed={schema} onClick={() => setSchema((v) => !v)}>
+                      {schema ? <Icon name="check" size={16} /> : null}Fond simple
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           {optionsOpen && !placingNow && (

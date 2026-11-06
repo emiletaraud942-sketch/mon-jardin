@@ -109,7 +109,7 @@ export function NeighborsPage({ garden }: { garden: Garden }) {
               <li>Vous pouvez tout supprimer, à tout moment.</li>
             </ul>
             <details className="np-details">
-              <summary>Détails</summary>
+              <summary>Quartier, durée et événements</summary>
               <ul className="nb-rules">
                 <li>Votre quartier est une zone d’environ 2 km. Vous pouvez choisir plus large, environ 5 km.</li>
                 <li>Vos annonces et messages sont gardés sur un serveur en Europe. Les annonces disparaissent après 60 jours.</li>

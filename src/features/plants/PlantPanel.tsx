@@ -267,7 +267,7 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
           </p>
         </div>
       )}
-      {plant.status === 'recoltee' && <p className="small muted">Plante récoltée : elle ne génère plus de tâches. Changez son état dans « Détails » pour la remettre en place.</p>}
+      {plant.status === 'recoltee' && <p className="small muted">Plante récoltée : elle ne génère plus de tâches. Changez son état dans « Date, notes et autres actions » pour la remettre en place.</p>}
 
       {myTasks.length > 0 && (
         <div>
@@ -284,28 +284,6 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
           <button className="btn small" onClick={() => setUi({ tab: 'entretien' })}>Voir toutes les tâches</button>
         </div>
       )}
-
-      <details className="np-details plant-details">
-        <summary>Détails</summary>
-        <div className="stack" style={{ gap: 12 }}>
-      {fields}
-      {(report.amis.length > 0 || report.ennemis.length > 0) && (
-        <div className="small stack">
-          {report.amis.length > 0 && (
-            <p style={{ margin: 0 }}>
-              <span className="badge green">Bonnes plantes voisines</span> {Array.from(new Set(report.amis.map(plantName))).join(', ')}
-            </p>
-          )}
-          {report.ennemis.length > 0 && (
-            <p style={{ margin: 0 }}>
-              <span className="badge danger">Plantes à éviter à côté</span> {Array.from(new Set(report.ennemis.map(plantName))).join(', ')}
-            </p>
-          )}
-        </div>
-      )}
-
-      {species && <PurchaseSummary plantId={plant.id} />}
-      {species && <MeasureSection plant={plant} species={species} name={plantName(plant)} />}
 
       <div>
         <h3>Photos</h3>
@@ -329,6 +307,32 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
         {photoError && <p className="alert error small" role="alert" style={{ marginTop: 8 }}>{photoError}</p>}
       </div>
 
+      <button className="btn plant-move" onClick={() => startMoving(plant.id)}>
+        <Icon name="move" size={16} /> Déplacer cette plante
+      </button>
+
+      <details className="np-details plant-details">
+        <summary>Date, notes et autres actions</summary>
+        <div className="stack" style={{ gap: 12 }}>
+      {fields}
+      {(report.amis.length > 0 || report.ennemis.length > 0) && (
+        <div className="small stack">
+          {report.amis.length > 0 && (
+            <p style={{ margin: 0 }}>
+              <span className="badge green">Bonnes plantes voisines</span> {Array.from(new Set(report.amis.map(plantName))).join(', ')}
+            </p>
+          )}
+          {report.ennemis.length > 0 && (
+            <p style={{ margin: 0 }}>
+              <span className="badge danger">Plantes à éviter à côté</span> {Array.from(new Set(report.ennemis.map(plantName))).join(', ')}
+            </p>
+          )}
+        </div>
+      )}
+
+      {species && <PurchaseSummary plantId={plant.id} />}
+      {species && <MeasureSection plant={plant} species={species} name={plantName(plant)} />}
+
       <label className="field">
         <span>Notes</span>
         <textarea className="input" rows={3} value={plant.notes ?? ''} onChange={(e) => updatePlant(plant.id, { notes: e.target.value })} placeholder="Variété, où vous l’avez achetée, observations…" />
@@ -336,9 +340,6 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
       <NoteAssist plant={plant} species={species} />
 
       <div className="stack panel-actions">
-        <button className="btn" onClick={() => startMoving(plant.id)}>
-          <Icon name="move" size={16} /> Déplacer cette plante
-        </button>
         {!fiche && (
           <button className="btn" onClick={() => openScan('mesures', { kind: 'plant', plantId: plant.id })}>
             <Icon name="pin" size={16} /> Placer par mesures

@@ -94,16 +94,6 @@ export function SpeciesSheet({ species: s, garden }: { species: Species; garden:
         {cal.note && <p className="small muted" style={{ marginTop: 6 }}>{cal.note}</p>}
       </div>
 
-      <details className="np-details">
-        <summary>Détails</summary>
-        <div className="stack" style={{ gap: 14 }}>
-      <p className="small" style={{ margin: 0 }}>
-        Adulte : {s.hauteurAdulteM.toLocaleString('fr-FR')} m de haut et {s.envergureAdulteM.toLocaleString('fr-FR')} m de large
-        {s.vivace && s.anneesMaturite > 1 ? `, en ${s.anneesMaturite} ans environ` : ''}. Distance entre deux pieds : {s.espacementCm >= 100 ? `${(s.espacementCm / 100).toLocaleString('fr-FR')} m` : `${s.espacementCm} cm`}.
-        {s.solPrefere?.length ? ` Sol : ${s.solPrefere.join(', ')}` : ''}
-        {s.ph ? ` (pH ${s.ph[0]}–${s.ph[1]})` : ''}.
-      </p>
-
       <div>
         <h3>Comment l’entretenir</h3>
         <p>{s.entretien}</p>
@@ -125,6 +115,16 @@ export function SpeciesSheet({ species: s, garden }: { species: Species; garden:
           ))}
         </ul>
       </div>
+
+      <details className="np-details">
+        <summary>Taille, sol et voisines</summary>
+        <div className="stack" style={{ gap: 14 }}>
+      <p className="small" style={{ margin: 0 }}>
+        Adulte : {s.hauteurAdulteM.toLocaleString('fr-FR')} m de haut et {s.envergureAdulteM.toLocaleString('fr-FR')} m de large
+        {s.vivace && s.anneesMaturite > 1 ? `, en ${s.anneesMaturite} ans environ` : ''}. Distance entre deux pieds : {s.espacementCm >= 100 ? `${(s.espacementCm / 100).toLocaleString('fr-FR')} m` : `${s.espacementCm} cm`}.
+        {s.solPrefere?.length ? ` Sol : ${s.solPrefere.join(', ')}` : ''}
+        {s.ph ? ` (pH ${s.ph[0]}–${s.ph[1]})` : ''}.
+      </p>
 
       {(s.compagnons.length > 0 || s.antagonistes.length > 0 || s.fonctions?.length) && (
         <div className="small">

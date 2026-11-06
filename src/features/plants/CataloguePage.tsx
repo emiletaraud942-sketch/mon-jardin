@@ -3,12 +3,13 @@ import { SPECIES_BY_ID } from '../../data/species'
 import { CATEGORY_LABEL, SUN_LABEL } from '../../data/labels'
 import { filterSpecies } from '../../components/SpeciesPicker'
 import { RiskBadges } from '../../components/RiskNotes'
-import { BottomSheet, type SheetSnap } from '../../components/BottomSheet'
+import { Icon } from '../../components/Icon'
 import { MetroNote } from '../../components/MetroNote'
 import { useIsMobile } from '../../components/useMedia'
 import { setUi, useUi } from '../../lib/ui'
-import type { Category, Garden, Sun } from '../../types'
+import type { Category, Garden, Month, Sun } from '../../types'
 import { SpeciesSheet } from './SpeciesSheet'
+import { applyFilters, FILTERS, type FilterId } from './catalogueFilters'
 import '../../styles/novice-pages.css'
 
 export function CataloguePage({ garden }: { garden: Garden }) {
@@ -16,18 +17,18 @@ export function CataloguePage({ garden }: { garden: Garden }) {
   const mobile = useIsMobile()
   const [q, setQ] = useState('')
   const [cat, setCat] = useState<Category | ''>('')
-  const [snap, setSnap] = useState<SheetSnap>(speciesId ? 'min' : 'mid')
   const sheetRef = useRef<HTMLDivElement>(null)
   const [sun, setSun] = useState<Sun | ''>('')
-  const [edible, setEdible] = useState(false)
-  const [safe, setSafe] = useState(false)
-  const list = useMemo(() => filterSpecies(q, { category: cat, sun, edible, safe }), [q, cat, sun, edible, safe])
+  const [filters, setFilters] = useState<FilterId[]>([])
+  const month = (new Date().getMonth() + 1) as Month
+  const list = useMemo(() => applyFilters(filterSpecies(q, { category: cat, sun }), filters, garden, month), [q, cat, sun, filters, garden, month])
+  const toggle = (id: FilterId) => setFilters((f) => (f.includes(id) ? f.filter((x) => x !== id) : [...f, id]))
   const selected = speciesId ? SPECIES_BY_ID[speciesId] : undefined
 
-  // La fiche s'ouvre sous la liste (ou au-dessus sur mobile) : on la ramène à l'écran.
+  // Ordinateur : la fiche s'ouvre à côté de la liste, on la ramène à l'écran.
   useEffect(() => {
-    if (!speciesId) return
-    sheetRef.current?.scrollIntoView({ block: mobile ? 'start' : 'nearest' })
+    if (!speciesId || mobile) return
+    sheetRef.current?.scrollIntoView({ block: 'nearest' })
   }, [speciesId, mobile])
 
   const listCard = (
@@ -39,10 +40,7 @@ export function CataloguePage({ garden }: { garden: Garden }) {
               className="btn ghost"
               style={{ width: '100%', justifyContent: 'flex-start', minHeight: 48, background: s.id === speciesId ? 'var(--accent-soft)' : undefined }}
               aria-current={s.id === speciesId ? 'true' : undefined}
-              onClick={() => {
-                setUi({ speciesId: s.id })
-                if (mobile) setSnap('min')
-              }}
+              onClick={() => setUi({ speciesId: s.id })}
             >
               <span className="dot" style={{ background: s.couleurAccent ?? s.couleur }} />
               <span style={{ textAlign: 'left' }}>
@@ -54,28 +52,40 @@ export function CataloguePage({ garden }: { garden: Garden }) {
             </button>
           </li>
         ))}
-        {list.length === 0 && <li className="muted" style={{ padding: 8 }}>Aucune plante ne correspond.</li>}
+        {list.length === 0 && (
+          <li className="muted" style={{ padding: 8 }}>
+            Aucune plante ne correspond.
+            {filters.length > 0 && (
+              <>
+                {' '}
+                <button className="btn small" onClick={() => setFilters([])}>
+                  Retirer les filtres
+                </button>
+              </>
+            )}
+          </li>
+        )}
       </ul>
     </div>
   )
 
   const sheetCard = (
     <div className="card sheet-card" ref={sheetRef}>
-      {selected && mobile && (
-        <button
-          className="btn"
-          style={{ marginBottom: 10 }}
-          onClick={() => {
-            setUi({ speciesId: undefined })
-            setSnap('mid')
-          }}
-        >
-          ‹ Retour à la liste
-        </button>
-      )}
       {selected ? <SpeciesSheet species={selected} garden={garden} /> : <p className="muted">Choisissez une plante dans la liste.</p>}
     </div>
   )
+
+  // Téléphone : la fiche prend tout l'écran, comme dans « Mes plantes » ; « Retour à la liste » ramène à la liste.
+  if (selected && mobile) {
+    return (
+      <div className="page np-page plants-ui species-full">
+        <button className="btn species-back" onClick={() => setUi({ speciesId: undefined })}>
+          <Icon name="back" size={18} /> Retour à la liste
+        </button>
+        {sheetCard}
+      </div>
+    )
+  }
 
   return (
     <div className="page np-page plants-ui">
@@ -89,10 +99,7 @@ export function CataloguePage({ garden }: { garden: Garden }) {
           aria-label="Rechercher une plante"
           placeholder="Pommier, Malus, tomate…"
           value={q}
-          onChange={(e) => {
-            setQ(e.target.value)
-            if (mobile) setSnap('mid')
-          }}
+          onChange={(e) => setQ(e.target.value)}
         />
         <select className="input" style={{ flex: '1 1 160px' }} value={cat} onChange={(e) => setCat(e.target.value as Category | '')} aria-label="Catégorie">
           <option value="">Toutes les catégories</option>
@@ -112,27 +119,23 @@ export function CataloguePage({ garden }: { garden: Garden }) {
             </option>
           ))}
         </select>
-        <label className="row" style={{ gap: 6, minHeight: 44 }}>
-          <input type="checkbox" checked={edible} onChange={(e) => setEdible(e.target.checked)} /> Comestibles
-        </label>
-        <label className="row" style={{ gap: 6, minHeight: 44 }}>
-          <input type="checkbox" checked={safe} onChange={(e) => setSafe(e.target.checked)} /> Sans risque connu
-        </label>
       </div>
-      {mobile ? (
-        <>
-          {sheetCard}
-          <div style={{ height: 96 }} aria-hidden />
-          <BottomSheet fixed label="Liste des plantes" title="Catalogue" summary={`${list.length} plante${list.length > 1 ? 's' : ''}`} snap={snap} onSnap={setSnap}>
-            <div id="catalogue-liste">{listCard}</div>
-          </BottomSheet>
-        </>
-      ) : (
-        <div className="grid catalogue-grid">
-          {listCard}
-          {sheetCard}
-        </div>
-      )}
+      <div className="row chip-filters" role="group" aria-label="Filtres">
+        {FILTERS.map((f) => (
+          <button key={f.id} className={'btn chip-filter' + (filters.includes(f.id) ? ' primary' : '')} aria-pressed={filters.includes(f.id)} title={f.help} onClick={() => toggle(f.id)}>
+            {filters.includes(f.id) && <Icon name="check" size={16} />}
+            {f.label}
+          </button>
+        ))}
+      </div>
+      <p className={filters.length > 0 ? 'small muted' : 'sr-only'} role="status" aria-live="polite" style={filters.length > 0 ? { margin: '0 0 8px' } : undefined}>
+        {list.length} plante{list.length > 1 ? 's' : ''}
+        {filters.length > 0 ? ' avec ces filtres.' : ''}
+      </p>
+      <div className="grid catalogue-grid">
+        {listCard}
+        {!mobile && sheetCard}
+      </div>
     </div>
   )
 }

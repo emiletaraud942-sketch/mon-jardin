@@ -6,6 +6,7 @@ import { RiskBadges } from './RiskNotes'
 import { cleanCustomName } from '../lib/customName'
 import { Icon } from './Icon'
 import { Modal } from './Modal'
+import { useIsMobile, useMedia } from './useMedia'
 
 export function normalize(s: string) {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
@@ -58,13 +59,15 @@ export function SpeciesPicker({
   const [q, setQ] = useState('')
   const [custom, setCustom] = useState<string>()
   const [cat, setCat] = useState<Category | ''>('')
+  // Sur téléphone, le clavier ne s'ouvre pas tout seul : il cacherait la liste.
+  const touch = useIsMobile() || useMedia('(pointer: coarse)')
   const list = useMemo(() => searchSpecies(q, cat), [q, cat])
   return (
     <Modal title={title} onClose={onClose}>
       <div className="plants-ui">
       {custom === undefined && (
       <div className="row" style={{ marginBottom: 12 }}>
-        <input className="input" style={{ flex: 2, minWidth: 160 }} autoFocus placeholder="Rechercher (pommier, tomate…)" aria-label="Rechercher une plante" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="input" style={{ flex: 2, minWidth: 160 }} autoFocus={!touch} placeholder="Rechercher (pommier, tomate…)" aria-label="Rechercher une plante" value={q} onChange={(e) => setQ(e.target.value)} />
         <select className="input" style={{ flex: 1, minWidth: 140 }} value={cat} onChange={(e) => setCat(e.target.value as Category | '')} aria-label="Type de plante">
           <option value="">Toutes</option>
           {Object.entries(CATEGORY_LABEL).map(([k, v]) => (
@@ -121,7 +124,16 @@ export function SpeciesPicker({
             </button>
           </li>
         ))}
-        {list.length === 0 && <li className="muted">Aucune plante ne correspond.</li>}
+        {list.length === 0 && (
+          <li className="muted">
+            Aucune plante ne correspond.
+            {onPickCustom && cleanCustomName(q) && (
+              <button className="btn custom-open" style={{ marginTop: 8, width: '100%' }} onClick={() => onPickCustom(cleanCustomName(q))}>
+                <Icon name="plus" /> Ajouter « {cleanCustomName(q)} » comme plante personnalisée
+              </button>
+            )}
+          </li>
+        )}
       </ul>
       )}
       </div>

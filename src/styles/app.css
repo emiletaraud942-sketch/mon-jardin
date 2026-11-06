@@ -4706,3 +4706,68 @@ html[data-immersive] body {
     grid-row: 3;
   }
 }
+
+/* Aides au placement : « Viser » en évidence d'abord, les autres sous « Aides ». */
+.map-aid .aim-first {
+  gap: 6px;
+}
+.map-aid-row > .btn.small:not(.aim-first) {
+  flex: 1 1 0;
+}
+.map-aid-row .history-btns {
+  flex: none;
+}
+.map-aid-more {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.map-aid-more .map-aid-row {
+  flex-wrap: wrap;
+}
+.map-aid-more .map-aid-row .btn.small {
+  flex: 1 1 40%;
+  white-space: normal;
+  line-height: 1.15;
+}
+
+/* À faire : groupes « Urgent » et « Cette semaine », puis « Voir tout » */
+.afaire-group-title {
+  margin: 20px 0 0;
+  font-size: calc(18 * var(--px));
+  color: var(--title);
+}
+.afaire-group .tcards {
+  margin-top: 10px;
+}
+.afaire-all {
+  margin-top: 14px;
+  min-height: 44px;
+  align-self: flex-start;
+  height: auto;
+  white-space: normal;
+  text-align: left;
+}
+.afaire-aside {
+  margin-top: 14px;
+}
+.tcard-emoji {
+  font-size: calc(30 * var(--px));
+  line-height: 1;
+}
+.afaire-frost {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-btn-lg);
+  background: var(--frost-bg);
+  color: var(--frost-text);
+  font-weight: var(--fw-strong);
+}
+
+/* Un message est affiché : la page garde de la place en bas, pour que « Fait » reste atteignable. */
+html[data-toast] .page {
+  padding-bottom: calc(112px + env(safe-area-inset-bottom));
+}

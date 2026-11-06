@@ -272,7 +272,7 @@ export function PrivacyCard() {
       <p>Vos données restent sur cet appareil. Rien n’est envoyé sans votre accord, sauf la carte et la météo.</p>
       <Consents />
       <details className="np-details">
-        <summary>Détails</summary>
+        <summary>Ce qui sort de l’appareil</summary>
         <p className="small muted">{NETWORK_INFO}</p>
         <p className="small">
           Texte complet : <LegalLink id="confidentialite" label="politique de confidentialité" />.

@@ -347,3 +347,60 @@
   min-height: var(--tap);
   align-items: center;
 }
+
+/* ---------- Catalogue sur téléphone : liste en page, fiche plein écran ---------- */
+.species-back {
+  margin-bottom: 10px;
+  min-height: 44px;
+}
+@media (max-width: 760px) {
+  .catalogue-grid {
+    grid-template-columns: 1fr;
+  }
+  .catalogue-list {
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+/* Catalogue : filtres en pastilles (cible de 44 px) */
+.chip-filters {
+  gap: 8px;
+  margin: 0 0 12px;
+  flex-wrap: wrap;
+}
+.chip-filter {
+  min-height: var(--tap);
+}
+
+/* « Mon adresse n'apparaît pas » : plan IGN pour pointer le jardin */
+.addr-map-btn {
+  margin-top: 6px;
+  min-height: 44px;
+  text-decoration: underline;
+  color: var(--accent);
+}
+.location-map {
+  height: min(60dvh, 420px);
+}
+
+/* Liste de courses et de semis */
+.shop-open {
+  margin: 0 0 8px;
+  min-height: var(--tap);
+}
+.shop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.shop-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 0;
+}
+
+.tcard-read {
+  min-height: var(--tap);
+}

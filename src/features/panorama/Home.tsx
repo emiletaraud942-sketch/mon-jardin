@@ -13,7 +13,7 @@ interface Info {
 }
 
 /** Ce que font (et ne font pas) ces photos, pour ne pas les confondre avec « Scanner mon jardin ». */
-const NOT_A_SCAN = 'Ces photos ne reconnaissent pas les plantes toutes seules. Pour trouver le nom d’une plante, utilisez « Scanner mon jardin », puis « Scanner les plantes ».'
+const NOT_A_SCAN = 'Ces photos ne reconnaissent pas les plantes toutes seules. Pour trouver le nom d’une plante, utilisez « Scanner mon jardin », puis « Filmer en marchant » ou « Photographier une plante ».'
 
 /** Liste des points de vue du jardin, ou explication quand il n'y en a pas encore. */
 export function Home({ garden }: { garden: Garden }) {

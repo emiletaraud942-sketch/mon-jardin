@@ -31,8 +31,13 @@ const LIVE_EVERY_MS = 2000
 const LIVE_MAX_MS = 4 * 60 * 1000
 
 /** Ligne d'entrée dans l'écran « Scanner les plantes ». */
-export function VideoScanSection({ garden, onDone }: { garden: Garden; onDone: (firstId?: string) => void }) {
+export function VideoScanSection({ garden, onDone, autoOpen }: { garden: Garden; onDone: (firstId?: string) => void; autoOpen?: boolean }) {
   const [open, setOpen] = useState(false)
+  // Ouverture automatique (« Filmer en marchant » du menu) : après le montage de l'écran parent. Un <dialog> enfant ouvert
+  // avant son parent passerait DERRIÈRE lui (ordre de la couche supérieure) et l'écran semblerait ne rien faire.
+  useEffect(() => {
+    if (autoOpen) setOpen(true)
+  }, [autoOpen])
   return (
     <>
       <button className="btn big" onClick={() => setOpen(true)}>

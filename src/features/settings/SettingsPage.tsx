@@ -24,7 +24,7 @@ import { readBackupFile } from '../../lib/security/import'
 import { getTheme, setTheme, THEME_LABEL, type Theme } from '../../lib/theme'
 import { setTextSize, useTextSize, TEXT_SIZE_LABEL, TEXT_SIZES } from '../../lib/textSize'
 import { showToast } from '../../lib/toast'
-import { restartOnboarding, setUi, useUi } from '../../lib/ui'
+import { openParcours, restartOnboarding, setUi, useUi } from '../../lib/ui'
 import { doyToLabel } from '../../lib/weather'
 import { lidarMessage, setLidarEnabled, useLidarScene } from '../../lib/useLidar'
 import { LIDAR_ATTRIBUTION } from '../../lib/lidar'
@@ -33,7 +33,10 @@ import { GardenCreator } from './GardenCreator'
 import { GardenDataBanner } from './GardenDataBanner'
 import { InstallCard } from '../../components/InstallButton'
 import { HelpSheet } from '../../components/HelpSheet'
-import { StepButton } from '../../components/StepButton'
+import { PlaceAction } from '../../components/PlaceAction'
+import { nextStep } from '../../lib/progress'
+import { isDemoGarden } from './demo'
+import { useTasks } from '../tasks/useTasks'
 import { useProgress } from '../../components/useProgress'
 import { InviteButton } from '../../components/InviteButton'
 import { PrivacyCard } from './PrivacyCard'
@@ -112,6 +115,7 @@ function GardenInfo({ garden }: { garden: Garden }) {
             Nature du sol <SavedNote show={soilSaved} />
           </span>
           <select
+            id="garden-soil"
             className="input"
             value={garden.sol ?? ''}
             onChange={(e) => {
@@ -753,11 +757,15 @@ function GardensCard({ garden, adding, setAdding, addRef }: { garden: Garden; ad
   )
 }
 
-/** Prochaine étape conseillée (ex-carte « Conseil » de l'accueil) et aide (ex-lien « Besoin d'aide ? »). */
+/** Prochaine étape conseillée (la même que sur l'accueil) et aide (ex-lien « Besoin d'aide ? »). */
 function AdviceCard({ garden }: { garden: Garden }) {
   const progress = useProgress(garden)
+  const { tasks } = useTasks(garden)
+  const refresh = useRefreshGarden(garden)
   const [help, setHelp] = useState(false)
-  const tip = progress.next
+  const { guide } = useUi()
+  const openTasks = tasks.filter((t) => !t.blockedBy && !t.done).length
+  const tip = nextStep(progress, { demo: isDemoGarden(garden), openTasks, noTree: !!guide.noTree?.includes(garden.id) })
   return (
     <div className="card">
       <h2>Conseil et aide</h2>
@@ -765,9 +773,30 @@ function AdviceCard({ garden }: { garden: Garden }) {
         {tip && (
           <div className="next-step">
             <span className="small">
-              <span className="muted">Conseil :</span> <strong>{tip.label}</strong>
+              <span className="muted">Conseil :</span> <strong>{tip.title}</strong>
             </span>
-            <StepButton step={tip} garden={garden} />
+            {tip.kind === 'placer' ? (
+              <PlaceAction className="btn small">{tip.action}</PlaceAction>
+            ) : (
+              <button
+                className="btn small"
+                disabled={tip.kind === 'donnees' && refresh.busy}
+                onClick={() => {
+                  if (tip.kind === 'creer') openParcours('adresse')
+                  else if (tip.kind === 'taches') setUi({ tab: 'entretien' })
+                  else if (tip.kind === 'donnees') void refresh.refresh()
+                  else {
+                    // « Choisissez la nature du sol » : on est déjà dans Réglages, on amène le champ à l'écran.
+                    const el = document.getElementById('garden-soil')
+                    el?.closest('details')?.setAttribute('open', '')
+                    el?.scrollIntoView({ block: 'center' })
+                    el?.focus()
+                  }
+                }}
+              >
+                {tip.action}
+              </button>
+            )}
           </div>
         )}
         <button className="btn" aria-haspopup="dialog" onClick={() => setHelp(true)}>

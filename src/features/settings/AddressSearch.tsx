@@ -1,7 +1,9 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useId, useRef, useState } from 'react'
 import { ErrorNote } from '../../components/ErrorNote'
 import { friendlyError, type FriendlyError } from '../../lib/http'
 import { geocode, type GeocodeResult } from '../../lib/ign'
+
+const LocationPicker = lazy(() => import('./LocationPicker'))
 
 type Status = 'idle' | 'loading' | 'empty' | 'error'
 
@@ -17,6 +19,7 @@ export function AddressSearch({ onSelect, onClear, autoFocus }: { onSelect: (r: 
   /** Valeur choisie dans la liste : tant que le champ la contient, on ne cherche plus. */
   const chosen = useRef<string>()
   const listId = useId()
+  const [onMap, setOnMap] = useState(false)
 
   useEffect(() => {
     const term = q.trim()
@@ -103,6 +106,26 @@ export function AddressSearch({ onSelect, onClear, autoFocus }: { onSelect: (r: 
           </li>
         ))}
       </ul>
+      {results.length === 0 && status !== 'loading' && (
+        <button type="button" className="btn ghost addr-map-btn" aria-haspopup="dialog" onClick={() => setOnMap(true)}>
+          Mon adresse n’apparaît pas
+        </button>
+      )}
+      {onMap && (
+        <Suspense fallback={null}>
+          <LocationPicker
+            onClose={() => setOnMap(false)}
+            onPick={(r) => {
+              chosen.current = r.label.trim()
+              setQ(r.label)
+              setResults([])
+              setStatus('idle')
+              setOnMap(false)
+              onSelect(r)
+            }}
+          />
+        </Suspense>
+      )}
     </div>
   )
 }

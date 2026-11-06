@@ -19,7 +19,7 @@ import { geolocationPermission, useGps } from './useGps'
 import { useHeading } from './useHeading'
 import { GpsMeter, GpsProblemNote } from './ScanParts'
 import { ScanMap, type PendingDot } from './ScanMap'
-import { closeScan, openScan } from './scanUi'
+import { closeScan, openScan, useScanUi } from './scanUi'
 import { parseMeters, precisionText } from './trilat'
 import {
   MAX_ITEMS, canValidate, choiceOf, chooseSpecies, enqueue, finish, forGarden, itemName, markIgnored, markUnvalidated, markValidated, moveItem, newItem, resetRetry, setPlantStatus, summary, summaryText, waitingText,
@@ -30,6 +30,7 @@ import { VideoScanSection } from './VideoScan'
 
 export function ScannerScreen({ garden }: { garden: Garden }) {
   const all = useScanQueue()
+  const autoVideo = !!useScanUi().video
   const items = useMemo(() => forGarden(all, garden.id), [all, garden.id])
   const plants = useGardenPlants(garden.id)
   const [selectedId, setSelectedId] = useState<string>()
@@ -248,7 +249,7 @@ export function ScannerScreen({ garden }: { garden: Garden }) {
           <GpsMeter state={gps.state} hideWhenDone />
           {error !== undefined && <ErrorNote error={error} />}
 
-          <VideoScanSection garden={garden} onDone={(id) => id && select(id)} />
+          <VideoScanSection garden={garden} autoOpen={autoVideo} onDone={(id) => id && select(id)} />
 
           {needsConsent && (
             <button className="btn" onClick={() => setAsking(true)}>

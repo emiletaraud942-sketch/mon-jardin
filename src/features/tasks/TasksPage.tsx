@@ -23,15 +23,17 @@ import type {
   Garden,
   GeneratedTask,
   TaskChoice,
+  TaskDone,
   TaskType,
   WeatherBundle,
 } from "../../types";
 import { PlaceAction } from "../../components/PlaceAction";
 import { useTasks } from "./useTasks";
 import { doneOnLabel, doneTaskLabel } from "./taskLabel";
-import { rainWord, weatherSentences } from "./weatherText";
+import { frostSentence, rainWord, weatherSentences } from "./weatherText";
 import "../../styles/novice-pages.css";
-import { PlantPot, PlantScene } from "../../components/illustrations";
+import { PlantScene } from "../../components/illustrations";
+import { speak, speechSupported, stopSpeaking, taskSpeech, useSpeakingKey, useStopSpeakingOnLeave } from "../../lib/speech";
 
 /** Types de tâches dont la faisabilité dépend de la météo : grisés tant qu'elle n'est pas chargée. */
 const WEATHER_TYPES = new Set<TaskType>([
@@ -41,6 +43,12 @@ const WEATHER_TYPES = new Set<TaskType>([
   "traitement",
   "protection",
 ]);
+
+/** Nombre signé avec un vrai signe moins (−2). */
+const signed = (n: number) => (n < 0 ? "−" + Math.abs(n) : String(n));
+
+/** Tâches visibles avant « Voir tout ». */
+const TASKS_SHOWN = 3;
 
 /** Jours de la semaine à venir : tuiles de la maquette (jour, température, temps). Le premier jour de gel est en vert foncé. */
 function WeatherDays({ weather }: { weather: WeatherBundle }) {
@@ -61,10 +69,10 @@ function WeatherDays({ weather }: { weather: WeatherBundle }) {
             <span className="wx-d">
               {label.charAt(0).toUpperCase() + label.slice(1)}
             </span>
-            <strong>{Math.round(d.tMax)}°</strong>
+            <strong>{signed(Math.round(frost ? d.tMin : d.tMax))}°</strong>
             <span className="wx-w">{frost ? "❄ Gel" : rainWord(d.rainMm)}</span>
             <span className="sr-only">
-              , {Math.round(d.tMin)} à {Math.round(d.tMax)} °C
+              , {Math.round(d.tMin)} à {Math.round(d.tMax)} °C{frost ? ", gel : la température minimale est affichée" : ""}
             </span>
           </li>
         );
@@ -82,7 +90,7 @@ function WeatherMore({ weather }: { weather: WeatherBundle }) {
         <p key={s}>{s}</p>
       ))}
       <details className="np-details">
-        <summary>Détails météo</summary>
+        <summary>Chiffres de la météo</summary>
         <p className="small" style={{ margin: 0 }}>
           Pluie tombée en 7 jours :{" "}
           {wb.rain7.toLocaleString("fr-FR", { maximumFractionDigits: 0 })} mm.
@@ -169,6 +177,7 @@ function TaskItem({
   const plants = useGardenPlants(garden.id);
   const names = task.plantIds.length;
   const [menu, setMenu] = useState(false);
+  const speaking = useSpeakingKey() === task.key;
   return (
     <li
       className={
@@ -178,7 +187,7 @@ function TaskItem({
       }
     >
       <div className="tcard-tile" aria-hidden>
-        <PlantPot size={54} />
+        <span className="tcard-emoji">{TASK_ICON[task.type]}</span>
       </div>
       <div className="tcard-body">
         <strong className="tcard-title">{task.title}</strong>
@@ -207,7 +216,7 @@ function TaskItem({
         type="button"
         className="tcard-later"
         aria-expanded={menu}
-        aria-label={`Autres choix pour : ${task.title}`}
+        aria-label={`Plus tard : ${task.title}`}
         onClick={() => setMenu((m) => !m)}
       >
         Plus tard <span aria-hidden>{menu ? "▴" : "▾"}</span>
@@ -225,10 +234,20 @@ function TaskItem({
         </div>
       )}
       <details className="tcard-more np-details">
-        <summary>Détails</summary>
+        <summary>Comment faire ?</summary>
         <div className="small">{task.howTo}</div>
         {task.tool && <div className="small muted">Outil : {task.tool}.</div>}
         {task.detail && <div className="small muted">{task.detail}</div>}
+        {speechSupported() && (
+          <button
+            type="button"
+            className="btn small tcard-read"
+            aria-pressed={speaking}
+            onClick={() => (speaking ? stopSpeaking() : speak(task.key, taskSpeech(task)))}
+          >
+            <Icon name={speaking ? "x" : "bell"} size={16} /> {speaking ? "Arrêter la lecture" : "Lire"}
+          </button>
+        )}
         {names > 0 && (
           <div className="tcard-plants">
             {task.plantIds.slice(0, 8).map((id) => {
@@ -315,6 +334,29 @@ function YearPlan({ garden }: { garden: Garden }) {
   );
 }
 
+/** « Mises de côté » : tâches repoussées ou refusées, avec « Remettre ». */
+function AsideCard({ aside }: { aside: TaskDone[] }) {
+  return (
+    <div className="card afaire-aside">
+      <h3>Mises de côté</h3>
+      <ul className="list small">
+        {aside.map((d) => (
+          <li key={d.id} className="row" style={{ justifyContent: "space-between" }}>
+            <span>
+              {d.status === "refuse" ? "✕" : "⏱"}{" "}
+              {doneTaskLabel(d.taskKey, (id) => SPECIES_BY_ID[id]?.nomCommun)}{" "}
+              <span className="muted">{choiceSentence(d)}</span>
+            </span>
+            <button className="btn small ghost" onClick={() => removeTaskDoneById(d.id)}>
+              Remettre
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function TasksPage({ garden }: { garden: Garden }) {
   const { tasks, weather, weatherError, weatherLoading } = useTasks(garden);
   const plants = useGardenPlants(garden.id);
@@ -327,7 +369,11 @@ export function TasksPage({ garden }: { garden: Garden }) {
   const [notif, setNotif] = useState(
     notificationsSupported() ? Notification.permission : "denied",
   );
-  const open = tasks.filter((t) => !t.blockedBy);
+  const open = useMemo(
+    () => [...tasks.filter((t) => !t.blockedBy)].sort((a, b) => Number(b.priority === "haute") - Number(a.priority === "haute")),
+    [tasks],
+  );
+  const [showAll, setShowAll] = useState(false);
   const blocked = tasks.filter((t) => t.blockedBy);
   const recent = done
     .filter((d) => !d.status || d.status === "fait")
@@ -336,6 +382,9 @@ export function TasksPage({ garden }: { garden: Garden }) {
     .reverse();
   const finished = useMemo(() => seasonOverPlants(plants, SPECIES_BY_ID, new Date()), [plants]);
   const aside = useMemo(() => activeChoices(allDone, garden.id, new Date()), [allDone, garden.id]);
+  const shown = showAll ? open : open.slice(0, TASKS_SHOWN);
+  useStopSpeakingOnLeave();
+  const frost = weather ? frostSentence(weather.forecast) : undefined;
 
   // Retour visuel : la tâche validée ne disparaît pas d'un coup, elle reste quelques secondes en vert, avec « Annuler ».
   const [flash, setFlash] = useState<Flash[]>([]);
@@ -395,6 +444,11 @@ export function TasksPage({ garden }: { garden: Garden }) {
                 .
               </div>
             )}
+            {frost && (
+              <p className="afaire-frost" role="status">
+                <Icon name="snow" size={18} /> {frost}
+              </p>
+            )}
             {weather && <WeatherDays weather={weather} />}
             {weatherError && (
               <div className="alert small">
@@ -414,28 +468,49 @@ export function TasksPage({ garden }: { garden: Garden }) {
               </div>
             ) : (
               <>
-                <h2 className="sr-only">À faire maintenant ({open.length})</h2>
                 {open.length === 0 && (
                   <p className="muted afaire-none">
                     Rien d'urgent : profitez du jardin.
                   </p>
                 )}
-                <ul className="tcards">
-                  {flash.map((f) => (
-                    <FlashCard key={f.id} item={f} onUndo={() => undoFlash(f.id)} onClose={() => dropFlash(f.id)} />
+                {flash.length > 0 && (
+                  <ul className="tcards">
+                    {flash.map((f) => (
+                      <FlashCard key={f.id} item={f} onUndo={() => undoFlash(f.id)} onClose={() => dropFlash(f.id)} />
+                    ))}
+                  </ul>
+                )}
+                {[
+                  { id: "urgent", title: "Urgent", list: shown.filter((t) => t.priority === "haute") },
+                  { id: "semaine", title: "Cette semaine", list: shown.filter((t) => t.priority !== "haute") },
+                ]
+                  .filter((g) => g.list.length > 0)
+                  .map((g) => (
+                    <section key={g.id} className="afaire-group" aria-labelledby={"grp-" + g.id}>
+                      <h2 id={"grp-" + g.id} className="afaire-group-title">
+                        {g.title} ({g.list.length})
+                      </h2>
+                      <ul className="tcards">
+                        {g.list.map((t) => (
+                          <TaskItem
+                            key={t.key}
+                            garden={garden}
+                            task={t}
+                            onDecide={decide}
+                            weatherPending={!weather && weatherLoading && WEATHER_TYPES.has(t.type)}
+                          />
+                        ))}
+                      </ul>
+                    </section>
                   ))}
-                  {open.map((t) => (
-                    <TaskItem
-                      key={t.key}
-                      garden={garden}
-                      task={t}
-                      onDecide={decide}
-                      weatherPending={
-                        !weather && weatherLoading && WEATHER_TYPES.has(t.type)
-                      }
-                    />
-                  ))}
-                </ul>
+                {(open.length > TASKS_SHOWN || aside.length > 0) && (
+                  <button className="btn afaire-all" aria-expanded={showAll} onClick={() => setShowAll(!showAll)}>
+                    {showAll
+                      ? "Voir moins"
+                      : `Voir tout (${open.length} à faire${aside.length > 0 ? `, ${aside.length} de côté` : ""})`}
+                  </button>
+                )}
+                {showAll && aside.length > 0 && <AsideCard aside={aside} />}
                 {blocked.length > 0 && (
                   <details className="later">
                     <summary>
@@ -491,25 +566,6 @@ export function TasksPage({ garden }: { garden: Garden }) {
           </div>
         )}
         {view === "semaine" && weather && <WeatherMore weather={weather} />}
-        {view === "semaine" && aside.length > 0 && (
-          <div className="card">
-            <h3>Mises de côté</h3>
-            <ul className="list small">
-              {aside.map((d) => (
-                <li key={d.id} className="row" style={{ justifyContent: "space-between" }}>
-                  <span>
-                    {d.status === "refuse" ? "✕" : "⏱"}{" "}
-                    {doneTaskLabel(d.taskKey, (id) => SPECIES_BY_ID[id]?.nomCommun)}{" "}
-                    <span className="muted">{choiceSentence(d)}</span>
-                  </span>
-                  <button className="btn small ghost" onClick={() => removeTaskDoneById(d.id)}>
-                    Remettre
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
         {view === "semaine" && recent.length > 0 && (
           <div className="card">
             <h3>Fait ces derniers jours</h3>
