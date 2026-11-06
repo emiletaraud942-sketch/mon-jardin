@@ -12,7 +12,7 @@ export function markHarvested(plants: Plant[], label: string) {
   const apply = () => plants.forEach((p) => updatePlant(p.id, { status: 'recoltee' }))
   apply()
   recordWithToast(
-    { label: `Récolte terminée : ${label}`, undo: () => before.forEach((b) => updatePlant(b.id, { status: b.status })), redo: apply },
+    { label: plants.length === 1 ? `${label} : marquée récoltée` : `${plants.length} plantes marquées récoltées`, undo: () => before.forEach((b) => updatePlant(b.id, { status: b.status })), redo: apply },
     plants.length === 1 ? `${label} : marquée récoltée.` : `${plants.length} plantes marquées récoltées.`,
   )
 }

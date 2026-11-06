@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { SPECIES_BY_ID } from '../../data/species'
 import { STATUS_LABEL } from '../../data/labels'
 import { Icon } from '../../components/Icon'
 import { SpeciesPicker } from '../../components/SpeciesPicker'
 import { UNKNOWN_SPECIES_ID, yourPlant } from '../../lib/customName'
+import { useInertBehind } from '../../lib/inert'
 import { useGardenPlants, useStore } from '../../lib/store'
 import { closePlantSheet, openHelp, setUi, startPlacing, stopPlacing, useUi } from '../../lib/ui'
 import type { Garden } from '../../types'
@@ -25,6 +26,18 @@ export function useSheetHead(garden: Garden): { title: string; summary: string }
   return { title: garden.name, summary: `${plants.length} plante${plants.length > 1 ? 's' : ''}` }
 }
 
+/** Fiche plante en plein écran (carte, 3D) : fenêtre modale, le reste de la page est inerte. */
+function FicheOverlay({ label, children }: { label: string; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useInertBehind(true)
+  useEffect(() => ref.current?.focus({ preventScroll: true }), [])
+  return (
+    <div ref={ref} className="fiche-overlay" role="dialog" aria-modal="true" aria-label={`Fiche : ${label}`} tabIndex={-1}>
+      {children}
+    </div>
+  )
+}
+
 /** Panneau latéral partagé par la carte et la 3D. */
 export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
   const plants = useGardenPlants(garden.id)
@@ -37,9 +50,9 @@ export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
   if (selected && mobile) {
     if (movingPlantId || placingSpeciesId) return null
     return createPortal(
-      <div className="fiche-overlay">
+      <FicheOverlay label={plantName(selected)}>
         <PlantPanel garden={garden} plant={selected} onClose={closePlantSheet} fiche onShowOnMap={() => setUi({ tab: 'carte', focusPlantId: selected.id, selectedPlantId: undefined })} />
-      </div>,
+      </FicheOverlay>,
       document.body,
     )
   }

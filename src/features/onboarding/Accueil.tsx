@@ -151,7 +151,7 @@ export function Accueil({ garden, openTasks, newsCount }: { garden: Garden; open
   return (
     <div className="page accueil">
       {route && <RouteCard garden={garden} />}
-      <PageHead compact kicker={who ? `Bonjour ${who}` : 'Bonjour'} title="Que voulez-vous faire ?" onHelp={openHelp} />
+      <PageHead compact kicker={who ? `Bonjour ${who}` : 'Bonjour'} title="Que voulez-vous faire ?" onHelp={openHelp} />
       <button className="chez" onClick={() => setUi({ tab: 'carte' })}>
         <span className="chez-title">{chezTitle(garden.name)}</span>
         <span className="chez-sum">

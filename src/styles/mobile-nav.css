@@ -301,3 +301,87 @@
     font-size: 0.9375rem;
   }
 }
+
+/* ---------- Bouton « A+ Agrandir le texte » (bienvenue, adresse, Réglages) ---------- */
+.textsize-btn {
+  align-self: flex-end;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+}
+.textsize-mark {
+  font-family: var(--font-title);
+  font-size: 1.15em;
+  color: var(--title);
+}
+.welcome-body {
+  position: relative;
+}
+.welcome-body .textsize-btn {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  right: 12px;
+  z-index: 2;
+}
+.settings-textsize {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 10px;
+}
+.diag-box {
+  gap: 4px;
+}
+
+/* ---------- « Prochaine étape » : « Je n'ai pas d'arbre » passe à la suite ---------- */
+.nextstep:has(.nextstep-skip) {
+  flex-wrap: wrap;
+}
+.nextstep:has(.nextstep-skip) .nextstep-text {
+  flex: 1 1 10rem;
+}
+.nextstep-skip {
+  flex: 1 0 100%;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: calc(14 * var(--px));
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ---------- Puce « Hors connexion » ---------- */
+/* Puce fixe en bas, au-dessus de la barre de navigation (téléphone) ; la page garde de la place pour ne pas être cachée. */
+.offline-chip {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 16px;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: max-content;
+  max-width: calc(100% - 16px);
+  margin: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  font-size: calc(13 * var(--px));
+  line-height: 1.3;
+  pointer-events: none;
+}
+@media (max-width: 760px) {
+  .offline-chip {
+    bottom: calc(var(--nav-h) + 8px + env(safe-area-inset-bottom));
+  }
+}
+html[data-offline] .page {
+  padding-bottom: calc(64px + env(safe-area-inset-bottom));
+}

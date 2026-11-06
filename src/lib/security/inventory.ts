@@ -181,6 +181,16 @@ export const DATA_INVENTORY: readonly DataItem[] = [
     effacement: 'Effacer toutes mes données',
   },
   {
+    id: 'diagnostic',
+    donnee: 'Dernières erreurs de l’appli (20 au plus) : heure, type, message nettoyé (sans adresse e-mail, coordonnée ni identifiant) ; version de l’appli, taille de l’écran, thème, nombre de jardins et de plantes',
+    stockage: 'Mémoire de la page seulement : rien n’est écrit sur l’appareil, tout disparaît à la fermeture. Un fichier n’est créé que si vous touchez « Exporter un diagnostic »',
+    destinataires: [],
+    finalite: 'Vous permettre de joindre un fichier de diagnostic à une demande d’aide. Rien n’est envoyé automatiquement',
+    base: 'interet-legitime',
+    duree: 'Jusqu’à la fermeture de la page. Le fichier exporté est à vous : supprimez-le quand vous voulez',
+    effacement: 'Fermer la page ; supprimer le fichier exporté',
+  },
+  {
     id: 'journaux',
     donnee: 'Adresse IP, date, URL et navigateur de chaque requête (journaux techniques d’hébergement)',
     stockage: 'Vercel',

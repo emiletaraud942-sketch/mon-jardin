@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TaskRule } from '../../types'
-import { SPECIES, SPECIES_BY_ID, matchesSpecies } from './index'
+import { SPECIES, SPECIES_BY_ID, matchesSpecies, searchRank, sortByRelevance } from './index'
 import { ALIAS } from './alias'
 import { AVERTISSEMENTS } from './avertissements'
 import { AJOUTS } from './ajouts'
@@ -246,6 +246,20 @@ describe('noms usuels (alias)', () => {
     expect(trouve('ciboule')).toEqual(expect.arrayContaining(['ciboule', 'ciboulette']))
     expect(trouve('')).toHaveLength(SPECIES.length)
     expect(trouve('zzzz')).toEqual([])
+  })
+  it('les pluriels (s, x) trouvent le singulier', () => {
+    const trouve = (q: string) => SPECIES.filter((s) => matchesSpecies(s, q)).map((s) => s.id)
+    expect(trouve('framboises')).toContain('framboisier')
+    expect(trouve('pommes')).toContain('pommier')
+    expect(trouve('tomates')).toContain('tomate')
+  })
+  it('le tri met le nom exact, puis l’alias exact, puis le début, puis « contient »', () => {
+    const sp = (nomCommun: string, alias: string[] = [], nomLatin = 'Xus yus') => ({ nomCommun, nomLatin, alias })
+    const liste = [sp('Cerisier du Japon', ['cerise des fleurs']), sp('Prunier cerise'), sp('Griottier', ['cerise']), sp('Cerise')]
+    expect(sortByRelevance(liste, 'cerise').map((s) => s.nomCommun)).toEqual(['Cerise', 'Griottier', 'Cerisier du Japon', 'Prunier cerise'])
+    expect(searchRank(liste[3], 'cerises')).toBe(0)
+    expect(sortByRelevance(liste, '')).toBe(liste)
+    expect(searchRank(liste[0], 'zzz')).toBe(99)
   })
   it('les alias sont portés par les espèces du catalogue', () => {
     expect(SPECIES_BY_ID.pommier.alias).toContain('pomme')

@@ -31,4 +31,4 @@ export function getSpecies(id: string): Species | undefined {
   return SPECIES_BY_ID[id]
 }
 
-export { matchesSpecies, normalizeSearch } from './search'
+export { matchesSpecies, normalizeSearch, searchRank, sortByRelevance } from './search'

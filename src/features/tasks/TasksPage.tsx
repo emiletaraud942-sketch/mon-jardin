@@ -486,7 +486,7 @@ export function TasksPage({ garden }: { garden: Garden }) {
             </ul>
             {finished.length > 8 && <p className="small muted">+ {finished.length - 8} autres</p>}
             <button className="btn" onClick={() => markHarvested(finished, "Fin de saison")}>
-              <Icon name="check" size={16} /> Tout marquer récolté ({finished.length})
+              <Icon name="check" size={16} /> Tout marquer comme récolté ({finished.length})
             </button>
           </div>
         )}

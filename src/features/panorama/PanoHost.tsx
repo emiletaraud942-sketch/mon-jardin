@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useActiveGarden } from '../../lib/store'
+import { useInertBehind } from '../../lib/inert'
 import { Capture } from './Capture'
 import { Home } from './Home'
 import { ImportPano } from './ImportPano'
@@ -27,6 +28,8 @@ export default function PanoHost() {
     return () => window.removeEventListener('keydown', onKey)
   }, [screen])
 
+  const shown = !!screen && !!garden
+  useInertBehind(shown)
   if (!screen || !garden) return null
   const spot = ui.spot ?? (ui.pointId ? panoramasOf(garden).find((p) => p.id === ui.pointId) : undefined)
   let body
@@ -36,7 +39,7 @@ export default function PanoHost() {
   else if (screen === 'import' && spot) body = <ImportPano key={ui.pointId ?? 'new'} garden={garden} spot={{ x: spot.x, y: spot.y }} redoId={ui.pointId} />
   else body = <Home garden={garden} />
   return (
-    <div ref={root} className="pano-overlay" role="dialog" aria-label="Photos du jardin" tabIndex={-1}>
+    <div ref={root} className="pano-overlay" role="dialog" aria-modal="true" aria-label="Photos du jardin" tabIndex={-1}>
       {body}
     </div>
   )

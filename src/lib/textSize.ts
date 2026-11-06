@@ -26,7 +26,7 @@ export function applyTextSize(size: TextSize) {
   else root.setAttribute('data-text-size', size)
 }
 
-const CHANGE_EVENT = 'permajardin:text-size-change' // nom d'événement, pas une clé de stockage
+const CHANGE_EVENT = 'textsize-change' // nom d'événement, pas une clé de stockage
 
 /** La taille du texte vue par l'interface : suit le bouton « Agrandir le texte » comme le choix de Réglages. */
 export function useTextSize(): TextSize {

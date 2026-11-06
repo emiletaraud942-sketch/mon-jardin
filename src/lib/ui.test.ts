@@ -454,6 +454,7 @@ describe('calques (modales, étapes, vues) et bouton Retour', () => {
     const onPop = vi.fn()
     const id = ui.openLayer(onPop)
     ui.closeLayer(id)
+    await Promise.resolve() // l'entrée est retirée à la fin du tour
     expect(onPop).not.toHaveBeenCalled()
     expect(b.current().hash).toBe('#plantes')
     expect(ui.getUi().tab).toBe('plantes')
@@ -473,6 +474,16 @@ describe('calques (modales, étapes, vues) et bouton Retour', () => {
     b.back()
     expect(onPop).not.toHaveBeenCalled()
     expect(ui.getUi().tab).toBe('plantes')
+  })
+
+  it('fermé puis rouvert dans le même tour : une seule entrée d’historique', async () => {
+    const { b, ui } = await load('#plantes')
+    const first = ui.openLayer(vi.fn())
+    ui.closeLayer(first)
+    const second = ui.openLayer(vi.fn())
+    await Promise.resolve()
+    expect(b.length()).toBe(2) // l'entrée initiale et celle du calque
+    expect(b.current().state).toMatchObject({ layer: second })
   })
 
   it('deux calques empilés se ferment un par un', async () => {

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { SPECIES, matchesSpecies } from '../data/species'
+import { SPECIES, matchesSpecies, sortByRelevance } from '../data/species'
 import { CATEGORY_LABEL } from '../data/labels'
 import type { Category, Species, Sun } from '../types'
 import { RiskBadges } from './RiskNotes'
@@ -22,7 +22,7 @@ export interface SpeciesFilters {
 }
 
 export function filterSpecies(q: string, f: SpeciesFilters = {}): Species[] {
-  return SPECIES.filter(
+  const found = SPECIES.filter(
     (s) =>
       (!f.category || s.categorie === f.category) &&
       (!f.sun || s.soleil.includes(f.sun)) &&
@@ -30,6 +30,7 @@ export function filterSpecies(q: string, f: SpeciesFilters = {}): Species[] {
       (!f.safe || !s.avertissements?.length) &&
       matchesSpecies(s, q),
   )
+  return sortByRelevance(found, q) // exact, alias, début, contient
 }
 
 export function searchSpecies(q: string, category?: Category | ''): Species[] {

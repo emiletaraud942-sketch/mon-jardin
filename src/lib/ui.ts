@@ -199,7 +199,10 @@ interface HistoryState {
 
 const snap = (u: UiState): NavSnap => ({ tab: u.tab, selectedPlantId: u.selectedPlantId, speciesId: u.speciesId })
 const sameSnap = (a: NavSnap, b: NavSnap) => a.tab === b.tab && a.selectedPlantId === b.selectedPlantId && a.speciesId === b.speciesId
+/** Faux hors d'un navigateur (tests qui importent un composant sans écran) : on ne touche ni l'historique ni l'adresse. */
+const hasBrowser = typeof history !== 'undefined' && typeof location !== 'undefined' && typeof window !== 'undefined'
 const readState = (): HistoryState | undefined => {
+  if (!hasBrowser) return undefined
   const s = history.state as HistoryState | null
   return s && typeof s === 'object' && s.nav ? s : undefined
 }
@@ -222,7 +225,7 @@ function initialUi(): UiState {
     extra = { selectedPlantId: stored.selectedPlantId, speciesId: stored.speciesId }
   } else {
     // Ni historique ni hash : le dernier rayon s'il est connu et disponible, sinon « Que voulez-vous faire ? ».
-    const fromHash = parseHash(location.hash)
+    const fromHash = hasBrowser ? parseHash(location.hash) : undefined
     tab = fromHash ?? (storedRayon && rayonAvailable(storedRayon) ? DEFAULT_TAB[storedRayon] : 'accueil')
   }
   return { tab, rayon: rayonOfTab(tab) ?? storedRayon, guide: readGuide(), ...extra }
@@ -233,7 +236,7 @@ const listeners = new Set<() => void>()
 
 // Entrée initiale : on ne touche pas à l'URL si le hash contient autre chose qu'un onglet
 // (jeton d'un lien magique, par exemple) : la synchronisation doit pouvoir le lire.
-if (location.hash === '' || location.hash === '#' + ui.tab) {
+if (hasBrowser && (location.hash === '' || location.hash === '#' + ui.tab)) {
   history.replaceState({ nav: snap(ui), sheetOnly: readState()?.sheetOnly } satisfies HistoryState, '', '#' + ui.tab)
 }
 
@@ -283,7 +286,7 @@ export function setUi(patch: Partial<Omit<UiState, 'guide'>>, opts: { push?: boo
 }
 
 // Bouton Retour (Android, navigateur) : on restitue l'écran mémorisé dans l'entrée d'historique.
-window.addEventListener('popstate', (e) => {
+if (hasBrowser) window.addEventListener('popstate', (e) => {
   // Retour silencieux : un calque s'est fermé tout seul (on a retiré son entrée), rien à restituer.
   if (silentBack && Date.now() < silentUntil) {
     silentBack = false
@@ -320,11 +323,19 @@ let layerSeq = 0
 let silentBack = false
 let silentUntil = 0
 
+/** Calque fermé dont on n'a pas encore retiré l'entrée d'historique (on attend la fin du tour : un calque rouvert aussitôt la réutilise). */
+let pendingClose: string | undefined
+
 /** Ouvre un calque. `onPop` est appelée si l'utilisateur fait Retour. Renvoie l'identifiant à donner à `closeLayer`. */
 export function openLayer(onPop: () => void): string {
   const id = 'l' + ++layerSeq
   const cur = readState()
-  history.pushState({ nav: cur?.nav ?? snap(ui), layer: id } satisfies HistoryState, '', location.hash || '#' + ui.tab)
+  const state = { nav: cur?.nav ?? snap(ui), layer: id } satisfies HistoryState
+  if (pendingClose !== undefined && cur?.layer === pendingClose) {
+    // Fermé puis rouvert dans le même tour (React en développement) : on réutilise l'entrée au lieu d'en empiler une seconde.
+    pendingClose = undefined
+    history.replaceState(state, '', location.hash || '#' + ui.tab)
+  } else history.pushState(state, '', location.hash || '#' + ui.tab)
   layers.push({ id, onPop })
   return id
 }
@@ -334,11 +345,16 @@ export function closeLayer(id: string) {
   const i = layers.findIndex((l) => l.id === id)
   if (i < 0) return
   layers.splice(i, 1)
-  if (readState()?.layer === id) {
+  if (readState()?.layer !== id) return
+  pendingClose = id
+  queueMicrotask(() => {
+    if (pendingClose !== id) return // rouvert entre-temps
+    pendingClose = undefined
+    if (readState()?.layer !== id) return // l'écran a changé entre-temps : l'entrée n'est plus la sienne
     silentBack = true
     silentUntil = Date.now() + 600
     history.back()
-  }
+  })
 }
 
 /** Ouvre un calque tant que `active` est vrai (étape du parcours, vue Voisins) ; `onPop` ramène à l'écran d'avant. */
