@@ -135,7 +135,7 @@ export function useTasksCompute(garden?: Garden): TasksResult {
   return { tasks, weather, weatherError: error, weatherLoading: loading }
 }
 
-/** Résultat partagé par l'appli (un seul calcul et une seule météo pour l'accueil, À faire, la fiche plante et Réglages). */
+/** Résultat partagé par l'appli : un seul calcul et une seule météo pour l'accueil, À faire, la fiche plante et Réglages. */
 export const TasksContext = createContext<{ gardenId: string | undefined; value: TasksResult } | undefined>(undefined)
 
 /** Le résultat partagé sert-il pour ce jardin ? */
@@ -144,7 +144,7 @@ export const canShare = (sharedGardenId: string | undefined, gardenId: string | 
 export function useTasks(garden?: Garden): TasksResult {
   const shared = useContext(TasksContext)
   const reuse = !!shared && canShare(shared.gardenId, garden?.id)
-  // Sans partage (tests, hors fournisseur) : calcul local. Avec partage : ce calcul-ci reste vide.
+  // Sans partage (tests, hors fournisseur) : calcul local. Avec partage : ce calcul-ci reste vide (jardin absent).
   const own = useTasksCompute(reuse ? undefined : garden)
   return reuse ? shared.value : own
 }

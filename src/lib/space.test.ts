@@ -1,61 +1,55 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ensureRoom, hasRoom, isQuotaError, RESERVE_BYTES, STORAGE_FULL_MESSAGE, StorageFullError, writeWithRetry } from './space'
+import { hasRoom, RESERVE_BYTES, roomFor, writeWithRetry } from './space'
 
-afterEach(() => vi.unstubAllGlobals())
+const MB = 1024 * 1024
 
 describe('hasRoom', () => {
-  it('accepte quand la place restante couvre l’écriture et la marge', () => {
-    expect(hasRoom({ quota: 100e6, usage: 10e6 }, 1e6)).toBe(true)
-    expect(hasRoom({ quota: 100e6, usage: 100e6 - 1e6 }, 1e6)).toBe(false)
-    expect(hasRoom({ quota: 100e6, usage: 100e6 - 1e6 - RESERVE_BYTES }, 1e6)).toBe(true)
+  it('assez de place : oui, marge comprise', () => {
+    expect(hasRoom({ quota: 100 * MB, usage: 10 * MB }, 1 * MB)).toBe(true)
+    expect(hasRoom({ quota: 100 * MB, usage: 100 * MB - (1 * MB + RESERVE_BYTES) }, 1 * MB)).toBe(true)
   })
-  it('accepte quand l’estimation manque', () => {
-    expect(hasRoom(undefined, 1e9)).toBe(true)
-    expect(hasRoom({}, 1e9)).toBe(true)
-    expect(hasRoom({ quota: 0, usage: 0 }, 1e9)).toBe(true)
+  it('pas assez : non, même si l’écriture seule tiendrait (la marge protège l’état du jardin)', () => {
+    expect(hasRoom({ quota: 100 * MB, usage: 100 * MB - 2 * MB }, 1 * MB)).toBe(false)
+    expect(hasRoom({ quota: 10 * MB, usage: 10 * MB }, 1)).toBe(false)
   })
-})
-
-describe('isQuotaError', () => {
-  it('reconnaît les formes connues', () => {
-    expect(isQuotaError(new DOMException('x', 'QuotaExceededError'))).toBe(true)
-    expect(isQuotaError({ name: 'NS_ERROR_DOM_QUOTA_REACHED' })).toBe(true)
-    expect(isQuotaError({ code: 22 })).toBe(true)
-    expect(isQuotaError(new StorageFullError())).toBe(true)
-    expect(isQuotaError(new Error('autre'))).toBe(false)
-    expect(isQuotaError(undefined)).toBe(false)
+  it('estimation absente ou incomplète : oui (on tente l’écriture)', () => {
+    expect(hasRoom(undefined, 5 * MB)).toBe(true)
+    expect(hasRoom({}, 5 * MB)).toBe(true)
+    expect(hasRoom({ quota: 0, usage: 0 }, 5 * MB)).toBe(true)
+    expect(hasRoom({ quota: 10 * MB }, 5 * MB)).toBe(true)
   })
 })
 
-describe('ensureRoom', () => {
-  it('refuse avec le message dédié quand il n’y a plus de place', async () => {
-    vi.stubGlobal('navigator', { storage: { estimate: async () => ({ quota: 50e6, usage: 49.5e6 }) } })
-    await expect(ensureRoom(1e6)).rejects.toThrow(STORAGE_FULL_MESSAGE)
+describe('roomFor', () => {
+  afterEach(() => vi.unstubAllGlobals())
+  it('lit l’estimation du navigateur', async () => {
+    vi.stubGlobal('navigator', { storage: { estimate: async () => ({ quota: 50 * MB, usage: 49 * MB }) } })
+    expect(await roomFor(1 * MB)).toBe(false)
   })
-  it('laisse passer quand l’estimation échoue', async () => {
-    vi.stubGlobal('navigator', { storage: { estimate: async () => { throw new Error('non') } } })
-    await expect(ensureRoom(1e6)).resolves.toBeUndefined()
+  it('sans API ou si elle échoue : oui', async () => {
+    vi.stubGlobal('navigator', {})
+    expect(await roomFor(1 * MB)).toBe(true)
+    vi.stubGlobal('navigator', { storage: { estimate: async () => { throw new Error('refusé') } } })
+    expect(await roomFor(1 * MB)).toBe(true)
   })
 })
 
 describe('writeWithRetry', () => {
-  it('recommence une fois après une erreur de place, puis réussit', async () => {
-    let n = 0
-    const r = await writeWithRetry(async () => {
-      if (++n === 1) throw new DOMException('plein', 'QuotaExceededError')
-      return 'ok'
-    }, { delayMs: 1 })
-    expect(r).toBe('ok')
-    expect(n).toBe(2)
-  })
-  it('lève le message dédié si la seconde tentative échoue aussi', async () => {
-    const write = vi.fn(async () => { throw new DOMException('plein', 'QuotaExceededError') })
-    await expect(writeWithRetry(write, { delayMs: 1 })).rejects.toThrow(STORAGE_FULL_MESSAGE)
+  const full = (e: unknown) => (e as { name?: string })?.name === 'QuotaExceededError'
+  const quota = () => Object.assign(new Error('plein'), { name: 'QuotaExceededError' })
+  it('réussit au deuxième essai quand la première écriture dit « plein »', async () => {
+    const write = vi.fn().mockRejectedValueOnce(quota()).mockResolvedValueOnce('ok')
+    expect(await writeWithRetry(write, full, { delayMs: 1 })).toBe('ok')
     expect(write).toHaveBeenCalledTimes(2)
   })
-  it('ne recommence pas une autre erreur', async () => {
-    const write = vi.fn(async () => { throw new Error('autre') })
-    await expect(writeWithRetry(write, { delayMs: 1 })).rejects.toThrow('autre')
+  it('relance l’erreur d’origine si c’est toujours plein', async () => {
+    const write = vi.fn().mockRejectedValue(quota())
+    await expect(writeWithRetry(write, full, { delayMs: 1 })).rejects.toThrow('plein')
+    expect(write).toHaveBeenCalledTimes(2)
+  })
+  it('une autre erreur n’est jamais retentée', async () => {
+    const write = vi.fn().mockRejectedValue(new Error('disque en panne'))
+    await expect(writeWithRetry(write, full, { delayMs: 1 })).rejects.toThrow('disque en panne')
     expect(write).toHaveBeenCalledTimes(1)
   })
 })

@@ -12,8 +12,7 @@ vi.mock('idb-keyval', () => ({
   keys: async () => [...db.keys()],
 }))
 
-import { compressToTarget, deletePhoto, getPhoto, listPhotoIds, restorePhoto, savePhoto, TARGET_BYTES } from './photos'
-import { isQuotaError, STORAGE_FULL_MESSAGE as MESSAGE_FULL } from './space'
+import { compressToTarget, deletePhoto, getPhoto, isFullError, isQuotaError, listPhotoIds, MESSAGE_FULL, restorePhoto, savePhoto, TARGET_BYTES } from './photos'
 
 let close: ReturnType<typeof vi.fn>
 let canvas: { width: number; height: number; getContext: () => unknown; toBlob: (cb: (b: Blob | null) => void, type: string, q: number) => void }
@@ -111,10 +110,22 @@ describe('stockage plein', () => {
     expect(isQuotaError(new Error('autre'))).toBe(false)
     expect(isQuotaError(null)).toBe(false)
   })
+  it('isFullError reconnaît l’erreur brute et le message de savePhoto', () => {
+    expect(isFullError(quota())).toBe(true)
+    expect(isFullError(new Error(MESSAGE_FULL))).toBe(true)
+    expect(isFullError(new Error('autre'))).toBe(false)
+    expect(isFullError(undefined)).toBe(false)
+  })
   it('savePhoto dit en français que l’espace est plein, et ne laisse rien derrière', async () => {
     failSet = quota()
     await expect(savePhoto(new Blob(['x']))).rejects.toThrow(MESSAGE_FULL)
     expect(await listPhotoIds()).toEqual([])
+  })
+  it('savePhoto refuse avant d’écrire quand le navigateur annonce qu’il ne reste pas de place', async () => {
+    vi.stubGlobal('navigator', { storage: { estimate: async () => ({ quota: 20 * 1024 * 1024, usage: 19.5 * 1024 * 1024 }) } })
+    await expect(savePhoto(new Blob(['x']))).rejects.toThrow(MESSAGE_FULL)
+    expect(await listPhotoIds()).toEqual([])
+    vi.unstubAllGlobals()
   })
   it('une autre panne d’écriture est relancée telle quelle', async () => {
     failSet = new Error('disque en panne')

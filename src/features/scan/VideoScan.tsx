@@ -5,8 +5,8 @@ import { Icon } from '../../components/Icon'
 import { Modal } from '../../components/Modal'
 import { hasConsent } from '../../lib/consent'
 import { uid } from '../../lib/geo'
-import { savePhoto } from '../../lib/photos'
-import { ensureRoom, isQuotaError, STORAGE_FULL_MESSAGE } from '../../lib/space'
+import { isFullError, MESSAGE_FULL, savePhoto } from '../../lib/photos'
+import { roomFor } from '../../lib/space'
 import type { Garden } from '../../types'
 import { ConsentDialog } from '../legal/ConsentDialog'
 import { gpsSupport, type GpsProblem } from './gps'
@@ -118,10 +118,8 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
       setError(new Error('Cet appareil ne permet pas de filmer depuis l’appli. Choisissez une vidéo déjà filmée.'))
       return
     }
-    try {
-      await ensureRoom(cap * FRAME_BYTES)
-    } catch (e) {
-      setError(e)
+    if (!(await roomFor(cap * FRAME_BYTES))) {
+      setError(new Error(MESSAGE_FULL))
       return
     }
     try {
@@ -199,7 +197,7 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
     setStep('tri')
     setProgress({ label: 'Lecture de la vidéo…', done: 0, total: 1 })
     try {
-      await ensureRoom(cap * FRAME_BYTES)
+      if (!(await roomFor(cap * FRAME_BYTES))) throw new Error(MESSAGE_FULL)
       const r = await extractFrames(file, { max: cap, onProgress: (done, total) => setProgress({ label: 'Choix des images…', done, total }) })
       setSkipped(r.skipped)
       setLocated(false)
@@ -238,7 +236,7 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
         updateQueue((q) => enqueue(q, newItem({ id, gardenId: garden.id, photoId, position, accuracyM: p?.accuracyM ?? 99, from: 'video' })))
       } catch (e) {
         failed++
-        if (isQuotaError(e)) {
+        if (isFullError(e)) {
           // Plus de place : inutile d'insister sur les images suivantes.
           full = true
           failed += chosen.length - n - 1
@@ -354,7 +352,7 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
                 <div className="alert small" role="status">
                   {lost > 0 ? (
                     <>
-                      <strong>{fullStop ? STORAGE_FULL_MESSAGE : 'Les images n’ont pas pu être enregistrées.'}</strong> Libérez de la place, puis filmez à nouveau.
+                      <strong>{fullStop ? MESSAGE_FULL : 'Les images n’ont pas pu être enregistrées. Libérez de la place, puis filmez à nouveau.'}</strong>
                     </>
                   ) : (
                     <>
@@ -379,7 +377,7 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
                   {waiting && <p className="small muted" style={{ margin: 0 }}>Les images qui restent seront envoyées dès que possible. Vous pouvez fermer cet écran.</p>}
                   {lost > 0 && (
                     <p className="alert warn small" role="alert">
-                      {fullStop ? STORAGE_FULL_MESSAGE : 'Une image n’a pas pu être enregistrée.'} {lost} image{lost > 1 ? 's' : ''} perdue{lost > 1 ? 's' : ''}. Libérez de la place, puis filmez à nouveau.
+                      {fullStop ? MESSAGE_FULL : 'Une image n’a pas pu être enregistrée. Libérez de la place, puis filmez à nouveau.'} {lost} image{lost > 1 ? 's' : ''} perdue{lost > 1 ? 's' : ''}.
                     </p>
                   )}
                   {!located && <p className="alert small">Pas de trace de marche. Glissez chaque plante à sa place sur la carte.</p>}

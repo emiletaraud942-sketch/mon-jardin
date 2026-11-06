@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { Modal } from '../../components/Modal'
 import { Icon } from '../../components/Icon'
 import { identifyPlant, type Identification } from '../../lib/plantnet'
-import { deletePhoto, getPhoto, savePhoto } from '../../lib/photos'
-import { isQuotaError, STORAGE_FULL_MESSAGE } from '../../lib/space'
+import { deletePhoto, getPhoto, isFullError, MESSAGE_FULL, savePhoto } from '../../lib/photos'
 import { PhotoThumb } from '../../components/PhotoThumb'
 import { startPlacing } from '../../lib/ui'
 import { hasConsent } from '../../lib/consent'
@@ -40,11 +39,11 @@ export function IdentifyDialog({ onClose }: { onClose: () => void }) {
         ids.push(await savePhoto(f))
       } catch (e) {
         failed++
-        if (isQuotaError(e)) full = true
+        if (isFullError(e)) full = true
         console.warn('Photo non enregistrée', e)
       }
     }
-    if (failed && full) setError(new Error(`${STORAGE_FULL_MESSAGE} Libérez de la place, puis recommencez.`))
+    if (failed && full) setError(new Error(MESSAGE_FULL))
     else if (failed) setError(new Error(failed === files.length ? 'Photo illisible. Essayez une autre photo (JPEG ou PNG).' : `${failed} photo(s) illisible(s) mises de côté.`))
     if (ids.length) {
       setPhotos((p) => [...p, ...ids])

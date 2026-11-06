@@ -2,6 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fetchWithTimeout, friendlyError } from './http'
 
 describe('friendlyError', () => {
+  it('garde tel quel le message « espace plein » de savePhoto, sans le cacher derrière « Informations techniques »', async () => {
+    const { MESSAGE_FULL } = await import('./photos')
+    expect(MESSAGE_FULL.length).toBeGreaterThan(160)
+    expect(friendlyError(new Error(MESSAGE_FULL))).toEqual({ message: MESSAGE_FULL })
+  })
   it('garde les phrases déjà simples', () => {
     expect(friendlyError(new Error('Connexion impossible. Vérifiez votre accès à Internet.')).message).toBe('Connexion impossible. Vérifiez votre accès à Internet.')
     expect(friendlyError(new Error('Le service met trop de temps à répondre. Réessayez dans un instant.'))).toEqual({

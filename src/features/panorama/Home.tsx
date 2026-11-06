@@ -28,7 +28,7 @@ export function Home({ garden }: { garden: Garden }) {
     void (async () => {
       const next: Record<string, Info> = {}
       for (const p of points) {
-        const bytes = p.bytes ?? (await pointBytes(p))
+        const bytes = await pointBytes(p) // le poids noté s'il existe, sinon lecture des photos
         // Point ancien : on note son poids une fois, le plafond se calcule ensuite sans relire les photos.
         if (p.bytes === undefined) noteBytes(garden.id, p.id, bytes)
         let url: string | undefined

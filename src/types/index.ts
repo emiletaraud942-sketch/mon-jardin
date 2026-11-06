@@ -191,7 +191,7 @@ export interface Panorama {
   kind: 'guide' | 'import'
   /** Faux si la boussole n'était pas fiable : les caps sont relatifs, les noms de plantes ne sont pas affichés. */
   northOk?: boolean
-  /** Poids des photos du point (octets), noté à la prise : le plafond de 25 Mo se calcule sans relire les photos. */
+  /** Poids total des photos du point (octets), noté une fois : évite de relire toutes les photos pour afficher la place prise. */
   bytes?: number
 }
 

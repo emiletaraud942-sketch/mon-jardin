@@ -52,6 +52,7 @@ export function friendlyError(e: unknown): FriendlyError {
   const raw = (e instanceof Error ? e.message : typeof e === 'string' ? e : '').trim()
   if (!raw) return { message: GENERIC }
   if (/^Connexion impossible/.test(raw) || /trop de temps/.test(raw)) return { message: raw }
+  if (/^L’espace de cet appareil est plein/.test(raw)) return { message: raw } // MESSAGE_FULL de photos.ts : long, mais déjà en mots simples
   if (/a répondu une erreur|réponse illisible/.test(raw)) return { message: SERVICE_DOWN, detail: raw }
   if (TECHNICAL.test(raw) || raw.length > 160) return { message: GENERIC, detail: raw }
   return { message: raw }

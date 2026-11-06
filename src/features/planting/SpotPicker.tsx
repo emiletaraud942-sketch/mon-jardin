@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
+import 'maplibre-gl/dist/maplibre-gl.css' // chargé avec la carte seulement (pas au démarrage de l'appli)
 import '../../lib/mapWorker'
-import 'maplibre-gl/dist/maplibre-gl.css'
 import { webgl2Supported } from '../../lib/webgl'
 import { MapUnsupported } from '../../components/MapUnsupported'
 import type { GeoJSONSource, Map as MLMap } from 'maplibre-gl'
