@@ -3,6 +3,7 @@ import { uid } from './geo'
 import { imageSize, sizeWithinLimits } from './security/image'
 import { LIMITS } from './security/limits'
 import { isPhotoId } from './security/sanitize'
+import { roomFor, writeWithRetry } from './space'
 
 export const PHOTO_PREFIX = 'photo:'
 /** Cible par image : 5 photos en base64 (×1,37) doivent tenir sous les 4,5 Mo d'une fonction Vercel. */
@@ -98,8 +99,10 @@ export function isQuotaError(e: unknown): boolean {
 export async function savePhoto(file: Blob, opts?: { maxSide?: number; targetBytes?: number; qualities?: number[] }): Promise<string> {
   const blob = await compressToTarget(file, opts)
   const id = PHOTO_PREFIX + uid()
+  // Avant d'écrire : s'il est sûr que la place manque, on le dit tout de suite (l'état du jardin garde une marge).
+  if (!(await roomFor(blob.size))) throw new Error(MESSAGE_FULL)
   try {
-    await set(id, blob)
+    await writeWithRetry(() => set(id, blob), isQuotaError)
   } catch (e) {
     throw isQuotaError(e) ? new Error(MESSAGE_FULL) : e
   }

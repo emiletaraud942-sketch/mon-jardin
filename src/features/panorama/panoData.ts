@@ -7,8 +7,9 @@ export const panoramasOf = (garden: Garden | undefined): Panorama[] => garden?.p
 
 const currentOf = (gardenId: string): Panorama[] => getState().gardens.find((g) => g.id === gardenId)?.panoramas ?? []
 
-/** Poids (octets) des photos d'un point. Une photo absente compte pour 0. */
+/** Poids (octets) des photos d'un point : la valeur notée si elle existe, sinon on lit les photos (une photo absente compte pour 0). */
 export async function pointBytes(p: Panorama): Promise<number> {
+  if (typeof p.bytes === 'number') return p.bytes
   let n = 0
   for (const s of p.shots) n += (await getPhoto(s.photoId))?.size ?? 0
   return n
@@ -18,6 +19,13 @@ export async function usedBytes(list: Panorama[]): Promise<number> {
   let n = 0
   for (const p of list) n += await pointBytes(p)
   return n
+}
+
+/** Note le poids d'un point qui n'en avait pas (points anciens) : la prochaine ouverture n'a plus à relire les photos. */
+export function noteBytes(gardenId: string, pointId: string, bytes: number) {
+  const list = currentOf(gardenId)
+  if (!(bytes > 0) || !list.some((p) => p.id === pointId && p.bytes === undefined)) return
+  write(gardenId, list.map((p) => (p.id === pointId && p.bytes === undefined ? { ...p, bytes } : p)))
 }
 
 function write(gardenId: string, list: Panorama[]) {

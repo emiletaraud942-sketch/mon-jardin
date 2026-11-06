@@ -217,6 +217,8 @@ export function sanitizePanoramas(raw: unknown, report: { add(id: string, one: s
     ids.add(r.id)
     const p: Panorama = { id: r.id, x: r.x, y: r.y, takenAt: r.takenAt, shots, kind: r.kind }
     if (r.northOk === false) p.northOk = false
+    // Poids noté : accepté seulement s'il est plausible (entier positif, au plus la place totale permise aux photos).
+    if (typeof r.bytes === 'number' && Number.isInteger(r.bytes) && r.bytes > 0 && r.bytes <= 100 * 1024 * 1024) p.bytes = r.bytes
     out.push(p)
   }
   return out

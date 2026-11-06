@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { SPECIES_BY_ID } from '../../data/species'
 import { isoDate } from '../../lib/dates'
 import { useGardenPlants, useStore } from '../../lib/store'
@@ -104,12 +104,15 @@ export function useWeather(garden?: Garden) {
   return { weather, error, loading }
 }
 
-export function useTasks(garden?: Garden): {
+export interface TasksResult {
   tasks: (GeneratedTask & { done?: boolean })[]
   weather?: WeatherBundle
   weatherError?: string
   weatherLoading: boolean
-} {
+}
+
+/** Calcul des tâches et de la météo d'un jardin (une instance par appel : préférer `useTasks`, qui réutilise celle de l'appli). */
+export function useTasksCompute(garden?: Garden): TasksResult {
   const plants = useGardenPlants(garden?.id)
   const tasksDone = useStore((s) => s.tasksDone)
   const { weather, error, loading } = useWeather(garden)
@@ -130,4 +133,18 @@ export function useTasks(garden?: Garden): {
     }
   }, [garden, plants, weather, tasksDone])
   return { tasks, weather, weatherError: error, weatherLoading: loading }
+}
+
+/** Résultat partagé par l'appli : un seul calcul et une seule météo pour l'accueil, À faire, la fiche plante et Réglages. */
+export const TasksContext = createContext<{ gardenId: string | undefined; value: TasksResult } | undefined>(undefined)
+
+/** Le résultat partagé sert-il pour ce jardin ? */
+export const canShare = (sharedGardenId: string | undefined, gardenId: string | undefined) => gardenId !== undefined && sharedGardenId === gardenId
+
+export function useTasks(garden?: Garden): TasksResult {
+  const shared = useContext(TasksContext)
+  const reuse = !!shared && canShare(shared.gardenId, garden?.id)
+  // Sans partage (tests, hors fournisseur) : calcul local. Avec partage : ce calcul-ci reste vide (jardin absent).
+  const own = useTasksCompute(reuse ? undefined : garden)
+  return reuse ? shared.value : own
 }

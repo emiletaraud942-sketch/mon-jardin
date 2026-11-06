@@ -26,6 +26,7 @@ import { isDemoGarden } from './features/settings/demo'
 import { PlantsPage } from './features/plants/PlantsPage'
 import { TasksPage } from './features/tasks/TasksPage'
 import { useTasks } from './features/tasks/useTasks'
+import { TasksProvider } from './features/tasks/TasksProvider'
 import { PlantingPage } from './features/planting/PlantingPage'
 import { CataloguePage } from './features/plants/CataloguePage'
 import { SettingsPage } from './features/settings/SettingsPage'
@@ -73,6 +74,15 @@ const NewsBadge = ({ count }: { count: number }) =>
   ) : null
 
 export function App() {
+  const garden = useActiveGarden()
+  return (
+    <TasksProvider garden={garden}>
+      <AppShell />
+    </TasksProvider>
+  )
+}
+
+function AppShell() {
   const loaded = useStore((s) => s.loaded)
   const garden = useActiveGarden()
   const { tab, guide, parcours, placingSpeciesId, movingPlantId } = useUi()

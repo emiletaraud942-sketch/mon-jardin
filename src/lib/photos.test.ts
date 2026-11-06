@@ -115,6 +115,12 @@ describe('stockage plein', () => {
     await expect(savePhoto(new Blob(['x']))).rejects.toThrow(MESSAGE_FULL)
     expect(await listPhotoIds()).toEqual([])
   })
+  it('savePhoto refuse avant d’écrire quand le navigateur annonce qu’il ne reste pas de place', async () => {
+    vi.stubGlobal('navigator', { storage: { estimate: async () => ({ quota: 20 * 1024 * 1024, usage: 19.5 * 1024 * 1024 }) } })
+    await expect(savePhoto(new Blob(['x']))).rejects.toThrow(MESSAGE_FULL)
+    expect(await listPhotoIds()).toEqual([])
+    vi.unstubAllGlobals()
+  })
   it('une autre panne d’écriture est relancée telle quelle', async () => {
     failSet = new Error('disque en panne')
     await expect(savePhoto(new Blob(['x']))).rejects.toThrow('disque en panne')

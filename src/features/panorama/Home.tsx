@@ -4,7 +4,7 @@ import { PlantScene } from '../../components/illustrations'
 import { getPhoto } from '../../lib/photos'
 import type { Garden } from '../../types'
 import { canAddPoint, MAX_BYTES, MAX_POINTS, photoDateLabel, pointName, refusalMessage, sizeLabel } from './geometry'
-import { pointBytes, panoramasOf } from './panoData'
+import { noteBytes, pointBytes, panoramasOf } from './panoData'
 import { closePanorama, openPanorama } from './panoUi'
 
 interface Info {
@@ -29,6 +29,7 @@ export function Home({ garden }: { garden: Garden }) {
       const next: Record<string, Info> = {}
       for (const p of points) {
         const bytes = await pointBytes(p)
+        if (p.bytes === undefined) noteBytes(garden.id, p.id, bytes) // point ancien : le poids est noté pour la prochaine fois
         let url: string | undefined
         for (const s of p.shots) {
           const blob = await getPhoto(s.photoId)

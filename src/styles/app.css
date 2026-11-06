@@ -1552,21 +1552,21 @@ label.field > span {
 .map-options .btn {
   justify-content: flex-start;
 }
-/* Boutons + et − de MapLibre : 44 px, bien séparés. */
-.maplibregl-ctrl-top-right {
+/* Boutons + et − de MapLibre : 44 px, bien séparés. Préfixe `.app` : maplibre-gl.css est chargé après (avec la carte) et l'emporterait. */
+.app .maplibregl-ctrl-top-right {
   top: 4px;
   right: 4px;
 }
-.maplibregl-ctrl-group button {
+.app .maplibregl-ctrl-group button {
   width: var(--tap);
   height: var(--tap);
 }
-.maplibregl-ctrl-group {
+.app .maplibregl-ctrl-group {
   border-radius: 22px !important;
   overflow: hidden;
   box-shadow: var(--shadow-float) !important;
 }
-.maplibregl-ctrl-group button + button {
+.app .maplibregl-ctrl-group button + button {
   border-top: 1px solid var(--border-strong);
 }
 .map-top .legend {
@@ -1662,7 +1662,7 @@ label.field > span {
   opacity: 0.6;
   border-style: dashed;
 }
-.maplibregl-popup-content {
+.app .maplibregl-popup-content {
   background: var(--surface);
   color: var(--text);
   font-family: var(--font-body);

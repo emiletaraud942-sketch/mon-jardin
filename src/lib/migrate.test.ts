@@ -375,3 +375,23 @@ describe('points de vue en photos (panoramas)', () => {
     expect(g).toHaveProperty('panoramas')
   })
 })
+
+describe('poids noté d’un point de vue (Panorama.bytes)', () => {
+  const garden = (bytes: unknown) => ({
+    version: 2,
+    gardens: [{ id: 'g1', name: 'J', address: '', center: { lon: 2, lat: 48 }, createdAt: '2026-01-01T00:00:00.000Z', panoramas: [{ id: 'p1', x: 1, y: 2, takenAt: '2026-05-01T10:00:00.000Z', kind: 'guide', bytes, shots: [{ photoId: 'photo:a', headingDeg: 10, fovDeg: 60 }] }] }],
+    plants: [],
+    tasksDone: [],
+  })
+  const bytesAfter = (b: unknown) => {
+    const r = migrateState(garden(b))
+    if (!r.ok) throw new Error(r.error)
+    return r.data.gardens[0].panoramas?.[0].bytes
+  }
+  it('un poids plausible est gardé', () => {
+    expect(bytesAfter(1_500_000)).toBe(1_500_000)
+  })
+  it('un poids absurde ou mal formé est retiré, le point reste', () => {
+    for (const bad of [-5, 0, 1.5, '12', null, NaN, 101 * 1024 * 1024]) expect(bytesAfter(bad)).toBeUndefined()
+  })
+})
