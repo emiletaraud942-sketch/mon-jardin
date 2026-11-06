@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { SPECIES, SPECIES_BY_ID } from '../../data/species'
 import type { Plant } from '../../types'
-import { buildPlantScene, disposePartGeometries, estimateTriangles, PART_KINDS, partGeometries, partTriangles, renderState } from './plantModel'
+import { buildPlantScene, disposePartGeometries, estimateTriangles, lookOf, plantLabel, PART_KINDS, partGeometries, partTriangles, renderState } from './plantModel'
 import { archetypeOf, generatePlant, type GenTier, type PlantLook } from './plantGen'
 import { TRIANGLE_CAP } from './quality'
 import { flatSampler } from './terrain'
@@ -168,6 +168,21 @@ describe('graine par plante', () => {
     const ghost = generatePlant(look('g', { ghost: true }), 2, [0, 0, 0])
     expect(ghost.every((p) => p.transparent)).toBe(true)
     expect(ghost.some((p) => p.kind === 'card')).toBe(false)
+  })
+})
+
+describe('plante récoltée (fin de saison)', () => {
+  const tomate = { ...mk(1, ['tomate'])[0], plantedAt: '2026-05-10', ageAtPlanting: 0 } as Plant
+  const recoltee: Plant = { ...tomate, status: 'recoltee' }
+  const sp = SPECIES_BY_ID.tomate
+  it('le nom dit « récoltée »', () => {
+    expect(plantLabel(recoltee, sp)).toBe('Tomate (récoltée)')
+    expect(plantLabel(tomate, sp)).not.toMatch(/récoltée/)
+  })
+  it('jamais dessinée comme vivante : aspect « mort », même en été', () => {
+    const summer = new Date('2026-07-15')
+    expect(lookOf(tomate, sp, renderState(tomate, sp, summer)).dead).toBe(false)
+    expect(lookOf(recoltee, sp, renderState(recoltee, sp, summer)).dead).toBe(true)
   })
 })
 

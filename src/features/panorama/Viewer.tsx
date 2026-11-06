@@ -76,6 +76,10 @@ export function Viewer({ garden, pointId }: { garden: Garden; pointId: string })
     for (const p of plants) {
       const sp = SPECIES_BY_ID[p.speciesId]
       if (!sp || p.status === 'projet' || p.status === 'mort') continue
+      if (p.status === 'recoltee') {
+        out.set(p.id, 'récoltée') // fin de saison : jamais « en fleurs » ni « en feuilles »
+        continue
+      }
       out.set(p.id, PHASE_LABEL[phaseOf(stateAtSeason(p, sp, now, at))])
     }
     return out

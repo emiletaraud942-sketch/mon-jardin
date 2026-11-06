@@ -50,7 +50,7 @@ export function shapeOf(species: Species | undefined): PlantShape {
 
 export function plantLabel(plant: Plant, species: Species | undefined): string {
   const name = plant.customName || species?.nomCommun || 'Plante inconnue'
-  const st = plant.status === 'projet' ? ' (projet)' : plant.status === 'malade' ? ' (malade)' : plant.status === 'mort' ? ' (morte)' : ''
+  const st = plant.status === 'projet' ? ' (projet)' : plant.status === 'malade' ? ' (malade)' : plant.status === 'mort' ? ' (morte)' : plant.status === 'recoltee' ? ' (récoltée)' : ''
   return name + st
 }
 
@@ -70,7 +70,8 @@ export function lookOf(plant: Plant, sp: Species | undefined, st: PlantState): P
     fruit: st.fruiting,
     tint: st.autumnTint,
     vigor: st.vigor,
-    dead: st.dead || plant.status === 'mort',
+    // Récoltée : fin de saison, rien de vivant (tiges sèches), comme une plante morte.
+    dead: st.dead || plant.status === 'mort' || plant.status === 'recoltee',
     sick: plant.status === 'malade',
     ghost: plant.status === 'projet',
     root: sp?.strate === 'racine',
