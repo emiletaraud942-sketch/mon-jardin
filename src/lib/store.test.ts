@@ -298,6 +298,23 @@ describe('échec de lecture', () => {
     expect(s.RESUME_REFUSAL_TEXT['newer-version']).toMatch(/jamais effacées/)
   })
 
+  it('replaceData et replaceRefusal : refus tant que les données sont d’une version plus récente, rien n’est modifié', async () => {
+    const newer = { version: 99, gardens: [garden], plants: [] }
+    db.set(KEY, newer)
+    const s = await freshStore()
+    await s.loadState()
+    expect(s.replaceRefusal()).toMatch(/version plus récente/)
+    expect(() => s.replaceData({ gardens: [{ ...garden, id: 'g9' }], plants: [], tasksDone: [] })).toThrow(/version plus récente/)
+    await vi.advanceTimersByTimeAsync(500)
+    expect(s.getStorageStatus().readFailed).toBe(true)
+    expect(db.get(KEY)).toEqual(newer)
+    expect(db.has(KEY + ':illisible')).toBe(false)
+  })
+  it('replaceRefusal : aucune raison de refuser quand tout va bien ou quand les données sont seulement illisibles', async () => {
+    const s = await freshStore()
+    await s.loadState()
+    expect(s.replaceRefusal()).toBeUndefined()
+  })
   it('describeReadFailure : « Mettre à jour l’appli » sans « Repartir de zéro » pour une version plus récente', async () => {
     const s = await freshStore()
     expect(s.describeReadFailure('newer-version')).toMatchObject({ primary: 'update', primaryLabel: 'Mettre à jour l’appli', canStartOver: false })

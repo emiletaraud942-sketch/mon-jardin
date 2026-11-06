@@ -111,7 +111,7 @@ function makeFake(): Fake {
 
 // ---------- Faux navigateur ----------
 
-const store = { replaceData: vi.fn(), keepCopy: vi.fn(async () => true), order: [] as string[], state: { gardens: [{ id: 'g1' }], plants: [], tasksDone: [], loaded: true }, readFailed: false }
+const store = { replaceData: vi.fn(), keepCopy: vi.fn(async () => true), order: [] as string[], state: { gardens: [{ id: 'g1' }], plants: [], tasksDone: [], loaded: true }, readFailed: false, refusal: undefined as string | undefined }
 vi.mock('./store', () => ({
   getState: () => store.state,
   replaceData: (d: unknown, o?: unknown) => {
@@ -123,6 +123,7 @@ vi.mock('./store', () => ({
     return store.keepCopy()
   },
   getStorageStatus: () => ({ persistent: undefined, readFailed: store.readFailed }),
+  replaceRefusal: () => store.refusal,
 }))
 vi.mock('@supabase/supabase-js', () => ({
   createClient: (_u: string, _k: string, options: Fake['options']) => {
@@ -169,6 +170,7 @@ beforeEach(() => {
   fake = makeFake()
   clock = 0
   store.readFailed = false
+  store.refusal = undefined
   store.replaceData.mockClear()
   store.keepCopy.mockReset()
   store.keepCopy.mockResolvedValue(true)
@@ -241,6 +243,29 @@ describe('client et session', () => {
     const assertion = expect(p).rejects.toThrow(/trop de temps/)
     await vi.advanceTimersByTimeAsync(15_001)
     await assertion
+  })
+})
+
+describe('données d’une version plus récente que l’appli', () => {
+  it('la reprise de la copie en ligne est refusée avant tout appel réseau, rien n’est remplacé', async () => {
+    const s = await load()
+    store.refusal = 'Les données de cet appareil viennent d’une version plus récente'
+    await expect(s.pullSnapshot()).rejects.toThrow('version plus récente')
+    expect(fake.calls).toEqual([])
+    expect(store.replaceData).not.toHaveBeenCalled()
+    expect(store.order).toEqual([])
+  })
+  it('l’envoi vers la copie en ligne est refusé aussi (on n’écrase pas la copie en ligne avec un état vide)', async () => {
+    const s = await load()
+    store.refusal = 'Les données de cet appareil viennent d’une version plus récente'
+    await expect(s.pushSnapshot()).rejects.toThrow('version plus récente')
+    expect(fake.calls).toEqual([])
+  })
+  it('sans données plus récentes : comportement inchangé', async () => {
+    const s = await load()
+    fake.rows.set('u1', { user_id: 'u1', data: validData, updated_at: fake.tick() })
+    expect(await s.pullSnapshot()).toBe(true)
+    expect(store.replaceData).toHaveBeenCalledTimes(1)
   })
 })
 

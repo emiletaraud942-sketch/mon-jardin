@@ -18,7 +18,7 @@ import { downloadFullBackup, estimateFullBackup, formatMo, FULL_EXTENSION, HEAVY
 import { formatDay, frNumber } from '../../lib/format'
 import { friendlyError, type FriendlyError } from '../../lib/http'
 import { deletePhoto } from '../../lib/photos'
-import { getLoadWarnings, getState, keepLocalSafetyCopy, replaceData, setActiveGarden, setState, updateGarden, useGardenPlants, useStorageStatus, useStore } from '../../lib/store'
+import { getLoadWarnings, getState, keepLocalSafetyCopy, replaceData, replaceRefusal, setActiveGarden, setState, updateGarden, useGardenPlants, useStorageStatus, useStore } from '../../lib/store'
 import { type StateData } from '../../lib/migrate'
 import { readBackupFile } from '../../lib/security/import'
 import { getTheme, setTheme, THEME_LABEL, type Theme } from '../../lib/theme'
@@ -234,6 +234,8 @@ function ImportDialog({ pending, onClose, onDone }: { pending: PendingImport; on
   const current = getState()
   const hasCurrent = current.gardens.length > 0 || current.plants.length > 0
   const hasPhotos = current.plants.some((p) => p.photos.length > 0)
+  // Données de cet appareil plus récentes que l'appli : l'import est refusé (jamais d'écrasement), on le dit dans la boîte.
+  const refusal = replaceRefusal()
 
   return (
     <ConfirmModal
@@ -245,6 +247,10 @@ function ImportDialog({ pending, onClose, onDone }: { pending: PendingImport; on
       onCancel={onClose}
       onConfirm={() => {
         void (async () => {
+          if (refusal) {
+            onDone(refusal)
+            return
+          }
           // Copie de sécurité de l'état actuel AVANT tout remplacement ; si elle échoue, rien n'est touché.
           if (!(await keepLocalSafetyCopy())) {
             onDone('Impossible de garder une copie de sécurité de vos données actuelles (espace plein ou bloqué). Rien n’a été remplacé : faites une sauvegarde, puis réessayez.')
@@ -269,6 +275,11 @@ function ImportDialog({ pending, onClose, onDone }: { pending: PendingImport; on
       <p>
         <strong>{importQuestion(countOf(current), countOf(pending.data))}</strong>
       </p>
+      {refusal && (
+        <p className="alert warn small" role="alert">
+          {refusal}
+        </p>
+      )}
       <p className="small muted">Fichier : {pending.fileName}</p>
       {pending.photos && <p className="small muted">Cette sauvegarde contient aussi {pending.photos.length} photo{pending.photos.length > 1 ? 's' : ''}{pending.skipped ? ` (${pending.skipped} illisible${pending.skipped > 1 ? 's ont été écartées' : ' a été écartée'})` : ''}.</p>}
       {pending.warnings.length > 0 && (

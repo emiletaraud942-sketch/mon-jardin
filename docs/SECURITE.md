@@ -442,3 +442,6 @@ Une autre branche (`backup-vague13`) avait développé des durcissements en para
 **À faire par le propriétaire** (le dépôt ne peut pas) : voir `docs/DEPLOIEMENT.md` §4 bis, 4 ter, 10, 11 ; activer « Secret scanning », « Push protection » et « Private vulnerability reporting » sur GitHub ; fournir l'adresse e-mail de sécurité (`SECURITY.md`, `security.txt`) ; vérifier l'adresse du dépôt citée par `security.txt` (`…/mon-jardin`, alors que le dépôt local pointe vers `…/mon-dressing-app`).
 
 **Non vérifié** : banc SQL et CodeQL dans GitHub ; `updateApp()` (bouton « Mettre à jour l'appli » du bandeau) sur un vrai navigateur avec service worker ; essai sur téléphone de la copie de sécurité téléchargée.
+
+**Décision du 6 novembre : données d'une version plus récente que l'appli.** Elles ne sont plus jamais remplacées, même après copie de sécurité : `replaceRefusal()` (`src/lib/store.ts`) fait refuser `replaceData` (dernier garde-fou), l'import d'une sauvegarde (le message s'affiche dans la boîte de reprise) et la synchro, dans les deux sens (`pullSnapshot`, `pushSnapshot`), **avant tout appel réseau**. Sans cela, un appareil dont l'appli n'était pas à jour pouvait voir ses données récentes remplacées par la copie en ligne. Tests : `store.test.ts`, `sync.test.ts`.
+

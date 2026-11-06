@@ -371,6 +371,16 @@ export function describeReadFailure(kind: ReadFailureKind): ReadFailureInfo {
   }
 }
 
+/**
+ * Remplacer les données de cet appareil (import d'une sauvegarde, reprise de la copie en ligne) est refusé tant qu'elles viennent
+ * d'une version plus récente de l'appli : on ne les écrase jamais, même après copie. Renvoie le message à afficher, ou `undefined`.
+ */
+export function replaceRefusal(): string | undefined {
+  return status.readFailed && status.readFailure === 'newer-version' ? NEWER_VERSION_TEXT : undefined
+}
+
+const NEWER_VERSION_TEXT = 'Les données de cet appareil viennent d’une version plus récente de PermaJardin : elles ne sont jamais écrasées. Mettez l’appli à jour, puis réessayez.'
+
 /** Raison d'un refus de `resumeSaving()`. */
 export type ResumeRefusal = 'not-blocked' | 'newer-version' | 'no-copy'
 export const RESUME_REFUSAL_TEXT: Record<ResumeRefusal, string> = {
@@ -669,6 +679,9 @@ export function removeTaskDoneById(id: string) {
  * puis passent `keepPhotos` : les photos des plantes remplacées sont gardées (elles sont dans la copie, purgées plus tard).
  */
 export function replaceData(data: Pick<AppState, 'gardens' | 'plants' | 'tasksDone'>, opts: { keepPhotos?: boolean } = {}) {
+  // Dernier garde-fou : jamais de remplacement par-dessus des données d'une version plus récente (les appelants le vérifient avant).
+  const refusal = replaceRefusal()
+  if (refusal) throw new Error(refusal)
   const previous = state.plants
   const previousGardens = state.gardens
   // Les points de vue en photos ne voyagent ni dans les sauvegardes ni dans la synchro : on garde ceux de cet appareil.

@@ -30,12 +30,12 @@ B8 aides de placement (« Viser » en tête, « Aides » replie le reste, ↶ �
 - Le parcours de test fait toujours 28 appuis (créer le jardin, 3 plantes, 1 tâche, Voisins, Accueil) : aucun appui gagné.
 - Si une idée de `claude/hopeful-turing-jnd7oo` manque, la lire avec `git show claude/hopeful-turing-jnd7oo:chemin` et l'adapter, sans copier. **À ne PAS porter** (`main` fait déjà mieux) : `.ics`, sauvegarde complète `.permajardin`, écran allumé (`lib/wakeLock.ts`), recherche (`data/species/search.ts`), badges de risque (`RiskNotes`), media/chunkError.
 
-## 5. Décisions en attente du propriétaire
-1. Fenêtres de récolte du thym, romarin, sauge, menthe, laurier-sauce, chou de Daubenton : `main` les a raccourcies pour coller à ses règles ; l'agronome recommande avril-octobre (persistants).
-2. Émojis composés (U+200D, ex. 👩‍🌾) refusés par la base de l'entraide depuis la v7 : les autoriser ?
-3. Version plus récente que l'appli : refuser aussi l'import et la synchro (aujourd'hui : copie puis remplacement) ?
-4. Environ 9 annuelles sans date de récolte (coquelicot, cosmos, phacélie, seigle, trèfle incarnat, vesce, moutarde blanche, œillet d'Inde, lupin) : suivies un an après la plantation (`main`, test qui le verrouille) ou arrêtées après leurs tâches d'entretien ?
-5. Extrait des signalements (S9) : non porté, contredit « jamais le contenu signalé » des textes légaux.
+## 5. Décisions du propriétaire : appliquées (6 nov.)
+1. Fenêtres de récolte : thym, romarin, sauge, menthe, laurier-sauce d'avril à octobre (fiche et règle) ; chou de Daubenton inchangé (avril à novembre).
+2. Émojis composés dans l'entraide : toujours refusés (rien à changer).
+3. Données d'une version plus récente que l'appli : jamais remplacées, ni par un import ni par la synchro (`replaceRefusal`), avec message « Mettez l'appli à jour ».
+4. Annuelles sans date de récolte : suivies un an (inchangé, un test le verrouille).
+5. Extrait des signalements : non porté.
 
 ## 6. Ce que seul le propriétaire peut faire
 Voir `docs/ACTIONS-PROPRIETAIRE.md` et `docs/ENTRAIDE.md`. En résumé : migrations de l'entraide v1 à v9 (v9 en dernier) sur un projet Supabase dédié (ne jamais exposer `neighbors_private`), purge (`PURGE_SECRET`, fonction à déployer, `pg_cron`/`pg_net`/Vault, décommenter `cron.sql`), modèles d'e-mail Supabase avec `{{ .Token }}`, suppression des deux variables Vercel `NEIGHBORS_*` tant que l'entraide n'existe pas, pare-feu Vercel (`/api/identify`, `/ext/*`), CSP avec les deux hôtes Supabase exacts, GitHub (secret scanning, push protection, signalement privé, protection de `main`), champs `[à compléter]` de `src/lib/legal.ts` + relecture juridique, adresse e-mail de sécurité (`SECURITY.md`, `security.txt`, expire le 2027-10-27).

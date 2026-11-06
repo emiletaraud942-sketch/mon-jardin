@@ -6,7 +6,7 @@
 // Le lien doit être ouvert dans le MÊME navigateur que celui où il a été demandé (le « code verifier » PKCE y est stocké).
 import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js'
 import { migrateState, serializeState } from './migrate'
-import { getState, getStorageStatus, keepLocalSafetyCopy, replaceData } from './store'
+import { getState, getStorageStatus, keepLocalSafetyCopy, replaceData, replaceRefusal } from './store'
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
@@ -250,6 +250,8 @@ async function requireUser() {
  */
 export async function pushSnapshot(opts: { force?: boolean } = {}) {
   const { sb, user } = await requireUser()
+  const refusal = replaceRefusal()
+  if (refusal) throw new Error(refusal)
   if (getStorageStatus().readFailed) {
     throw new Error('Les données de cet appareil n’ont pas pu être lues : la synchronisation est suspendue pour ne pas écraser votre sauvegarde en ligne.')
   }
@@ -324,6 +326,9 @@ export async function deleteMyAccount(): Promise<void> {
  * Valable pour la synchro manuelle comme pour la synchro automatique (`autoSync.ts` appelle cette fonction).
  */
 export async function pullSnapshot(): Promise<boolean> {
+  // Avant tout appel réseau : des données plus récentes que l'appli ne sont jamais remplacées par la copie en ligne.
+  const refusal = replaceRefusal()
+  if (refusal) throw new Error(refusal)
   const { sb, user } = await requireUser()
   const { data, error } = await withTimeout(sb.from(TABLE).select('data, updated_at').eq('user_id', user.id).maybeSingle())
   if (error) throw dbFailure(error)

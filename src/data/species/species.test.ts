@@ -292,3 +292,17 @@ describe('avertissements (toxique, envahissante…)', () => {
     expect(SPECIES_BY_ID.laitue.avertissements).toBeUndefined()
   })
 })
+
+describe('fenêtres de récolte des aromatiques persistantes (décision du propriétaire, 6 nov.)', () => {
+  const APRIL_TO_OCTOBER = [4, 5, 6, 7, 8, 9, 10]
+  it.each(['thym', 'romarin', 'sauge', 'menthe', 'laurier-sauce'])('%s se récolte d’avril à octobre, fiche et règle d’accord', (id) => {
+    const sp = SPECIES_BY_ID[id]
+    expect(sp.recolte).toEqual(APRIL_TO_OCTOBER)
+    const rule = sp.taches.find((r) => r.type === 'recolte')
+    expect(rule?.months).toEqual(APRIL_TO_OCTOBER)
+  })
+  it('chou de Daubenton : au moins d’avril à octobre (il se cueille presque toute l’année)', () => {
+    const months = SPECIES_BY_ID['chou-daubenton'].recolte ?? []
+    for (const m of APRIL_TO_OCTOBER) expect(months).toContain(m)
+  })
+})
