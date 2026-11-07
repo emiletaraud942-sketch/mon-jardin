@@ -100,6 +100,7 @@ export function translateError(e: unknown): string {
   const quota = /quota_exceeded:(\w+)/.exec(msg)
   if (quota) return QUOTA_TEXT[quota[1]] ?? LIMIT_TEXT
   if (/_text_clean/.test(low)) return 'Ce texte contient des caractères interdits (contrôles ou marques de direction). Retirez-les et réessayez.'
+  if (/otp_expired|token has expired|invalid.{0,12}(token|otp)|otp.{0,12}invalid/.test(low)) return 'Code incorrect ou expiré. Vérifiez-le, ou demandez-en un nouveau.'
   if (low.includes('profiles_pseudo_key')) return 'Ce pseudo est déjà pris. Choisissez-en un autre.'
   if (low.includes('reports_reporter_target_kind_target_id_key')) return 'Vous avez déjà signalé ce contenu. Merci.'
   if (low.includes('blocks_pkey')) return 'Cette personne est déjà bloquée.'
@@ -245,13 +246,33 @@ const isEmail = (e: string) => e.length <= 254 && /^[^\s@<>"',;]+@[^\s@<>"',;]+\
 /** Marqueur de retour d'un lien de l'entraide, pour ne pas le confondre avec celui de la synchro privée. */
 const REDIRECT_MARK = 'entraide=1'
 
-/** Envoie le lien magique. Le lien doit être ouvert dans le MÊME navigateur (PKCE). */
-export async function signIn(email: string): Promise<void> {
+const CODE_WRONG = 'Code incorrect ou expiré. Vérifiez-le, ou demandez-en un nouveau.'
+
+/**
+ * Envoie un CODE à saisir dans l'appli (plutôt qu'un lien à ouvrir) : sur iPhone, l'appli épinglée à l'écran d'accueil et Safari n'ont
+ * pas le même stockage, donc un lien ouvert dans Safari ne connectait jamais l'appli. Le modèle d'e-mail Supabase du projet de l'entraide
+ * doit contenir {{ .Token }} (voir docs/ENTRAIDE.md). Un lien éventuel du même e-mail revient encore sur `?entraide=1` (`initNeighbors`).
+ */
+export async function sendLoginCode(email: string): Promise<void> {
   const client = sb()
   const address = email.trim()
   if (!isEmail(address)) throw new NeighborsError('Adresse e-mail invalide.', 'invalid')
   const redirect = typeof location !== 'undefined' ? `${location.origin}/?${REDIRECT_MARK}` : undefined
-  await run(client.auth.signInWithOtp({ email: address, options: { emailRedirectTo: redirect } }).then((r) => ({ data: null, error: r.error })))
+  await run(client.auth.signInWithOtp({ email: address, options: { shouldCreateUser: true, emailRedirectTo: redirect } }).then((r) => ({ data: null, error: r.error })))
+}
+
+/** Vérifie le code reçu par e-mail et ouvre la session sur cet appareil (elle reste ouverte : jeton renouvelé tout seul). */
+export async function verifyLoginCode(email: string, code: string): Promise<NeighborsSession> {
+  const client = sb()
+  const address = email.trim()
+  if (!isEmail(address)) throw new NeighborsError('Adresse e-mail invalide.', 'invalid')
+  const token = code.replace(/[\s-]/g, '')
+  if (!/^\d{6,10}$/.test(token)) throw new NeighborsError('Le code est fait de chiffres seulement (6 à 10).', 'invalid')
+  const res = await run(client.auth.verifyOtp({ email: address, token, type: 'email' }).then((r) => ({ data: r.data, error: r.error })))
+  const u = res?.session?.user ?? res?.user
+  if (!res?.session || !u) throw new NeighborsError(CODE_WRONG, 'invalid')
+  profileCache = undefined
+  return { userId: u.id, email: u.email ?? null }
 }
 
 /**

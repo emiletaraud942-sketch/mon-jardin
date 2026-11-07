@@ -12,6 +12,7 @@ const state = vi.hoisted(() => ({
   session: { user: { id: '11111111-1111-4111-8111-111111111111', email: 'moi@example.org' } } as { user: { id: string; email: string } } | null,
   signInWithOtp: vi.fn(async (_a: unknown) => ({ error: null as unknown })),
   exchange: vi.fn(async (_c: string) => ({ error: null as unknown })),
+  verifyOtp: vi.fn(async (_a: unknown): Promise<{ data: { session: unknown; user: unknown }; error: unknown }> => ({ data: { session: { user: { id: '11111111-1111-4111-8111-111111111111', email: 'moi@example.org' } }, user: { id: '11111111-1111-4111-8111-111111111111', email: 'moi@example.org' } }, error: null })),
   rpc: vi.fn(async (_n: string) => ({ data: null, error: null as unknown })),
   upload: vi.fn(async (_p: string, _b: unknown, _o: unknown) => ({ data: {}, error: null as unknown })),
   remove: vi.fn(async (_p: string[]) => ({ data: [], error: null })),
@@ -47,6 +48,7 @@ vi.mock('./client', () => ({
     auth: {
       getSession: async () => ({ data: { session: state.session } }),
       signInWithOtp: state.signInWithOtp,
+      verifyOtp: state.verifyOtp,
       exchangeCodeForSession: state.exchange,
       signOut: async () => ({ error: null }),
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
@@ -143,19 +145,42 @@ describe('validation', () => {
 })
 
 describe('connexion', () => {
-  it('signIn envoie un lien magique avec le marqueur de retour', async () => {
+  it('sendLoginCode demande un code, crée le compte si besoin, et garde le marqueur de retour d’un éventuel lien', async () => {
     vi.stubGlobal('location', { origin: 'https://app.test', search: '' })
-    await api.signIn(' a@b.fr ')
-    expect(state.signInWithOtp).toHaveBeenCalledWith({ email: 'a@b.fr', options: { emailRedirectTo: 'https://app.test/?entraide=1' } })
+    await api.sendLoginCode(' a@b.fr ')
+    expect(state.signInWithOtp).toHaveBeenCalledWith({ email: 'a@b.fr', options: { shouldCreateUser: true, emailRedirectTo: 'https://app.test/?entraide=1' } })
     vi.unstubAllGlobals()
   })
-  it('signIn refuse une adresse invalide sans appel réseau', async () => {
-    await expect(api.signIn('pas-un-mail')).rejects.toThrow(/invalide/)
+  it('sendLoginCode refuse une adresse invalide sans appel réseau', async () => {
+    await expect(api.sendLoginCode('pas-un-mail')).rejects.toThrow(/invalide/)
     expect(state.signInWithOtp).not.toHaveBeenCalled()
   })
-  it('signIn traduit une limite d’envoi', async () => {
+  it('sendLoginCode traduit une limite d’envoi', async () => {
     state.signInWithOtp.mockResolvedValueOnce({ error: { message: 'email rate limit exceeded', status: 429 } })
-    await expect(api.signIn('a@b.fr')).rejects.toThrow(/Trop de demandes/)
+    await expect(api.sendLoginCode('a@b.fr')).rejects.toThrow(/Trop de demandes/)
+  })
+  it('verifyLoginCode vérifie le code et rend la session', async () => {
+    const s = await api.verifyLoginCode(' a@b.fr ', '123 456')
+    expect(state.verifyOtp).toHaveBeenCalledWith({ email: 'a@b.fr', token: '123456', type: 'email' })
+    expect(s).toEqual({ userId: '11111111-1111-4111-8111-111111111111', email: 'moi@example.org' })
+  })
+  it('verifyLoginCode accepte un code collé avec des tirets', async () => {
+    await api.verifyLoginCode('a@b.fr', '123-456')
+    expect(state.verifyOtp).toHaveBeenLastCalledWith({ email: 'a@b.fr', token: '123456', type: 'email' })
+  })
+  it('verifyLoginCode refuse un code qui n’est pas fait de chiffres, sans appel réseau', async () => {
+    for (const bad of ['', '12', 'abcdef', '12345678901', '12 34 5x']) await expect(api.verifyLoginCode('a@b.fr', bad)).rejects.toThrow(/chiffres/)
+    await expect(api.verifyLoginCode('pas-un-mail', '123456')).rejects.toThrow(/invalide/)
+    expect(state.verifyOtp).not.toHaveBeenCalled()
+  })
+  it('un code faux ou expiré donne une phrase claire', async () => {
+    state.verifyOtp.mockResolvedValueOnce({ data: { session: null, user: null }, error: { message: 'Token has expired or is invalid', code: 'otp_expired' } })
+    await expect(api.verifyLoginCode('a@b.fr', '123456')).rejects.toThrow('Code incorrect ou expiré')
+    state.verifyOtp.mockResolvedValueOnce({ data: { session: null, user: null }, error: null })
+    await expect(api.verifyLoginCode('a@b.fr', '123456')).rejects.toThrow('Code incorrect ou expiré')
+  })
+  it('translateError : code faux ou expiré', () => {
+    expect(api.translateError({ message: 'Token has expired or is invalid', code: 'otp_expired' })).toContain('Code incorrect ou expiré')
   })
   it('initNeighbors ignore une URL sans marqueur (retour de la synchro privée)', async () => {
     vi.stubGlobal('location', { origin: 'https://app.test', search: '?code=abc', pathname: '/' })

@@ -124,7 +124,7 @@ export const CONFIDENTIALITE: LegalDoc = {
           'Pl@ntNet (Cirad, INRAE, Inria, IRD) : identification des plantes à partir des photos que vous envoyez.',
           'Supabase : compte et sauvegarde en ligne, seulement si vous activez la synchronisation.',
           'Supabase (projet distinct, dédié à l’entraide) : compte, profil, annonces, photos, messages, signalements, seulement si vous rejoignez l’entraide. Supabase est notre sous-traitant (RGPD, art. 28).',
-          'Prestataire d’envoi d’e-mails (à renseigner par l’éditeur) : envoi du lien de connexion de l’entraide.',
+          'Prestataire d’envoi d’e-mails (à renseigner par l’éditeur) : envoi du code de connexion de l’entraide.',
           'Service d’alertes de votre navigateur (Google pour Chrome et Android, Mozilla pour Firefox, Apple pour Safari, Microsoft pour Edge) : il reçoit l’adresse technique de votre appareil et un signal vide « un message est arrivé », seulement si vous activez les alertes. Il ne reçoit ni le texte du message ni aucun pseudo. Ce service est le sous-traitant technique qui livre l’alerte à votre appareil.',
           'Les autres membres de l’entraide : voir la section « Entraide entre voisins ».',
         ),
@@ -143,7 +143,7 @@ export const CONFIDENTIALITE: LegalDoc = {
       blocs: [
         p('L’entraide est facultative. Elle permet de publier des annonces de don, d’échange, de prêt, des demandes (« Je cherche ») ou des questions, de consulter des événements près de chez vous, et d’écrire en privé à d’autres jardiniers proches. Elle est réservée aux personnes de 15 ans et plus.'),
         ul(
-          'Compte : votre adresse e-mail sert uniquement à vous envoyer un lien de connexion. Elle n’est visible d’aucun autre membre.',
+          'Compte : votre adresse e-mail sert uniquement à vous envoyer un code de connexion. Elle n’est visible d’aucun autre membre.',
           'Profil public : un pseudo et un quartier. Le quartier est une zone d’environ 2 km, ou d’environ 5 km si vous choisissez « Large ». Plus la zone est grande, moins on peut deviner où vous habitez. Ce n’est jamais votre adresse ni votre position exacte. Choisissez un pseudo qui ne révèle pas votre identité.',
           'Annonces et réponses : type (don, échange, prêt, demande ou question), catégorie éventuelle, titre, description, espèce et photo éventuelle. Elles sont visibles des membres situés à moins de 55 km environ, sauf ceux que vous avez bloqués. N’y écrivez ni votre adresse, ni votre téléphone, ni de données concernant d’autres personnes.',
           'Ce que j’ai dans mon jardin (facultatif, désactivé par défaut) : si vous choisissez de le montrer, la liste des espèces de vos plantes (par exemple pommier, romarin) devient visible, avec votre pseudo, des membres situés à moins de 55 km environ, sauf ceux que vous avez bloqués. Jamais la place des plantes, leur nombre, leurs photos ni votre adresse. Un voisin peut alors vous écrire pour demander une bouture ; vous êtes libre de répondre ou non. « Ne plus montrer mon jardin » efface la liste.',
@@ -430,7 +430,7 @@ export const CONSENT_TEXT: Record<'plantnet' | 'sync' | 'voisins' | 'notificatio
   voisins: {
     titre: 'Rejoindre l’entraide entre voisins ?',
     paragraphes: [
-      'Votre adresse e-mail (pour le lien de connexion), votre pseudo, votre quartier arrondi (une zone d’environ 2 km, ou d’environ 5 km si vous le choisissez), vos annonces, photos, réponses et messages privés seront enregistrés sur un serveur dédié (Supabase ; région d’hébergement à confirmer par l’éditeur). Votre adresse et votre position exacte ne sont jamais envoyées.',
+      'Votre adresse e-mail (pour le code de connexion), votre pseudo, votre quartier arrondi (une zone d’environ 2 km, ou d’environ 5 km si vous le choisissez), vos annonces, photos, réponses et messages privés seront enregistrés sur un serveur dédié (Supabase ; région d’hébergement à confirmer par l’éditeur). Votre adresse et votre position exacte ne sont jamais envoyées.',
       'Votre pseudo, votre quartier, vos annonces et vos réponses sont visibles des autres membres. Vos messages ne sont lus que par votre correspondant. Les annonces disparaissent après 60 jours. Si vous devenez organisateur, le nom de votre organisation et vos événements sont visibles aussi. Si vous choisissez de montrer votre jardin, la liste de vos plantes (jamais leur place) l’est aussi ; vous pouvez l’arrêter à tout moment.',
       'Vous pouvez retirer votre autorisation dans Réglages, et supprimer votre compte et vos annonces à tout moment dans l’entraide.',
     ],

@@ -92,9 +92,9 @@ export const DATA_INVENTORY: readonly DataItem[] = [
   },
   {
     id: 'entraide-compte',
-    donnee: 'Entraide entre voisins : adresse e-mail du compte (lien de connexion), jeton de session, adresse IP et navigateur des connexions (conservés par le service d’authentification Supabase)',
+    donnee: 'Entraide entre voisins : adresse e-mail du compte (code de connexion), jeton de session, adresse IP et navigateur des connexions (conservés par le service d’authentification Supabase)',
     stockage: 'Projet Supabase DÉDIÉ à l’entraide (authentification, distinct de la synchronisation) ; jeton dans le localStorage (clé sb-neighbors-auth-token)',
-    destinataires: ['Supabase (sous-traitant : hébergement et authentification de l’entraide)', 'Prestataire d’envoi d’e-mails choisi par l’éditeur (lien de connexion)'],
+    destinataires: ['Supabase (sous-traitant : hébergement et authentification de l’entraide)', 'Prestataire d’envoi d’e-mails choisi par l’éditeur (code de connexion)'],
     finalite: 'Se connecter à l’entraide sans mot de passe. Fonction facultative, réservée aux personnes de 15 ans et plus.',
     base: 'consentement',
     duree: 'Jusqu’à suppression du compte. L’adresse n’est jamais visible des autres membres.',

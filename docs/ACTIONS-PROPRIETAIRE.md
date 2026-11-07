@@ -72,7 +72,7 @@ Dépôt > **Settings** :
   7. `20261027000000_neighbors_v7_hardening.sql` (un changement de quartier par semaine, textes sans caractères invisibles)
   8. `20261029000000_neighbors_v8_gardens.sql` *(nouveau : « Ce que j'ai dans mon jardin », boutures entre voisins ; à coller en dernier)*
   - *Vérifier* : **Table Editor** : toutes les tables ont « RLS enabled » ; **Security Advisor** ne signale rien de critique.
-- [ ] 🔴 **Authentication > Providers** : Email (lien magique) activé ; **Anonymous sign-ins**, Phone et OAuth désactivés.
+- [ ] 🔴 **Authentication > Providers** : Email activé (connexion par **code**, modèles d'e-mail avec `{{ .Token }}`, voir §2) ; **Anonymous sign-ins**, Phone et OAuth désactivés.
 - [ ] 🔴 **Authentication > URL Configuration** : comme au §2.
 - [ ] 🔴 **Authentication > SMTP** : un SMTP à vous, avec un expéditeur de votre domaine ; le service par défaut de Supabase est limité à quelques e-mails par heure. Traduire le modèle « Magic Link » en français.
 - [ ] 🔴 **Authentication > Attack Protection** : activer un CAPTCHA avant l'ouverture publique.
