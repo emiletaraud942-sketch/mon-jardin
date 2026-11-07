@@ -271,6 +271,16 @@ Exemples : fuite de la clé `service_role`, faille de RLS révélée, accès non
 
 Contenu illicite grave ou campagne d'abus : masquer en masse (`update public.posts set status='hidden' where author in (...)`), bannir, couper les inscriptions (Authentication > Providers > désactiver « Allow new users to sign up »), puis traiter comme un signalement.
 
+## Même projet Supabase que la synchro (choix du 7 nov. 2026)
+
+Le projet `permajardin` (réf `ebgrxcyvdayvrjruefem`) porte maintenant **aussi** l'entraide : les 9 migrations y sont posées (v1 à v9, dans l'ordre), et `NEIGHBORS_SUPABASE_URL` / `NEIGHBORS_SUPABASE_PUBLISHABLE` (Vercel, Production) pointent vers lui. Raison : l'offre gratuite ne permet que 2 projets actifs, et les modèles d'e-mail avec `{{ .Token }}` y sont déjà réglés (un seul endroit à tenir à jour).
+
+- **Deux comptes, deux sessions** : les deux clients (`sync.ts` et `neighbors/client.ts`, clé de stockage `sb-neighbors-auth-token`) partagent la table `auth.users` mais gardent chacun leur session ; on saisit donc un code une fois pour la synchro et une fois pour l'entraide. Ne jamais donner la même clé de stockage aux deux clients (deux instances qui renouvellent le même jeton se disputeraient la session).
+- **Preuve de non-régression** : `supabase/neighbors/tests/run-shared.sh` applique les migrations de synchro puis celles de l'entraide sur un Postgres jetable, puis joue `scenarios_shared.sql` (947 contrôles au total, 0 échec) : `garden_snapshots` garde ses droits et sa politique restrictive pour les comptes anonymes, les tables de l'entraide ne laissent voir aucun jardin synchronisé, `neighbors_private` ne contient aucune table et `anon` n'exécute aucune de ses fonctions, `delete_my_account()` est identique dans les deux jeux (suppression du compte et cascade sur toutes les tables).
+- **Vérifié sur le vrai projet (7 nov.)** : empreintes (fonctions, politiques, droits, déclencheurs, colonnes, RLS) identiques à la base de test ; seules les contraintes de nettoyage de texte diffèrent d'écriture (séquences `\uXXXX` au lieu de caractères invisibles littéraux) et rejettent bien les 8 caractères invisibles ou de contrôle essayés. Bucket `neighbors-photos` privé (1 Mo, jpeg/png/webp).
+- **À ne jamais faire** : ajouter `neighbors_private` aux schémas exposés par l'API (Settings > API) ; mettre la clé `service_role` dans une variable `VITE_*` ou `NEIGHBORS_*`.
+- **Encore à faire par le propriétaire** (inchangé) : purge quotidienne (`cron.sql`, fonction Edge `purge-neighbors-photos`), CAPTCHA avant l'ouverture publique, adresse de signalement.
+
 ## Étapes pour le propriétaire
 
 1. Créer un **nouveau projet Supabase** (ne pas réutiliser celui de la synchro). Région UE.
