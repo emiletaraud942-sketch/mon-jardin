@@ -290,6 +290,7 @@ export const LOCAL_STORAGE_KEYS: readonly StorageKeyInfo[] = [
   { cle: 'permajardin:voisins:regles', contenu: 'Règles de conduite de l’entraide acceptées' },
   { cle: 'permajardin:voisins:visite:', prefixe: true, contenu: 'Date de dernière visite de l’entraide, par identifiant de compte' },
   { cle: 'pj.rayon', contenu: 'Dernière rubrique ouverte (rayon de l’interface)' },
+  { cle: 'pj.reopen', contenu: 'Réglage « Rouvrir l’appli où j’étais » (désactivé par défaut : l’appli rouvre sur l’accueil)' },
   { cle: 'pj.mode', contenu: 'Ancien mode d’affichage (lu une fois pour retrouver le rayon)' },
   { cle: 'pj.guide', contenu: 'Aides et repères mémorisés : étapes d’accueil, cartes repliées, identifiants des jardins dont la 3D et l’Entretien ont été ouverts' },
   { cle: 'pj.lidar', contenu: 'Réglage du relevé LiDAR HD' },

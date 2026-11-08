@@ -85,7 +85,7 @@ export function IdentifyDialog({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Modal title="Identifier une plante" onClose={close}>
+    <Modal title="Identifier une plante par photo" feat="identify" onClose={close}>
       <p className="muted">Prenez 1 à 5 photos nettes de la même plante : feuille, fleur ou fruit.</p>
       <div className="row photo-row" style={{ marginBottom: 12 }}>
         {photos.map((id) => (

@@ -48,7 +48,7 @@ export function DiagnosticButton({ className = 'btn' }: { className?: string }) 
   return (
     <>
       <button className={className} onClick={() => void run()}>
-        <Icon name="download" /> Exporter un diagnostic
+        <Icon name="download" /> Exporter un rapport d’erreurs
       </button>
       <p className="small muted" style={{ margin: 0 }}>Un fichier sur cet appareil : version, écran, dernières erreurs. Ni nom, ni adresse, ni photo.</p>
       {msg && (

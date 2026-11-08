@@ -5,6 +5,10 @@ import { PageHead } from './components/PageHead'
 import { SPECIES_BY_ID } from './data/species'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { HelpSheet } from './components/HelpSheet'
+import { ToutFaire } from './features/aide/ToutFaire'
+import { FeatureHost } from './features/aide/FeatureHost'
+import { LostButton, LostSheet } from './features/aide/Perdu'
+import { lostSheet, toutFaire } from './lib/overlays'
 import { SubTabs } from './components/SubTabs'
 import { StorageBanner } from './components/StorageBanner'
 import { ToastHost } from './components/Toast'
@@ -46,6 +50,7 @@ import { preload3d } from './features/garden3d/preload3d'
 import './styles/leafora.css'
 import './styles/mobile-nav.css'
 import './styles/panorama.css'
+import './styles/facile.css'
 
 const View3D = lazy(() => import('./features/garden3d/View3D'))
 const NeighborsPage = lazy(() => import('./features/neighbors/NeighborsPage').then((m) => ({ default: m.NeighborsPage })))
@@ -102,6 +107,8 @@ function AppShell() {
   const panoOpen = !!usePanoUi().screen
   const onboarding = useOnboarding()
   const helpOpen = useHelpOpen()
+  const toutOpen = toutFaire.use()
+  const lostOpen = lostSheet.use()
   const mainRef = useRef<HTMLElement>(null)
   const firstPaint = useRef(true)
   const open = tasks.filter((t) => !t.blockedBy && !t.done).length
@@ -209,7 +216,7 @@ function AppShell() {
   const placing = !!(placingSpeciesId || movingPlantId)
 
   return (
-    <div className={'app' + (tab === 'accueil' || tab === 'entretien' || phead ? ' has-pagehead' : '') + (phead ? ' has-phead' : '') + (placing ? ' is-placing' : '') + (tab === 'accueil' && shouldShowRoute(onboarding.state, onboarding.neighbors) ? ' route-open' : '')}>
+    <div data-tab={tab} className={'app' + (tab === 'accueil' || tab === 'entretien' || phead ? ' has-pagehead' : '') + (phead ? ' has-phead' : '') + (placing ? ' is-placing' : '') + (tab === 'accueil' && shouldShowRoute(onboarding.state, onboarding.neighbors) ? ' route-open' : '')}>
       <a
         className="skip-link"
         href="#main-panel"
@@ -229,15 +236,21 @@ function AppShell() {
         <span className="garden-name" title={garden.name}>
           {garden.name}
         </span>
-        <button className="btn help-btn" aria-haspopup="dialog" aria-label="Aide" onClick={openHelp}>
-          <span className="help-mark" aria-hidden>
-            ?
+        <button className="btn help-btn tout-btn" aria-haspopup="dialog" aria-label="Tout ce que je peux faire" onClick={() => toutFaire.set(true)}>
+          <Icon name="list" />
+          <span className="help-label" aria-hidden>
+            Tout
           </span>
-          <span className="help-label">Aide</span>
         </button>
-        <button className="btn profile-btn" aria-label="Mon compte et réglages" aria-current={tab === 'reglages' ? 'page' : undefined} onClick={() => setUi({ tab: 'reglages' })}>
+        <button className="btn help-btn" aria-haspopup="dialog" aria-label="Aide" onClick={openHelp}>
+          <Icon name="help" />
+          <span className="help-label" aria-hidden>
+            Aide
+          </span>
+        </button>
+        <button className="btn profile-btn" aria-label="Compte et réglages" aria-current={tab === 'reglages' ? 'page' : undefined} onClick={() => setUi({ tab: 'reglages' })}>
           <Icon name="user" />
-          <span className="hide-mobile">Mon compte</span>
+          <span aria-hidden>Compte</span>
         </button>
       </header>
       {phead && (
@@ -335,6 +348,10 @@ function AppShell() {
         </Suspense>
       )}
       {helpOpen && <HelpSheet tab={tab} onClose={() => setHelpOpen(false)} />}
+      <FeatureHost />
+      {lostOpen && <LostSheet />}
+      {toutOpen && <ToutFaire />}
+      <LostButton />
     </div>
   )
 }

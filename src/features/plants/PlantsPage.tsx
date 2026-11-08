@@ -50,7 +50,7 @@ export function PlantsPage({ garden }: { garden: Garden }) {
   }
 
   return (
-    <div className="page plants-ui">
+    <div className="page plants-ui" data-feat="liste-plantes">
       <div className="plants-head">
         <h1>Mes plantes ({plants.length})</h1>
         <div className="plants-actions">
@@ -69,14 +69,11 @@ export function PlantsPage({ garden }: { garden: Garden }) {
           <Icon name="leaf" /> Liste de courses et de semis ({planned})
         </button>
       )}
-      <details className="np-details plants-more">
-        <summary>Autres façons d’ajouter</summary>
-        <div className="row" style={{ marginBottom: 8 }}>
-          <button className="btn" onClick={() => setIdentifying(true)}>
-            <Icon name="camera" /> Identifier par photo
-          </button>
-        </div>
-      </details>
+      <div className="row plants-more" style={{ marginBottom: 8 }}>
+        <button className="btn" aria-haspopup="dialog" onClick={() => setIdentifying(true)}>
+          <Icon name="camera" /> Identifier une plante par photo
+        </button>
+      </div>
       <div className="row" style={{ margin: '8px 0 16px' }}>
         <input className="input" style={{ flex: '2 1 200px' }} type="search" aria-label="Rechercher une plante" placeholder="Rechercher une plante" value={q} onChange={(e) => setQ(e.target.value)} />
         <select className="input" style={{ flex: '1 1 180px' }} value={status} onChange={(e) => setStatus(e.target.value as PlantStatus | '')} aria-label="Où en sont-elles ?">

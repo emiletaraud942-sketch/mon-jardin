@@ -54,7 +54,7 @@ export function RecalerScreen({ garden }: { garden: Garden }) {
   }
 
   return (
-    <Modal title={stepTitle(s)} full onClose={closeScan}>
+    <Modal title={stepTitle(s)} full feat="scan-recaler" onClose={closeScan}>
       <div className="scan-layout">
         {s.phase !== 'intro' && (
           <ScanMap

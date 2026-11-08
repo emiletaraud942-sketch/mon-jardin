@@ -15,6 +15,7 @@ import { showToast } from "../../lib/toast";
 import { downloadBlob } from "../../lib/backup";
 import { buildIcs } from "../../lib/ics";
 import { openHelp, setUi } from "../../lib/ui";
+import { useIntent } from "../../lib/overlays";
 import { MONTH_NAMES } from "../../engine/calendar";
 import { waterBalance, yearPlan } from "../../engine/tasks";
 import { seasonOverPlants } from "../../engine/annuelles";
@@ -55,7 +56,7 @@ function WeatherDays({ weather }: { weather: WeatherBundle }) {
   const days = weather.forecast.slice(0, 7);
   const firstFrost = days.findIndex((d) => d.tMin <= 0);
   return (
-    <ul className="wx-days" aria-label="Météo des 7 prochains jours">
+    <ul className="wx-days" aria-label="Météo des 7 prochains jours" data-feat="meteo">
       {days.map((d, i) => {
         const frost = d.tMin <= 0;
         const label = new Date(d.date)
@@ -139,7 +140,8 @@ interface Flash {
   choice: TaskChoice;
   sentence?: string;
 }
-const FLASH_MS = 8000;
+/** Le message « Fait » reste 30 secondes, comme les autres messages avec « Annuler ». */
+const FLASH_MS = 30000;
 
 /** Carte verte qui remplace la tâche pendant quelques secondes : on voit qu'elle est faite, repoussée ou refusée, et on peut annuler. */
 function FlashCard({ item, onUndo, onClose }: { item: Flash; onUndo: () => void; onClose: () => void }) {
@@ -207,6 +209,7 @@ function TaskItem({
       <button
         type="button"
         className="tcard-done"
+        data-feat="tache-fait"
         aria-label={`Fait : ${task.title}`}
         onClick={() => onDecide(task, "fait")}
       >
@@ -215,6 +218,7 @@ function TaskItem({
       <button
         type="button"
         className="tcard-later"
+        data-feat="tache-plus-tard"
         aria-expanded={menu}
         aria-label={`Plus tard : ${task.title}`}
         onClick={() => setMenu((m) => !m)}
@@ -242,10 +246,11 @@ function TaskItem({
           <button
             type="button"
             className="btn small tcard-read"
+            data-feat="lire"
             aria-pressed={speaking}
             onClick={() => (speaking ? stopSpeaking() : speak(task.key, taskSpeech(task)))}
           >
-            <Icon name={speaking ? "x" : "bell"} size={16} /> {speaking ? "Arrêter la lecture" : "Lire"}
+            <Icon name={speaking ? "x" : "speaker"} size={16} /> {speaking ? "Arrêter la lecture" : "Lire à voix haute"}
           </button>
         )}
         {names > 0 && (
@@ -293,7 +298,7 @@ function YearPlan({ garden }: { garden: Garden }) {
   return (
     <>
     <div className="row" style={{ margin: "0 0 12px" }}>
-      <button className="btn" onClick={exportAgenda} disabled={!hasTasks}>
+      <button className="btn" data-feat="agenda" onClick={exportAgenda} disabled={!hasTasks}>
         <Icon name="download" /> Ajouter à mon agenda (.ics)
       </button>
       {!hasTasks && <span className="small muted">Placez d’abord une plante.</span>}
@@ -337,7 +342,7 @@ function YearPlan({ garden }: { garden: Garden }) {
 /** « Mises de côté » : tâches repoussées ou refusées, avec « Remettre ». */
 function AsideCard({ aside }: { aside: TaskDone[] }) {
   return (
-    <div className="card afaire-aside">
+    <div className="card afaire-aside" data-feat="mises-de-cote">
       <h3>Mises de côté</h3>
       <ul className="list small">
         {aside.map((d) => (
@@ -374,6 +379,12 @@ export function TasksPage({ garden }: { garden: Garden }) {
     [tasks],
   );
   const [showAll, setShowAll] = useState(false);
+  // « Tout ce que je peux faire » : ouvre le calendrier de l'année ou la liste complète (avec les tâches mises de côté).
+  useIntent("taches:annee", () => setView("annee"));
+  useIntent("taches:tout", () => {
+    setView("semaine");
+    setShowAll(true);
+  });
   const blocked = tasks.filter((t) => t.blockedBy);
   const recent = done
     .filter((d) => !d.status || d.status === "fait")
@@ -420,9 +431,9 @@ export function TasksPage({ garden }: { garden: Garden }) {
           view === "semaine" ? "À faire cette semaine" : "Calendrier de l’année"
         }
       />
-      <div className="afaire-top">
+      <div className="afaire-top" data-feat="taches">
         {view === "annee" ? (
-          <div className="afaire-year">
+          <div className="afaire-year" data-feat="calendrier">
             <YearPlan garden={garden} />
           </div>
         ) : (
@@ -603,7 +614,7 @@ export function TasksPage({ garden }: { garden: Garden }) {
           {view === "annee" ? "Revenir à la semaine" : "Calendrier de l’année"}
         </button>
         {view === "semaine" && (
-          <div className="afaire-notif">
+          <div className="afaire-notif" data-feat="rappels">
             {!notificationsSupported() ? (
               <p className="small muted">
                 Les rappels ne marchent pas sur cet appareil.

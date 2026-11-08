@@ -41,6 +41,7 @@ export const MODE_TO_RAYON: Record<string, Rayon> = { jardin: 'jardin', entreten
 // ---------- Mémoire locale (localStorage peut être absent ou refuser d'écrire) ----------
 const MODE_KEY = 'pj.mode' // ancienne clé (3 modes) : lue une fois pour retrouver le rayon
 const RAYON_KEY = 'pj.rayon'
+const REOPEN_KEY = 'pj.reopen' // « Rouvrir l'appli où j'étais » : désactivé par défaut (on rouvre sur l'accueil)
 const GUIDE_KEY = 'pj.guide'
 
 function readPref(key: string): string | undefined {
@@ -156,7 +157,7 @@ export const TAB_LABEL: Record<Tab, string> = {
   carte: 'Carte',
   '3d': 'Vue 3D',
   plantes: 'Plantes',
-  entretien: 'Entretien',
+  entretien: 'À faire',
   planter: 'Où planter ?',
   catalogue: 'Catalogue',
   reglages: 'Réglages',
@@ -216,6 +217,12 @@ function readStoredRayon(): Rayon | undefined {
 }
 const storedRayon = readStoredRayon()
 
+/** Rouvrir l'appli sur le dernier rayon (choix de Réglages). Par défaut non : « Que voulez-vous faire ? » reste la porte d'entrée. */
+export const reopenWhereIWas = (): boolean => readPref(REOPEN_KEY) === '1'
+export function setReopenWhereIWas(on: boolean) {
+  writePref(REOPEN_KEY, on ? '1' : '0')
+}
+
 function initialUi(): UiState {
   const stored = readState()?.nav
   let tab: Tab
@@ -224,9 +231,9 @@ function initialUi(): UiState {
     tab = stored.tab
     extra = { selectedPlantId: stored.selectedPlantId, speciesId: stored.speciesId }
   } else {
-    // Ni historique ni hash : le dernier rayon s'il est connu et disponible, sinon « Que voulez-vous faire ? ».
+    // Ni historique ni hash : « Que voulez-vous faire ? », sauf si la personne a demandé de rouvrir sur le dernier rayon.
     const fromHash = hasBrowser ? parseHash(location.hash) : undefined
-    tab = fromHash ?? (storedRayon && rayonAvailable(storedRayon) ? DEFAULT_TAB[storedRayon] : 'accueil')
+    tab = fromHash ?? (reopenWhereIWas() && storedRayon && rayonAvailable(storedRayon) ? DEFAULT_TAB[storedRayon] : 'accueil')
   }
   return { tab, rayon: rayonOfTab(tab) ?? storedRayon, guide: readGuide(), ...extra }
 }

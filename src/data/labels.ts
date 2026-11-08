@@ -13,10 +13,10 @@ export const CATEGORY_LABEL: Record<Category, string> = {
 }
 
 export const STRATE_LABEL: Record<Strate, string> = {
-  canopee: 'Canopée',
+  canopee: 'Grand arbre',
   'arbre-bas': 'Petit arbre',
   arbuste: 'Arbuste',
-  herbacee: 'Herbacée',
+  herbacee: 'Plante à tige tendre',
   'couvre-sol': 'Couvre-sol',
   grimpante: 'Grimpante',
   racine: 'Racine / tubercule',

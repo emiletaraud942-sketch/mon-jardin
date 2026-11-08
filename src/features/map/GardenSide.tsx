@@ -7,6 +7,7 @@ import { SpeciesPicker } from '../../components/SpeciesPicker'
 import { UNKNOWN_SPECIES_ID, yourPlant } from '../../lib/customName'
 import { useInertBehind } from '../../lib/inert'
 import { useGardenPlants, useStore } from '../../lib/store'
+import { identifyOpen } from '../../lib/overlays'
 import { closePlantSheet, openHelp, setUi, startPlacing, stopPlacing, useUi } from '../../lib/ui'
 import type { Garden } from '../../types'
 import { PlantPanel, plantName } from '../plants/PlantPanel'
@@ -74,10 +75,15 @@ export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
         <Icon name="camera" /> Photos du jardin{(garden.panoramas?.length ?? 0) > 0 ? ` (${garden.panoramas!.length})` : ''}
       </button>
       <details className="np-details">
-        <summary>Autres façons d’ajouter</summary>
-        <button className="btn" onClick={() => openScan('menu')}>
-          <Icon name="camera" /> Scanner mon jardin
-        </button>
+        <summary>Scanner, identifier par photo</summary>
+        <div className="stack" style={{ gap: 8 }}>
+          <button className="btn" onClick={() => openScan('menu')}>
+            <Icon name="camera" /> Scanner mon jardin
+          </button>
+          <button className="btn" aria-haspopup="dialog" onClick={() => identifyOpen.set(true)}>
+            <Icon name="camera" /> Identifier une plante par photo
+          </button>
+        </div>
       </details>
       <p className="muted small">{hint}</p>
       <button className="btn ghost small" aria-haspopup="dialog" onClick={openHelp}>
@@ -161,7 +167,7 @@ export function PlacingBanner() {
         )}
         {info.summary && <span className="small placing-dist">{info.summary}</span>}
         {info.note && <span className="small placing-note">{info.note}</span>}
-        {confirm && !aim && !ready && !info.note && <span className="small muted placing-hint">Pour viser : maintenez le doigt (loupe) ou touchez Viser.</span>}
+        {confirm && !aim && !ready && !info.note && <span className="small muted placing-hint">Pour viser avec précision : touchez « Loupe » ou « Viser ».</span>}
       </span>
       <span className="placing-actions">
         {confirm && (

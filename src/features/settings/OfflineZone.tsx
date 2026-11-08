@@ -75,7 +75,7 @@ export function OfflineZoneCard({ garden }: { garden: Garden }) {
 
   const pct = progress.total ? Math.round((progress.done / progress.total) * 100) : 0
   return (
-    <Fold title="Carte sans internet">
+    <Fold title="Carte sans internet" feat="zone-hors-ligne">
       <div className="stack" style={{ gap: 8 }}>
         <p className="small muted" style={{ margin: 0 }}>
           Garde la photo aérienne autour de votre terrain (environ {plan.marginM} m de plus). Compter environ {frNumber(mo, 0)} Mo.
@@ -86,7 +86,7 @@ export function OfflineZoneCard({ garden }: { garden: Garden }) {
               <span style={{ width: `${pct}%` }} />
             </div>
             <p className="small muted" role="status" aria-live="polite" style={{ margin: 0 }}>
-              {progress.done} sur {progress.total} tuiles
+              {progress.done} sur {progress.total} morceaux de carte
             </p>
             <button className="btn" onClick={() => ctrl.current?.abort()}>
               Annuler
@@ -101,7 +101,7 @@ export function OfflineZoneCard({ garden }: { garden: Garden }) {
             {!supported && <p className="small muted" style={{ margin: 0 }}>Ce navigateur ne peut pas garder la carte hors ligne.</p>}
             {already !== undefined && already > 0 && phase === 'repos' && !message && (
               <p className="small muted" style={{ margin: 0 }}>
-                {already} tuiles sur {plan.tiles.length} déjà gardées.
+                {already} morceaux de carte sur {plan.tiles.length} déjà gardés.
               </p>
             )}
           </>
@@ -110,7 +110,7 @@ export function OfflineZoneCard({ garden }: { garden: Garden }) {
           {phase !== 'en-cours' ? message : ''}
         </p>
         <p className="small muted" style={{ margin: 0 }}>
-          L’IGN limite le débit de ses services : l’appli demande 4 tuiles à la fois, 150 au plus par zone.
+          L’IGN limite le débit de ses services : l’appli demande 4 morceaux de carte à la fois, 150 au plus par zone.
         </p>
       </div>
     </Fold>

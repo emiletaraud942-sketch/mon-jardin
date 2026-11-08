@@ -324,13 +324,18 @@ describe('rayons', () => {
     expect(ui.getUi()).toMatchObject({ tab: 'entretien', rayon: 'afaire' })
   })
 
-  it('mémorise le dernier rayon et rouvre dessus au lancement suivant', async () => {
+  it('mémorise le dernier rayon ; il ne sert qu’avec « Rouvrir où j’étais » (désactivé par défaut)', async () => {
     const storage = memoryStorage()
     const first = await load('', storage)
     first.ui.setUi({ tab: 'catalogue' })
     expect(storage.data.get('pj.rayon')).toBe('planter')
+    // Par défaut : l'accueil, « Que voulez-vous faire ? » reste la porte d'entrée.
+    expect((await load('', storage)).ui.getUi()).toMatchObject({ tab: 'accueil', rayon: 'planter' })
+    storage.setItem('pj.reopen', '1')
     const second = await load('', storage)
     expect(second.ui.getUi()).toMatchObject({ tab: 'planter', rayon: 'planter' })
+    second.ui.setReopenWhereIWas(false)
+    expect(second.ui.reopenWhereIWas()).toBe(false)
   })
 
   it('un hash explicite l’emporte sur le dernier rayon', async () => {
@@ -340,16 +345,18 @@ describe('rayons', () => {
   })
 
   it('migre l’ancien mode mémorisé (pj.mode) vers un rayon', async () => {
-    expect((await load('', memoryStorage({ 'pj.mode': 'entretenir' }))).ui.getUi()).toMatchObject({ tab: 'entretien', rayon: 'afaire' })
-    expect((await load('', memoryStorage({ 'pj.mode': 'planifier' }))).ui.getUi().tab).toBe('planter')
-    expect((await load('', memoryStorage({ 'pj.mode': 'jardin' }))).ui.getUi().tab).toBe('carte')
+    const reopen = { 'pj.reopen': '1' }
+    expect((await load('', memoryStorage({ ...reopen, 'pj.mode': 'entretenir' }))).ui.getUi()).toMatchObject({ tab: 'entretien', rayon: 'afaire' })
+    expect((await load('', memoryStorage({ ...reopen, 'pj.mode': 'planifier' }))).ui.getUi().tab).toBe('planter')
+    expect((await load('', memoryStorage({ ...reopen, 'pj.mode': 'jardin' }))).ui.getUi().tab).toBe('carte')
+    expect((await load('', memoryStorage({ 'pj.mode': 'jardin' }))).ui.getUi()).toMatchObject({ tab: 'accueil', rayon: 'jardin' })
     expect((await load('', memoryStorage({ 'pj.mode': 'nimporte', 'pj.guide': '{pas du json' }))).ui.getUi().tab).toBe('accueil')
   })
 
   it('le rayon Voisins mémorisé est ignoré si l’entraide est désactivée', async () => {
     vi.stubEnv('VITE_NEIGHBORS_SUPABASE_URL', '')
     vi.stubEnv('VITE_NEIGHBORS_SUPABASE_ANON_KEY', '')
-    const { ui } = await load('', memoryStorage({ 'pj.rayon': 'voisins' }))
+    const { ui } = await load('', memoryStorage({ 'pj.rayon': 'voisins', 'pj.reopen': '1' }))
     expect(ui.getUi().tab).toBe('accueil')
     vi.unstubAllEnvs()
   })

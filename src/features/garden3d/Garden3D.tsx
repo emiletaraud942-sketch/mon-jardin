@@ -24,6 +24,8 @@ import { plantLabel } from './plantModel'
 import { QUALITY_PREFS, TIER_LABEL, useQuality3D } from './quality'
 import { SeasonPicker } from '../../components/SeasonPicker'
 import { seasonDate, type SeasonChoice } from '../../engine/season'
+import { goHome } from '../../lib/goHome'
+import { useIntent } from '../../lib/overlays'
 import { setUi, useUi } from '../../lib/ui'
 import './garden3d.css'
 
@@ -148,6 +150,14 @@ function GearIcon() {
     <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true">
       <circle cx="10" cy="10" r="2.8" fill="none" stroke="currentColor" strokeWidth="1.8" />
       <path d="M10 1.8v2.6M10 15.6v2.6M1.8 10h2.6M15.6 10h2.6M4.2 4.2l1.9 1.9M13.9 13.9l1.9 1.9M15.8 4.2l-1.9 1.9M6.1 13.9l-1.9 1.9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function HomeIcon() {
+  return (
+    <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+      <path d="M2.5 9.5 10 3l7.5 6.5M4.5 8.5V17h11V8.5M8.5 17v-5h3v5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -300,6 +310,21 @@ export function Garden3D({
   // Aide de la Promenade : s'ouvre à la première visite et reste affichée jusqu'à « Compris » (ou « ? »). Ensuite, seul « Aide » la rouvre.
   const [hourOpen, setHourOpen] = useState(false)
   const [panelOpen, setPanelOpen] = useState(false)
+  // « Tout ce que je peux faire » : entre dans la promenade, ouvre « Aller à », le panneau de l'heure ou les réglages 3D.
+  useIntent('3d:promenade', () => setMode('promenade'))
+  useIntent('3d:aller-a', () => {
+    setMode('promenade')
+    setGotoOpen(true)
+  })
+  useIntent('3d:heure', () => {
+    setMode((m) => (m === 'promenade' ? 'perspective' : m))
+    setPanelOpen(true)
+  })
+  useIntent('3d:reglages', () => {
+    setMode((m) => (m === 'promenade' ? 'perspective' : m))
+    setPanelOpen(true)
+    setCollapsed(false)
+  })
   useEffect(() => {
     if (!walking) {
       setWalkHelpOpen(false)
@@ -433,7 +458,7 @@ export function Garden3D({
 
   /** Heure : curseur, lecture de la journée et (hors Promenade) bouton Réglages, sur une seule ligne. */
   const hourRow = (withSettings: boolean) => (
-    <div className="g3d-hourrow">
+    <div className="g3d-hourrow" data-feat="heure">
       <label className="g3d-hourfield">
         <span className="g3d-field-label">
           Heure <b>{formatHour(hour)}</b>
@@ -453,7 +478,7 @@ export function Garden3D({
       </label>
       <button
         type="button"
-        className="g3d-btn g3d-btn--icon"
+        className="g3d-btn g3d-btn--label"
         aria-label={playing ? 'Pause' : 'Animer la journée'}
         aria-pressed={playing}
         onClick={togglePlay}
@@ -469,17 +494,19 @@ export function Garden3D({
             <path d="M5 3l12 7-12 7z" fill="currentColor" />
           </svg>
         )}
+        <span aria-hidden="true">{playing ? 'Pause' : 'Animer'}</span>
       </button>
       {withSettings && (
         <button
           type="button"
-          className="g3d-btn g3d-btn--icon"
+          className="g3d-btn g3d-btn--label"
           onClick={() => setCollapsed((c) => !c)}
           aria-expanded={!collapsed}
-          aria-label="Réglages"
+          aria-label="Réglages 3D"
           title={collapsed ? 'Afficher le jour, la qualité et la croissance des plantes' : 'Masquer ces réglages'}
         >
           <GearIcon />
+          <span aria-hidden="true">Réglages 3D</span>
         </button>
       )}
     </div>
@@ -497,7 +524,7 @@ export function Garden3D({
   )
 
   return (
-    <div className="g3d-root" ref={rootRef} data-mode={mode} data-failed={failed || undefined}>
+    <div className="g3d-root" ref={rootRef} data-mode={mode} data-failed={failed || undefined} data-feat="vue-3d">
       <CanvasErrorBoundary onFail={setFailed}>
         <Canvas
           key={canvasKey}
@@ -548,7 +575,7 @@ export function Garden3D({
 
       <div className="g3d-overlay">
         {walking ? (
-          <div className="g3d-top g3d-top--walk">
+          <div className="g3d-top g3d-top--walk" data-feat="promenade-ui">
             <div className="g3d-left">
               <div className="g3d-walkrow">
                 <button type="button" className="g3d-btn g3d-quit" onClick={() => setMode('perspective')} title="Quitter la promenade et revenir à la vue en perspective">
@@ -579,6 +606,9 @@ export function Garden3D({
                   size={76}
                   points={photoPoints}
                 />
+                <span className="g3d-minibtn-word" aria-hidden="true">
+                  Aller à
+                </span>
               </button>
             </div>
             <div className="g3d-tools">
@@ -591,6 +621,9 @@ export function Garden3D({
               </button>
               <button type="button" className="g3d-btn g3d-btn--label" title="Revenir à l’entrée du jardin" onClick={() => setFitNonce((n) => n + 1)}>
                 <RecenterIcon /> Recentrer
+              </button>
+              <button type="button" className="g3d-btn g3d-btn--label g3d-home" title="Quitter la 3D et revenir à l’accueil" onClick={goHome}>
+                <HomeIcon /> Accueil
               </button>
             </div>
           </div>
@@ -606,6 +639,7 @@ export function Garden3D({
                 <button
                   type="button"
                   className="g3d-btn g3d-sunbtn"
+                  data-feat="ensoleillement"
                   aria-pressed={showHeatmap}
                   onClick={() => setShowHeatmap((v) => !v)}
                   title="Colorier le terrain selon le soleil qu’il reçoit le jour choisi"
@@ -729,7 +763,9 @@ export function Garden3D({
               <div className="g3d-panel" id="g3d-time-panel">
                 {hourRow(true)}
                 {/* Les saisons restent visibles même panneau réduit (téléphone) : c'est ce qu'on cherche pour voir son jardin fleuri en hiver. */}
-                <SeasonPicker className="g3d-shortcuts" buttonClass="g3d-btn g3d-btn--small" value={seasonShown} onChange={chooseSeason} />
+                <div data-feat="saison">
+                  <SeasonPicker className="g3d-shortcuts" buttonClass="g3d-btn g3d-btn--small" value={seasonShown} onChange={chooseSeason} />
+                </div>
                 {!collapsed && (
                   <>
                     <label className="g3d-field">
@@ -745,7 +781,7 @@ export function Garden3D({
                         <span>Arbres des environs (IGN) : {treeCount}</span>
                       </label>
                     )}
-                    <div className="g3d-field">
+                    <div className="g3d-field" data-feat="qualite">
                       <span className="g3d-field-label">
                         Qualité 3D <b>{quality.pref === 'auto' ? `Auto (${TIER_LABEL[quality.tier]})` : QUALITY_PREFS.find((q) => q.id === quality.pref)?.label}</b>
                       </span>
@@ -758,7 +794,7 @@ export function Garden3D({
                       </div>
                       <span className="g3d-help">« Simple » si votre téléphone ralentit.</span>
                     </div>
-                    <label className="g3d-field">
+                    <label className="g3d-field" data-feat="annees">
                       <span className="g3d-field-label">
                         <b>{yearsLabel(yearsAhead)}</b>
                       </span>
@@ -788,7 +824,7 @@ export function Garden3D({
                 </div>
                 <button
                   type="button"
-                  className="g3d-btn g3d-btn--icon"
+                  className="g3d-btn g3d-btn--label"
                   aria-label="Heure et réglages"
                   aria-expanded={panelOpen}
                   aria-controls="g3d-time-panel"
@@ -796,9 +832,11 @@ export function Garden3D({
                   onClick={() => setPanelOpen((v) => !v)}
                 >
                   <ClockIcon />
+                  <span aria-hidden="true">Heure</span>
                 </button>
-                <button type="button" className="g3d-btn g3d-btn--icon g3d-recenter" aria-label="Recentrer" title="Cadrer de nouveau tout le jardin" onClick={() => setFitNonce((n) => n + 1)}>
+                <button type="button" className="g3d-btn g3d-btn--label g3d-recenter" aria-label="Recentrer" title="Cadrer de nouveau tout le jardin" onClick={() => setFitNonce((n) => n + 1)}>
                   <RecenterIcon />
+                  <span aria-hidden="true">Recentrer</span>
                 </button>
               </div>
 

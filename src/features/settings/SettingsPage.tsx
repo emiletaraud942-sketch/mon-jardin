@@ -24,7 +24,7 @@ import { readBackupFile } from '../../lib/security/import'
 import { getTheme, setTheme, THEME_LABEL, type Theme } from '../../lib/theme'
 import { setTextSize, useTextSize, TEXT_SIZE_LABEL, TEXT_SIZES } from '../../lib/textSize'
 import { showToast } from '../../lib/toast'
-import { openParcours, restartOnboarding, setUi, useUi } from '../../lib/ui'
+import { openParcours, reopenWhereIWas, restartOnboarding, setReopenWhereIWas, setUi, useUi } from '../../lib/ui'
 import { doyToLabel } from '../../lib/weather'
 import { lidarMessage, setLidarEnabled, useLidarScene } from '../../lib/useLidar'
 import { LIDAR_ATTRIBUTION } from '../../lib/lidar'
@@ -102,7 +102,7 @@ function GardenInfo({ garden }: { garden: Garden }) {
   const terrain = [garden.areaM2 ? `${frNumber(garden.areaM2, 0)} m²` : '', garden.altitudeM != null ? `altitude ${frNumber(garden.altitudeM, 0)} m` : ''].filter(Boolean).join(' · ')
 
   return (
-    <Fold title="Mon jardin" open={missingSources(garden).length > 0}>
+    <Fold title="Infos du terrain et du sol" feat="infos-terrain" open={missingSources(garden).length > 0}>
       <GardenDataBanner garden={garden} />
       <div className="grid cols-2">
         <label className="field">
@@ -194,7 +194,7 @@ function LidarCard({ garden }: { garden: Garden }) {
   const busy = lidar.status === 'loading'
   const message = lidar.enabled ? lidarMessage({ status: lidar.status }, lidar.trees.length) : ''
   return (
-    <Fold title="Relief et arbres des environs">
+    <Fold title="Relief et arbres des environs" feat="lidar">
       <label className="check-row">
         <input type="checkbox" checked={lidar.enabled} onChange={(e) => setLidarEnabled(e.target.checked)} />
         <span>Utiliser les arbres des environs (données IGN)</span>
@@ -391,7 +391,7 @@ function Backup() {
   }
 
   return (
-    <div className="card">
+    <div className="card" data-feat="sauvegarde">
       <h2>Sauvegarde de mes données</h2>
       <p role="status" className={writeError ? 'warn-text' : 'small'}>{storageLine}</p>
       <p className="small">{STORAGE_WHERE}</p>
@@ -405,10 +405,10 @@ function Backup() {
         <button className="btn primary" onClick={() => void exportJson()} disabled={busy}>
           <Icon name="download" /> Faire une sauvegarde
         </button>
-        <button className="btn" onClick={() => void exportFull()} disabled={busy || est?.photos === 0}>
+        <button className="btn" data-feat="sauvegarde-complete" onClick={() => void exportFull()} disabled={busy || est?.photos === 0}>
           <Icon name="download" /> Sauvegarde avec photos{est && est.photos > 0 ? ` (${formatMo(est.bytes)})` : ''}
         </button>
-        <label className="btn file-btn">
+        <label className="btn file-btn" data-feat="reprise">
           <Icon name="upload" /> Reprendre une sauvegarde
           <input className="sr-only" type="file" accept={`application/json,.json,${FULL_EXTENSION}`} onChange={(e) => void importJson(e.target)} />
         </label>
@@ -441,12 +441,12 @@ function Backup() {
         </div>
       )}
       <details className="np-details">
-        <summary>Détails et copie de sécurité</summary>
+        <summary>Copie de sécurité et conseils</summary>
         <p className="small muted">Gardez-le en lieu sûr : ordinateur, clé USB, ou e-mail à vous-même.</p>
         <p className="small muted">La sauvegarde simple n’a pas les photos : elles restent sur cet appareil. « Sauvegarde avec photos » les met dans le fichier, qui est plus lourd. « Reprendre une sauvegarde » lit les deux.</p>
         {persistent === false && <p className="small muted">Si l’espace manque, cet appareil peut effacer vos données. Une sauvegarde les protège.</p>}
         <p className="small muted">Avant de remplacer vos données, l’appli en garde une copie sur cet appareil. Vous pouvez la télécharger.</p>
-        <div className="row">
+        <div className="row" data-feat="copie-securite">
           <SafetyCopyButton className="btn" />
         </div>
       </details>
@@ -507,7 +507,7 @@ function Sync() {
   if (!syncConfigured) return null
   if (!mod) {
     return (
-      <Fold title="Retrouver mes jardins sur un autre appareil">
+      <Fold title="Retrouver mes jardins sur un autre appareil" feat="synchro">
         {msg?.error ? <ErrorNote error={msg.error} /> : <p className="muted"><span className="spinner" /> Chargement…</p>}
       </Fold>
     )
@@ -567,7 +567,7 @@ function Sync() {
   const hasPhotos = getState().plants.some((p) => p.photos.length > 0)
 
   return (
-    <Fold title="Retrouver mes jardins sur un autre appareil">
+    <Fold title="Retrouver mes jardins sur un autre appareil" feat="synchro">
       <p className="small muted">Connecté, vos jardins se mettent à jour en ligne tout seuls ; reprenez-les sur un autre appareil. Les photos ne sont pas copiées. Un code reçu par e-mail suffit, sans lien à ouvrir.</p>
       {user ? (
         <>
@@ -703,6 +703,7 @@ function Sync() {
 function ReadingCard() {
   const [theme, setThemeState] = useState<Theme>(getTheme())
   const size = useTextSize()
+  const [reopen, setReopen] = useState(reopenWhereIWas())
   const [saved, flash] = useFlash()
   return (
     <div className="card">
@@ -722,7 +723,11 @@ function ReadingCard() {
             }}
           />
         </div>
-        <div className="stack">
+        <label className="check-row" data-feat="rouvrir">
+          <input type="checkbox" checked={reopen} onChange={(e) => (setReopenWhereIWas(e.target.checked), setReopen(e.target.checked), flash())} />
+          <span>Rouvrir l’appli là où j’étais. Sinon elle s’ouvre sur l’accueil.</span>
+        </label>
+        <div className="stack" data-feat="theme">
           <strong>Couleurs</strong>
           <Segmented
             label="Couleurs"
@@ -744,7 +749,7 @@ function ReadingCard() {
 function GardensCard({ garden, adding, setAdding, addRef }: { garden: Garden; adding: boolean; setAdding: (v: boolean) => void; addRef: React.RefObject<HTMLDivElement> }) {
   const gardens = useStore((s) => s.gardens)
   return (
-    <div className="card" ref={addRef}>
+    <div className="card" ref={addRef} data-feat="mes-jardins">
       <h2>Mes jardins</h2>
       <ul className="list garden-list">
         {gardens.map((g) => (
@@ -760,7 +765,7 @@ function GardensCard({ garden, adding, setAdding, addRef }: { garden: Garden; ad
         {adding ? (
           <GardenCreator onDone={() => setAdding(false)} />
         ) : (
-          <button className="btn" onClick={() => setAdding(true)}>
+          <button className="btn" data-feat="nouveau-jardin" onClick={() => setAdding(true)}>
             <Icon name="plus" /> Nouveau jardin
           </button>
         )}
@@ -814,7 +819,7 @@ function AdviceCard({ garden }: { garden: Garden }) {
         <button className="btn" aria-haspopup="dialog" onClick={() => setHelp(true)}>
           Besoin d’aide ?
         </button>
-        <div className="stack diag-box">
+        <div className="stack diag-box" data-feat="diagnostic">
           <DiagnosticButton />
         </div>
       </div>
@@ -826,13 +831,15 @@ function AdviceCard({ garden }: { garden: Garden }) {
 /** Visite guidée et partage de l'appli. */
 function TourCard() {
   return (
-    <Fold title="La visite">
+    <Fold title="La visite et le partage">
       <p className="small muted">Le guide en 5 étapes : adresse, terrain, plantes, entretien, voisins.</p>
       <div className="stack">
         <button className="btn" onClick={restartOnboarding}>
           Revoir la visite
         </button>
-        <InviteButton className="btn" label="Faire connaître l’appli" copyLabel="Copier le lien de l’appli" />
+        <div data-feat="inviter">
+          <InviteButton className="btn" label="Faire connaître l’appli" copyLabel="Copier le lien de l’appli" />
+        </div>
       </div>
     </Fold>
   )
@@ -852,9 +859,9 @@ export function SettingsPage({ garden }: { garden: Garden }) {
   }, [newGarden])
 
   return (
-    <div className="page">
+    <div className="page" data-feat="reglages">
       <h1>Mon compte et réglages</h1>
-      <div className="settings-textsize">
+      <div className="settings-textsize" data-feat="taille-texte">
         <TextSizeButton />
       </div>
       <div className="grid cols-2" style={{ alignItems: 'start' }}>

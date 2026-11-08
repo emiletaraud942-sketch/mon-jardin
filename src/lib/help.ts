@@ -25,7 +25,7 @@ export const HELP: Record<Tab, HelpContent> = {
     steps: [
       'Touchez « Ajouter une plante », puis choisissez la plante.',
       'Touchez la carte à l’endroit où elle pousse (ou « Viser »), puis « Valider ». « Annuler » arrête.',
-      '« Aides » ouvre « Par mesures », « Je suis ici », « Coller aux bords », « Grille » et « Fond simple ».',
+      '« Aides au placement » ouvre « Placer au mètre », « Je suis ici », « Coller aux bords », « Grille » et « Fond simple ».',
       'Touchez une plante pour ouvrir sa fiche : état, photos, soins. Un message permet de défaire après coup.',
       'Pour la déplacer, touchez « Déplacer cette plante », le nouvel endroit, puis « Valider ».',
       'Pour zoomer, pincez avec deux doigts ou touchez + et −. Le trait jaune montre les limites du terrain.',
@@ -76,7 +76,7 @@ export const HELP: Record<Tab, HelpContent> = {
   catalogue: {
     title: 'Le catalogue',
     steps: [
-      'Cherchez une plante par son nom ou son type. Les pastilles trient : comestible, mellifère, ombre, facile, ce mois-ci.',
+      'Cherchez une plante par son nom ou son type. Les pastilles trient : comestible, utile aux abeilles, ombre, facile, ce mois-ci.',
       'Sa fiche dit le soleil, l’eau, le sol et les bonnes plantes voisines.',
       'Le calendrier montre quand semer, planter et récolter.',
       'Le bouton sous la fiche la pose sur la carte de votre jardin.',
@@ -96,7 +96,7 @@ export const HELP: Record<Tab, HelpContent> = {
   voisins: {
     title: 'L’entraide',
     steps: [
-      'Entrez votre e-mail : un lien arrive. Ouvrez-le sur ce téléphone. Choisissez ensuite un pseudo et votre quartier : une zone d’environ 2 km, ou environ 5 km à la campagne.',
+      'Entrez votre e-mail : un code arrive par e-mail. Saisissez-le ici. Choisissez ensuite un pseudo et votre quartier : une zone d’environ 2 km, ou environ 5 km à la campagne.',
       '« Nouveautés » résume ce qui est arrivé depuis votre dernière visite. Touchez une ligne pour la voir.',
       'Les annonces montrent les dons, échanges, prêts, demandes et questions près de chez vous. « Publier » en crée une. Rien ne se vend ici.',
       '« Écrire en privé » ouvre une conversation. « J’ai ce qu’il cherche » répond à une demande. « Signaler » et « Bloquer » protègent le groupe.',
@@ -108,6 +108,50 @@ export const HELP: Record<Tab, HelpContent> = {
 
 export const HELP_SCREENS = Object.keys(HELP) as Tab[]
 
+/** Écrans qui ne sont pas un onglet : le scanner, les photos du jardin et la promenade en 3D. */
+export type HelpExtra = 'scanner' | 'photos' | 'promenade'
+
+export const HELP_EXTRA: Record<HelpExtra, HelpContent> = {
+  scanner: {
+    title: 'Le scanner',
+    steps: [
+      '« Filmer en marchant » : marchez dans le jardin, l’appli propose le nom des plantes, avec votre accord.',
+      '« Placer une plante en la photographiant » : une photo, et la plante est posée là où vous êtes.',
+      '« Placer avec un mètre » : mesurez la distance à deux repères, sans GPS.',
+      '« Ajuster la carte à ma position » est facultatif. Il améliore la précision de la carte.',
+      'Touchez « Accueil » pour tout quitter et revenir au début.',
+    ],
+  },
+  photos: {
+    title: 'Les photos du jardin',
+    steps: [
+      '« Prendre un point de vue » : choisissez un endroit, puis tournez sur vous-même. L’appli prend 8 à 12 photos.',
+      'Touchez un point de la liste pour vous y promener. Glissez le doigt pour tourner la vue.',
+      'Les flèches mènent à un autre point. « Afficher les noms » montre vos plantes sur la photo.',
+      'Ces photos restent sur ce téléphone. Elles ne reconnaissent pas les plantes toutes seules.',
+      'Touchez « Accueil » pour revenir au début, ou « Fermer » pour revenir à la carte.',
+    ],
+  },
+  promenade: {
+    title: 'La promenade en 3D',
+    steps: [
+      'Poussez le rond pour marcher. Glissez sur la scène pour regarder autour.',
+      '« Courir » va plus vite. Les flèches rondes tournent la vue.',
+      '« Aller à » vous place près d’une plante ou d’un point photo. Vous pouvez aussi toucher la mini-carte.',
+      '« Mouvement réduit » avance par bonds, pour éviter le vertige.',
+      '« Quitter » revient à la vue en perspective. « Accueil » revient au début de l’appli.',
+    ],
+  },
+}
+
+/** Écran d'aide à ouvrir d'après ce qu'on voit : promenade, scanner ou photos du jardin d'abord, sinon l'onglet. */
+export function helpExtraNow(doc: { documentElement: { dataset: DOMStringMap }; querySelector(s: string): unknown } = document): HelpExtra | undefined {
+  if (doc.querySelector('.pano-overlay')) return 'photos'
+  if (doc.querySelector('dialog.modal.full[open]')) return 'scanner'
+  if (doc.documentElement.dataset.immersive) return 'promenade'
+  return undefined
+}
+
 export const RAYONS_HELP = {
   title: 'À quoi servent les 4 parties de l’appli ?',
   intro: 'Les boutons du bas rangent l’appli en 4 parties, plus l’Accueil. Rien n’est bloqué.',
@@ -118,7 +162,7 @@ export const RAYONS_HELP = {
     { name: 'Voisins', text: 'Dons, questions et rendez-vous près de chez vous. Facultatif.' },
   ],
   optional: 'Placer vos plantes est facultatif : vous pouvez aller directement à « À faire ».',
-  account: 'Sauvegarde, réglages, aide et changement de jardin sont dans l’icône profil, en haut à droite.',
+  account: 'Sauvegarde, réglages et changement de jardin sont sous « Compte », en haut à droite. « Tout » liste toutes les fonctions.',
 }
 
 export function helpFor(tab: Tab): HelpContent {

@@ -48,7 +48,9 @@ export function SpeciesPicker({
   onPickCustom,
   onScan,
   onClose,
+  feat,
 }: {
+  feat?: string
   title?: string
   onPick: (s: Species) => void
   onPickCustom?: (name: string) => void
@@ -63,7 +65,7 @@ export function SpeciesPicker({
   const touch = useIsMobile() || useMedia('(pointer: coarse)')
   const list = useMemo(() => searchSpecies(q, cat), [q, cat])
   return (
-    <Modal title={title} onClose={onClose}>
+    <Modal title={title} feat={feat} onClose={onClose}>
       <div className="plants-ui">
       {custom === undefined && (
       <div className="row" style={{ marginBottom: 12 }}>

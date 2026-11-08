@@ -76,7 +76,7 @@ export function stepTitle(s: CalibState): string {
   const n = currentLandmark(s)
   switch (s.phase) {
     case 'intro':
-      return 'Recaler la carte sur ma position'
+      return 'Ajuster la carte à ma position'
     case 'gps':
       return `Repère ${n} : mesurer ma position`
     case 'carte':

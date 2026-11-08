@@ -18,6 +18,7 @@ import { legalDistance } from '../../engine/planting'
 import { PlaceAction } from '../../components/PlaceAction'
 import { updatePlant, useGardenPlants } from '../../lib/store'
 import { getUi, openHelp, setUi, useUi } from '../../lib/ui'
+import { useIntent } from '../../lib/overlays'
 import { useBanner } from '../../lib/banners'
 import { plantSizeAt } from '../../engine/growth'
 import { canopyLook, seasonDate, seasonSummary, stateAtSeason, type SeasonChoice } from '../../engine/season'
@@ -162,7 +163,14 @@ function MapViewInner({ garden }: { garden: Garden }) {
   const tileNoticeTurn = useBanner('carte', tileProblem)
   const [legendOpen, setLegendOpen] = useState(false)
   const [optionsOpen, setOptionsOpen] = useState(false)
+  // « Tout ce que je peux faire » demande d'ouvrir le panneau d'options ou la légende.
+  useIntent('carte:options', () => setOptionsOpen(true))
+  useIntent('carte:legende', () => setLegendOpen(true))
   const [aidsOpen, setAidsOpen] = useState(false)
+  // Bouton « Loupe » : la loupe s'ouvre dès que le doigt se pose (au lieu d'attendre l'appui long).
+  const [loupeOn, setLoupeOn] = useState(false)
+  const loupeQuick = useRef(false)
+  loupeQuick.current = loupeOn
   const [names, setNames] = useState(() => readNames(plants.length))
   const namesRef = useRef(names)
   namesRef.current = names
@@ -384,7 +392,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
         m.touchZoomRotate.disable()
         box.classList.add('on')
         aimAt(start)
-      }, LOUPE_HOLD_MS)
+      }, loupeQuick.current ? 0 : LOUPE_HOLD_MS)
     }
     const onMove = (e: PointerEvent) => {
       if (active) return aimAt(rel(e))
@@ -908,10 +916,10 @@ function MapViewInner({ garden }: { garden: Garden }) {
   return (
     <div className="workspace">
       <div className={'canvas-wrap' + (placingSpeciesId || movingPlantId ? ' placing' : '')}>
-        <div ref={el} className="map" />
+        <div ref={el} className="map" data-feat="carte" />
         <div className="map-top">
           {!placingNow && (
-          <div className="floating row map-toolbar" role="toolbar" aria-label="Réglages de la carte">
+          <div className="floating row map-toolbar" role="toolbar" aria-label="Réglages de la carte" data-feat="fond-carte">
             <button className={'btn small' + (base === 'ortho' ? ' primary' : '')} aria-pressed={base === 'ortho'} onClick={() => setBase('ortho')}>
               Vue photo
             </button>
@@ -919,7 +927,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
               Vue plan
             </button>
             <button className={'btn small' + (optionsOpen ? ' on' : '')} aria-expanded={optionsOpen} aria-controls="map-options" onClick={() => setOptionsOpen((o) => !o)}>
-              Options <span aria-hidden>{optionsOpen ? '▴' : '▾'}</span>
+              Options de la carte <span aria-hidden>{optionsOpen ? '▴' : '▾'}</span>
             </button>
             <HistoryButtons />
           </div>
@@ -927,33 +935,44 @@ function MapViewInner({ garden }: { garden: Garden }) {
           {placingNow && (
             <div className="floating map-aid" role="toolbar" aria-label="Aides au placement">
               <div className="map-aid-row">
-                <button className={'btn small aim-first' + (aim ? ' primary' : '')} aria-pressed={!!aim} onClick={() => setUi({ aim: !aim })}>
+                <button className={'btn small aim-first' + (aim ? ' primary' : '')} data-feat="viser" aria-pressed={!!aim} onClick={() => setUi({ aim: !aim })}>
                   <Icon name={aim ? 'check' : 'pin'} size={16} />
                   Viser
                 </button>
-                <button className={'btn small' + (aidsOpen ? ' on' : '')} aria-expanded={aidsOpen} aria-controls="map-aids" onClick={() => setAidsOpen((o) => !o)}>
-                  Aides <span aria-hidden>{aidsOpen ? '▴' : '▾'}</span>
+                <button className={'btn small' + (loupeOn ? ' primary' : '')} data-feat="loupe" aria-pressed={loupeOn} disabled={!!aim} onClick={() => setLoupeOn((v) => !v)}>
+                  <Icon name={loupeOn ? 'check' : 'loupe'} size={16} />
+                  Loupe
                 </button>
+                <button className={'btn small' + (aidsOpen ? ' on' : '')} data-feat="aides-toggle" aria-expanded={aidsOpen} aria-controls="map-aids" onClick={() => setAidsOpen((o) => !o)}>
+                  Aides au placement <span aria-hidden>{aidsOpen ? '▴' : '▾'}</span>
+                </button>
+              </div>
+              <div className="map-aid-row">
                 <HistoryButtons />
               </div>
+              {loupeOn && !aim && (
+                <p className="small map-aid-hint" role="note">
+                  Loupe active : posez le doigt sur la carte, la zone s’agrandit. Levez le doigt pour valider. Touchez « Loupe » pour déplacer la carte.
+                </p>
+              )}
               {aidsOpen && (
                 <div id="map-aids" className="map-aid-more">
                   <div className="map-aid-row">
                     <button className="btn small" onClick={() => openScan('mesures', movingPlantId ? { kind: 'plant', plantId: movingPlantId } : { kind: 'new' })}>
-                      Par mesures
+                      Placer au mètre
                     </button>
-                    <button className="btn small" disabled={gpsBusy} onClick={() => void placeHere()}>
+                    <button className="btn small" data-feat="je-suis-ici" disabled={gpsBusy} onClick={() => void placeHere()}>
                       Je suis ici
                     </button>
                   </div>
                   <div className="map-aid-row">
-                    <button className={'btn small' + (snapOn ? ' primary' : '')} aria-pressed={snapOn} onClick={() => setSnapPref(!snapOn)}>
+                    <button className={'btn small' + (snapOn ? ' primary' : '')} data-feat="coller-bords" aria-pressed={snapOn} onClick={() => setSnapPref(!snapOn)}>
                       {snapOn ? <Icon name="check" size={16} /> : null}Coller aux bords
                     </button>
-                    <button className={'btn small' + (gridOn ? ' primary' : '')} aria-pressed={gridOn} onClick={() => setGridPref(!gridOn)}>
+                    <button className={'btn small' + (gridOn ? ' primary' : '')} data-feat="grille" aria-pressed={gridOn} onClick={() => setGridPref(!gridOn)}>
                       {gridOn ? <Icon name="check" size={16} /> : null}Grille
                     </button>
-                    <button className={'btn small' + (schema ? ' primary' : '')} aria-pressed={schema} onClick={() => setSchema((v) => !v)}>
+                    <button className={'btn small' + (schema ? ' primary' : '')} data-feat="fond-simple" aria-pressed={schema} onClick={() => setSchema((v) => !v)}>
                       {schema ? <Icon name="check" size={16} /> : null}Fond simple
                     </button>
                   </div>
@@ -962,8 +981,9 @@ function MapViewInner({ garden }: { garden: Garden }) {
             </div>
           )}
           {optionsOpen && !placingNow && (
-            <div id="map-options" className="floating stack map-options">
-              <button className="btn small" onClick={() => fit()}>
+            <div id="map-options" className="floating stack map-options" data-feat="map-options">
+              <p className="small muted map-opt-intro">Recentrer, limites du terrain, saison, taille adulte, noms, légende.</p>
+              <button className="btn small" data-feat="recentrer" onClick={() => fit()}>
                 <Icon name="pin" size={16} /> Recentrer sur mon terrain
               </button>
               <button className={'btn small' + (cadastre ? ' on' : '')} aria-pressed={cadastre} onClick={() => setCadastre((c) => !c)}>
@@ -1002,7 +1022,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
             </div>
           )}
           {legendOpen && !placingNow && (
-            <ul id="map-legend" className="floating legend small" aria-label="Légende de la carte">
+            <ul id="map-legend" className="floating legend small" aria-label="Légende de la carte" data-feat="legende">
               <li>
                 <span className="swatch line parcel" aria-hidden /> Trait jaune : limites du terrain
               </li>

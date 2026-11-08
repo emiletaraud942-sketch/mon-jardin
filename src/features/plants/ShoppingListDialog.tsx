@@ -25,7 +25,7 @@ export function ShoppingListDialog({ garden, plants, onClose }: { garden: Garden
   }
 
   return (
-    <Modal title="Liste de courses et de semis" onClose={onClose}>
+    <Modal title="Liste de courses et de semis" feat="shopping" onClose={onClose}>
       <div className="stack">
         {items.length === 0 ? (
           <p>Aucune plante prévue. Ajoutez une plante avec l’état « Prévue » pour la voir ici.</p>

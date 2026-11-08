@@ -63,7 +63,7 @@ export function InstallCard() {
   const state = useInstallState()
   if (state === 'installed') return null
   return (
-    <Fold title="Installer l’appli">
+    <Fold title="Installer l’appli" feat="installer">
       <div className="stack">
         <p className="small muted" style={{ margin: 0 }}>
           Elle s’ouvre comme une appli, depuis votre écran d’accueil.

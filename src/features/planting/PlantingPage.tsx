@@ -41,9 +41,9 @@ function SowNow({ garden }: { garden: Garden }) {
   const setMonth = (m: Month) => setUi({ sowMonth: m })
   const now = useMemo(() => whatToSowNow(SPECIES, garden, month), [garden, month])
   return (
-    <div className="card">
+    <div className="card" data-feat="semer-ce-mois">
       <div className="row" style={{ justifyContent: 'space-between' }}>
-        <h2>Ce que vous pouvez faire en</h2>
+        <h2>Que semer et planter en</h2>
         <select className="input" style={{ width: 'auto' }} value={month} onChange={(e) => setMonth(Number(e.target.value) as Month)} aria-label="Mois">
           {MONTH_NAMES.map((m, i) => (
             <option key={m} value={i + 1}>
@@ -186,7 +186,7 @@ function BestForSpot({ garden }: { garden: Garden }) {
   )
 
   return (
-    <div className="card">
+    <div className="card" data-feat="ou-planter">
       <h2>Quelle plante pour cet endroit ?</h2>
       <ol className="np-steps" style={{ marginBottom: 8 }}>
         <li>
@@ -234,7 +234,7 @@ function ModelHint({ garden }: { garden: Garden }) {
         </p>
       </details>
       <div className="row">
-        <PlaceAction>Placer une plante</PlaceAction>
+        <PlaceAction>Ajouter une plante</PlaceAction>
       </div>
     </div>
   )

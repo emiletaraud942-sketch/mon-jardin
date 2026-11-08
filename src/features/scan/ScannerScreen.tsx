@@ -145,7 +145,7 @@ export function ScannerScreen({ garden }: { garden: Garden }) {
   const needsConsent = live.some((i) => i.why === 'consentement')
 
   return (
-    <Modal title="Scanner les plantes" full onClose={closeScan}>
+    <Modal title="Scanner les plantes" full feat="scan-scanner" onClose={closeScan}>
       <div className="scan-layout">
         <ScanMap
           garden={garden}
@@ -159,9 +159,9 @@ export function ScannerScreen({ garden }: { garden: Garden }) {
         <div className="scan-panel stack">
           {!garden.calibration && (
             <div className="alert info small">
-              <span>La carte n’est pas recalée. Les positions seront moins précises.</span>
+              <span>La carte n’est pas ajustée à votre position. Les positions seront moins précises.</span>
               <button className="btn small" style={{ marginTop: 6 }} onClick={() => openScan('recaler')}>
-                Recaler la carte
+                Ajuster la carte
               </button>
             </div>
           )}
@@ -229,7 +229,7 @@ export function ScannerScreen({ garden }: { garden: Garden }) {
           </details>
 
           <label className={'btn primary big scan-photo' + (busy || perm === 'inconnu' ? ' is-disabled' : '')}>
-            {busy ? <span className="spinner" /> : <Icon name="camera" />} Photographier une plante
+            {busy ? <span className="spinner" /> : <Icon name="camera" />} Photographier pour placer
             <input
               className="sr-only"
               type="file"

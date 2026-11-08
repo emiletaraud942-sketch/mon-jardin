@@ -268,7 +268,7 @@ function Consents() {
 export function PrivacyCard() {
   const [erasing, setErasing] = useState(false)
   return (
-    <Fold title="Vie privée et données">
+    <Fold title="Vie privée et données" feat="vie-privee">
       <p>Vos données restent sur cet appareil. Rien n’est envoyé sans votre accord, sauf la carte et la météo.</p>
       <Consents />
       <details className="np-details">

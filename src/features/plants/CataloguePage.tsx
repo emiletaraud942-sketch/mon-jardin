@@ -88,7 +88,7 @@ export function CataloguePage({ garden }: { garden: Garden }) {
   }
 
   return (
-    <div className="page np-page plants-ui">
+    <div className="page np-page plants-ui" data-feat="catalogue">
       <h1>Catalogue des plantes ({list.length})</h1>
       <MetroNote garden={garden} />
       <div className="row" style={{ margin: '8px 0 16px' }}>
@@ -120,7 +120,7 @@ export function CataloguePage({ garden }: { garden: Garden }) {
           ))}
         </select>
       </div>
-      <div className="row chip-filters" role="group" aria-label="Filtres">
+      <div className="row chip-filters" role="group" aria-label="Filtres du catalogue" data-feat="catalogue-filtres">
         {FILTERS.map((f) => (
           <button key={f.id} className={'btn chip-filter' + (filters.includes(f.id) ? ' primary' : '')} aria-pressed={filters.includes(f.id)} title={f.help} onClick={() => toggle(f.id)}>
             {filters.includes(f.id) && <Icon name="check" size={16} />}

@@ -240,7 +240,7 @@ function PlantesStep({ garden, next, skip }: StepProps) {
           <button className="choice" onClick={() => setIdentifying(true)}>
             <Icon name="camera" size={30} />
             <span>
-              <strong>Photographier une plante</strong>
+              <strong>Identifier une plante par photo</strong>
               <span className="muted small">On devine son nom à partir de la photo.</span>
             </span>
             <Icon name="forward" size={20} />

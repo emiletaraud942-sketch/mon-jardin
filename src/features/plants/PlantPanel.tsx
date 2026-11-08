@@ -7,6 +7,7 @@ import { RiskNotes } from '../../components/RiskNotes'
 import { isFullError, MESSAGE_FULL, savePhoto } from '../../lib/photos'
 import { addPlant, getState, removePlant, updatePlant, useGardenPlants } from '../../lib/store'
 import { recordWithToast } from '../../lib/history'
+import { goHome } from '../../lib/goHome'
 import { cleanCustomName } from '../../lib/customName'
 import { frMeters, frNumber } from '../../lib/format'
 import { openScan } from '../scan/scanUi'
@@ -177,7 +178,7 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
   )
 
   return (
-    <div className={fiche ? 'fiche plants-ui' : 'stack plants-ui'} style={fiche ? undefined : { gap: 12 }}>
+    <div className={fiche ? 'fiche plants-ui' : 'stack plants-ui'} style={fiche ? undefined : { gap: 12 }} data-feat="fiche">
       {fiche && (
         <div className="fiche-hero">
           <Blob size={330} height={280} className="fh-blob" />
@@ -187,6 +188,10 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
               <Icon name="back" size={22} />
             </button>
           )}
+          <button className="fiche-home" onClick={goHome}>
+            <Icon name="home" size={20} />
+            <span>Accueil</span>
+          </button>
         </div>
       )}
       <div className={fiche ? 'fiche-sheet stack' : 'stack'} style={fiche ? undefined : { gap: 12 }}>
@@ -243,8 +248,8 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
               Voir sur la carte
             </button>
           )}
-          <button className="fiche-btn" aria-label="Mesurer pour placer la plante" onClick={() => openScan('mesures', { kind: 'plant', plantId: plant.id })}>
-            Mesurer
+          <button className="fiche-btn" aria-label="Placer au mètre" onClick={() => openScan('mesures', { kind: 'plant', plantId: plant.id })}>
+            Placer au mètre
           </button>
         </div>
       )}
@@ -261,7 +266,7 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
       {legal && <PositionNote legal={legal} />}
 
       {harvest.ok && (
-        <div className="harvest-box">
+        <div className="harvest-box" data-feat="recoltee">
           <button className="btn" onClick={() => markHarvested([plant], plantName(plant))} aria-describedby={'harvest-why-' + plant.id}>
             <Icon name="check" size={16} /> Marquer comme récoltée
           </button>
@@ -270,7 +275,7 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
           </p>
         </div>
       )}
-      {plant.status === 'recoltee' && <p className="small muted">Plante récoltée : elle ne génère plus de tâches. Changez son état dans « Date, notes et autres actions » pour la remettre en place.</p>}
+      {plant.status === 'recoltee' && <p className="small muted">Plante récoltée : elle ne génère plus de tâches. Changez son état dans « Date et notes » pour la remettre en place.</p>}
 
       {myTasks.length > 0 && (
         <div>
@@ -288,7 +293,7 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
         </div>
       )}
 
-      <div>
+      <div data-feat="photos-plante">
         <h3>Photos</h3>
         <div className="row photo-row">
           {plant.photos.map((id) => (
@@ -310,14 +315,6 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
         {photoError && <p className="alert error small" role="alert" style={{ marginTop: 8 }}>{photoError}</p>}
       </div>
 
-      <button className="btn plant-move" onClick={() => startMoving(plant.id)}>
-        <Icon name="move" size={16} /> Déplacer cette plante
-      </button>
-
-      <details className="np-details plant-details">
-        <summary>Date, notes et autres actions</summary>
-        <div className="stack" style={{ gap: 12 }}>
-      {fields}
       {(report.amis.length > 0 || report.ennemis.length > 0) && (
         <div className="small stack">
           {report.amis.length > 0 && (
@@ -333,23 +330,18 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
         </div>
       )}
 
-      {species && <PurchaseSummary plantId={plant.id} />}
-      {species && <MeasureSection plant={plant} species={species} name={plantName(plant)} />}
-
-      <label className="field">
-        <span>Notes</span>
-        <textarea className="input" rows={3} value={plant.notes ?? ''} onChange={(e) => updatePlant(plant.id, { notes: e.target.value })} placeholder="Variété, où vous l’avez achetée, observations…" />
-      </label>
-      <NoteAssist plant={plant} species={species} />
-
       <div className="stack panel-actions">
+        <button className="btn plant-move" onClick={() => startMoving(plant.id)}>
+          <Icon name="move" size={16} /> Déplacer cette plante
+        </button>
+        <p className="small muted plant-move-hint">Sur la carte 3D, vous pouvez aussi la glisser avec le doigt.</p>
         {!fiche && (
           <button className="btn" onClick={() => openScan('mesures', { kind: 'plant', plantId: plant.id })}>
-            <Icon name="pin" size={16} /> Placer par mesures
+            <Icon name="pin" size={16} /> Placer au mètre
           </button>
         )}
         <button className="btn" onClick={() => startPlacing(plant.speciesId, { customName: plant.customName, series: true })}>
-          <Icon name="plus" size={16} /> Ajouter une autre « {plantName(plant)} »
+          <Icon name="plus" size={16} /> Ajouter une autre « {plantName(plant)} »
         </button>
         {species && (
           <button className="btn" onClick={() => openSpecies(species.id)}>
@@ -357,13 +349,34 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
           </button>
         )}
       </div>
-      <div className="danger-zone">
+
+      <details className="np-details plant-details" data-feat="date-notes">
+        <summary>Date et notes</summary>
+        <div className="stack" style={{ gap: 12 }}>
+          {fields}
+          {species && <PurchaseSummary plantId={plant.id} />}
+          <label className="field">
+            <span>Notes</span>
+            <textarea className="input" rows={3} value={plant.notes ?? ''} onChange={(e) => updatePlant(plant.id, { notes: e.target.value })} placeholder="Variété, où vous l’avez achetée, observations…" />
+          </label>
+          <NoteAssist plant={plant} species={species} />
+        </div>
+      </details>
+
+      {species && (
+        <details className="np-details plant-details" data-feat="croissance">
+          <summary>Suivre sa croissance</summary>
+          <MeasureSection plant={plant} species={species} name={plantName(plant)} />
+        </details>
+      )}
+
+      <section className="danger-zone" data-feat="supprimer" aria-label="Supprimer cette plante">
+        <h3>Supprimer cette plante</h3>
+        <p className="small muted">La plante quitte le jardin. Vous pouvez annuler pendant 30 secondes.</p>
         <button className="btn danger" onClick={remove}>
           <Icon name="trash" size={16} /> Supprimer cette plante
         </button>
-      </div>
-        </div>
-      </details>
+      </section>
       </div>
     </div>
   )

@@ -81,7 +81,7 @@ export function MeasureSection({ plant, species, name }: { plant: Plant; species
 
   return (
     <div className="stack measure-box" style={{ gap: 8 }}>
-      <h3>Mesurer ma plante</h3>
+      <h3>Noter sa hauteur et sa largeur</h3>
       <p className="muted small" style={{ margin: 0 }}>
         Mesurez au mètre ruban ou en comptant vos pas.
       </p>

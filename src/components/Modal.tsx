@@ -1,14 +1,16 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { Icon } from './Icon'
+import { goHome } from '../lib/goHome'
 import { closeLayer, openLayer } from '../lib/ui'
 
 /**
  * Boîte de dialogue native (`<dialog>`) : piège le focus, se ferme avec Échap, rend le focus à l'élément
  * qui l'a ouverte. `onClose` n'est appelée qu'une fois, quelle que soit la façon de fermer.
  * `sheet` : sur mobile, la boîte se colle en bas de l'écran.
- * `full` : sur mobile, la boîte prend tout l'écran (écrans de scan : carte en haut, consignes dessous).
+ * `full` : sur mobile, la boîte prend tout l'écran (écrans de scan : carte en haut, consignes dessous) ; un bouton « Accueil » ramène à l'accueil en un appui.
+ * `feat` : repère `data-feat` de la fonction que la boîte porte (« Tout ce que je peux faire » l'attend à l'arrivée).
  */
-export function Modal({ title, onClose, children, sheet, full }: { title: string; onClose: () => void; children: ReactNode; sheet?: boolean; full?: boolean }) {
+export function Modal({ title, onClose, children, sheet, full, feat }: { title: string; onClose: () => void; children: ReactNode; sheet?: boolean; full?: boolean; feat?: string }) {
   const ref = useRef<HTMLDialogElement>(null)
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
@@ -33,6 +35,7 @@ export function Modal({ title, onClose, children, sheet, full }: { title: string
       className={'modal' + (sheet ? ' sheet' : '') + (full ? ' full' : '')}
       aria-labelledby={titleId}
       aria-modal="true"
+      data-feat={feat}
       onClose={() => onCloseRef.current()}
       onClick={(e) => {
         // Clic sur le fond (hors du contenu) : ferme.
@@ -41,6 +44,11 @@ export function Modal({ title, onClose, children, sheet, full }: { title: string
     >
       <div className="modal-head">
         <h2 id={titleId}>{title}</h2>
+        {full && (
+          <button className="btn ghost small close-btn modal-home" onClick={goHome}>
+            <Icon name="home" size={18} /> Accueil
+          </button>
+        )}
         <button className="btn ghost small close-btn" onClick={() => ref.current?.close()}>
           <Icon name="x" size={18} /> Fermer
         </button>

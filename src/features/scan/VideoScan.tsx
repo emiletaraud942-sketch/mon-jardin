@@ -288,9 +288,9 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
               <p className="small muted" style={{ margin: 0 }}>La vidéo reste sur votre téléphone. Seules les images gardées partent à Pl@ntNet, avec votre accord.</p>
               {!garden.calibration && (
                 <div className="alert info small">
-                  <span>La carte n’est pas recalée. Recalez-la d’abord : les plantes seront mieux placées.</span>
+                  <span>La carte n’est pas ajustée à votre position. Ajustez-la d’abord : les plantes seront mieux placées.</span>
                   <button className="btn small" style={{ marginTop: 6 }} onClick={() => openScan('recaler')}>
-                    Recaler la carte
+                    Ajuster la carte
                   </button>
                 </div>
               )}

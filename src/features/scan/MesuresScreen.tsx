@@ -124,7 +124,7 @@ export function MesuresScreen({ garden, target }: { garden: Garden; target?: Mea
   const secondDisabled = refs.length >= 2 || !allReady
 
   return (
-    <Modal title="Placer par mesures" full onClose={closeScan}>
+    <Modal title="Placer au mètre" full feat="scan-mesures" onClose={closeScan}>
       <div className="scan-layout">
         <ScanMap
           garden={garden}

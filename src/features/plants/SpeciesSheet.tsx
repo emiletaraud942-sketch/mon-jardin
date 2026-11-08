@@ -67,7 +67,7 @@ export function SpeciesSheet({ species: s, garden }: { species: Species; garden:
           )}
           {s.mellifere && (
             <li>
-              <strong>Mellifère</strong> : ses fleurs nourrissent les abeilles.
+              <strong>Mellifère</strong> (utile aux abeilles) : ses fleurs les nourrissent.
             </li>
           )}
           {s.comestible && (

@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { useActiveGarden } from '../../lib/store'
+import { goHome } from '../../lib/goHome'
 import { useInertBehind } from '../../lib/inert'
+import { Icon } from '../../components/Icon'
 import { Capture } from './Capture'
 import { Home } from './Home'
 import { ImportPano } from './ImportPano'
@@ -39,8 +41,14 @@ export default function PanoHost() {
   else if (screen === 'import' && spot) body = <ImportPano key={ui.pointId ?? 'new'} garden={garden} spot={{ x: spot.x, y: spot.y }} redoId={ui.pointId} />
   else body = <Home garden={garden} />
   return (
-    <div ref={root} className="pano-overlay" role="dialog" aria-modal="true" aria-label="Photos du jardin" tabIndex={-1}>
+    <div ref={root} className="pano-overlay" role="dialog" aria-modal="true" aria-label="Photos du jardin" tabIndex={-1} data-feat={'pano-' + (screen === 'view' ? 'view' : screen)}>
       {body}
+      {/* Retour à l'accueil en un appui, quel que soit l'écran des photos (sauf en pleine prise de vue : un appui par erreur perdrait la série). */}
+      {screen !== 'capture' && (
+        <button className="btn pano-home" onClick={goHome}>
+          <Icon name="home" size={18} /> Accueil
+        </button>
+      )}
     </div>
   )
 }

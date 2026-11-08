@@ -6,7 +6,7 @@ export type FilterId = 'comestible' | 'melliferes' | 'ombre' | 'facile' | 'maint
 
 export const FILTERS: { id: FilterId; label: string; help: string }[] = [
   { id: 'comestible', label: 'Comestible', help: 'Se mange (fruit, feuille, racine…)' },
-  { id: 'melliferes', label: 'Mellifère', help: 'Nourrit les abeilles et les papillons' },
+  { id: 'melliferes', label: 'Utile aux abeilles', help: 'Mellifère : ses fleurs nourrissent les abeilles et les papillons' },
   { id: 'ombre', label: 'Ombre', help: 'Pousse à l’ombre ou à mi-ombre' },
   { id: 'facile', label: 'Facile', help: 'Rustique, peu d’eau, au plus 4 soins par an' },
   { id: 'maintenant', label: 'Ce mois-ci', help: 'À semer ou à planter ce mois-ci chez vous' },

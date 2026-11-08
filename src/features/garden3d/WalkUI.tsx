@@ -133,12 +133,18 @@ export function WalkButtons({ shared, running, onToggleRun }: { shared: WalkShar
     <div className="g3d-pad" role="group" aria-label="Tourner et courir">
       <PadButton shared={shared} axis="turnLeft" label="Tourner à gauche (maintenir)" className="g3d-turn">
         <span aria-hidden="true">↺</span>
+        <span className="g3d-turn-word" aria-hidden="true">
+          Gauche
+        </span>
       </PadButton>
       <button type="button" className="g3d-btn g3d-padbtn g3d-pad-run" aria-pressed={running} onClick={onToggleRun} title="Courir : plus vite que la marche">
         Courir
       </button>
       <PadButton shared={shared} axis="turnRight" label="Tourner à droite (maintenir)" className="g3d-turn">
         <span aria-hidden="true">↻</span>
+        <span className="g3d-turn-word" aria-hidden="true">
+          Droite
+        </span>
       </PadButton>
     </div>
   )
@@ -365,7 +371,7 @@ export function GotoPanel({ shared, parcel, buildings, plants, speciesById, sele
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
   return (
-    <div className="g3d-panel g3d-goto" id="g3d-goto" role="dialog" aria-label="Aller à" ref={ref}>
+    <div className="g3d-panel g3d-goto" id="g3d-goto" role="dialog" aria-label="Aller à" ref={ref} data-feat="aller-a">
       <div className="g3d-goto-head">
         <strong>Aller à</strong>
         <button type="button" className="g3d-btn" onClick={onClose}>
@@ -401,7 +407,7 @@ export function GotoPanel({ shared, parcel, buildings, plants, speciesById, sele
           </li>
         ))}
       </ul>
-      <button type="button" className="g3d-btn g3d-goto-hop" aria-pressed={hop} onClick={onToggleHop}>
+      <button type="button" className="g3d-btn g3d-goto-hop" data-feat="mouvement-reduit" aria-pressed={hop} onClick={onToggleHop}>
         Mouvement réduit
       </button>
       <span className="g3d-help">{hop ? 'Activé : vous avancez par bonds de 1,5 m et tournez de 30°.' : 'Désactivé. Activé, vous avancez par bonds de 1,5 m au lieu de glisser.'}</span>
