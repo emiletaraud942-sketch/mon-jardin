@@ -7,6 +7,7 @@ import {
   fetchTerrain,
   fillMissing,
   geocode,
+  getJson,
   CADASTRE_MAXZOOM,
   ORTHO_MAXZOOM,
   PLAN_MAXZOOM,
@@ -181,6 +182,106 @@ describe('geocode', () => {
     vi.stubGlobal('fetch', f404)
     await expect(geocode('introuvable 404')).rejects.toThrow(/404/)
     expect(f404).toHaveBeenCalledTimes(1)
+  })
+
+  it('429 puis 200 : attend `Retry-After` (borné) au lieu de 600 ms fixes', async () => {
+    vi.useFakeTimers()
+    try {
+      const times: number[] = []
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          times.push(Date.now())
+          return times.length === 1 ? new Response('', { status: 429, headers: { 'Retry-After': '2' } }) : new Response(JSON.stringify(GEOCODE))
+        }),
+      )
+      const p = geocode('retry after nantes')
+      await vi.advanceTimersByTimeAsync(1999)
+      expect(times).toHaveLength(1) // pas de réessai avant les 2 s demandées
+      await vi.advanceTimersByTimeAsync(2)
+      expect(await p).toHaveLength(1)
+      expect(times[1] - times[0]).toBeGreaterThanOrEqual(2000)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('Retry-After de 60 s : l’attente reste bornée à 5 s', async () => {
+    vi.useFakeTimers()
+    try {
+      let n = 0
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => (++n === 1 ? new Response('', { status: 429, headers: { 'Retry-After': '60' } }) : new Response(JSON.stringify(GEOCODE)))),
+      )
+      const p = geocode('retry borne nantes')
+      await vi.advanceTimersByTimeAsync(5001)
+      expect(await p).toHaveLength(1)
+      expect(n).toBe(2)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('429 sans en-tête : repli de 600 ms', async () => {
+    vi.useFakeTimers()
+    try {
+      let n = 0
+      vi.stubGlobal('fetch', vi.fn(async () => (++n === 1 ? new Response('', { status: 429 }) : new Response(JSON.stringify(GEOCODE)))))
+      const p = geocode('retry sans entete nantes')
+      await vi.advanceTimersByTimeAsync(601)
+      expect(await p).toHaveLength(1)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('429 persistant : erreur claire après deux réessais, pas de boucle', async () => {
+    vi.useFakeTimers()
+    try {
+      const f = vi.fn(async () => new Response('', { status: 429, headers: { 'Retry-After': '1' } }))
+      vi.stubGlobal('fetch', f)
+      const p = geocode('retry persistant nantes').catch((e) => e as Error)
+      await vi.advanceTimersByTimeAsync(60_000)
+      const e = await p
+      expect(e).toBeInstanceOf(Error)
+      expect((e as Error).message).toMatch(/très sollicité/)
+      expect((e as Error).message).not.toMatch(/429/)
+      expect(f).toHaveBeenCalledTimes(3) // 1 essai + 2 réessais, puis arrêt
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('annuler pendant l’attente d’un 429 interrompt le délai', async () => {
+    const ctrl = new AbortController()
+    const f = vi.fn(async () => new Response('', { status: 429, headers: { 'Retry-After': '5' } }))
+    vi.stubGlobal('fetch', f)
+    const t0 = Date.now()
+    const p = geocode('retry annule nantes', { signal: ctrl.signal }).catch((e) => e as Error)
+    setTimeout(() => ctrl.abort(), 20)
+    expect(await p).toMatchObject({ name: 'AbortError' })
+    expect(Date.now() - t0).toBeLessThan(1000)
+    expect(f).toHaveBeenCalledTimes(1)
+  })
+
+  it('limiteur : une file de 10 requêtes ne dépasse jamais le plafond', async () => {
+    const { createLimiter } = await import('./http')
+    const lim = createLimiter(2)
+    let running = 0
+    let peak = 0
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        running++
+        peak = Math.max(peak, running)
+        await new Promise((r) => setTimeout(r, 5))
+        running--
+        return new Response('{"ok":true}')
+      }),
+    )
+    await Promise.all(Array.from({ length: 10 }, (_, i) => getJson(`/ext/geopf/x?${i}`, { limiter: lim })))
+    expect(peak).toBe(2)
   })
 
   it('signal déjà annulé : AbortError sans appel réseau', async () => {
@@ -388,6 +489,12 @@ describe('orthophoto', () => {
     expect(orthoTextureUrl(center, 0)).toContain('BBOX=') // emprise nulle : repli à 1 m
     const b = new URL(orthoTextureUrl(center, 0), 'http://x').searchParams.get('BBOX')!.split(',').map(Number)
     expect(b[2]).toBeGreaterThan(b[0])
+  })
+
+  it('plan IGN : z19 mesuré (200), z20 non mesuré donc jamais demandé', () => {
+    expect(PLAN_MAXZOOM).toBe(19)
+    expect(ORTHO_MAXZOOM).toBe(19)
+    expect(CADASTRE_MAXZOOM).toBe(18) // maxzoom réel NON vérifié
   })
 
   it('zooms maximaux exportés', () => {

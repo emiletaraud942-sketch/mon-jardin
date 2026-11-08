@@ -316,3 +316,16 @@ describe('legalDistance : résumé court et mis en valeur', () => {
     expect(cas[1].summary).toMatch(/conforme à l’art\. 671/)
   })
 })
+
+describe('legalDistance : les limites du cadastre ne valent pas bornage', () => {
+  it('le texte long le dit, le résumé reste court', () => {
+    const phrase = 'Limites indicatives (cadastre) : elles peuvent être décalées de plusieurs mètres et ne valent pas bornage.'
+    for (const spot of [{ x: 9, y: 0 }, { x: 0, y: 0 }, { x: 50, y: 0 }]) {
+      const r = legalDistance(pommier, spot, parcel)
+      expect(r.message).toContain(phrase)
+      expect(r.summary).not.toMatch(/cadastre|bornage/)
+    }
+    expect(legalDistance(pommier, { x: 0, y: 0 }).message).toContain(phrase) // sans parcelle connue aussi
+    expect(phrase.split(/\s+/).length).toBeLessThanOrEqual(20)
+  })
+})

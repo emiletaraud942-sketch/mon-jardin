@@ -45,6 +45,7 @@ import { ConsentDialog } from '../legal/ConsentDialog'
 import { LegalLinks } from '../legal/LegalLinks'
 import { FAIL_HELP, missingSources } from './createGarden'
 import { ScanCard } from '../scan/ScanCard'
+import { OfflineZoneCard } from './OfflineZone'
 import { removeGardenData, photosOf, restoreGardenData } from './gardenDelete'
 import { uniqueGardenName } from './gardenName'
 import { backupErrorNote, describeCounts, importQuestion } from './importSummary'
@@ -862,6 +863,7 @@ export function SettingsPage({ garden }: { garden: Garden }) {
           <Backup />
           <GardenInfo garden={garden} />
           <LidarCard garden={garden} />
+          <OfflineZoneCard garden={garden} />
           <ScanCard garden={garden} />
         </div>
         <div className="stack" style={{ gap: 12 }}>

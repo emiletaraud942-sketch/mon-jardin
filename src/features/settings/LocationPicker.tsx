@@ -4,7 +4,8 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import '../../lib/mapWorker'
 import { MapUnsupported } from '../../components/MapUnsupported'
 import { Modal } from '../../components/Modal'
-import { IGN_ATTRIBUTION, PLAN_TILES, TILE_SIZE } from '../../lib/ign'
+import { IGN_ATTRIBUTION, PLAN_MAXZOOM, PLAN_TILES, TILE_SIZE } from '../../lib/ign'
+import { PLAN_MAP_MAXZOOM } from '../map/photoZoom'
 import type { GeocodeResult } from '../../lib/ign'
 import { webgl2Supported } from '../../lib/webgl'
 import { cssVar } from '../map/colors'
@@ -21,11 +22,11 @@ function PlanMap({ onPoint }: { onPoint: (p: { lon: number; lat: number }) => vo
       container: el.current,
       center: [2.5, 46.6],
       zoom: 4.6,
-      maxZoom: 19,
+      maxZoom: PLAN_MAP_MAXZOOM,
       attributionControl: false,
       style: {
         version: 8,
-        sources: { plan: { type: 'raster', tiles: [PLAN_TILES], tileSize: TILE_SIZE, maxzoom: 19, attribution: IGN_ATTRIBUTION } },
+        sources: { plan: { type: 'raster', tiles: [PLAN_TILES], tileSize: TILE_SIZE, maxzoom: PLAN_MAXZOOM, attribution: IGN_ATTRIBUTION } },
         layers: [{ id: 'plan', type: 'raster', source: 'plan' }],
       },
     })

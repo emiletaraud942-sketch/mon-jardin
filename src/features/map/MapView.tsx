@@ -9,6 +9,7 @@ import type { GeoJSONSource, Map as MLMap } from 'maplibre-gl'
 import type * as GeoJSON from 'geojson'
 import { SPECIES_BY_ID } from '../../data/species'
 import { Icon } from '../../components/Icon'
+import { CADASTRE_HONESTY } from '../../lib/cadastreNote'
 import { CADASTRE_MAXZOOM, CADASTRE_TILES, IGN_ATTRIBUTION, ORTHO_MAXZOOM, ORTHO_TILES, PLAN_MAXZOOM, PLAN_TILES, TILE_SIZE } from '../../lib/ign'
 import { toLocal, toLonLat } from '../../lib/geo'
 import { detectRows, gridLines, measureRuler, snapPoint, thresholdMeters, uncertaintyRadiusM, type SnapResult, type SnapTargets } from '../../lib/snap'
@@ -29,7 +30,7 @@ import { GardenSide, PlacingBanner, useSheetHead } from './GardenSide'
 import { SidePanel } from './SidePanel'
 import { movePlant, moveWithUndo, placePlant } from './placing'
 import { confirmBeforePlacing, registerAim, setPlacingInfo, usePlacingInfo } from './aimBridge'
-import { MAP_MAXZOOM, PHOTO_MAP_MAXZOOM, PHOTO_NOTE_ZOOM, gridStepM, orthoPaint, review } from './photoZoom'
+import { PHOTO_MAP_MAXZOOM, PHOTO_NOTE_ZOOM, cadastreOpacityExpression, gridStepM, mapMaxZoomFor, orthoPaint, review } from './photoZoom'
 import { LOUPE_HOLD_MS, LOUPE_SIZE, LOUPE_SLOP_PX, LOUPE_ZOOM, gpsCircleRadiusM, loupeCenter, loupeSource, rulerSummary } from './placeAids'
 import { useGps } from '../scan/useGps'
 import { gpsMessage } from '../scan/gps'
@@ -448,7 +449,8 @@ function MapViewInner({ garden }: { garden: Garden }) {
           { id: 'schema', type: 'background', paint: { 'background-color': SCHEMA_BG }, layout: { visibility: 'none' } },
           { id: 'ortho', type: 'raster', source: 'ortho', paint: orthoPaint(rv.ortho) },
           { id: 'plan', type: 'raster', source: 'plan', layout: { visibility: 'none' } },
-          { id: 'cadastre', type: 'raster', source: 'cadastre', paint: { 'raster-opacity': 0.7 } },
+          // Raster étiré au-delà de son maxzoom : estompé après 18,5 ; la parcelle jaune vectorielle reste nette.
+          { id: 'cadastre', type: 'raster', source: 'cadastre', paint: { 'raster-opacity': cadastreOpacityExpression() as never } },
         ],
       },
     })
@@ -563,11 +565,10 @@ function MapViewInner({ garden }: { garden: Garden }) {
     const m = map.current
     if (!m || !ready) return
     // Fond schématique : uni, sans photo, plan ni cadastre en image ; seuls les traits nets restent.
-    const photo = base === 'ortho' && !schema
     m.setLayoutProperty('plan', 'visibility', base === 'plan' && !schema ? 'visible' : 'none')
     m.setLayoutProperty('cadastre', 'visibility', cadastre && !schema ? 'visible' : 'none')
-    // La photo ne se zoome pas au-delà de son zoom utile + 1 niveau (étirement ≤ ×2) ; plan et schéma gardent 22.
-    m.setMaxZoom(photo ? PHOTO_MAP_MAXZOOM : MAP_MAXZOOM)
+    // Photo et plan ne se zooment pas au-delà de leur zoom utile + 1 niveau (étirement ≤ ×2 : 19) ; le fond simple garde 22.
+    m.setMaxZoom(mapMaxZoomFor(base === 'plan' ? 'plan' : 'ortho', schema))
   }, [base, cadastre, schema, ready])
 
   useEffect(() => {
@@ -1001,10 +1002,11 @@ function MapViewInner({ garden }: { garden: Garden }) {
             </div>
           )}
           {legendOpen && !placingNow && (
-            <ul className="floating legend small" aria-label="Légende de la carte">
+            <ul id="map-legend" className="floating legend small" aria-label="Légende de la carte">
               <li>
                 <span className="swatch line parcel" aria-hidden /> Trait jaune : limites du terrain
               </li>
+              <li className="legend-honesty">{CADASTRE_HONESTY}</li>
               <li>
                 <span className="swatch disc" aria-hidden /> Disque : largeur de la plante
               </li>

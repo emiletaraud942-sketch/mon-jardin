@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { readFileSync } from 'node:fs'
 import type { Plugin } from 'vite'
+import { runtimeCaching } from './pwa-caching'
 
 // Les mêmes préfixes sont réécrits par vercel.json en production :
 // le navigateur n'appelle que notre domaine (pas de souci CORS).
@@ -116,51 +117,8 @@ export default defineConfig({
         importScripts: ['push-sw.js'],
         // Jamais de repli sur index.html pour les fonctions serveur et les proxys.
         navigateFallbackDenylist: [/^\/api\//, /^\/ext\//, /^\/\.well-known\//],
-        // Règle d'or : on ne met JAMAIS en cache /api/* (identification), /ext/meteo*
-        // (météo, doit rester fraîche) ni le géocodage (/ext/geopf/geocodage) :
-        // aucune des règles ci-dessous ne les couvre.
-        runtimeCaching: [
-          {
-            // Chunk 3D chargé à la demande (hash dans le nom : contenu immuable, donc CacheFirst).
-            urlPattern: ({ url }) => /^\/assets\/three-[^/]+\.js$/.test(url.pathname),
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'chunk-3d',
-              expiration: { maxEntries: 3, maxAgeSeconds: 60 * 60 * 24 * 90 },
-              cacheableResponse: { statuses: [200] },
-            },
-          },
-          {
-            // Modules de lecture de l'étiquette (≈ 5 Mo) : téléchargés à la première lecture, puis servis du cache (hors ligne).
-            urlPattern: ({ url }) => url.pathname.startsWith('/ocr/'),
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'ocr-modules',
-              expiration: { maxEntries: 8, maxAgeSeconds: 60 * 60 * 24 * 365 },
-              cacheableResponse: { statuses: [200] },
-            },
-          },
-          {
-            // Tuiles WMTS (plan, orthophoto, cadastre) : changent rarement.
-            urlPattern: ({ url }) => url.pathname.startsWith('/ext/geopf/wmts'),
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'ign-tuiles',
-              expiration: { maxEntries: 2000, maxAgeSeconds: 60 * 60 * 24 * 60 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            // Orthophoto plaquée au sol en 3D (WMS raster) : on sert le cache puis on rafraîchit.
-            urlPattern: ({ url }) => url.pathname.startsWith('/ext/geopf/wms-r'),
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'ign-ortho-3d',
-              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 14 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-        ],
+        // Règles dans `pwa-caching.ts` (testées) : règle d'or, jamais de cache pour /api/*, /ext/meteo* ni le géocodage.
+        runtimeCaching,
       },
     }),
   ],

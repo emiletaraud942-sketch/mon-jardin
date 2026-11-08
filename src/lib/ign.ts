@@ -10,7 +10,7 @@
 // - altimétrie : {"elevations":[z…]} avec zonly=true, -99999 hors couverture, 5 000 points max, 5 req/s/IP.
 import type { LonLat, TerrainGrid, XY } from '../types'
 import { distanceToRing, pointInRing, toLocal, toLonLat } from './geo'
-import { fetchJson } from './http'
+import { HttpStatusError, createLimiter, fetchJson, type Limiter } from './http'
 
 export interface GeocodeResult {
   label: string
@@ -35,6 +35,8 @@ export interface BuildingResult {
   id: string
   ring: LonLat[]
   heightM: number
+  /** Faux si la hauteur est le repli de 6 m (ni `hauteur` ni étages dans la BD TOPO). Jamais stocké. */
+  heightKnown: boolean
 }
 
 const WMTS = '/ext/geopf/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}'
@@ -55,12 +57,14 @@ export const IGN_ATTRIBUTION = '© IGN – Géoplateforme'
  * HR.ORTHOIMAGERY.ORTHOPHOTOS donne la même tuile z19 ; THR.ORTHOIMAGERY.ORTHOPHOTOS répond 404 dès z19 ici.
  * Aucune photo plus fine n'est donc disponible : on ne change pas de couche. Valeur mesurée sur un seul point
  * (la couverture peut varier ailleurs) ; le repli de MapLibre étire alors la dernière tuile reçue.
- * PLAN_MAXZOOM et CADASTRE_MAXZOOM : NON VÉRIFIÉS (GetCapabilities inaccessible depuis le conteneur de dev),
- * seul z18 est confirmé pour ces deux couches. À relever dans le TileMatrixSetLimits de la couche en PM.
+ * PLAN_MAXZOOM = 19 : VÉRIFIÉ le 27 oct. 2026 sur un point (même lon/lat) : GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2 en z19 = 200 ;
+ * z20 non mesuré, donc on ne le demande pas.
+ * CADASTRE_MAXZOOM : NON VÉRIFIÉ (GetCapabilities inaccessible depuis le conteneur de dev), seul z18 est confirmé.
+ * À relever dans le TileMatrixSetLimits de la couche en PM.
  * Le zoom de CARTE correspondant à ces niveaux est calculé dans `src/features/map/photoZoom.ts`.
  */
 export const ORTHO_MAXZOOM = 19
-export const PLAN_MAXZOOM = 18
+export const PLAN_MAXZOOM = 19
 export const CADASTRE_MAXZOOM = 18
 
 const R = 6378137
@@ -69,11 +73,24 @@ const R = 6378137
 
 const RETRY_DELAY_MS = 600
 const SERVICE = 'Géoplateforme IGN'
+/** Réessais après un 429 (limite de débit) : l'en-tête `Retry-After` fixe l'attente, bornée à 5 s. */
+const MAX_RETRIES_429 = 2
+const MAX_RETRIES_OTHER = 1
 
-/** Erreur réseau ou 5xx/429 (messages de `fetchJson`) : un nouvel essai a une chance de réussir. */
+/** Files d'attente par service : la Géoplateforme limite le débit (altimétrie 5 requêtes/s, WFS 30/s). */
+export const wfsLimiter: Limiter = createLimiter(4, 40)
+export const altiLimiter: Limiter = createLimiter(2, 220)
+
+function statusOf(e: unknown): number | undefined {
+  return e instanceof HttpStatusError ? e.status : undefined
+}
+
+/** Erreur réseau ou 5xx/429 : un nouvel essai a une chance de réussir. */
 function isRetryable(e: unknown): boolean {
   if (!(e instanceof Error) || e.name === 'AbortError') return false
-  return e.message.startsWith('Connexion impossible') || /\((429|5\d\d)\)/.test(e.message)
+  const st = statusOf(e)
+  if (st !== undefined) return st === 429 || st >= 500
+  return e.message.startsWith('Connexion impossible')
 }
 
 function abortError(): Error {
@@ -82,24 +99,52 @@ function abortError(): Error {
   return e
 }
 
+/** Attente annulable : un signal abandonné interrompt le délai tout de suite. */
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) return reject(abortError())
+    const onAbort = () => {
+      clearTimeout(t)
+      reject(abortError())
+    }
+    const t = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort)
+      resolve()
+    }, ms)
+    signal?.addEventListener('abort', onAbort, { once: true })
+  })
+}
+
 interface GetOpts {
   service?: string
   timeoutMs?: number
   signal?: AbortSignal
+  /** File d'attente du service (plafond de requêtes simultanées et de débit). */
+  limiter?: Limiter
 }
 
-/** GET JSON avec délai (15 s par défaut) et un seul réessai après 600 ms (tous nos appels sont idempotents). */
-async function getJson<T>(url: string, opts: GetOpts = {}): Promise<T> {
-  const { service = SERVICE, timeoutMs = 15000, signal } = opts
+/**
+ * GET JSON avec délai (15 s par défaut). Tous nos appels sont idempotents : un réessai après 600 ms sur une erreur
+ * réseau ou 5xx ; après un 429, jusqu'à deux réessais en suivant `Retry-After` (au plus 5 s chacun).
+ * Un 429 qui persiste donne une erreur claire. Jamais de boucle sans fin.
+ */
+export async function getJson<T>(url: string, opts: GetOpts = {}): Promise<T> {
+  const { service = SERVICE, timeoutMs = 15000, signal, limiter } = opts
   if (signal?.aborted) throw abortError()
   const call = () => fetchJson<T>(url, { service, timeoutMs, signal })
-  try {
-    return await call()
-  } catch (e) {
-    if (!isRetryable(e)) throw e
-    await new Promise((r) => setTimeout(r, RETRY_DELAY_MS))
-    if (signal?.aborted) throw abortError()
-    return call()
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await (limiter ? limiter.run(call, signal) : call())
+    } catch (e) {
+      if (!isRetryable(e)) throw e
+      const is429 = statusOf(e) === 429
+      if (attempt >= (is429 ? MAX_RETRIES_429 : MAX_RETRIES_OTHER)) {
+        if (is429) throw new HttpStatusError(`${service} est très sollicité en ce moment. Réessayez dans quelques secondes.`, 429)
+        throw e
+      }
+      const asked = e instanceof HttpStatusError ? e.retryAfterMs : undefined
+      await sleep(is429 ? (asked ?? RETRY_DELAY_MS * (attempt + 1)) : RETRY_DELAY_MS, signal)
+    }
   }
 }
 
@@ -248,6 +293,7 @@ export async function fetchParcel(p: LonLat): Promise<ParcelResult | null> {
   try {
     const fc = await getJson<GeoJsonFC>(
       wfsUrl('CADASTRALPARCELS.PARCELLAIRE_EXPRESS:parcelle', p, 20, 50),
+      { limiter: wfsLimiter },
     )
     return pickParcel(fc, p, 30)
   } catch (e) {
@@ -257,12 +303,20 @@ export async function fetchParcel(p: LonLat): Promise<ParcelResult | null> {
 
 // ---------- bâtiments ----------
 
-export function buildingHeight(props: Record<string, unknown>): number {
+/** Hauteur par défaut d'un bâtiment dont la BD TOPO ne donne ni hauteur ni étages. */
+export const DEFAULT_BUILDING_HEIGHT_M = 6
+
+/** Hauteur de la BD TOPO (`hauteur`, sinon 3 m par étage), ou `null` si elle manque. */
+export function declaredBuildingHeight(props: Record<string, unknown>): number | null {
   const h = Number(props.hauteur)
   if (props.hauteur != null && Number.isFinite(h) && h > 0) return h
   const et = Number(props.nombre_d_etages)
   if (props.nombre_d_etages != null && Number.isFinite(et) && et > 0) return et * 3
-  return 6
+  return null
+}
+
+export function buildingHeight(props: Record<string, unknown>): number {
+  return declaredBuildingHeight(props) ?? DEFAULT_BUILDING_HEIGHT_M
 }
 
 export function parseBuildings(fc: GeoJsonFC, max = 200): BuildingResult[] {
@@ -270,9 +324,10 @@ export function parseBuildings(fc: GeoJsonFC, max = 200): BuildingResult[] {
   for (const f of fc.features ?? []) {
     const props = f.properties ?? {}
     const baseId = String(props.cleabs ?? f.id ?? out.length)
-    const heightM = buildingHeight(props)
+    const declared = declaredBuildingHeight(props)
+    const heightM = declared ?? DEFAULT_BUILDING_HEIGHT_M
     const rings = outerRings(f.geometry)
-    rings.forEach((ring, i) => out.push({ id: rings.length > 1 ? `${baseId}-${i}` : baseId, ring, heightM }))
+    rings.forEach((ring, i) => out.push({ id: rings.length > 1 ? `${baseId}-${i}` : baseId, ring, heightM, heightKnown: declared !== null }))
     if (out.length >= max) break
   }
   return out.slice(0, max)
@@ -280,7 +335,7 @@ export function parseBuildings(fc: GeoJsonFC, max = 200): BuildingResult[] {
 
 /** Bâtiments BD TOPO dans un carré de demi-côté radiusM autour du centre. */
 export async function fetchBuildings(center: LonLat, radiusM: number): Promise<BuildingResult[]> {
-  const fc = await getJson<GeoJsonFC>(wfsUrl('BDTOPO_V3:batiment', center, radiusM, 200))
+  const fc = await getJson<GeoJsonFC>(wfsUrl('BDTOPO_V3:batiment', center, radiusM, 200), { limiter: wfsLimiter })
   return parseBuildings(fc, 200)
 }
 
@@ -348,8 +403,8 @@ async function fetchElevations(points: LonLat[]): Promise<(number | null)[]> {
       `?lon=${batch.map((p) => f7(p.lon)).join('|')}` +
       `&lat=${batch.map((p) => f7(p.lat)).join('|')}` +
       '&resource=ign_rge_alti_wld&delimiter=|&zonly=true'
-    // 30 s par lot ; limite de 5 requêtes/s : le 429 est réessayé une fois après 600 ms.
-    const json = await getJson<unknown>(url, { timeoutMs: 30000 })
+    // 30 s par lot ; limite de 5 requêtes/s : file d'attente (2 en parallèle, 220 ms entre deux départs), 429 réessayé selon `Retry-After`.
+    const json = await getJson<unknown>(url, { timeoutMs: 30000, limiter: altiLimiter })
     out.push(...parseElevations(json, batch.length))
   }
   return out

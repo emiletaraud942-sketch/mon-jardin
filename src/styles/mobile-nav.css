@@ -279,6 +279,10 @@
   .app:has(#map-options) .add-fab {
     display: none;
   }
+  /* Légende seule : elle s'allonge (mention sur les limites du cadastre) ; elle défile au-dessus du bouton « Ajouter une plante ». */
+  .app:has(#map-legend):not(:has(#map-options)) .map-top {
+    max-height: max(160px, calc(100dvh - 440px));
+  }
   /* Saison : 3 boutons par rangée, grands, sans rien qui dépasse. */
   .map-options .season-picker {
     display: grid;

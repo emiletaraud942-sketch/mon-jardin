@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fetchWithTimeout, friendlyError } from './http'
+import { HttpStatusError, RETRY_AFTER_MAX_MS, createLimiter, fetchJson, fetchWithTimeout, friendlyError, parseRetryAfter } from './http'
 
 describe('friendlyError', () => {
   it('garde tel quel le message « espace plein » de savePhoto, sans le cacher derrière « Informations techniques »', async () => {
@@ -84,5 +84,67 @@ describe('fetchWithTimeout : signal d’annulation', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+})
+
+describe('parseRetryAfter', () => {
+  const now = Date.parse('2026-11-08T10:00:00Z')
+  it('secondes entières, date HTTP, borné à 5 s', () => {
+    expect(parseRetryAfter('2', now)).toBe(2000)
+    expect(parseRetryAfter('0', now)).toBe(0)
+    expect(parseRetryAfter('120', now)).toBe(RETRY_AFTER_MAX_MS)
+    expect(parseRetryAfter('Sun, 08 Nov 2026 10:00:03 GMT', now)).toBe(3000)
+    expect(parseRetryAfter('Sun, 08 Nov 2026 09:00:00 GMT', now)).toBe(0) // date passée
+  })
+  it('absent ou illisible : undefined', () => {
+    expect(parseRetryAfter(null, now)).toBeUndefined()
+    expect(parseRetryAfter('', now)).toBeUndefined()
+    expect(parseRetryAfter('bientôt', now)).toBeUndefined()
+    expect(parseRetryAfter('-3', now)).toBeUndefined()
+  })
+  it('fetchJson garde le statut et Retry-After dans l’erreur', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('', { status: 429, headers: { 'Retry-After': '3' } })))
+    const e = (await fetchJson('/x', { service: 'IGN' }).catch((x: unknown) => x)) as HttpStatusError
+    expect(e).toBeInstanceOf(HttpStatusError)
+    expect(e.status).toBe(429)
+    expect(e.retryAfterMs).toBe(3000)
+    expect(e.message).toMatch(/IGN a répondu une erreur \(429\)/)
+    vi.unstubAllGlobals()
+  })
+})
+
+describe('createLimiter', () => {
+  it('ne dépasse jamais le plafond de tâches simultanées', async () => {
+    const lim = createLimiter(3)
+    let running = 0
+    let peak = 0
+    const task = async () => {
+      running++
+      peak = Math.max(peak, running)
+      await new Promise((r) => setTimeout(r, 5))
+      running--
+    }
+    await Promise.all(Array.from({ length: 12 }, () => lim.run(task)))
+    expect(peak).toBe(3)
+    expect(lim.active).toBe(0)
+    expect(lim.queued).toBe(0)
+  })
+  it('espace les départs d’au moins minGapMs', async () => {
+    const lim = createLimiter(5, 30)
+    const starts: number[] = []
+    await Promise.all(Array.from({ length: 4 }, () => lim.run(async () => void starts.push(Date.now()))))
+    for (let i = 1; i < starts.length; i++) expect(starts[i] - starts[i - 1]).toBeGreaterThanOrEqual(25)
+  })
+  it('une tâche en erreur libère sa place ; un signal annulé la retire de la file', async () => {
+    const lim = createLimiter(1)
+    const first = lim.run(() => new Promise<void>((_r, rej) => setTimeout(() => rej(new Error('boum')), 10)))
+    const ctrl = new AbortController()
+    const queued = lim.run(async () => 'jamais', ctrl.signal).catch((e) => e as Error)
+    const after = lim.run(async () => 'ok')
+    ctrl.abort()
+    await expect(first).rejects.toThrow('boum')
+    expect(await queued).toMatchObject({ name: 'AbortError' })
+    await expect(after).resolves.toBe('ok')
+    await expect(lim.run(async () => 1, ctrl.signal)).rejects.toMatchObject({ name: 'AbortError' })
   })
 })

@@ -5,7 +5,7 @@
 // elle demande donc des tuiles de niveau round(Z + 1), plafonnées par le `maxzoom` de la source.
 // Le niveau de tuile n s'affiche donc à l'échelle 1:1 (1 pixel de photo = 1 pixel CSS) au zoom de carte n − 1.
 import { metersPerPixel } from '../../lib/snap'
-import { ORTHO_MAXZOOM, TILE_SIZE } from '../../lib/ign'
+import { ORTHO_MAXZOOM, PLAN_MAXZOOM, TILE_SIZE } from '../../lib/ign'
 
 /** Zoom de carte où un niveau de tuile s'affiche sans étirement (1 pixel de tuile = 1 pixel CSS). */
 export function mapZoomForTileZoom(tileZoom: number, tileSize = TILE_SIZE): number {
@@ -52,11 +52,50 @@ export function gridStepM(mapZoom: number, latDeg: number): 1 | 5 | null {
 }
 
 /**
+ * Zoom de carte maximal d'une source raster de `maxTileZoom` : zoom utile + 1 niveau (étirement ≤ ×2).
+ * Même relation pour la photo (z19 → 19) et le plan IGN (z19 → 19).
+ */
+export function maxMapZoomForSource(maxTileZoom: number, tileSize = TILE_SIZE): number {
+  return photoUsefulMapZoom(maxTileZoom, tileSize) + PHOTO_OVERSAMPLE_LEVELS
+}
+
+/** Plan IGN v2 : tuile z19 mesurée (200) le 27 oct. 2026, z20 non mesuré. Zoom de carte maximal du fond « Plan » : 19. */
+export const PLAN_USEFUL_ZOOM = photoUsefulMapZoom(PLAN_MAXZOOM)
+export const PLAN_MAP_MAXZOOM = maxMapZoomForSource(PLAN_MAXZOOM)
+
+/**
  * Zoom maximal de la carte quand la photo est affichée : zoom utile + 1 niveau (19). L'étirement ne dépasse jamais ×2.
  * Sans photo (fond schématique, vue plan), la carte garde son zoom maximal de 22.
  */
 export const PHOTO_MAP_MAXZOOM = PHOTO_MAX_MAP_ZOOM
 export const MAP_MAXZOOM = 22
+
+/** Zoom de carte maximal selon le fond : photo et plan s'arrêtent à leur zoom utile + 1 ; le fond simple garde 22. */
+export function mapMaxZoomFor(base: 'ortho' | 'plan', schema: boolean): number {
+  if (schema) return MAP_MAXZOOM
+  return base === 'ortho' ? PHOTO_MAP_MAXZOOM : PLAN_MAP_MAXZOOM
+}
+
+// ---------- cadastre en image : estompé quand il est étiré ----------
+
+/** Opacité du cadastre en image jusqu'à 18,5, puis décroissante jusqu'à 19 : la parcelle jaune vectorielle reste nette. */
+export const CADASTRE_OPACITY = 0.7
+export const CADASTRE_OPACITY_FAR = 0.2
+export const CADASTRE_FADE_FROM = 18.5
+export const CADASTRE_FADE_TO = 19
+
+/** Opacité du raster cadastre à un zoom de carte (même courbe que l'expression MapLibre). */
+export function cadastreOpacityAt(mapZoom: number): number {
+  if (mapZoom <= CADASTRE_FADE_FROM) return CADASTRE_OPACITY
+  if (mapZoom >= CADASTRE_FADE_TO) return CADASTRE_OPACITY_FAR
+  const t = (mapZoom - CADASTRE_FADE_FROM) / (CADASTRE_FADE_TO - CADASTRE_FADE_FROM)
+  return CADASTRE_OPACITY + t * (CADASTRE_OPACITY_FAR - CADASTRE_OPACITY)
+}
+
+/** Expression MapLibre `raster-opacity` du cadastre (les zooms sont des zooms de carte). */
+export function cadastreOpacityExpression(): unknown[] {
+  return ['interpolate', ['linear'], ['zoom'], CADASTRE_FADE_FROM, CADASTRE_OPACITY, CADASTRE_FADE_TO, CADASTRE_OPACITY_FAR]
+}
 
 /** Zoom à partir duquel la mention « la photo n'est pas plus précise » s'affiche. */
 export const PHOTO_NOTE_ZOOM = PHOTO_MAX_MAP_ZOOM - 0.1

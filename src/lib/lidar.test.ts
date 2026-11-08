@@ -3,7 +3,11 @@ import type { TerrainGrid } from '../types'
 import {
   canopyFromSurface,
   canopyFromValues,
+  applyMnhHeights,
+  buildingHeightFromMnh,
   canopyHeightAt,
+  pixelCenterM,
+  pixelGridSize,
   decodeBil32,
   detectTrees,
   fetchLidar,
@@ -160,5 +164,89 @@ describe('fetchLidar (fetch mocké)', () => {
     expect(d?.trees[0].y).toBeGreaterThan(3) // au nord
     expect(d?.altitudeCenterM).toBe(50)
     vi.unstubAllGlobals()
+  })
+})
+
+describe('centres des pixels (decodeBil32 → grille)', () => {
+  it('le centre du pixel i est −h + (i + ½) · 2h / n', () => {
+    expect(pixelCenterM(0, 120, 60)).toBeCloseTo(-59.5, 6) // un demi-pixel du bord, pas sur le bord
+    expect(pixelCenterM(119, 120, 60)).toBeCloseTo(59.5, 6)
+    expect(pixelCenterM(0, 4, 2)).toBeCloseTo(-1.5, 6)
+    expect(pixelCenterM(3, 4, 2)).toBeCloseTo(1.5, 6)
+  })
+  it('les nœuds de la grille tombent sur les centres des pixels (écart de 0,5 m corrigé au bord)', () => {
+    const n = 6
+    const h = 3 // 1 m par pixel
+    const raw = bil(n, (_r, c) => 100 + c) // la valeur dit la colonne ; nord en premier
+    const g = canopyFromValues(decodeBil32(raw, n), n, h)
+    expect(g.size).toBeCloseTo(pixelGridSize(h, n), 9)
+    expect(g.size).toBeCloseTo(2.5, 9)
+    const step = (2 * g.size) / (g.n - 1)
+    for (let i = 0; i < n; i++) {
+      const nodeX = -g.size + i * step
+      expect(nodeX).toBeCloseTo(pixelCenterM(i, n, h), 9)
+      // La mesure du pixel i se relit à son centre réel (interpolation exacte sur un nœud).
+      expect(canopyHeightAt(g, { x: nodeX, y: 0 })).toBeCloseTo(100 + i, 3)
+    }
+    // Ancienne convention (nœuds sur [-h, +h]) : la colonne 0 aurait été lue à −3 m au lieu de −2,5 m.
+    expect(canopyHeightAt(g, { x: -2.5, y: 0 })).toBeCloseTo(100, 6)
+    expect(canopyHeightAt(g, { x: -3, y: 0 })).toBeCloseTo(100, 6) // le demi-pixel du bord reste couvert
+    expect(canopyHeightAt(g, { x: -3.2, y: 0 })).toBe(0)
+  })
+  it('le pas de la grille est celui du raster (2h / n)', () => {
+    const t = terrainFromMnt(new Array(120 * 120).fill(10), 120, 60)
+    expect((2 * t.grid.size) / (t.grid.n - 1)).toBeCloseTo(1, 9)
+  })
+})
+
+describe('hauteur des bâtiments d’après le MNH', () => {
+  // Grille 1 m par pixel : toit à 8 m sur [-5,5]×[-5,5], arbre de 14 m collé à la façade est (x ∈ [4,5], y ∈ [-5,-3]).
+  const n = 41
+  const roof = (x: number, y: number) => (Math.abs(x) <= 5 && Math.abs(y) <= 5 ? 8 : 0)
+  const canopy: TerrainGrid = (() => {
+    const size = (n - 1) / 2
+    const heights: number[] = []
+    for (let j = 0; j < n; j++)
+      for (let i = 0; i < n; i++) {
+        const x = -size + i
+        const y = -size + j
+        heights.push(x >= 4 && x <= 5 && y >= -5 && y <= -3 ? 14 : roof(x, y))
+      }
+    return { size, n, heights }
+  })()
+  const ring = [{ x: -5, y: -5 }, { x: 5, y: -5 }, { x: 5, y: 5 }, { x: -5, y: 5 }]
+
+  it('90e centile dans l’emprise', () => {
+    const flat: TerrainGrid = { ...canopy, heights: canopy.heights.map((_, k) => roof(-20 + (k % n), -20 + Math.floor(k / n))) }
+    expect(buildingHeightFromMnh(flat, ring)).toBeCloseTo(8, 1)
+  })
+  it('un arbre collé à la façade ne fait pas monter le toit (plafond : double de la médiane)', () => {
+    const h = buildingHeightFromMnh(canopy, ring) as number
+    expect(h).toBeGreaterThanOrEqual(7.9)
+    expect(h).toBeLessThanOrEqual(16) // jamais au-delà de 2 × 8
+    // Sans ce plafond, un bâtiment bas dont la moitié est couverte par un grand arbre prendrait la hauteur de l’arbre.
+    const lowRoof: TerrainGrid = { ...canopy, heights: canopy.heights.map((v) => (v === 8 ? 3 : v === 14 ? 30 : v)) }
+    expect(buildingHeightFromMnh(lowRoof, ring) as number).toBeLessThanOrEqual(6)
+  })
+  it('repli (null) : hors de la grille, trop peu de points, MNH vide', () => {
+    expect(buildingHeightFromMnh(canopy, ring.map((p) => ({ x: p.x + 100, y: p.y })))).toBeNull()
+    expect(buildingHeightFromMnh(canopy, [{ x: 0, y: 0 }, { x: 1, y: 0 }])).toBeNull()
+    expect(buildingHeightFromMnh(canopy, [{ x: 0, y: 0 }, { x: 0.8, y: 0 }, { x: 0.4, y: 0.8 }])).toBeNull()
+    const empty: TerrainGrid = { ...canopy, heights: canopy.heights.map(() => 0) }
+    expect(buildingHeightFromMnh(empty, ring)).toBeNull()
+  })
+  it('applyMnhHeights : seulement les bâtiments sans hauteur ; 6 m gardés si la mesure manque', () => {
+    const far = ring.map((p) => ({ x: p.x + 100, y: p.y }))
+    const input = [
+      { id: 'a', ring, heightM: 6 },
+      { id: 'b', ring, heightM: 9 }, // hauteur connue de la BD TOPO : intacte
+      { id: 'c', ring: far, heightM: 6 },
+    ]
+    const out = applyMnhHeights(input, new Set(['a', 'c']), canopy)
+    expect(out[0].heightM).toBeGreaterThan(7)
+    expect(out[0].heightM).not.toBe(6)
+    expect(out[1]).toBe(input[1])
+    expect(out[2].heightM).toBe(6)
+    expect(Object.keys(out[0]).sort()).toEqual(['heightM', 'id', 'ring']) // format stocké inchangé
   })
 })

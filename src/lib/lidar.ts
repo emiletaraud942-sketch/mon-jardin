@@ -96,11 +96,27 @@ export function decodeBil32(buf: ArrayBuffer, n: number): (number | null)[] {
   return out
 }
 
-/** Hauteurs MNH : manquant → 0, négatif (bruit) → 0. Refuse une grille presque vide. */
+/**
+ * Abscisse locale (m) du centre du pixel i d'un raster de n pixels qui couvre [-h, +h] : −h + (i + ½) · 2h / n.
+ * Le premier centre est à un demi-pixel du bord (jusqu'à 0,5 m à 1 m par pixel).
+ */
+export function pixelCenterM(i: number, n: number, halfSizeM: number): number {
+  return -halfSizeM + ((i + 0.5) * 2 * halfSizeM) / n
+}
+
+/**
+ * Demi-côté `size` d'une `TerrainGrid` dont les nœuds tombent sur les centres des pixels : h · (n − 1) / n.
+ * (Une grille de nœuds posés sur [-h, +h] déplacerait chaque mesure de ½ pixel au bord.)
+ */
+export function pixelGridSize(halfSizeM: number, n: number): number {
+  return n > 0 ? (halfSizeM * (n - 1)) / n : halfSizeM
+}
+
+/** Hauteurs MNH : manquant → 0, négatif (bruit) → 0. Refuse une grille presque vide. `halfSizeM` : demi-côté du raster demandé. */
 export function canopyFromValues(values: (number | null)[], n: number, halfSizeM: number): TerrainGrid {
   const valid = values.filter((v) => v != null).length
   if (valid < values.length * 0.5) throw new Error(NO_COVERAGE)
-  return { size: halfSizeM, n, heights: values.map((v) => (v == null ? 0 : Math.max(0, Math.round(v * 100) / 100))) }
+  return { size: pixelGridSize(halfSizeM, n), n, heights: values.map((v) => (v == null ? 0 : Math.max(0, Math.round(v * 100) / 100))) }
 }
 
 /** MNH = MNS - MNT (si le service ne fournit pas directement le MNH). */
@@ -119,10 +135,11 @@ export function terrainFromMnt(values: (number | null)[], n: number, halfSizeM: 
   const mean = ok.reduce((a, b) => a + b, 0) / ok.length
   const abs = values.map((v) => v ?? mean)
   // La grille est composée de pixels (centres) : on lit l'altitude au centre du jardin par interpolation.
-  const tmp: TerrainGrid = { size: halfSizeM, n, heights: abs }
+  const size = pixelGridSize(halfSizeM, n)
+  const tmp: TerrainGrid = { size, n, heights: abs }
   const c = heightAt(tmp, { x: 0, y: 0 })
   return {
-    grid: { size: halfSizeM, n, heights: abs.map((z) => Math.round((z - c) * 100) / 100) },
+    grid: { size, n, heights: abs.map((z) => Math.round((z - c) * 100) / 100) },
     altitudeCenterM: Math.round(c * 100) / 100,
   }
 }
@@ -135,10 +152,75 @@ async function getRaster(layer: LidarLayer, center: LonLat, halfSizeM: number, s
 
 // ---------- échantillonnage ----------
 
-/** Hauteur de canopée / bâti (m au-dessus du sol) en un point local, interpolée. */
+/** Hauteur de canopée / bâti (m au-dessus du sol) en un point local, interpolée. Les nœuds sont des centres de pixels : le demi-pixel du bord compte encore. */
 export function canopyHeightAt(canopy: TerrainGrid, p: XY): number {
-  if (Math.abs(p.x) > canopy.size || Math.abs(p.y) > canopy.size) return 0
+  const reach = canopy.size + (canopy.n > 1 ? canopy.size / (canopy.n - 1) : 0)
+  if (Math.abs(p.x) > reach || Math.abs(p.y) > reach) return 0
   return heightAt(canopy, p)
+}
+
+// ---------- hauteur des bâtiments d'après le MNH ----------
+
+/** Hauteur retenue sous laquelle on ne se fie pas au MNH (hangar ou « pas de donnée » mis à 0) : on garde le repli. */
+const MIN_ROOF_M = 2
+const MAX_ROOF_M = 40
+const MIN_ROOF_SAMPLES = 3
+
+function percentile(sorted: number[], q: number): number {
+  const k = (sorted.length - 1) * q
+  const lo = Math.floor(k)
+  const hi = Math.min(sorted.length - 1, lo + 1)
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (k - lo)
+}
+
+/**
+ * Hauteur d'un bâtiment (m) d'après le MNH dans son emprise : 90e centile des hauteurs, plafonné au double de la médiane
+ * (un arbre collé à la façade ne doit pas faire monter le toit). `null` si l'emprise sort de la grille, compte moins de
+ * 3 points ou donne moins de 2 m : l'appelant garde alors la hauteur par défaut. `ring` en repère local (m).
+ */
+export function buildingHeightFromMnh(canopy: TerrainGrid, ring: XY[]): number | null {
+  if (ring.length < 3 || canopy.n < 2) return null
+  const step = (2 * canopy.size) / (canopy.n - 1)
+  const sample = Math.max(0.5, step)
+  let minX = Infinity
+  let maxX = -Infinity
+  let minY = Infinity
+  let maxY = -Infinity
+  for (const p of ring) {
+    minX = Math.min(minX, p.x)
+    maxX = Math.max(maxX, p.x)
+    minY = Math.min(minY, p.y)
+    maxY = Math.max(maxY, p.y)
+  }
+  const values: number[] = []
+  const x0 = minX + sample / 2
+  const y0 = minY + sample / 2
+  for (let y = y0; y <= maxY; y += sample) {
+    for (let x = x0; x <= maxX; x += sample) {
+      const p = { x, y }
+      if (!pointInRing(p, ring)) continue
+      if (Math.abs(x) > canopy.size || Math.abs(y) > canopy.size) continue // hors de la grille : pas de mesure
+      values.push(heightAt(canopy, p))
+    }
+  }
+  if (values.length < MIN_ROOF_SAMPLES) return null
+  values.sort((a, b) => a - b)
+  const h = Math.min(percentile(values, 0.9), 2 * percentile(values, 0.5))
+  if (!(h >= MIN_ROOF_M)) return null
+  return Math.round(Math.min(MAX_ROOF_M, h) * 10) / 10
+}
+
+/**
+ * Remplace la hauteur par défaut des bâtiments dont la BD TOPO ne donne ni hauteur ni étages (`unknownIds`)
+ * par la hauteur mesurée au MNH. Les autres bâtiments, et ceux dont la mesure est inutilisable, ne changent pas.
+ * Même format stocké : seul `heightM` change.
+ */
+export function applyMnhHeights<B extends { id: string; ring: XY[]; heightM: number }>(buildings: B[], unknownIds: ReadonlySet<string>, canopy: TerrainGrid): B[] {
+  return buildings.map((b) => {
+    if (!unknownIds.has(b.id)) return b
+    const h = buildingHeightFromMnh(canopy, b.ring)
+    return h == null ? b : { ...b, heightM: h }
+  })
 }
 
 // ---------- détection des houppiers ----------

@@ -12,5 +12,5 @@
     "isolatedModules": true,
     "noEmit": true
   },
-  "include": ["vite.config.ts", "api"]
+  "include": ["vite.config.ts", "pwa-caching.ts", "api"]
 }

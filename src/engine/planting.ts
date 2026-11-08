@@ -1,6 +1,7 @@
 // « Où et quand planter » : note d'adéquation d'une espèce pour un emplacement du jardin.
 import type { Category, Garden, Month, Plant, Species, Strate, Sun, XY } from '../types'
 import { distance, distanceToRing, pointInRing } from '../lib/geo'
+import { CADASTRE_HONESTY } from '../lib/cadastreNote'
 import { plantingCalendar, MONTH_NAMES } from './calendar'
 
 export interface SpotContext {
@@ -90,7 +91,8 @@ export function legalDistance(
     ? `Art. 671 du Code civil : à défaut de règlement ou d’usage local, une plantation de plus de 2 m de haut doit être à au moins 2 m de la limite séparative`
     : `Art. 671 du Code civil : à défaut de règlement ou d’usage local, une plantation de 2 m de haut ou moins doit être à au moins 0,5 m de la limite séparative`
   const local =
-    'Des règlements particuliers (PLU, lotissement) ou des usages locaux constants et reconnus priment sur ces distances : renseignez-vous en mairie. Une limite en bordure de voirie n’est pas une limite séparative : l’art. 671 ne s’y applique pas.'
+    'Des règlements particuliers (PLU, lotissement) ou des usages locaux constants et reconnus priment sur ces distances : renseignez-vous en mairie. Une limite en bordure de voirie n’est pas une limite séparative : l’art. 671 ne s’y applique pas. ' +
+    CADASTRE_HONESTY
   const espalier =
     'En espalier contre un mur séparatif, aucune distance n’est exigée, mais la plante ne doit pas dépasser la crête du mur ; si le mur n’est pas mitoyen, seul son propriétaire peut y appuyer des espaliers. ' +
     'Art. 672 : le voisin peut exiger que l’arbre soit arraché ou réduit à 2 m de haut, sauf titre, destination du père de famille ou prescription trentenaire. Un arbre mort, coupé ou arraché ne se remplace qu’à la distance légale.'

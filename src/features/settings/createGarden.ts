@@ -1,5 +1,7 @@
 import { fetchBuildings, fetchParcel, fetchTerrain, type GeocodeResult } from '../../lib/ign'
 import { fetchClimate } from '../../lib/weather'
+import { applyMnhHeights, fetchLidar } from '../../lib/lidar'
+import { LIDAR_HALF_SIZE_M, lidarEnabled } from '../../lib/useLidar'
 import { zoneCode } from '../../engine/climate'
 import { polygonArea, toLocal, uid } from '../../lib/geo'
 import { frNumber, plural } from '../../lib/format'
@@ -38,6 +40,27 @@ export function missingSources(g: Garden): Step['id'][] {
 }
 
 export const SCENE_HALF_SIZE = 40
+
+/** Attente maximale du LiDAR à la création : au-delà, on garde les 6 m par défaut (le jardin ne doit jamais attendre). */
+const LIDAR_WAIT_MS = 8000
+
+/**
+ * Bâtiments sans hauteur dans la BD TOPO : hauteur mesurée au MNH LiDAR si disponible (cache IndexedDB commun avec l'écran 3D),
+ * sinon 6 m. Silencieux : aucun message, aucune requête si le réglage « arbres des environs » est coupé.
+ */
+async function measureUnknownHeights<B extends { id: string; ring: { x: number; y: number }[]; heightM: number }>(buildings: B[], unknownIds: ReadonlySet<string>, center: LonLat): Promise<B[]> {
+  if (!unknownIds.size || !lidarEnabled()) return buildings
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), LIDAR_WAIT_MS)
+  try {
+    const lidar = await fetchLidar(center, { halfSizeM: LIDAR_HALF_SIZE_M, signal: ctrl.signal })
+    return lidar ? applyMnhHeights(buildings, unknownIds, lidar.canopy) : buildings
+  } catch {
+    return buildings
+  } finally {
+    clearTimeout(timer)
+  }
+}
 
 /**
  * Construit un jardin à partir d'une adresse : chaque source est facultative,
@@ -79,7 +102,9 @@ export async function buildGarden(
       onStep('batiments', 'en-cours')
       try {
         const bs = await fetchBuildings(center, SCENE_HALF_SIZE + 20)
-        garden.buildings = bs.map((b) => ({ id: b.id, heightM: b.heightM, ring: b.ring.map((p) => toLocal(center, p)) }))
+        let buildings = bs.map((b) => ({ id: b.id, heightM: b.heightM, ring: b.ring.map((p) => toLocal(center, p)) }))
+        buildings = await measureUnknownHeights(buildings, new Set(bs.filter((b) => !b.heightKnown).map((b) => b.id)), center)
+        garden.buildings = buildings
         onStep('batiments', 'ok', bs.length ? plural(bs.length, 'maison ou bâtiment', 'maisons ou bâtiments') + ' autour' : 'aucune maison autour')
       } catch (e) {
         onStep('batiments', 'echec', (e as Error).message)

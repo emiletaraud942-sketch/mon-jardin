@@ -1570,6 +1570,10 @@ label.field > span {
 .maplibregl-map .maplibregl-ctrl-group button + button {
   border-top: 1px solid var(--border-strong);
 }
+.legend .legend-honesty {
+  flex-basis: 100%;
+  font-size: 0.9em;
+}
 .map-top .legend {
   flex-direction: column;
   gap: 6px;
@@ -4778,4 +4782,23 @@ html[data-toast] .page {
   flex: none;
   min-width: 44px;
   padding-inline: 0;
+}
+
+/* « Télécharger ma zone » : barre de progression */
+.zone-bar {
+  height: 12px;
+  border-radius: 6px;
+  background: var(--track);
+  overflow: hidden;
+}
+.zone-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--accent-2);
+  transition: width 0.2s linear;
+}
+@media (prefers-reduced-motion: reduce) {
+  .zone-bar > span {
+    transition: none;
+  }
 }
