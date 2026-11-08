@@ -182,13 +182,13 @@ export const DATA_INVENTORY: readonly DataItem[] = [
   },
   {
     id: 'diagnostic',
-    donnee: 'Dernières erreurs de l’appli (20 au plus) : heure, type, message nettoyé (sans adresse e-mail, coordonnée ni identifiant) ; version de l’appli, taille de l’écran, thème, nombre de jardins et de plantes',
-    stockage: 'Mémoire de la page seulement : rien n’est écrit sur l’appareil, tout disparaît à la fermeture. Un fichier n’est créé que si vous touchez « Exporter un diagnostic »',
+    donnee: 'Dernières erreurs de l’appli (20 au plus) : heure, type, message nettoyé (sans adresse e-mail, coordonnée ni identifiant) ; version de l’appli et du build, taille de l’écran, thème, nombre de jardins et de plantes',
+    stockage: 'Mémoire de la page et sessionStorage de l’onglet (clé pj.errors) : tout disparaît à la fermeture de l’onglet. Un fichier n’est créé que si vous touchez « Exporter un diagnostic »',
     destinataires: [],
     finalite: 'Vous permettre de joindre un fichier de diagnostic à une demande d’aide. Rien n’est envoyé automatiquement',
     base: 'interet-legitime',
-    duree: 'Jusqu’à la fermeture de la page. Le fichier exporté est à vous : supprimez-le quand vous voulez',
-    effacement: 'Fermer la page ; supprimer le fichier exporté',
+    duree: 'Jusqu’à la fermeture de l’onglet. Le fichier exporté est à vous : supprimez-le quand vous voulez',
+    effacement: 'Fermer l’onglet, ou Effacer toutes mes données ; supprimer le fichier exporté',
   },
   {
     id: 'journaux',
@@ -313,6 +313,7 @@ export const LOCAL_STORAGE_KEYS: readonly StorageKeyInfo[] = [
 /** Clés sessionStorage (effacées à la fermeture de l'onglet ; « Effacer toutes mes données » les retire aussi). */
 export const SESSION_STORAGE_KEYS: readonly StorageKeyInfo[] = [
   { cle: 'pj.force3d', contenu: '« Essayer quand même » choisi pour la 3D (session seulement)' },
+  { cle: 'pj.errors', contenu: 'Les 20 dernières erreurs de l’appli (texte nettoyé), pour le diagnostic ; jamais envoyées' },
 ]
 
 /** Clés IndexedDB (base par défaut de idb-keyval) : toutes sont supprimées par `wipeLocalData()` (`del` de chaque clé). */

@@ -360,13 +360,14 @@ export function annualSeasonOver(p: Plant, sp: Species, today: Date): boolean {
 }
 const isSowing = (t: TaskType) => t === 'semis' || t === 'plantation'
 
-const HOWTO_SEMIS = 'Semer en place dans un sol ameubli et désherbé, recouvrir de terre fine puis arroser en pluie fine.'
-const HOWTO_PLANTATION = 'Creuser un trou deux fois plus large que la motte, planter sans enterrer le collet, arroser copieusement puis pailler.'
-const HOWTO_RECOLTE = 'Cueillez à maturité, de préférence le matin ; ne laissez pas les fruits mûrs sur la plante.'
-const HOWTO_ARROSAGE =
-  "Arroser au pied, le matin ou le soir : 10 à 15 L par m² ou par jeune arbre, en une fois plutôt qu'un peu chaque jour. Pailler pour garder l'humidité."
-const HOWTO_GEL =
-  "Poser un voile d'hivernage sur les plantes basses et les jeunes arbres, pailler épais au pied, rentrer les pots à l'abri. Retirer le voile en journée."
+/** Conseils des tâches générées (exportés pour le test de longueur des phrases). */
+export const HOWTO_SEMIS = 'Semer en place dans un sol ameubli et désherbé, recouvrir de terre fine puis arroser en pluie fine.'
+export const HOWTO_PLANTATION = 'Creuser un trou deux fois plus large que la motte, planter sans enterrer le collet, arroser copieusement puis pailler.'
+export const HOWTO_RECOLTE = 'Cueillez à maturité, de préférence le matin ; ne laissez pas les fruits mûrs sur la plante.'
+export const HOWTO_ARROSAGE =
+  "Arroser au pied, le matin ou le soir : 10 à 15 L par m² ou par jeune arbre. Mieux vaut un gros arrosage qu'un peu chaque jour. Pailler pour garder l'humidité."
+export const HOWTO_GEL =
+  "Poser un voile d'hivernage sur les plantes basses et les jeunes arbres. Pailler épais au pied et rentrer les pots à l'abri. Retirer le voile en journée."
 
 /** Au-delà de cet âge (ans), une vivace est établie : plus d'arrosage météo (sauf espèces gourmandes en eau). */
 const ESTABLISHED_YEARS = 3

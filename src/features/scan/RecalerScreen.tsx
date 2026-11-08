@@ -43,13 +43,13 @@ export function RecalerScreen({ garden }: { garden: Garden }) {
     ...s.landmarks.map((l, i) => ({ id: 'l' + i, pos: l.truth, label: String(i + 1), aria: `Repère ${i + 1}`, tone: 'repere' as const })),
     ...(s.phase === 'carte' && s.truth ? [{ id: 'cur', pos: s.truth, label: String(currentLandmark(s)), aria: `Repère ${currentLandmark(s)}`, tone: 'choix' as const }] : []),
     // Bilan : où le GPS corrigé place chaque repère (doit tomber près du point touché).
-    ...(fit ? s.landmarks.map((l, i) => ({ id: 'c' + i, pos: applyCalibration(fit, l.measured), label: '✓', aria: `Repère ${i + 1} après recalage`, tone: 'verite' as const })) : []),
+    ...(fit ? s.landmarks.map((l, i) => ({ id: 'c' + i, pos: applyCalibration(fit, l.measured), label: '✓', aria: `Repère ${i + 1} après l’ajustement`, tone: 'verite' as const })) : []),
   ]
 
   const save = () => {
     if (!fit) return
     updateGarden(garden.id, { calibration: fit })
-    showToast({ message: `Carte recalée. Précision : ${precisionText(precision ?? fit.rmsM)}.` })
+    showToast({ message: `Carte ajustée. Précision : ${precisionText(precision ?? fit.rmsM)}.` })
     closeScan()
   }
 
@@ -68,7 +68,7 @@ export function RecalerScreen({ garden }: { garden: Garden }) {
         <div className="scan-panel stack">
           {s.phase === 'intro' && (
             <>
-              <p style={{ margin: 0 }}>Le GPS d’un téléphone se trompe parfois de plusieurs mètres. Ce recalage corrige l’écart.</p>
+              <p style={{ margin: 0 }}>Le GPS d’un téléphone se trompe parfois de plusieurs mètres. L’ajustement de la carte corrige l’écart.</p>
               <ol className="scan-steps">
                 <li>
                   <strong>Allez sur un repère.</strong> Coin de maison, portail ou angle de clôture, visible sur la photo aérienne.
@@ -81,7 +81,7 @@ export function RecalerScreen({ garden }: { garden: Garden }) {
                 </li>
               </ol>
               <p className="small muted" style={{ margin: 0 }}>Votre position reste sur votre téléphone. Elle n’est envoyée nulle part.</p>
-              {garden.calibration && <p className="small" style={{ margin: 0 }}>Un recalage existe déjà. Un nouveau le remplacera.</p>}
+              {garden.calibration && <p className="small" style={{ margin: 0 }}>La carte est déjà ajustée. Un nouvel ajustement remplacera l’ancien.</p>}
               <button className="btn primary big" onClick={() => dispatch({ type: 'commencer' })}>
                 Commencer
               </button>
@@ -98,7 +98,7 @@ export function RecalerScreen({ garden }: { garden: Garden }) {
               {low && (
                 <div className="alert small" role="status">
                   <span>
-                    <strong>Le signal est faible</strong> (environ {Math.round(low.accuracyM)} m d’erreur). Le recalage sera peu précis.
+                    <strong>Le signal est faible</strong> (environ {Math.round(low.accuracyM)} m d’erreur). L’ajustement sera peu précis.
                   </span>
                   <div className="row" style={{ marginTop: 8 }}>
                     <button className="btn" onClick={() => void measure()}>
@@ -152,7 +152,7 @@ export function RecalerScreen({ garden }: { garden: Garden }) {
                 </button>
               )}
               <button className="btn primary big" onClick={() => dispatch({ type: 'bilan' })}>
-                Calculer le recalage
+                Calculer l’ajustement
               </button>
             </>
           )}

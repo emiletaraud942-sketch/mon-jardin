@@ -1,6 +1,6 @@
 # PermaJardin : ce qui a été fait avec Claude (résumé pour une autre conversation)
 
-Arrêté au 3 novembre 2026, dernier commit sur `main` : `b584f4f`. À lire avec `CLAUDE.md` (architecture et conventions, tenu à jour à chaque étape), `docs/PLAN-RETOURS.md`, `docs/ACTIONS-PROPRIETAIRE.md` et `docs/SECURITE.md` (journal détaillé §14 à §23).
+Arrêté au 3 novembre 2026, dernier commit sur `main` : `b584f4f`. À lire avec `CLAUDE.md` (architecture et conventions, tenu à jour à chaque étape), `docs/archive/PLAN-RETOURS.md`, `docs/ACTIONS-PROPRIETAIRE.md` et `docs/SECURITE.md` (journal détaillé §14 à §23).
 
 ## 1. Le projet en deux lignes
 PWA française (React 18 + TypeScript + Vite) pour cartographier son jardin en 3D (données IGN), placer ses plantes au mètre près, savoir quoi planter où et quand tailler, arroser, récolter. Local-first (IndexedDB), budget 0 €. Propriétaire non développeur : il fait lui-même ce qui est réglage de compte (Supabase, Vercel, GitHub, textes légaux) et les essais sur téléphone.
@@ -21,7 +21,7 @@ Carte IGN et placement des plantes, 3D réaliste (plantes procédurales, saisons
 ### Audit sécurité et complétude (27-28 octobre), lots 1 à 6
 Corrections de sécurité (CSP, en-têtes, validation des imports, RGPD, inventaire des données), règles du moteur (annuelles, art. 671/672, froid observé), sauvegarde avec photos (`.permajardin`), calendrier `.ics`, avertissements de risque des plantes, bandeau de mise à jour. Montées de version (Vite 7, vitest 5, vite-plugin-pwa 2, three 0.186, MapLibre 6), `@vercel/node` retiré, `npm audit` : 0 alerte. Liste des actions réservées au propriétaire : `docs/ACTIONS-PROPRIETAIRE.md`.
 
-### Retours du 29 octobre : 20 remarques, plan en 10 étapes (`docs/PLAN-RETOURS.md`)
+### Retours du 29 octobre : 20 remarques, plan en 10 étapes (`docs/archive/PLAN-RETOURS.md`)
 1. **Ne plus perdre de données** : copie de secours synchrone (localStorage) en plus d'IndexedDB, essai d'écriture au démarrage, état « enregistré » visible, synchro automatique sans écrasement silencieux (`autoSync.ts`).
 2. **Retrouver la sauvegarde sur téléphone** : menu « Partager », message qui dit où est le fichier.
 3. **Placement** : annuler / rétablir (↶ ↷, Ctrl+Z, 50 actions), messages 30 s avec grande croix, avertissement de position court (le long texte sous « En savoir plus »).

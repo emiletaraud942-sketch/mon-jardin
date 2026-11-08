@@ -158,7 +158,7 @@ describe('calibration dans migrateState', () => {
     for (const bad of [{ a: 3, b: 0, tx: 0, ty: 0, rmsM: 0, n: 2 }, { a: 1, b: 0, tx: NaN, ty: 0, rmsM: 0, n: 2 }, { a: '1' }, 'x']) {
       const r = run(bad)
       expect(r.data.gardens[0].calibration).toBeUndefined()
-      expect(r.warnings.some((w) => w.includes('recalage'))).toBe(true)
+      expect(r.warnings.some((w) => w.includes('ajustement de la carte'))).toBe(true)
     }
   })
 })

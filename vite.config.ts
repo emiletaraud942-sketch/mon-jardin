@@ -3,6 +3,7 @@ import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { readFileSync } from 'node:fs'
+import { execSync } from 'node:child_process'
 import type { Plugin } from 'vite'
 import { runtimeCaching } from './pwa-caching'
 
@@ -62,13 +63,49 @@ function manualChunks(id: string): string | undefined {
   return undefined
 }
 
+// Budget de taille par chunk (ko non compressés, base 1000 comme Vite). Un dépassement s'affiche en avertissement de build.
+// Mesures du 8 nov. 2026 : three 925, maplibre 1 078, index 763 ; marge d'environ 3 à 8 %. Les autres chunks : 900 ko au plus.
+const CHUNK_BUDGET_KB: Record<string, number> = { three: 950, maplibre: 1100 }
+const DEFAULT_CHUNK_BUDGET_KB = 900
+function chunkBudgets(): Plugin {
+  return {
+    name: 'permajardin-chunk-budgets',
+    generateBundle(_options, bundle) {
+      for (const [file, item] of Object.entries(bundle)) {
+        if (item.type !== 'chunk') continue
+        const kb = Buffer.byteLength(item.code) / 1000
+        const budget = CHUNK_BUDGET_KB[item.name] ?? DEFAULT_CHUNK_BUDGET_KB
+        if (kb > budget) this.warn(`Le chunk « ${item.name} » (${file}) pèse ${kb.toFixed(0)} ko, budget ${budget} ko : voir vite.config.ts.`)
+      }
+    },
+  }
+}
+
+// Version et commit affichés en bas de Réglages et dans le diagnostic.
+// Sur Vercel, le commit vient de VERCEL_GIT_COMMIT_SHA ; ailleurs, de git ; sans git : « inconnu ».
+function appCommit(): string {
+  const fromEnv = process.env.VERCEL_GIT_COMMIT_SHA?.trim()
+  if (fromEnv) return fromEnv.slice(0, 7)
+  try {
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim() || 'inconnu'
+  } catch {
+    return 'inconnu'
+  }
+}
+const appVersion = (JSON.parse(readFileSync('package.json', 'utf8')) as { version?: string }).version ?? 'inconnue'
+
 // Variables exposées au navigateur : VITE_* et NEIGHBORS_* (URL et clé publiques de l'entraide, sans mot « KEY » : Vercel le refuse).
 // Jamais de secret sous ces préfixes.
 export default defineConfig({
   envPrefix: ['VITE_', 'NEIGHBORS_'],
+  define: {
+    __APP_VERSION__: JSON.stringify(appVersion),
+    __APP_COMMIT__: JSON.stringify(appCommit()),
+  },
   plugins: [
     react(),
     ocrAssets(),
+    chunkBudgets(),
     VitePWA({
       // « prompt » : le nouveau service worker attend (pas de skipWaiting automatique).
       // L'interface propose « Nouvelle version — Recharger » (virtual:pwa-register/react),
@@ -103,7 +140,7 @@ export default defineConfig({
         skipWaiting: false,
         clientsClaim: false,
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
-        // Le chunk 3D (~860 ko, ~230 ko en gzip, écran secondaire) n'est pas préchargé à l'installation :
+        // Le chunk 3D (≈ 925 ko bruts, ≈ 248 ko en gzip, mesuré au build du 8 nov. 2026 ; écran secondaire) n'est pas préchargé à l'installation :
         // il est mis en cache à la première ouverture de la 3D (voir runtimeCaching ci-dessous).
         // MapLibre reste dans le précache : la carte est l'écran d'accueil et doit s'ouvrir hors ligne
         // dès la première installation (son nom ne change qu'avec la bibliothèque, il n'est donc
@@ -124,10 +161,13 @@ export default defineConfig({
   ],
   build: {
     rollupOptions: { output: { manualChunks } },
-    // 900 ko (non compressés) : le chunk Three.js + drei pèse ~700-800 ko minifié (~200 ko en gzip),
-    // il est chargé à la demande (écran 3D) et ne figure pas dans le chargement initial.
-    // L'alerte par défaut (500 ko) serait un bruit permanent ; elle reste utile au-delà de 900 ko.
-    chunkSizeWarningLimit: 900,
+    // Tailles mesurées au build du 8 nov. 2026 (ko non compressés, comme les affiche Vite) :
+    // three 925 (≈ 248 en gzip, chargé à la demande par l'écran 3D), maplibre 1 078 (≈ 295 en gzip, précaché : la carte doit s'ouvrir
+    // hors ligne ; bibliothèque tierce, indivisible), tout le reste sous 765.
+    // L'avertissement de Vite n'a qu'une seule limite pour tous les chunks : on la place juste au-dessus du plus gros (maplibre) pour ne plus
+    // avoir de bruit permanent, et `chunkBudgets` (plus haut) garde un budget par chunk pour que three, maplibre ou le code applicatif
+    // ne grossissent pas sans qu'on le voie.
+    chunkSizeWarningLimit: 1100,
   },
   server: {
     proxy: Object.fromEntries(

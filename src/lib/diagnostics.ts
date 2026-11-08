@@ -1,4 +1,5 @@
-// Diagnostic local : les 20 dernières erreurs gardées en mémoire (jamais écrites, jamais envoyées).
+// Diagnostic local : les 20 dernières erreurs gardées en mémoire et dans sessionStorage (clé `pj.errors`), jamais envoyées.
+// La copie de session survit à un rechargement de la page (par exemple après « Recharger » d'une mise à jour) et disparaît à la fermeture de l'onglet.
 // L'utilisateur peut exporter un fichier pour l'envoyer lui-même s'il demande de l'aide.
 // Le texte est nettoyé : adresses web sans paramètres, e-mails, coordonnées et identifiants longs retirés.
 
@@ -15,7 +16,39 @@ export interface ErrorEntry {
   stack?: string
 }
 
-const ring: ErrorEntry[] = []
+const ERRORS_KEY = 'pj.errors'
+const KINDS: readonly string[] = ['erreur', 'promesse', 'ecran', 'morceau']
+
+/** Relit les erreurs de la session (valide chaque entrée ; stockage absent, bloqué ou abîmé = liste vide). */
+function loadSaved(): ErrorEntry[] {
+  try {
+    const raw = sessionStorage.getItem(ERRORS_KEY)
+    if (!raw) return []
+    const data: unknown = JSON.parse(raw)
+    if (!Array.isArray(data)) return []
+    const out: ErrorEntry[] = []
+    for (const x of data) {
+      if (!x || typeof x !== 'object') continue
+      const e = x as Record<string, unknown>
+      if (typeof e.at !== 'string' || typeof e.message !== 'string' || typeof e.kind !== 'string' || !KINDS.includes(e.kind)) continue
+      out.push({ at: scrub(e.at, 40), kind: e.kind as ErrorKind, message: scrub(e.message), stack: typeof e.stack === 'string' ? scrub(e.stack, 400) : undefined })
+    }
+    return out.slice(-RING_SIZE)
+  } catch {
+    return []
+  }
+}
+
+const ring: ErrorEntry[] = loadSaved()
+
+function persist() {
+  try {
+    if (ring.length === 0) sessionStorage.removeItem(ERRORS_KEY)
+    else sessionStorage.setItem(ERRORS_KEY, JSON.stringify(ring))
+  } catch {
+    /* stockage plein ou bloqué : la liste reste en mémoire */
+  }
+}
 
 /** Retire ce qui pourrait identifier quelqu'un : e-mails, adresses web, coordonnées, longs identifiants. */
 export function scrub(text: string, max = 240): string {
@@ -59,11 +92,13 @@ function messageOf(e: unknown): string {
 export function recordError(kind: ErrorKind, e: unknown, at: Date = new Date()) {
   ring.push({ at: at.toISOString(), kind, message: scrub(messageOf(e)), stack: stackOf(e) })
   while (ring.length > RING_SIZE) ring.shift()
+  persist()
 }
 
 export const getErrors = (): readonly ErrorEntry[] => ring
 export function clearErrors() {
   ring.length = 0
+  persist()
 }
 
 /** Branche les écouteurs globaux. Renvoie la fonction qui les retire. */
@@ -93,6 +128,9 @@ export interface DiagnosticContext {
   online: boolean
   viewport: { w: number; h: number }
   standalone: boolean
+  /** Version de l'appli (package.json) et commit du build. */
+  appVersion: string
+  appCommit: string
   stateVersion: number
   counts: { jardins: number; plantes: number; tachesFaites: number }
   storage?: { usedMo: number; quotaMo: number; persistent?: boolean }
@@ -107,7 +145,7 @@ export function buildDiagnostic(ctx: DiagnosticContext, errors: readonly ErrorEn
     date: ctx.now.toISOString(),
     appareil: { navigateur: scrub(ctx.userAgent, 200), langue: ctx.language, enLigne: ctx.online, ecran: ctx.viewport, appInstallee: ctx.standalone },
     reglages: { theme: ctx.theme, tailleTexte: ctx.textSize },
-    donnees: { versionFormat: ctx.stateVersion, ...ctx.counts },
+    donnees: { versionAppli: ctx.appVersion, commitAppli: ctx.appCommit, versionFormat: ctx.stateVersion, ...ctx.counts },
     stockage: ctx.storage,
     erreurs: errors.map((x) => ({ ...x })),
   }

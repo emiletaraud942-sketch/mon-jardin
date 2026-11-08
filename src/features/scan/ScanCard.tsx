@@ -10,14 +10,14 @@ export function ScanCard({ garden }: { garden: Garden }) {
   return (
     <div className="card">
       <h2>Carte du jardin</h2>
-      <p>{c ? `Carte recalée sur votre position. Précision : ${precisionText(Math.max(c.rmsM, 0.3))}.` : 'Avec votre téléphone, placez vos plantes sur la carte au mètre près.'}</p>
+      <p>{c ? `Carte ajustée à votre position. Précision : ${precisionText(Math.max(c.rmsM, 0.3))}.` : 'Avec votre téléphone, placez vos plantes sur la carte au mètre près.'}</p>
       <div className="stack">
         <button className="btn" onClick={() => openScan('menu')}>
           <Icon name="camera" /> Scanner mon jardin
         </button>
         {c && (
           <button className="btn" onClick={() => clearCalibration(garden)}>
-            Effacer le recalage
+            Effacer l’ajustement de la carte
           </button>
         )}
       </div>

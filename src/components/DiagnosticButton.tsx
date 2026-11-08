@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { APP_COMMIT, APP_VERSION } from '../lib/appVersion'
 import { downloadJson } from '../lib/backup'
 import { isoDate } from '../lib/dates'
 import { buildDiagnostic, getErrors } from '../lib/diagnostics'
@@ -32,6 +33,8 @@ export function DiagnosticButton({ className = 'btn' }: { className?: string }) 
         online: navigator.onLine,
         viewport: { w: window.innerWidth, h: window.innerHeight },
         standalone: window.matchMedia?.('(display-mode: standalone)').matches ?? false,
+        appVersion: APP_VERSION,
+        appCommit: APP_COMMIT,
         stateVersion: STATE_VERSION,
         counts: { jardins: s.gardens.length, plantes: s.plants.length, tachesFaites: s.tasksDone.length },
         storage,

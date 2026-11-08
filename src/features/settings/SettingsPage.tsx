@@ -47,6 +47,7 @@ import { ConsentDialog } from '../legal/ConsentDialog'
 import { LegalLinks } from '../legal/LegalLinks'
 import { FAIL_HELP, missingSources } from './createGarden'
 import { ScanCard } from '../scan/ScanCard'
+import { versionLabel } from '../../lib/appVersion'
 import { OfflineZoneCard } from './OfflineZone'
 import { removeGardenData, photosOf, restoreGardenData } from './gardenDelete'
 import { uniqueGardenName } from './gardenName'
@@ -903,6 +904,7 @@ export function SettingsPage({ garden }: { garden: Garden }) {
       </div>
       <footer className="legal-footer">
         <LegalLinks />
+        <p className="small muted" data-testid="app-version" style={{ margin: 0 }}>{versionLabel()}</p>
       </footer>
     </div>
   )

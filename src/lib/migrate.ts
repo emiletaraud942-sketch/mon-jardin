@@ -167,7 +167,7 @@ function sanitizeGarden(raw: unknown, report: Report): Garden | undefined {
     if (cal && isValidCalibration(cal)) g.calibration = cal
     else {
       delete g.calibration
-      report.add('calibration', 'Le recalage GPS de {n} jardin était invalide : il a été retiré.', 'Le recalage GPS de {n} jardins était invalide : il a été retiré.')
+      report.add('calibration', 'L’ajustement de la carte de {n} jardin était invalide : il a été retiré.', 'L’ajustement de la carte de {n} jardins était invalide : il a été retiré.')
     }
   }
   if (raw.panoramas !== undefined) {

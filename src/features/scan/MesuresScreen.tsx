@@ -20,7 +20,7 @@ import { useGps } from './useGps'
 import { circleIntersections, intersectionPrecisionM, nearestPoint, parseMeters, pointOnCircle, precisionText, singleCirclePrecisionM } from './trilat'
 
 type Kind = 'coin' | 'moi' | 'plante' | 'carte'
-const KIND_LABEL: Record<Kind, string> = { coin: 'Un coin de maison ou de terrain', moi: 'Ma position (recalée)', plante: 'Une autre plante', carte: 'Un point touché sur la carte' }
+const KIND_LABEL: Record<Kind, string> = { coin: 'Un coin de maison ou de terrain', moi: 'Ma position (ajustée)', plante: 'Une autre plante', carte: 'Un point touché sur la carte' }
 
 interface Ref {
   kind: Kind

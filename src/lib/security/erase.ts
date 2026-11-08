@@ -2,6 +2,7 @@
 // et, sur demande, l'instantané ou le compte en ligne. Chaque étape est indépendante : un échec n'empêche pas les autres.
 import { wipeLocalData } from '../store'
 import { neighborsEnabled } from '../neighbors/enabled'
+import { clearErrors } from '../diagnostics'
 import { ERASABLE_CACHE, ERASABLE_LOCAL_KEY } from './inventory'
 
 export interface EraseOptions {
@@ -94,6 +95,7 @@ export async function eraseAllData(opts: EraseOptions = {}): Promise<EraseReport
   await run('indexeddb', () => wipeLocalData())
   await run('localstorage', () => {
     clearLocalKeys(localStorage)
+    clearErrors() // la liste en mémoire ne doit pas réécrire la clé de session qu'on vient de vider
     try {
       if (typeof sessionStorage !== 'undefined') clearLocalKeys(sessionStorage)
     } catch {

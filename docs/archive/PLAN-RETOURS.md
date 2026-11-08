@@ -1,3 +1,5 @@
+> **Plan clos** (archivé le 8 nov. 2026) : l'état actuel est dans `CLAUDE.md`. Seul reste à décider le lien de l'étape 9. Gardé pour l'historique.
+
 # Plan : tout reprendre, une étape à la fois
 
 Fait le 29 octobre 2026, à partir de vos 19 remarques. Chaque étape est **livrable seule** : code, tests, essai dans un vrai navigateur, documentation, puis je vous dis ce qui est fait et ce que je n'ai pas pu vérifier. On passe à la suivante quand vous dites « suivant ».

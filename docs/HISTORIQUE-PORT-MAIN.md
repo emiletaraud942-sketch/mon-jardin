@@ -1,6 +1,6 @@
 # PermaJardin : ce qui a été fait sur `port-main` (état au 6 novembre 2026 en fin de journée, pour une autre conversation)
 
-À lire avec `CLAUDE.md` (à jour de tout ce qui est fusionné), `docs/HISTORIQUE-CLAUDE.md` (l'autre conversation, jusqu'au 3 nov.), `docs/PLAN-RETOURS.md`, `docs/ACTIONS-PROPRIETAIRE.md` et `docs/SECURITE.md` (§14 à §24).
+À lire avec `CLAUDE.md` (à jour de tout ce qui est fusionné), `docs/HISTORIQUE-CLAUDE.md` (l'autre conversation, jusqu'au 3 nov.), `docs/archive/PLAN-RETOURS.md`, `docs/ACTIONS-PROPRIETAIRE.md` et `docs/SECURITE.md` (§14 à §24).
 
 ## 1. Où est quoi sur GitHub
 | Branche | Contenu | Statut |

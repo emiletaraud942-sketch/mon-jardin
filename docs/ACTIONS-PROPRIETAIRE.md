@@ -1,6 +1,6 @@
 # Ce qu'il vous reste à faire (PermaJardin)
 
-Liste faite le 27 octobre 2026, à la fin de l'audit. Tout ce qui pouvait être fait dans le code est fait et poussé sur la branche `claude/upbeat-volta-sh223c`. **Ce qui suit, seul le propriétaire peut le faire** : ce sont des réglages dans GitHub, Vercel et Supabase, des textes légaux, et des essais sur un vrai téléphone.
+Liste faite le 27 octobre 2026, à la fin de l'audit. Tout ce qui pouvait être fait dans le code est fait et fusionné dans `main`. **Ce qui suit, seul le propriétaire peut le faire** : ce sont des réglages dans GitHub, Vercel et Supabase, des textes légaux, et des essais sur un vrai téléphone.
 
 Chaque ligne dit **à quoi ça sert**, **comment faire**, **comment vérifier**. Les noms de menus des sites peuvent avoir changé : cherchez le mot en gras. Cochez au fur et à mesure.
 
@@ -10,8 +10,8 @@ Légende : 🔴 à faire avant d'ouvrir l'appli à d'autres personnes · 🟠 à
 
 ## 0. D'abord : mettre le code en production
 
-- [ ] 🔴 **Fusionner la branche `claude/upbeat-volta-sh223c` dans `main`** (sur GitHub : bouton *Compare & pull request*, puis *Merge*). Tant que ce n'est pas fait, rien de ce qui a été corrigé n'est en ligne. Vercel redéploie ensuite tout seul.
-  - *Vérifier* : sur Vercel, le dernier déploiement est « Ready » ; ouvrez le site, rien en rouge dans la console (F12).
+- [ ] 🔴 **Vérifier que la dernière version de `main` est en ligne** (l'ancienne branche `claude/upbeat-volta-sh223c` est déjà fusionnée dans `main`). Vercel redéploie tout seul à chaque fusion.
+  - *Vérifier* : sur Vercel, le dernier déploiement est « Ready » ; ouvrez le site, rien en rouge dans la console (F12). En bas de **Réglages**, la ligne « Version … (commit …) » doit montrer le même commit que `main` sur GitHub.
   - La CI (typecheck, tests, build, audit des dépendances) doit être verte avant de fusionner.
 
 ---
@@ -32,7 +32,7 @@ Dépôt > **Settings** :
 
 ## 2. Supabase : sauvegarde en ligne (« synchronisation »), si vous l'utilisez
 
-> **Aujourd'hui, aucun Supabase n'est relié au projet : il n'y a aucune synchronisation.** Les jardins restent dans le navigateur de chaque appareil. Pour une synchronisation automatique entre appareils (code prêt, voir `docs/SECURITE.md` §20), il faut faire cette section **et** poser `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` sur Vercel (§4), puis redéployer. Sans cela, le passage d'un appareil à l'autre se fait par « Sauvegarde » puis « Reprendre une sauvegarde ».
+> **Le projet Supabase `permajardin` existe** (il porte aussi l'entraide depuis le 7 nov. 2026 : voir §3). **La synchronisation n'est active que si `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` sont posées sur Vercel (§4)** : le dépôt ne permet pas de vérifier ce réglage, regardez dans Vercel > Settings > Environment Variables. Sans elles, les jardins restent dans le navigateur de chaque appareil et le passage d'un appareil à l'autre se fait par « Sauvegarde » puis « Reprendre une sauvegarde ». Détails : `docs/SECURITE.md` §20. La connexion se fait par code reçu par e-mail (modèles ci-dessous).
 
 *Le projet Supabase de synchronisation est distinct de celui de l'entraide.*
 
@@ -59,10 +59,10 @@ Dépôt > **Settings** :
 
 ## 3. Supabase : entraide entre voisins
 
-*Projet DÉDIÉ à l'entraide (ne réutilisez pas celui de la synchronisation). Détails complets : `docs/ENTRAIDE.md`, « Étapes pour le propriétaire ».*
+*Depuis le 7 nov. 2026, l'entraide utilise le même projet `permajardin` que la synchronisation (`docs/ENTRAIDE.md`, « Même projet Supabase que la synchro ») : les 9 migrations y sont déjà posées. Les étapes ci-dessous servent à refaire l'installation sur un projet neuf. Détails complets : `docs/ENTRAIDE.md`, « Étapes pour le propriétaire ».*
 
-- [ ] 🔴 **Créer un nouveau projet Supabase, région Union européenne** (ex. Francfort ou Paris). Impossible à changer après coup.
-- [ ] 🔴 **SQL Editor** : coller et exécuter, **dans cet ordre**, les 8 fichiers de `supabase/neighbors/migrations/` (tous rejouables ; si vous en rejouez un ancien, rejouez ensuite les suivants jusqu'à la v8) :
+- [ ] 🔴 **Créer un nouveau projet Supabase, région Union européenne** (ex. Francfort ou Paris). Impossible à changer après coup. *(Inutile si vous gardez `permajardin` : vérifiez sa région dans Project Settings > General.)*
+- [ ] 🔴 **SQL Editor** : coller et exécuter, **dans cet ordre**, les 9 fichiers de `supabase/neighbors/migrations/` (tous rejouables ; si vous en rejouez un ancien, rejouez ensuite les suivants jusqu'à la v9) :
   1. `20261023000000_neighbors.sql`
   2. `20261025000000_neighbors_v2.sql` (« Je cherche », catégories)
   3. `20261025010000_neighbors_v3_read.sql` (messages non lus)
@@ -70,7 +70,8 @@ Dépôt > **Settings** :
   5. `20261025030000_neighbors_v5_push.sql` (alertes)
   6. `20261025040000_neighbors_v6_cell_size.sql` (quartier 2 km / 5 km)
   7. `20261027000000_neighbors_v7_hardening.sql` (un changement de quartier par semaine, textes sans caractères invisibles)
-  8. `20261029000000_neighbors_v8_gardens.sql` *(nouveau : « Ce que j'ai dans mon jardin », boutures entre voisins ; à coller en dernier)*
+  8. `20261029000000_neighbors_v8_gardens.sql` (« Ce que j'ai dans mon jardin », boutures entre voisins)
+  9. `20261104000000_neighbors_v9_hardening2.sql` *(à coller en dernier ; rejouable : sondes de blocage dans le schéma privé `neighbors_private`, masquage automatique plus exigeant, contraintes de texte complétées)*
   - *Vérifier* : **Table Editor** : toutes les tables ont « RLS enabled » ; **Security Advisor** ne signale rien de critique.
 - [ ] 🔴 **Authentication > Providers** : Email activé (connexion par **code**, modèles d'e-mail avec `{{ .Token }}`, voir §2) ; **Anonymous sign-ins**, Phone et OAuth désactivés.
 - [ ] 🔴 **Authentication > URL Configuration** : comme au §2.
@@ -93,13 +94,13 @@ Dépôt > **Settings** :
 
 Projet > **Settings** :
 
-- [ ] 🔴 **Environment Variables** (puis **Redeploy**, car les `VITE_*` sont lues au moment du build) :
+- [ ] 🔴 **Environment Variables** (puis **Redeploy**, car les `VITE_*` et `NEIGHBORS_*` sont lues au moment du build) :
 
   | Nom | Valeur | Remarque |
   | --- | --- | --- |
   | `PLANTNET_API_KEY` | clé gratuite de my.plantnet.org | **Production seulement**, cochez *Sensitive*. Jamais en `VITE_*` |
   | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | projet de **synchronisation** | clé « anon / publishable » seulement, **jamais** `service_role` |
-  | `VITE_NEIGHBORS_SUPABASE_URL`, `VITE_NEIGHBORS_SUPABASE_ANON_KEY` | projet de l'**entraide** | **Production seulement** : en Preview, les prévisualisations parleraient à de vraies personnes |
+  | `NEIGHBORS_SUPABASE_URL`, `NEIGHBORS_SUPABASE_PUBLISHABLE` | projet de l'**entraide** (aujourd'hui le même que la synchro) | **Production seulement** : en Preview, les prévisualisations parleraient à de vraies personnes |
 
 - [ ] 🔴 **Firewall** (Security > Firewall) : une règle de **limitation de débit** sur `/api/identify` (ex. 10 par minute et par adresse) et une sur `/ext/*`. *À quoi ça sert* : un script pourrait sinon épuiser les 500 identifications gratuites du jour de Pl@ntNet, ou saturer les quotas de l'IGN et d'Open-Meteo pour tout le monde. Le limiteur du code n'est qu'un garde-fou par instance.
 - [ ] 🔴 **Deployment Protection** : activer pour les prévisualisations ; la production reste publique.

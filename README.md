@@ -2,15 +2,17 @@
 
 Votre jardin en 3D à partir de la photo aérienne et du cadastre de l'IGN, avec l'ombre réelle du soleil, vos plantes à leur place exacte, et la liste de ce qu'il faut faire cette semaine.
 
-## Ce que fait la V1
+## Ce que fait l'appli
+- **Accueil** : de gros boutons étiquetés de mots (ajouter une plante, voir mon jardin, me promener en 3D, ce qu'il y a à faire…), un mode guidé en quelques questions, et « Je suis perdu » toujours à portée. **« Tout ce que je peux faire »** liste chaque fonction avec une recherche et montre où elle se trouve.
 - **Carte** : photo aérienne IGN, cadastre, parcelle et bâtiments voisins ; placement des plantes par glisser-déposer (≈ 20 cm de précision) ; envergure actuelle ou adulte.
 - **3D** : relief RGE ALTI, orthophoto au sol, bâtiments extrudés (BD TOPO), arbres qui grandissent (« dans N ans »), ombres réelles selon la date et l'heure, carte d'ensoleillement.
 - **Plantes** : inventaire avec photos, état, notes ; identification par photo (Pl@ntNet).
-- **Entretien** : tâches de la semaine (taille, désherbage, arrosage, protection gel, récolte…) calculées à partir de 162 fiches espèces et de la météo (gel, pluie, bilan hydrique) ; calendrier de l'année ; rappel quotidien (notification locale, voir « Limites »).
+- **Entretien** : tâches de la semaine (taille, désherbage, arrosage, protection gel, récolte…) calculées à partir de 173 fiches espèces et de la météo (gel, pluie, bilan hydrique) ; calendrier de l'année ; rappel quotidien (notification locale, voir « Limites »).
 - **Planter** : score « quelle plante pour cet endroit » (ensoleillement simulé, pente, sol, bons et mauvais voisins, distance légale art. 671 du Code civil) ; que semer ce mois-ci selon les gelées locales.
-- **Catalogue** : 162 espèces (légumes, aromatiques, fleurs, engrais verts, vivaces, petits fruits, fruitiers, arbres et haies) avec fiche d'entretien.
-- **Réglages** : plusieurs jardins, sol, export/import (avec validation du fichier), synchronisation Supabase optionnelle, « Effacer toutes mes données » (appareil, sauvegarde en ligne, compte).
-- **Voisins** : l'onglet de l'**entraide entre voisins** (facultative, projet Supabase dédié) : dons, échanges, demandes, événements, messages privés. Voir [docs/ENTRAIDE.md](docs/ENTRAIDE.md).
+- **Catalogue** : 173 fiches (légumes, aromatiques, fleurs, engrais verts, vivaces, petits fruits, fruitiers, arbres et haies) avec fiche d'entretien.
+- **Photos du jardin et scanner** : photos prises en tournant pour revoir le jardin avec les noms des plantes ; scanner pour placer une plante au mètre près (filmer en marchant, photographier, mesurer).
+- **Réglages** : plusieurs jardins, sol, sauvegarde en un fichier `.permajardin` (avec les photos) ou en JSON, import (avec validation du fichier), synchronisation Supabase optionnelle, « Effacer toutes mes données » (appareil, sauvegarde en ligne, compte) ; la version et le commit de l'appli sont notés en bas de page.
+- **Voisins** : l'onglet de l'**entraide entre voisins** (facultative, via Supabase) : dons, échanges, demandes, événements, messages privés, jardins partagés (boutures). Base SQL à jour jusqu'à la migration v9. Voir [docs/ENTRAIDE.md](docs/ENTRAIDE.md).
 
 ## Démarrer
 ```bash

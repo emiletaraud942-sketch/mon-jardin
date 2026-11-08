@@ -17,3 +17,8 @@ interface ImportMetaEnv {
   /** Alertes de nouveaux messages : clé PUBLIQUE VAPID (base64url, 65 octets). Sans préfixe VITE_ ni mot KEY/TOKEN. La clé privée n'est JAMAIS ici. Absente = alertes masquées. */
   readonly NEIGHBORS_VAPID_PUBLIC?: string
 }
+
+/** Version de package.json, posée au build par vite.config.ts (`define`). */
+declare const __APP_VERSION__: string
+/** Commit court du build (VERCEL_GIT_COMMIT_SHA, sinon git, sinon « inconnu »). */
+declare const __APP_COMMIT__: string

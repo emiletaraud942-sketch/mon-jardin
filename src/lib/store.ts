@@ -367,7 +367,7 @@ export function describeReadFailure(kind: ReadFailureKind): ReadFailureInfo {
     primaryLabel: 'Réessayer',
     canStartOver: true,
     startOverWarning:
-      'Vos données illisibles seront remplacées dès le prochain enregistrement. Une copie est d’abord gardée sur cet appareil (bouton « Récupérer la copie de sécurité »), mais l’appli ne sait pas la rouvrir seule. Si la copie ne peut pas être faite, rien n’est remplacé.',
+      'Vos données illisibles seront remplacées dès le prochain enregistrement. Une copie est d’abord gardée sur cet appareil (bouton « Récupérer la copie de sécurité »). L’appli ne sait pas la rouvrir seule. Si la copie ne peut pas être faite, rien n’est remplacé.',
   }
 }
 

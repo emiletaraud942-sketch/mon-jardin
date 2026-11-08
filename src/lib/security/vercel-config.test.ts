@@ -145,6 +145,12 @@ describe('/.well-known/security.txt (RFC 9116)', () => {
     expect(field('Preferred-Languages')[0]).toMatch(/\bfr\b/)
   })
 
+  it('les adresses GitHub citées sont celles du dépôt (mon-dressing-app), pas un ancien nom', () => {
+    const urls = [...text.matchAll(/https:\/\/github\.com\/([\w.-]+\/[\w.-]+)/g)].map((m) => m[1])
+    expect(urls.length).toBeGreaterThan(0)
+    for (const u of urls) expect(u).toBe('emiletaraud942-sketch/mon-dressing-app')
+  })
+
   it('ne dit rien de secret (aucune clé, aucun jeton)', () => {
     expect(text).not.toMatch(/eyJ|sk-|api[_-]?key|service_role/i)
   })

@@ -84,7 +84,7 @@ export function stepTitle(s: CalibState): string {
     case 'suite':
       return `${s.landmarks.length} repères notés`
     case 'bilan':
-      return 'Résultat du recalage'
+      return 'Résultat de l’ajustement'
   }
 }
 

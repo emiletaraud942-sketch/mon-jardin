@@ -243,6 +243,9 @@ async function requireUser() {
   return { sb, user }
 }
 
+/** Message quand les données locales n'ont pas pu être lues (exporté pour le test de longueur des phrases). */
+export const MESSAGE_READ_FAILED = 'Les données de cet appareil n’ont pas pu être lues. La synchronisation est suspendue pour ne pas écraser votre sauvegarde en ligne.'
+
 /**
  * Envoie l'état local (jardins, plantes, tâches faites ; les photos restent sur l'appareil).
  * Sans `force`, refuse d'écraser des données en ligne plus récentes que notre dernière synchro :
@@ -253,7 +256,7 @@ export async function pushSnapshot(opts: { force?: boolean } = {}) {
   const refusal = replaceRefusal()
   if (refusal) throw new Error(refusal)
   if (getStorageStatus().readFailed) {
-    throw new Error('Les données de cet appareil n’ont pas pu être lues : la synchronisation est suspendue pour ne pas écraser votre sauvegarde en ligne.')
+    throw new Error(MESSAGE_READ_FAILED)
   }
   const { gardens, plants, tasksDone } = getState()
   const data = serializeState({ gardens, plants, tasksDone })
