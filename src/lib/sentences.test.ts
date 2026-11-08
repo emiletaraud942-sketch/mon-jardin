@@ -67,7 +67,7 @@ describe('longueur des phrases', () => {
   })
 
   it('écrans : tous les textes visibles des fichiers de l’interface', () => {
-    const dirs = ['components', 'features/map', 'features/settings', 'features/legal', 'features/plants', 'features/neighbors', 'features/onboarding', '.']
+    const dirs = ['components', 'features/map', 'features/settings', 'features/legal', 'features/plants', 'features/neighbors', 'features/onboarding', 'features/aide', '.']
     // Icon.tsx : tracés SVG ; les trois autres fichiers appartiennent à l'agent du Catalogue.
     const skip = new Set(['CataloguePage.tsx', 'SpeciesSheet.tsx', 'MonthGrid.tsx', 'Icon.tsx'])
     const files = dirs.flatMap((d) =>

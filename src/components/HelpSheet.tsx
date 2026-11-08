@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { HELP_EXTRA, RAYONS_HELP, helpExtraNow, helpFor, type HelpExtra } from '../lib/help'
-import { lostSheet, toutFaire } from '../lib/overlays'
+import { guideOpen, lostSheet, toutFaire, tourOpen } from '../lib/overlays'
 import { restartOnboarding, type Tab } from '../lib/ui'
 import { LegalLinks } from '../features/legal/LegalLinks'
 import { Icon } from './Icon'
 import { Modal } from './Modal'
+import { ReadScreenButton } from './ReadScreenButton'
 
 /**
  * Feuille d'aide du bouton « Aide » : « Tout ce que je peux faire », étapes de l'écran courant (ou du scanner, des photos du jardin,
@@ -27,6 +28,7 @@ export function HelpSheet({ tab, onClose }: { tab: Tab; onClose: () => void }) {
           >
             <Icon name="list" /> Tout ce que je peux faire
           </button>
+          <ReadScreenButton help={help} />
           <ol className="help-steps">
             {help.steps.map((s) => (
               <li key={s}>{s}</li>
@@ -48,10 +50,28 @@ export function HelpSheet({ tab, onClose }: { tab: Tab; onClose: () => void }) {
             className="btn"
             onClick={() => {
               onClose()
+              window.setTimeout(() => guideOpen.set(true), 160)
+            }}
+          >
+            Je ne sais pas par où commencer
+          </button>
+          <button
+            className="btn"
+            onClick={() => {
+              onClose()
+              window.setTimeout(() => tourOpen.set(true), 160)
+            }}
+          >
+            Revoir la visite des fonctions
+          </button>
+          <button
+            className="btn"
+            onClick={() => {
+              onClose()
               restartOnboarding()
             }}
           >
-            Revoir la visite
+            Refaire les 5 étapes de départ
           </button>
           <LegalLinks onOpen={onClose} />
         </div>

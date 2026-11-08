@@ -5,6 +5,7 @@ import { goHome } from '../../lib/goHome'
 import { useInertBehind } from '../../lib/inert'
 import { toutFaire } from '../../lib/overlays'
 import { useBackLayer } from '../../lib/ui'
+import { setBigTaps, useBigTaps } from '../../lib/bigTaps'
 
 /** Délai entre la fermeture de la page et le lancement de la fonction : le bouton Retour d'Android a fini de retirer son entrée d'historique. */
 export const RUN_DELAY_MS = 160
@@ -83,6 +84,7 @@ export function FeatureList({ query, opened, onToggle, onChoose }: { query: stri
 export function ToutFaire() {
   const ref = useRef<HTMLDivElement>(null)
   const [query, setQuery] = useState('')
+  const bigTaps = useBigTaps()
   const [opened, setOpened] = useState<ReadonlySet<string>>(() => new Set([RUBRIQUES[0].id]))
   useInertBehind(true)
   useBackLayer(true, () => toutFaire.set(false))
@@ -117,6 +119,10 @@ export function ToutFaire() {
           onChange={(e) => setQuery(e.target.value)}
         />
       </div>
+      <label className="check-row tf-taps" data-feat="grandes-touches-tout">
+        <input type="checkbox" checked={bigTaps} onChange={(e) => setBigTaps(e.target.checked)} />
+        <span>Grandes touches : des boutons plus hauts.</span>
+      </label>
       <div className="tf-body">
         <FeatureList
           query={query}

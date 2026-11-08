@@ -9,17 +9,12 @@ import { useRefreshGarden } from '../settings/useRefreshGarden'
 import { badgeAria, badgeLabel } from '../../lib/neighbors/news'
 import { activeSteps, chezTitle, currentStep, settledCount, shouldShowRoute, stepStatus, STEP_HINT, STEP_TITLE, type OnboardingStepId } from '../../lib/onboarding'
 import { useGardenPlants } from '../../lib/store'
-import { goRayon, hideOnboardingRoute, openHelp, openParcours, setGuide, setUi, useUi, visibleRayons, RAYON_LABEL, type Rayon } from '../../lib/ui'
+import { hideOnboardingRoute, openHelp, openParcours, setGuide, setUi, useUi } from '../../lib/ui'
+import { FEATURES, visibleFeatures } from '../../lib/features'
+import { HOME_ACTIONS, HOME_HELPERS, type HomeAction } from '../../lib/homeActions'
+import { guideOpen, lostSheet, toutFaire } from '../../lib/overlays'
 import type { Garden } from '../../types'
 import { useOnboarding } from './useOnboarding'
-
-const RAYON_ICON: Record<Rayon, string> = { jardin: 'map', afaire: 'check', planter: 'leaf', voisins: 'users' }
-const RAYON_TEXT: Record<Rayon, string> = {
-  jardin: 'Carte, vue 3D, mes plantes',
-  afaire: 'Tâches et météo',
-  planter: 'Conseils et catalogue',
-  voisins: 'Dons, questions, événements',
-}
 
 /** Prénom lu dans « Chez Marie » (rien si le nom du jardin n'a pas cette forme). */
 const firstName = (gardenName: string) => gardenName.trim().match(/^chez\s+(.+)$/i)?.[1]
@@ -140,45 +135,64 @@ function NextStepCard({ garden, openTasks }: { garden: Garden; openTasks: number
   )
 }
 
-/** Écran « Que voulez-vous faire ? » : 4 grosses cartes, le résumé du jardin et, au début, la carte de route. */
+/** Lance un gros bouton : une fonction du registre, ou une page d'aide. Un seul appui depuis l'accueil. */
+export function runHomeAction(a: HomeAction) {
+  if (a.special === 'tout') toutFaire.set(true)
+  else if (a.special === 'guide') guideOpen.set(true)
+  else if (a.special === 'perdu') lostSheet.set(true)
+  else FEATURES.find((f) => f.id === a.featureId)?.run()
+}
+
+/** Un gros bouton de l'accueil : une icône, un verbe, une phrase. Le nom accessible est le texte écrit. */
+function HomeButton({ a, badge }: { a: HomeAction; badge?: number }) {
+  return (
+    <button className={'home-btn' + (a.primary ? ' primary' : '')} data-home={a.id} onClick={() => runHomeAction(a)}>
+      <span className="home-btn-icon" aria-hidden>
+        <Icon name={a.icon} size={24} />
+      </span>
+      <span className="home-btn-text">
+        <strong>{a.mot}</strong>
+        <span>{a.phrase}</span>
+      </span>
+      {badge ? (
+        <span className="badge count" aria-label={badgeAria(badge)}>
+          {badgeLabel(badge)}
+        </span>
+      ) : null}
+    </button>
+  )
+}
+
+/** Écran « Que voulez-vous faire ? » : le résumé du jardin, la prochaine étape, puis de gros boutons étiquetés, dans un ordre fixe. */
 export function Accueil({ garden, openTasks, newsCount }: { garden: Garden; openTasks: number; newsCount: number }) {
   const { state, neighbors } = useOnboarding()
   const plants = useGardenPlants(garden.id)
   const route = shouldShowRoute(state, neighbors)
   const who = firstName(garden.name)
   const tasksText = openTasks === 0 ? 'rien à faire' : `${openTasks} chose${openTasks > 1 ? 's' : ''} à faire`
+  const shown = new Set(visibleFeatures().map((f) => f.id))
+  const actions = HOME_ACTIONS.filter((a) => !a.featureId || shown.has(a.featureId))
 
   return (
     <div className="page accueil">
       {route && <RouteCard garden={garden} />}
-      <PageHead compact kicker={who ? `Bonjour ${who}` : 'Bonjour'} title="Que voulez-vous faire ?" onHelp={openHelp} />
+      <PageHead compact kicker={who ? `Bonjour ${who}` : 'Bonjour'} title="Que voulez-vous faire ?" onHelp={openHelp} />
       <button className="chez" onClick={() => setUi({ tab: 'carte' })}>
         <span className="chez-title">{chezTitle(garden.name)}</span>
         <span className="chez-sum">
-          <span>
-            {plants.length} plante{plants.length > 1 ? 's' : ''}
-          </span>
-          <span>{tasksText}</span>
+          {plants.length} plante{plants.length > 1 ? 's' : ''}
+          {'\u00a0· '}
+          {tasksText}
         </span>
-        <PlantPot size={150} className="chez-art" />
+        <PlantPot size={64} className="chez-art" />
       </button>
       {!route && <NextStepCard garden={garden} openTasks={openTasks} />}
-      <div className="rayons">
-        {visibleRayons().map((r) => (
-          <button key={r} className="rayon-card" onClick={() => goRayon(r)}>
-            <span className="rayon-icon" aria-hidden>
-              <Icon name={RAYON_ICON[r]} size={28} />
-            </span>
-            <span className="rayon-text">
-              <strong>{RAYON_LABEL[r]}</strong>
-              <span className="muted">{RAYON_TEXT[r]}</span>
-            </span>
-            {r === 'voisins' && newsCount > 0 && (
-              <span className="badge count" aria-label={badgeAria(newsCount)}>
-                {badgeLabel(newsCount)}
-              </span>
-            )}
-          </button>
+      <div className="home-grid" role="group" aria-label="Que voulez-vous faire ?">
+        {actions.map((a) => (
+          <HomeButton key={a.id} a={a} badge={a.id === 'voisins' ? newsCount : undefined} />
+        ))}
+        {HOME_HELPERS.map((a) => (
+          <HomeButton key={a.id} a={a} />
         ))}
       </div>
     </div>

@@ -2506,9 +2506,9 @@ details > summary {
     --btn-h: 48px;
     --nav-h: 80px; /* barre flottante : pilule (≈ 66 px) + marges */
   }
-  /* 15 px de base : le corps de texte passe à ≈ 16 px, les titres et petits textes suivent (tout est en rem). */
+  /* 16 px de base (15 px avant le lot F2 : un cran plus lisible par défaut) ; --px reste 1/15 rem de la maquette. */
   html {
-    font-size: 93.75%;
+    font-size: 100%;
   }
   html[data-text-size='grand'] {
     font-size: 111.3%;
@@ -3324,67 +3324,6 @@ html[data-immersive] body {
 }
 .accueil > .pagehead h1 {
   font-size: calc(31 * var(--px));
-}
-.rayons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-top: 18px;
-}
-@media (max-width: 460px) {
-  html[data-text-size='tres-grand'] .rayons {
-    grid-template-columns: 1fr;
-  }
-}
-.rayon-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 0;
-  min-height: 150px;
-  padding: 16px;
-  border: 0;
-  border-radius: 26px;
-  background: var(--surface);
-  box-shadow: var(--shadow);
-  color: var(--text);
-  text-align: left;
-  cursor: pointer;
-}
-.rayon-card:hover {
-  background: var(--surface-2);
-}
-.rayon-icon {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
-  background: var(--accent-soft);
-  color: var(--title);
-}
-.rayon-text {
-  min-width: 0;
-  margin-top: 5px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: calc(13 * var(--px));
-  line-height: 1.3;
-}
-.rayon-text strong {
-  font-family: var(--font-title);
-  font-weight: var(--fw-text);
-  font-size: calc(21 * var(--px));
-  line-height: normal;
-  color: var(--title);
-}
-.rayon-card .badge {
-  position: absolute;
-  top: 14px;
-  right: 14px;
 }
 .chez {
   position: relative;
@@ -4333,7 +4272,12 @@ html[data-immersive] body {
 .tcard.blocked,
 .tcard.weather-pending,
 .choice:hover,
-.rayon-card:hover,
+.home-btn:hover,
+.home-btn:active,
+.guide-btn:hover,
+.guide-btn:active,
+.tf-item:hover,
+.tf-item:active,
 .later,
 .plant-now,
 .alert,

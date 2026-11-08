@@ -29,6 +29,10 @@ export function createValue<T>(initial: T) {
 export const toutFaire = createValue(false)
 /** Feuille « Je suis perdu » ouverte. */
 export const lostSheet = createValue(false)
+/** Mode guidé « Que voulez-vous faire ? » ouvert (une question par écran). */
+export const guideOpen = createValue(false)
+/** Visite des fonctions ouverte (5 ou 6 écrans, une phrase chacun). */
+export const tourOpen = createValue(false)
 /** Choix d'une plante à ajouter, ouvert depuis le registre. `then` : éléments à montrer une fois la plante choisie (aides au placement). */
 export const addPicker = createValue<{ then?: string[] } | undefined>(undefined)
 export const identifyOpen = createValue(false)

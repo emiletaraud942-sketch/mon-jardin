@@ -13,10 +13,10 @@ export const HELP: Record<Tab, HelpContent> = {
   accueil: {
     title: 'L’accueil',
     steps: [
-      'Choisissez une partie de l’appli : Mon jardin, À faire, Où planter ? ou Voisins. Le bouton Accueil, en bas, ramène ici.',
-      '« Chez » résume votre jardin : plantes et choses à faire.',
-      '« Votre jardin en 5 étapes » vous guide au début. Touchez une étape pour la reprendre.',
-      '« Passer et découvrir l’appli » masque ce guide. Vous pouvez le revoir dans Mon compte.',
+      'Touchez un gros bouton pour ouvrir une partie de l’appli. Chaque bouton dit ce qu’il fait.',
+      '« Chez » résume votre jardin : plantes et choses à faire. « Prochaine étape » propose quoi faire ensuite.',
+      '« Je ne sais pas par où commencer » pose quelques questions simples, une à la fois.',
+      '« Tout ce que je peux faire » liste chaque fonction. Tapez un mot pour la trouver : photo, tailler.',
       'Touchez Accueil, en bas, ou le nom PermaJardin, en haut, pour revenir ici.',
     ],
   },

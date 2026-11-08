@@ -8,7 +8,10 @@ import { HelpSheet } from './components/HelpSheet'
 import { ToutFaire } from './features/aide/ToutFaire'
 import { FeatureHost } from './features/aide/FeatureHost'
 import { LostButton, LostSheet } from './features/aide/Perdu'
-import { lostSheet, toutFaire } from './lib/overlays'
+import { Guide } from './features/aide/Guide'
+import { Visite } from './features/aide/Visite'
+import { tourSeen } from './lib/featureTour'
+import { guideOpen, lostSheet, toutFaire, tourOpen } from './lib/overlays'
 import { SubTabs } from './components/SubTabs'
 import { StorageBanner } from './components/StorageBanner'
 import { ToastHost } from './components/Toast'
@@ -109,6 +112,8 @@ function AppShell() {
   const helpOpen = useHelpOpen()
   const toutOpen = toutFaire.use()
   const lostOpen = lostSheet.use()
+  const guideShown = guideOpen.use()
+  const tourShown = tourOpen.use()
   const mainRef = useRef<HTMLElement>(null)
   const firstPaint = useRef(true)
   const open = tasks.filter((t) => !t.blockedBy && !t.done).length
@@ -169,6 +174,15 @@ function AppShell() {
     mainRef.current?.focus({ preventScroll: true })
     // Seul le changement d'écran compte.
   }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Visite des fonctions : une seule fois, sur l'accueil, une fois le jardin créé (jamais pendant le parcours de départ).
+  useEffect(() => {
+    if (!loaded || !gardenId || parcours || tab !== 'accueil' || tourSeen()) return
+    const t = window.setTimeout(() => {
+      if (!tourSeen()) tourOpen.set(true)
+    }, 700)
+    return () => window.clearTimeout(t)
+  }, [loaded, gardenId, parcours, tab])
 
   const startNewGarden = () => openParcours('adresse')
 
@@ -351,6 +365,8 @@ function AppShell() {
       <FeatureHost />
       {lostOpen && <LostSheet />}
       {toutOpen && <ToutFaire />}
+      {guideShown && <Guide />}
+      {tourShown && <Visite />}
       <LostButton />
     </div>
   )

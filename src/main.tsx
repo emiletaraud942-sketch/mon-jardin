@@ -6,6 +6,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { loadState } from './lib/store'
 import { applyStoredTheme } from './lib/theme'
 import { applyStoredTextSize } from './lib/textSize'
+import { applyStoredBigTaps } from './lib/bigTaps'
 import { showToast } from './lib/toast'
 import { hasConsent } from './lib/consent'
 import { neighborsEnabled } from './lib/neighbors/enabled'
@@ -16,6 +17,7 @@ installDiagnostics()
 
 applyStoredTheme()
 applyStoredTextSize()
+applyStoredBigTaps()
 
 // Entraide entre voisins : le retour d'un lien magique (`/?entraide=1&code=…`) est traité AVANT la synchro privée,
 // qui lit aussi `?code=` : initNeighbors() échange le code puis remplace l'URL par `#entraide`.

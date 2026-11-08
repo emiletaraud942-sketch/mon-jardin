@@ -293,6 +293,8 @@ export const LOCAL_STORAGE_KEYS: readonly StorageKeyInfo[] = [
   { cle: 'pj.reopen', contenu: 'Réglage « Rouvrir l’appli où j’étais » (désactivé par défaut : l’appli rouvre sur l’accueil)' },
   { cle: 'pj.mode', contenu: 'Ancien mode d’affichage (lu une fois pour retrouver le rayon)' },
   { cle: 'pj.guide', contenu: 'Aides et repères mémorisés : étapes d’accueil, cartes repliées, identifiants des jardins dont la 3D et l’Entretien ont été ouverts' },
+  { cle: 'pj.bigTaps', contenu: 'Réglage « Grandes touches » : boutons de 56 px de haut' },
+  { cle: 'pj.tourSeen', contenu: 'Visite des fonctions déjà montrée au premier lancement (elle se rejoue depuis l’aide)' },
   { cle: 'pj.lidar', contenu: 'Réglage du relevé LiDAR HD' },
   { cle: 'pj.quality3d', contenu: 'Qualité de la vue 3D' },
   { cle: 'pj.walkHop', contenu: 'Promenade 3D : « Mouvement réduit » (bonds) activé ou non' },

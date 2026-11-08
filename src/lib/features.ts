@@ -1,7 +1,7 @@
 import { neighborsEnabled } from './neighbors/enabled'
 import { speechSupported } from './speech'
 import { getState } from './store'
-import { addPicker, identifyOpen, plantChoice, postIntent, shoppingOpen, type PlantAsk } from './overlays'
+import { addPicker, guideOpen, identifyOpen, plantChoice, postIntent, shoppingOpen, tourOpen, type PlantAsk } from './overlays'
 import { reveal } from './reveal'
 import { redoWithToast, undoWithToast } from './history'
 import { showToast } from './toast'
@@ -180,6 +180,11 @@ export const FEATURES: Feature[] = [
   F('ou-planter', 'Où planter ?', 'afaire', 'Touchez un endroit : l’appli classe les plantes qui s’y plairont.', ['où planter', 'conseil', 'emplacement', 'soleil', 'pente', 'recommander'], 'ou-planter', go('planter', { path: ['ou-planter'] })),
   F('semer-mois', 'Que semer ce mois-ci', 'afaire', 'Les semis, plantations et récoltes possibles ce mois-ci chez vous.', ['semer', 'planter', 'mois', 'semis', 'quand', 'récolter'], 'semer-ce-mois', go('planter', { path: ['semer-ce-mois'] })),
   F('aide-ecran', 'Aide de cet écran', 'afaire', 'Explique l’écran où vous êtes, en quelques phrases.', ['aide', 'comment faire', 'explication', 'besoin d’aide', 'problème'], 'help', () => openHelp()),
+  F('guide', 'Je ne sais pas par où commencer', 'afaire', 'Quelques questions simples, une à la fois : l’appli vous amène au bon endroit.', ['guide', 'commencer', 'par où', 'aide', 'débuter', 'perdu', 'questions'], 'guide', () => guideOpen.set(true)),
+  F('lire-ecran', 'Lire cet écran à voix haute', 'afaire', 'Le téléphone lit l’aide de l’écran où vous êtes. Un bouton arrête la lecture.', ['lire', 'voix', 'écouter', 'audio', 'haut-parleur', 'aide', 'écran'], 'lire-ecran', () => {
+    openHelp()
+    void reveal(['lire-ecran'])
+  }, () => speechSupported()),
 
   // Voisins
   F('voisins', 'Entraide entre voisins', 'voisins', 'Dons, échanges, questions et rendez-vous près de chez vous.', ['voisins', 'entraide', 'dons', 'échanges', 'événements', 'boutures'], 'voisins', go('voisins', { path: ['voisins'] }), () => neighborsEnabled),
@@ -190,7 +195,9 @@ export const FEATURES: Feature[] = [
   F('taille-texte', 'Agrandir le texte', 'compte', 'Texte normal, grand ou très grand, pour lire sans effort.', ['texte', 'agrandir', 'taille', 'police', 'lire', 'vue'], 'taille-texte', go('reglages', { path: ['taille-texte'] })),
   F('theme', 'Clair ou sombre', 'compte', 'Choisissez l’apparence : clair, sombre ou comme le téléphone.', ['thème', 'sombre', 'clair', 'couleurs', 'nuit'], 'theme', go('reglages', { path: ['theme'] })),
   F('rouvrir', 'Rouvrir l’appli où j’étais', 'compte', 'Au lancement, l’appli peut revenir sur le dernier écran utilisé.', ['rouvrir', 'démarrage', 'lancement', 'accueil', 'dernier écran'], 'rouvrir', go('reglages', { path: ['rouvrir'] })),
-  F('visite', 'Revoir la visite', 'compte', 'Reprend le guide en 5 étapes depuis le début.', ['visite', 'guide', 'tutoriel', 'étapes', 'bienvenue'], 'parcours', () => restartOnboarding()),
+  F('visite', 'Refaire les 5 étapes de départ', 'compte', 'Reprend « Votre jardin en 5 étapes » depuis le début : adresse, terrain, plantes.', ['étapes', 'départ', 'bienvenue', 'adresse', 'recommencer', 'guide'], 'parcours', () => restartOnboarding()),
+  F('visite-fonctions', 'Revoir la visite des fonctions', 'compte', 'Six écrans rapides pour retrouver les boutons importants : Tout, Aide, Je suis perdu.', ['visite', 'tutoriel', 'présentation', 'boutons', 'découvrir', 'revoir'], 'visite-fonctions', () => tourOpen.set(true)),
+  F('grandes-touches', 'Grandes touches', 'compte', 'Des boutons plus hauts, plus faciles à toucher avec un gros doigt.', ['touches', 'boutons', 'gros', 'taille', 'toucher', 'doigt', 'agrandir', 'trembler'], 'grandes-touches', go('reglages', { path: ['grandes-touches'] })),
   F('sauvegarde', 'Sauvegarder mes données', 'compte', 'Un fichier à garder : vos jardins et vos plantes, sans les photos.', ['sauvegarde', 'exporter', 'fichier', 'copie', 'données', 'json'], 'sauvegarde', go('reglages', { path: ['sauvegarde'] })),
   F('sauvegarde-photos', 'Sauvegarde avec photos', 'compte', 'Un seul fichier avec vos données et toutes vos photos.', ['sauvegarde', 'photos', 'permajardin', 'tout sauvegarder'], 'sauvegarde-complete', go('reglages', { path: ['sauvegarde-complete'] })),
   F('reprise', 'Reprendre une sauvegarde', 'compte', 'Retrouvez vos données depuis un fichier de sauvegarde.', ['restaurer', 'reprendre', 'importer', 'récupérer', 'nouveau téléphone'], 'reprise', go('reglages', { path: ['reprise'] })),

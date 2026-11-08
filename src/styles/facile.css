@@ -393,6 +393,11 @@ html[data-immersive] .lost-fab {
   justify-content: flex-start;
   gap: 12px;
   font-size: calc(17 * var(--px));
+  text-align: left;
+}
+.lost-big svg,
+.help-all svg {
+  flex: none;
 }
 .help-all {
   min-height: 60px;
@@ -527,11 +532,13 @@ dialog.modal.full .modal-head .modal-home {
   bottom: calc(var(--nav-h) + 296px + env(safe-area-inset-bottom));
 }
 
-/* Un panneau long est ouvert (réglages 3D, options de la carte) : « Je suis perdu » s'efface le temps qu'il est ouvert. */
-.app:has(#g3d-time-panel) .lost-fab,
-.app:has(#map-options) .lost-fab,
-.app:has(#map-legend) .lost-fab {
-  display: none;
+/* Ordinateur : un panneau long est ouvert (réglages 3D, options de la carte) : « Je suis perdu » s'efface le temps qu'il est ouvert. */
+@media (min-width: 761px) {
+  .app:has(#g3d-time-panel) .lost-fab,
+  .app:has(#map-options) .lost-fab,
+  .app:has(#map-legend) .lost-fab {
+    display: none;
+  }
 }
 
 /* 3D : curseurs avec « − » et « + » (le doigt n'a pas à glisser). */
@@ -559,4 +566,338 @@ dialog.modal.full .modal-head .modal-home {
 }
 .g3d-hourfield .g3d-field-label {
   min-width: 0;
+}
+
+/* ---------- Lot F2 : accueil à gros boutons, mode guidé, visite, grandes touches ---------- */
+
+/* ----- Accueil : le résumé du jardin tient sur deux lignes ----- */
+.accueil .chez {
+  min-height: 0;
+  margin-top: 8px;
+  padding: 8px 84px 8px 16px;
+  border-radius: 22px;
+}
+.accueil .chez .chez-art {
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 64px;
+  height: auto;
+}
+.accueil .chez-title {
+  font-size: calc(20 * var(--px));
+}
+.accueil .chez-sum {
+  display: block;
+  font-size: calc(14 * var(--px));
+}
+.accueil .nextstep {
+  margin-top: 8px;
+  padding: 8px 8px 8px 14px;
+  gap: 10px;
+}
+.accueil .nextstep-text .pagehead-kicker {
+  font-size: calc(12 * var(--px));
+}
+@media (max-width: 560px) {
+  /* « Prochaine étape » reste dit aux lecteurs d'écran (aria-label de la section) ; à l'écran, un titre et un bouton. */
+  .accueil .nextstep-text .pagehead-kicker {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .accueil .nextstep-btn {
+    padding: 6px 14px;
+  }
+}
+.accueil .nextstep-text h2 {
+  font-size: calc(16 * var(--px));
+}
+
+/* ----- Accueil : gros boutons étiquetés, ordre fixe, une colonne (deux si la place le permet) ----- */
+.home-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  margin-top: 8px;
+}
+@media (min-width: 560px) {
+  .home-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+}
+.home-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 58px;
+  padding: 6px 14px 6px 10px;
+  border: var(--border-w) solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.home-btn:hover,
+.home-btn:active {
+  background: var(--surface-2);
+}
+.home-btn:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.home-btn-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  color: var(--title);
+}
+.home-btn-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.home-btn-text strong {
+  font-size: calc(17 * var(--px));
+  font-weight: var(--fw-strong);
+  line-height: 1.2;
+  color: var(--title);
+}
+.home-btn-text span {
+  font-size: calc(13 * var(--px));
+  line-height: 1.3;
+  color: var(--muted);
+}
+.home-btn.primary {
+  border-color: var(--btn-green);
+  background: var(--btn-green);
+  color: var(--on-btn-green);
+}
+.home-btn.primary .home-btn-icon {
+  background: rgb(255 255 255 / 18%);
+  color: var(--on-btn-green);
+}
+.home-btn.primary .home-btn-text strong,
+.home-btn.primary .home-btn-text span {
+  color: var(--on-btn-green);
+}
+.home-btn .badge {
+  flex: none;
+}
+/* « Je suis perdu » : sur l'accueil il est dans la grille, jamais par-dessus le contenu. */
+.app[data-tab='accueil'] .lost-fab {
+  display: none;
+}
+
+/* ----- Mode guidé : une question par écran ----- */
+.guide-step {
+  order: 4;
+  flex: 1 1 100%;
+  margin: -4px 0 0;
+  color: var(--muted);
+  font-size: calc(14 * var(--px));
+}
+.guide-btn svg {
+  flex: none;
+}
+.guide-body {
+  gap: 12px;
+}
+.guide-btn {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 72px;
+  padding: 12px 16px;
+  border: var(--border-w) solid var(--border-strong);
+  border-radius: 22px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.guide-btn:hover,
+.guide-btn:active {
+  background: var(--accent-soft);
+}
+.guide-btn:focus-visible,
+.guide-all:focus-visible,
+.tour-btn:focus-visible,
+.tour-skip:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.guide-btn-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.guide-btn-text strong {
+  font-size: calc(20 * var(--px));
+  font-weight: var(--fw-strong);
+  line-height: 1.2;
+  color: var(--title);
+}
+.guide-btn-text span {
+  font-size: calc(14 * var(--px));
+  line-height: 1.3;
+  color: var(--muted);
+}
+.guide-all {
+  flex: none;
+  min-height: 56px;
+  margin-top: 4px;
+  justify-content: flex-start;
+  text-align: left;
+}
+.guide-all svg {
+  flex: none;
+}
+
+/* ----- Visite des fonctions ----- */
+.tour {
+  align-items: center;
+  justify-content: center;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+}
+.tour-card {
+  width: min(100%, 460px);
+  max-height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 20px;
+  border: var(--border-w) solid var(--border);
+  border-radius: 28px;
+  background: var(--surface);
+  box-shadow: var(--shadow-float);
+  text-align: center;
+  outline: none;
+}
+.tour-count {
+  margin: 0;
+  color: var(--muted);
+  font-size: calc(14 * var(--px));
+}
+.tour-dots {
+  display: flex;
+  gap: 8px;
+}
+.tour-dots i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--track);
+}
+.tour-dots i.on {
+  background: var(--btn-green);
+}
+.tour-card h1 {
+  margin: 0;
+  font-size: calc(26 * var(--px));
+  line-height: 1.15;
+}
+.tour-demo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 8px 22px;
+  border: 2px solid var(--accent);
+  border-radius: var(--radius-btn);
+  background: var(--surface);
+  color: var(--title);
+  font-size: calc(18 * var(--px));
+  font-weight: var(--fw-strong);
+}
+.tour-text {
+  margin: 0;
+  font-size: calc(18 * var(--px));
+  line-height: 1.4;
+}
+.tour-nav {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+.tour-btn {
+  flex: 1 1 0;
+  min-height: 56px;
+}
+.tour-skip {
+  min-height: var(--tap);
+}
+
+/* ----- « Tout ce que je peux faire » : réglage « Grandes touches » sous la recherche ----- */
+.tf-taps {
+  flex: none;
+  margin: 0 16px 6px;
+  padding: 8px 14px;
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius-btn-lg);
+  background: var(--surface);
+}
+
+/* ----- Réglage « Grandes touches » : cibles de 56 px (boutons, onglets, cases, lignes de listes) ----- */
+html[data-big-taps] {
+  --tap: 56px;
+  --btn-h: 56px;
+}
+html[data-big-taps] .app :is(button, summary, [role='tab'], a.btn, .check-row, .navbtn, select):not(.maplibregl-map *, .sr-only, .skip-link) {
+  min-height: 56px;
+}
+html[data-big-taps] .app .btn.small,
+html[data-big-taps] .app .btn.ghost {
+  min-height: 56px;
+}
+html[data-big-taps] dialog.modal :is(button, summary, [role='tab'], a.btn, .check-row) {
+  min-height: 56px;
+}
+html[data-big-taps] .home-btn {
+  min-height: 68px;
+}
+
+/* ----- « Je suis perdu » sur téléphone : une rangée à part, entre le contenu et la barre du bas ----- */
+/* Plus de pastille flottante : elle recouvrait des titres, des boutons « Fait » et « Ajouter une plante ». Le contenu s'arrête au-dessus d'elle. */
+@media (max-width: 760px) {
+  .app {
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  }
+  .app > .sidenav {
+    grid-row: 5;
+  }
+  .app .lost-fab,
+  .app[data-tab] .lost-fab {
+    position: static;
+    grid-row: 4;
+    grid-column: 1;
+    justify-self: start;
+    margin: 6px 16px 0;
+    z-index: auto;
+    box-shadow: none;
+  }
 }

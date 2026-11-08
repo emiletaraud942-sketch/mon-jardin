@@ -8,6 +8,8 @@ import { Icon } from '../../components/Icon'
 import { SafetyCopyButton } from '../../components/StorageBanner'
 import { DiagnosticButton } from '../../components/DiagnosticButton'
 import { TextSizeButton } from '../../components/TextSizeButton'
+import { setBigTaps, useBigTaps } from '../../lib/bigTaps'
+import { tourOpen } from '../../lib/overlays'
 import { climateSummary } from '../../engine/climate'
 import { Segmented } from '../../components/Segmented'
 import { SavedNote, useFlash } from '../../components/useFlash'
@@ -704,6 +706,7 @@ function ReadingCard() {
   const [theme, setThemeState] = useState<Theme>(getTheme())
   const size = useTextSize()
   const [reopen, setReopen] = useState(reopenWhereIWas())
+  const bigTaps = useBigTaps()
   const [saved, flash] = useFlash()
   return (
     <div className="card">
@@ -723,6 +726,10 @@ function ReadingCard() {
             }}
           />
         </div>
+        <label className="check-row" data-feat="grandes-touches">
+          <input type="checkbox" checked={bigTaps} onChange={(e) => (setBigTaps(e.target.checked), flash())} />
+          <span>Grandes touches : des boutons plus hauts, plus faciles à toucher.</span>
+        </label>
         <label className="check-row" data-feat="rouvrir">
           <input type="checkbox" checked={reopen} onChange={(e) => (setReopenWhereIWas(e.target.checked), setReopen(e.target.checked), flash())} />
           <span>Rouvrir l’appli là où j’étais. Sinon elle s’ouvre sur l’accueil.</span>
@@ -832,10 +839,13 @@ function AdviceCard({ garden }: { garden: Garden }) {
 function TourCard() {
   return (
     <Fold title="La visite et le partage">
-      <p className="small muted">Le guide en 5 étapes : adresse, terrain, plantes, entretien, voisins.</p>
+      <p className="small muted">Les 5 étapes de départ : adresse, terrain, plantes, entretien, voisins. La visite des fonctions montre les boutons importants.</p>
       <div className="stack">
+        <button className="btn" data-feat="visite-fonctions" onClick={() => tourOpen.set(true)}>
+          Revoir la visite des fonctions
+        </button>
         <button className="btn" onClick={restartOnboarding}>
-          Revoir la visite
+          Refaire les 5 étapes de départ
         </button>
         <div data-feat="inviter">
           <InviteButton className="btn" label="Faire connaître l’appli" copyLabel="Copier le lien de l’appli" />

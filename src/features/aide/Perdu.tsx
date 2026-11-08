@@ -1,9 +1,12 @@
+import { useState } from 'react'
 import { Icon } from '../../components/Icon'
 import { Modal } from '../../components/Modal'
 import { goHome } from '../../lib/goHome'
 import { undoWithToast, useHistory } from '../../lib/history'
-import { lostSheet, toutFaire } from '../../lib/overlays'
-import { openHelp } from '../../lib/ui'
+import { ReadScreenButton } from '../../components/ReadScreenButton'
+import { helpExtraNow, HELP_EXTRA, helpFor } from '../../lib/help'
+import { guideOpen, lostSheet, toutFaire } from '../../lib/overlays'
+import { getUi, openHelp } from '../../lib/ui'
 import { RUN_DELAY_MS } from './ToutFaire'
 
 /** Petit bouton fixe, toujours visible : « Je suis perdu ». */
@@ -19,6 +22,11 @@ export function LostButton() {
 /** Feuille d'aide : trois gros boutons, puis « Tout ce que je peux faire ». */
 export function LostSheet() {
   const history = useHistory()
+  // L'écran dessous la feuille : le même texte que l'aide de cet écran.
+  const [help] = useState(() => {
+    const extra = helpExtraNow()
+    return extra ? HELP_EXTRA[extra] : helpFor(getUi().tab)
+  })
   /** Ferme la feuille, puis agit (le Retour d'Android a fini de retirer l'entrée d'historique de la feuille). */
   const then = (action: () => void) => {
     lostSheet.set(false)
@@ -48,6 +56,10 @@ export function LostSheet() {
         )}
         <button className="btn lost-big" onClick={() => then(openHelp)}>
           <Icon name="help" /> Ce que je peux faire ici
+        </button>
+        <ReadScreenButton help={help} />
+        <button className="btn lost-big" onClick={() => then(() => guideOpen.set(true))}>
+          <Icon name="forward" /> Je ne sais pas par où commencer
         </button>
         <button className="btn lost-big" onClick={() => then(() => toutFaire.set(true))}>
           <Icon name="list" /> Tout ce que je peux faire
