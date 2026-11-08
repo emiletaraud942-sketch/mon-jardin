@@ -16,7 +16,7 @@ import { useOnboarding } from './useOnboarding'
 const RAYON_ICON: Record<Rayon, string> = { jardin: 'map', afaire: 'check', planter: 'leaf', voisins: 'users' }
 const RAYON_TEXT: Record<Rayon, string> = {
   jardin: 'Carte, vue 3D, mes plantes',
-  afaire: 'Entretien et météo',
+  afaire: 'Tâches et météo',
   planter: 'Conseils et catalogue',
   voisins: 'Dons, questions, événements',
 }

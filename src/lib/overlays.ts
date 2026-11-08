@@ -61,7 +61,8 @@ export function useIntent(name: string, handler: () => void) {
       const i = pending.findIndex((p) => p.name === name && Date.now() - p.at < INTENT_MS)
       if (i < 0) return
       pending.splice(i, 1)
-      ref.current()
+      // Un tour plus tard : les effets de l'écran qui s'ouvre (remise à zéro, double montage de React en développement) sont passés.
+      window.setTimeout(() => ref.current(), 0)
     }
     check()
     intentListeners.add(check)

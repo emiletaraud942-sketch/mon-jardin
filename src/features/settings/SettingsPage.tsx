@@ -761,11 +761,11 @@ function GardensCard({ garden, adding, setAdding, addRef }: { garden: Garden; ad
           </li>
         ))}
       </ul>
-      <div style={{ marginTop: 10 }}>
+      <div style={{ marginTop: 10 }} data-feat="nouveau-jardin">
         {adding ? (
           <GardenCreator onDone={() => setAdding(false)} />
         ) : (
-          <button className="btn" data-feat="nouveau-jardin" onClick={() => setAdding(true)}>
+          <button className="btn" onClick={() => setAdding(true)}>
             <Icon name="plus" /> Nouveau jardin
           </button>
         )}

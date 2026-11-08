@@ -110,7 +110,7 @@ export function OfflineZoneCard({ garden }: { garden: Garden }) {
           {phase !== 'en-cours' ? message : ''}
         </p>
         <p className="small muted" style={{ margin: 0 }}>
-          L’IGN limite le débit de ses services : l’appli demande 4 morceaux de carte à la fois, 150 au plus par zone.
+          L’IGN limite le débit de ses services. L’appli demande 4 morceaux de carte à la fois, 150 au plus par zone.
         </p>
       </div>
     </Fold>

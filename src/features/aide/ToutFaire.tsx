@@ -111,7 +111,7 @@ export function ToutFaire() {
           inputMode="search"
           enterKeyHint="search"
           autoComplete="off"
-          placeholder="Chercher une fonction : photo, tailler…"
+          placeholder="Chercher : photo, tailler…"
           aria-label="Chercher une fonction"
           value={query}
           onChange={(e) => setQuery(e.target.value)}

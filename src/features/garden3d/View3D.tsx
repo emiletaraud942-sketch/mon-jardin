@@ -77,7 +77,7 @@ export default function View3D({ garden }: { garden: Garden }) {
         <PlacingBanner />
       </div>
       <SidePanel {...head} tall={!!selectedPlantId}>
-        <GardenSide garden={garden} hint="Tournez la vue à deux doigts. Glissez une plante pour la déplacer." />
+        <GardenSide garden={garden} hint="Tournez la vue à deux doigts. Pour déplacer une plante, glissez-la, ou ouvrez sa fiche et touchez « Déplacer cette plante »." />
       </SidePanel>
     </div>
   )

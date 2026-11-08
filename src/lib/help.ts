@@ -38,7 +38,7 @@ export const HELP: Record<Tab, HelpContent> = {
       'Choisissez « Vue de dessus », « Vue en perspective » ou « Se promener ».',
       'Le curseur montre vos arbres dans quelques années, avec leur ombre.',
       '« Se promener » vous place dans le jardin, à hauteur d’yeux.',
-      'Glissez une plante pour la déplacer.',
+      'Pour déplacer une plante, glissez-la. Ou ouvrez sa fiche et touchez « Déplacer cette plante ».',
     ],
   },
   plantes: {

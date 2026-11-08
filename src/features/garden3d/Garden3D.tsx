@@ -154,6 +154,15 @@ function GearIcon() {
   )
 }
 
+/** Bouton « − » ou « + » à côté d'un curseur : le doigt n'a pas à glisser. */
+function StepBtn({ label, sign, onClick }: { label: string; sign: string; onClick: () => void }) {
+  return (
+    <button type="button" className="g3d-btn g3d-btn--icon g3d-step" aria-label={label} title={label} onClick={onClick}>
+      <span aria-hidden="true">{sign}</span>
+    </button>
+  )
+}
+
 function HomeIcon() {
   return (
     <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
@@ -310,21 +319,6 @@ export function Garden3D({
   // Aide de la Promenade : s'ouvre à la première visite et reste affichée jusqu'à « Compris » (ou « ? »). Ensuite, seul « Aide » la rouvre.
   const [hourOpen, setHourOpen] = useState(false)
   const [panelOpen, setPanelOpen] = useState(false)
-  // « Tout ce que je peux faire » : entre dans la promenade, ouvre « Aller à », le panneau de l'heure ou les réglages 3D.
-  useIntent('3d:promenade', () => setMode('promenade'))
-  useIntent('3d:aller-a', () => {
-    setMode('promenade')
-    setGotoOpen(true)
-  })
-  useIntent('3d:heure', () => {
-    setMode((m) => (m === 'promenade' ? 'perspective' : m))
-    setPanelOpen(true)
-  })
-  useIntent('3d:reglages', () => {
-    setMode((m) => (m === 'promenade' ? 'perspective' : m))
-    setPanelOpen(true)
-    setCollapsed(false)
-  })
   useEffect(() => {
     if (!walking) {
       setWalkHelpOpen(false)
@@ -342,6 +336,22 @@ export function Garden3D({
     setWalkHelpOpen(false)
     writePref(HELP_SEEN_KEY, '1')
   }, [])
+  // (après l'effet de la promenade, qui remet « Aller à » à zéro à l'ouverture)
+  // « Tout ce que je peux faire » : entre dans la promenade, ouvre « Aller à », le panneau de l'heure ou les réglages 3D.
+  useIntent('3d:promenade', () => setMode('promenade'))
+  useIntent('3d:aller-a', () => {
+    setMode('promenade')
+    setGotoOpen(true)
+  })
+  useIntent('3d:heure', () => {
+    setMode((m) => (m === 'promenade' ? 'perspective' : m))
+    setPanelOpen(true)
+  })
+  useIntent('3d:reglages', () => {
+    setMode((m) => (m === 'promenade' ? 'perspective' : m))
+    setPanelOpen(true)
+    setCollapsed(false)
+  })
   // Promenade immersive : l'application cache ses bandeaux (voir app.css) et la page ne défile ni ne zoome pendant les gestes.
   useEffect(() => {
     if (!walking) return
@@ -459,11 +469,13 @@ export function Garden3D({
   /** Heure : curseur, lecture de la journée et (hors Promenade) bouton Réglages, sur une seule ligne. */
   const hourRow = (withSettings: boolean) => (
     <div className="g3d-hourrow" data-feat="heure">
-      <label className="g3d-hourfield">
+      <div className="g3d-hourfield">
         <span className="g3d-field-label">
           Heure <b>{formatHour(hour)}</b>
         </span>
+        <StepBtn label="Une heure plus tôt" sign="−" onClick={() => (setPlaying(false), setHour((h) => Math.max(HOUR_MIN, h - 1)))} />
         <input
+          aria-label="Heure de la journée"
           type="range"
           min={HOUR_MIN}
           max={HOUR_MAX}
@@ -475,7 +487,8 @@ export function Garden3D({
             setHour(Number(e.target.value))
           }}
         />
-      </label>
+        <StepBtn label="Une heure plus tard" sign="+" onClick={() => (setPlaying(false), setHour((h) => Math.min(HOUR_MAX, h + 1)))} />
+      </div>
       <button
         type="button"
         className="g3d-btn g3d-btn--label"
@@ -772,7 +785,11 @@ export function Garden3D({
                       <span className="g3d-field-label">
                         Jour <b>{dateLabel}</b>
                       </span>
-                      <input type="range" min={1} max={daysInYear} step={1} value={doy} aria-valuetext={dateLabel} onChange={(e) => setDoy(Number(e.target.value))} />
+                      <span className="g3d-stepper">
+                        <StepBtn label="Un mois plus tôt" sign="−" onClick={() => setDoy((d) => Math.max(1, d - 30))} />
+                        <input type="range" min={1} max={daysInYear} step={1} value={doy} aria-valuetext={dateLabel} onChange={(e) => setDoy(Number(e.target.value))} />
+                        <StepBtn label="Un mois plus tard" sign="+" onClick={() => setDoy((d) => Math.min(daysInYear, d + 30))} />
+                      </span>
                       <span className="g3d-help">Glissez pour changer de saison.</span>
                     </label>
                     {treeCount > 0 && (
@@ -798,16 +815,20 @@ export function Garden3D({
                       <span className="g3d-field-label">
                         <b>{yearsLabel(yearsAhead)}</b>
                       </span>
-                      <input
-                        type="range"
-                        min={0}
-                        max={20}
-                        step={1}
-                        value={yearsAhead}
-                        aria-label="Dans combien d’années"
-                        aria-valuetext={yearsLabel(yearsAhead)}
-                        onChange={(e) => setYearsAhead(Number(e.target.value))}
-                      />
+                      <span className="g3d-stepper">
+                        <StepBtn label="Une année de moins" sign="−" onClick={() => setYearsAhead((y) => Math.max(0, y - 1))} />
+                        <input
+                          type="range"
+                          min={0}
+                          max={20}
+                          step={1}
+                          value={yearsAhead}
+                          aria-label="Dans combien d’années"
+                          aria-valuetext={yearsLabel(yearsAhead)}
+                          onChange={(e) => setYearsAhead(Number(e.target.value))}
+                        />
+                        <StepBtn label="Une année de plus" sign="+" onClick={() => setYearsAhead((y) => Math.min(20, y + 1))} />
+                      </span>
                       <span className="g3d-help">Glissez pour voir vos plantes grandir.</span>
                     </label>
                   </>

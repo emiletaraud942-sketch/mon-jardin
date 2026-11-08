@@ -952,7 +952,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
               </div>
               {loupeOn && !aim && (
                 <p className="small map-aid-hint" role="note">
-                  Loupe active : posez le doigt sur la carte, la zone s’agrandit. Levez le doigt pour valider. Touchez « Loupe » pour déplacer la carte.
+                  Loupe active : posez le doigt sur la carte, puis levez-le pour valider. Touchez « Loupe » pour la couper.
                 </p>
               )}
               {aidsOpen && (
