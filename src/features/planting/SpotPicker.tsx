@@ -12,6 +12,7 @@ import { toLocal, toLonLat } from '../../lib/geo'
 import type { Garden, Plant, XY } from '../../types'
 import { cssVar } from '../map/colors'
 import { PHOTO_MAP_MAXZOOM, orthoPaint, review } from '../map/photoZoom'
+import { MAP_LOCALE_FR } from '../map/mapLocale'
 
 function contextData(garden: Garden, plants: Plant[]): GeoJSON.FeatureCollection {
   const features: GeoJSON.Feature[] = []
@@ -62,11 +63,7 @@ function SpotPickerInner({ garden, plants, spot, onPick }: { garden: Garden; pla
       attributionControl: false,
       // Sur mobile, un doigt fait défiler la page ; deux doigts déplacent la carte.
       cooperativeGestures: true,
-      locale: {
-        'CooperativeGesturesHandler.WindowsHelpText': 'Ctrl + molette pour zoomer la carte',
-        'CooperativeGesturesHandler.MacHelpText': '⌘ + molette pour zoomer la carte',
-        'CooperativeGesturesHandler.MobileHelpText': 'Utilisez deux doigts pour déplacer la carte',
-      },
+      locale: MAP_LOCALE_FR,
       style: {
         version: 8,
         sources: { ortho: { type: 'raster', tiles: [ORTHO_TILES], tileSize: TILE_SIZE, maxzoom: ORTHO_MAXZOOM, attribution: IGN_ATTRIBUTION } },

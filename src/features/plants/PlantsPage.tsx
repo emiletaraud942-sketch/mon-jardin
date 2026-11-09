@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { SPECIES_BY_ID } from '../../data/species'
 import { CATEGORY_LABEL, STATUS_LABEL, formatDate } from '../../data/labels'
 import { Icon } from '../../components/Icon'
@@ -32,6 +32,28 @@ export function PlantsPage({ garden }: { garden: Garden }) {
   useEffect(() => {
     if (selected) sheetRef.current?.scrollIntoView({ block: 'start' })
   }, [selected?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Téléphone : la fiche plein écran s'ouvre en haut (l'écran garde sinon le défilement de la liste), et la liste retrouve sa place au retour.
+  const ficheOpen = !!selected && mobile
+  const listScroll = useRef(0)
+  useEffect(() => {
+    if (ficheOpen) return
+    const main = document.getElementById('main-panel')
+    if (!main) return
+    const onScroll = () => {
+      listScroll.current = main.scrollTop
+    }
+    main.addEventListener('scroll', onScroll, { passive: true })
+    return () => main.removeEventListener('scroll', onScroll)
+  }, [ficheOpen])
+  const wasOpen = useRef(false)
+  useLayoutEffect(() => {
+    const was = wasOpen.current
+    wasOpen.current = ficheOpen
+    if (ficheOpen === was) return
+    const main = document.getElementById('main-panel')
+    if (main) main.scrollTop = ficheOpen ? 0 : listScroll.current
+  }, [ficheOpen])
 
   const groups = useMemo(() => {
     const n = normalize(q)

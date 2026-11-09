@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css' // chargé avec la carte seulement (pas au démarrage de l'appli)
+import { MAP_LOCALE_FR } from './mapLocale'
+import { hiddenLabelIds, type LabelBox } from './labelLayout'
 import '../../lib/mapWorker'
 import { HistoryButtons } from '../../components/HistoryButtons'
 import { webgl2Supported } from '../../lib/webgl'
@@ -101,6 +103,7 @@ const isTouch = () => window.matchMedia('(pointer: coarse)').matches
 
 /** « Afficher les noms » : choix mémorisé ; sans choix, les noms s'affichent tant que le jardin reste lisible. */
 const NAMES_KEY = 'pj.mapNames'
+const LABEL_OFFSET_PX = 12 // le nom commence 12 px sous le centre du point (voir .marker-label)
 const MANY_PLANTS = 15
 function readNames(plantCount: number): boolean {
   try {
@@ -446,6 +449,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
       zoom: 19,
       maxZoom: PHOTO_MAP_MAXZOOM, // la photo n'a pas de détail au-delà : zoom utile + 1 niveau
       attributionControl: false,
+      locale: MAP_LOCALE_FR,
       style: {
         version: 8,
         sources: {
@@ -529,6 +533,16 @@ function MapViewInner({ garden }: { garden: Garden }) {
       if (!aimNow()) aidRef.current?.clear()
     })
     m.on('move', () => aidRef.current?.refreshAim())
+    let labelFrame = 0
+    const scheduleLabels = () => {
+      if (labelFrame) return
+      labelFrame = requestAnimationFrame(() => {
+        labelFrame = 0
+        layoutLabelsRef.current()
+      })
+    }
+    m.on('move', scheduleLabels)
+    m.on('resize', scheduleLabels)
     // Mention discrète quand la photo ne peut plus gagner en précision (variantes de revue).
     let beyond = false
     m.on('zoom', () => {
@@ -605,6 +619,27 @@ function MapViewInner({ garden }: { garden: Garden }) {
     if (!m || !ready) return
     ;(m.getSource('canopy') as GeoJSONSource).setData({ type: 'FeatureCollection', features: canopyFeatures(garden, plants, adult, season) })
   }, [garden, plants, adult, season, ready])
+
+  // Noms sous les points : ceux qui en recouvrent un autre sont masqués (la plante choisie garde le sien). Recalculé à chaque mouvement de la carte.
+  const layoutLabels = () => {
+    const m = map.current
+    if (!m) return
+    const boxes: LabelBox[] = []
+    const tags = new Map<string, HTMLElement>()
+    for (const [id, mk] of markers.current) {
+      const hit = mk.getElement()
+      const tag = hit.lastElementChild as HTMLElement
+      tags.set(id, tag)
+      if (tag.hidden) continue
+      const p = m.project(mk.getLngLat())
+      const w = tag.offsetWidth
+      boxes.push({ id, left: p.x - w / 2, top: p.y + LABEL_OFFSET_PX, width: w, height: tag.offsetHeight, keep: hit.classList.contains('selected') })
+    }
+    const crowded = hiddenLabelIds(boxes)
+    for (const [id, tag] of tags) tag.classList.toggle('crowded', crowded.has(id))
+  }
+  const layoutLabelsRef = useRef(layoutLabels)
+  layoutLabelsRef.current = layoutLabels
 
   // Marqueurs déplaçables (un par plante). Zone tactile de 40 px autour d'un point de 14 px.
   useEffect(() => {
@@ -696,6 +731,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
         markers.current.delete(id)
       }
     }
+    layoutLabelsRef.current()
   }, [plants, selectedPlantId, garden.center, ready, names])
 
   // « 📍 plante » d'une tâche, « Voir sur la carte » : la carte se centre sur la plante.
@@ -915,7 +951,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
 
   return (
     <div className="workspace">
-      <div className={'canvas-wrap' + (placingSpeciesId || movingPlantId ? ' placing' : '')}>
+      <div className={'canvas-wrap map-wrap' + (placingSpeciesId || movingPlantId ? ' placing' : '')}>
         <div ref={el} className="map" data-feat="carte" />
         <div className="map-top">
           {!placingNow && (

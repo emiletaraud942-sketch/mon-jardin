@@ -381,9 +381,10 @@
   line-height: 1.3;
   pointer-events: none;
 }
+/* Téléphone : « Je suis perdu » occupe la rangée juste au-dessus de la barre (facile.css) ; la puce se place au-dessus d'elle, jamais dessus. */
 @media (max-width: 760px) {
   .offline-chip {
-    bottom: calc(var(--nav-h) + 8px + env(safe-area-inset-bottom));
+    bottom: calc(var(--nav-h) + var(--tap) + 16px + env(safe-area-inset-bottom));
   }
 }
 html[data-offline] .page {

@@ -146,7 +146,7 @@ export function SpeciesSheet({ species: s, garden }: { species: Species; garden:
         </div>
       </details>
 
-      <button className="btn primary place-btn" style={{ minHeight: 44 }} onClick={() => startPlacing(s.id)}>
+      <button className="btn primary place-btn" onClick={() => startPlacing(s.id)}>
         <Icon name="pin" /> Placer dans mon jardin
       </button>
     </div>

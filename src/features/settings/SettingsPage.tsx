@@ -408,7 +408,7 @@ function Backup() {
         <button className="btn primary" onClick={() => void exportJson()} disabled={busy}>
           <Icon name="download" /> Faire une sauvegarde
         </button>
-        <button className="btn" data-feat="sauvegarde-complete" onClick={() => void exportFull()} disabled={busy || est?.photos === 0}>
+        <button className="btn" data-feat="sauvegarde-complete" aria-describedby={est?.photos === 0 ? 'sauvegarde-photos-aide' : undefined} onClick={() => void exportFull()} disabled={busy || est?.photos === 0}>
           <Icon name="download" /> Sauvegarde avec photos{est && est.photos > 0 ? ` (${formatMo(est.bytes)})` : ''}
         </button>
         <label className="btn file-btn" data-feat="reprise">
@@ -416,6 +416,11 @@ function Backup() {
           <input className="sr-only" type="file" accept={`application/json,.json,${FULL_EXTENSION}`} onChange={(e) => void importJson(e.target)} />
         </label>
       </div>
+      {est?.photos === 0 && (
+        <p id="sauvegarde-photos-aide" className="small muted">
+          Aucune photo dans l’appli : la sauvegarde simple suffit.
+        </p>
+      )}
       {est?.tooHeavy && <p className="alert small">{MESSAGE_TOO_HEAVY(Math.round(est.bytes / (1024 * 1024)))}</p>}
       {est && !est.tooHeavy && est.bytes > HEAVY_BACKUP_BYTES && <p className="small muted">Le fichier avec photos est lourd ({formatMo(est.bytes)}) : faites-le avec du Wi-Fi et de la place libre sur le téléphone.</p>}
       {msg?.error && <ErrorNote error={msg.error} />}

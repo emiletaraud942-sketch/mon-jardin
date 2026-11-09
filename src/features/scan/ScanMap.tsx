@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css' // chargé avec la carte seulement (pas au démarrage de l'appli)
+import { MAP_LOCALE_FR } from '../map/mapLocale'
 import '../../lib/mapWorker'
 import { webgl2Supported } from '../../lib/webgl'
 import { MapUnsupported } from '../../components/MapUnsupported'
@@ -117,6 +118,7 @@ function ScanMapInner({ garden, plants, onTap, dots = [], pending = [], onSelect
       fitBoundsOptions: { padding: 24, maxZoom: 20 },
       maxZoom: PHOTO_MAP_MAXZOOM, // la photo n'a pas de détail au-delà (zoom utile + 1)
       attributionControl: false,
+      locale: MAP_LOCALE_FR,
       style: {
         version: 8,
         sources: { ortho: { type: 'raster', tiles: [ORTHO_TILES], tileSize: TILE_SIZE, maxzoom: ORTHO_MAXZOOM, attribution: IGN_ATTRIBUTION } },

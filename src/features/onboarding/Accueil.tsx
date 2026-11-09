@@ -4,7 +4,7 @@ import { PlantPot } from '../../components/illustrations'
 import { PlaceAction } from '../../components/PlaceAction'
 import { useProgress } from '../../components/useProgress'
 import { nextStep, type NextStep } from '../../lib/progress'
-import { isDemoGarden } from '../settings/demo'
+import { demoHomeTitle, isDemoGarden } from '../settings/demo'
 import { useRefreshGarden } from '../settings/useRefreshGarden'
 import { badgeAria, badgeLabel } from '../../lib/neighbors/news'
 import { activeSteps, chezTitle, currentStep, settledCount, shouldShowRoute, stepStatus, STEP_HINT, STEP_TITLE, type OnboardingStepId } from '../../lib/onboarding'
@@ -178,7 +178,7 @@ export function Accueil({ garden, openTasks, newsCount }: { garden: Garden; open
       {route && <RouteCard garden={garden} />}
       <PageHead compact kicker={who ? `Bonjour ${who}` : 'Bonjour'} title="Que voulez-vous faire ?" onHelp={openHelp} />
       <button className="chez" onClick={() => setUi({ tab: 'carte' })}>
-        <span className="chez-title">{chezTitle(garden.name)}</span>
+        <span className="chez-title">{demoHomeTitle(garden, chezTitle(garden.name))}</span>
         <span className="chez-sum">
           {plants.length} plante{plants.length > 1 ? 's' : ''}
           {'\u00a0· '}

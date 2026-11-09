@@ -37,8 +37,8 @@ export function CataloguePage({ garden }: { garden: Garden }) {
         {list.map((s) => (
           <li key={s.id} style={{ padding: 0 }}>
             <button
-              className="btn ghost"
-              style={{ width: '100%', justifyContent: 'flex-start', minHeight: 48, background: s.id === speciesId ? 'var(--accent-soft)' : undefined }}
+              className="btn ghost cat-row"
+              style={{ background: s.id === speciesId ? 'var(--accent-soft)' : undefined }}
               aria-current={s.id === speciesId ? 'true' : undefined}
               onClick={() => setUi({ speciesId: s.id })}
             >

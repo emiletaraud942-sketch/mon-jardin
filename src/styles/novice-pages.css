@@ -363,6 +363,13 @@
   }
 }
 
+/* Ligne du catalogue : 48 px (56 px en Grandes touches, qu'un style en ligne empêcherait). */
+.cat-row {
+  width: 100%;
+  justify-content: flex-start;
+  min-height: 48px;
+}
+
 /* Catalogue : filtres en pastilles (cible de 44 px) */
 .chip-filters {
   gap: 8px;

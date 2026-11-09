@@ -112,7 +112,8 @@
   min-width: 0;
   max-width: 100%;
   padding: 4px 10px;
-  white-space: nowrap;
+  flex-wrap: wrap; /* texte très grand : la légende passe à la ligne au lieu d'être coupée */
+  white-space: normal;
   overflow: hidden;
 }
 .g3d-info strong {
@@ -123,9 +124,8 @@
 .g3d-sun {
   color: var(--g3d-muted);
   font-size: 0.8125rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 .g3d-sun--years {
   flex: none;

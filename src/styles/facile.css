@@ -425,8 +425,10 @@ html[data-immersive] .lost-fab {
   font-weight: var(--fw-strong);
   cursor: pointer;
 }
+/* Dans le haut de la fiche, il défile avec elle : fixe, il cachait des étiquettes (« Attendre… », « Notes »). « Je suis perdu » reste là pour revenir à l'accueil. */
 .fiche-home {
-  z-index: 36;
+  position: absolute;
+  z-index: 3;
   top: max(8px, env(safe-area-inset-top));
   right: 14px;
 }
@@ -879,6 +881,36 @@ html[data-big-taps] dialog.modal :is(button, summary, [role='tab'], a.btn, .chec
 }
 html[data-big-taps] .home-btn {
   min-height: 68px;
+}
+/* Parcours de départ et bienvenue : hors de `.app`, ils ont leurs propres règles (plus précises que celles de app.css). */
+html[data-big-taps] .parcours .parcours-foot .btn.big,
+html[data-big-taps] .parcours .parcours-foot .btn.big:not(.primary),
+html[data-big-taps] .parcours .route-go,
+html[data-big-taps] .parcours .choice,
+html[data-big-taps] .parcours .textsize-btn,
+html[data-big-taps] .parcours .addr-map-btn,
+html[data-big-taps] .parcours .btn,
+html[data-big-taps] .parcours summary {
+  min-height: 56px;
+}
+html[data-big-taps] .parcours .parcours-head .back-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
+}
+html[data-big-taps] .parcours .dot-btn {
+  height: 56px;
+}
+html[data-big-taps] p .legal-link::after {
+  inset: -16px -6px; /* ligne de 24 px + 2 x 16 = 56 px touchables */
+}
+/* Champs de saisie, partout (hors cases, curseurs et fichiers) : 56 px. */
+html[data-big-taps] :is(input, select, textarea):not([type='checkbox'], [type='radio'], [type='range'], [type='file'], [type='color'], [type='hidden']):not(.maplibregl-map *, .sr-only) {
+  min-height: 56px;
+}
+html[data-big-taps] .textsize-btn,
+html[data-big-taps] .addr-map-btn {
+  min-height: 56px;
 }
 
 /* ----- « Je suis perdu » sur téléphone : une rangée à part, entre le contenu et la barre du bas ----- */

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import { MAP_LOCALE_FR } from '../map/mapLocale'
 import '../../lib/mapWorker'
 import { MapUnsupported } from '../../components/MapUnsupported'
 import { Modal } from '../../components/Modal'
@@ -24,6 +25,7 @@ function PlanMap({ onPoint }: { onPoint: (p: { lon: number; lat: number }) => vo
       zoom: 4.6,
       maxZoom: PLAN_MAP_MAXZOOM,
       attributionControl: false,
+      locale: MAP_LOCALE_FR,
       style: {
         version: 8,
         sources: { plan: { type: 'raster', tiles: [PLAN_TILES], tileSize: TILE_SIZE, maxzoom: PLAN_MAXZOOM, attribution: IGN_ATTRIBUTION } },

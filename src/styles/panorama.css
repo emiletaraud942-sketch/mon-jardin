@@ -539,9 +539,6 @@ label.btn.disabled {
   gap: 6px;
   padding: 0 16px 8px;
 }
-.pano-season .season-picker {
-  overflow-x: auto;
-}
 .pano-season-note {
   font-size: calc(13 * var(--px));
   color: var(--muted);
@@ -554,13 +551,19 @@ label.btn.disabled {
   background: var(--accent-soft, var(--surface-2, transparent));
 }
 
-/* Saison sur téléphone : une seule rangée qui défile, pour ne pas manger la photo. */
+/* Saison : les cinq choix restent tous visibles (grille de 3, puis une seule rangée sur écran large), jamais une rangée qui défile. */
 .pano-season .season-picker {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
 }
 .pano-season .season-picker .pano-pill {
-  padding: 4px 12px;
+  min-width: 0;
+  padding: 4px 8px;
   font-size: calc(14 * var(--px));
+}
+@media (min-width: 560px) {
+  .pano-season .season-picker {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
 }
