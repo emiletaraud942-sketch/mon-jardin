@@ -47,7 +47,7 @@ export const HELP: Record<Tab, HelpContent> = {
       'Vos plantes sont rangées par type : légumes, fruitiers, fleurs…',
       '« Ajouter » vous fait choisir une plante, puis la placer.',
       '« Identifier » reconnaît une plante grâce à une photo.',
-      'Touchez une plante pour ouvrir sa fiche et ajouter des photos.',
+      'Touchez une plante pour ouvrir sa fiche et tenir son journal de photos datées.',
       '« Voir sur la carte » montre où elle se trouve.',
       '« Liste de courses et de semis » regroupe les plantes prévues, avec la bonne période.',
     ],

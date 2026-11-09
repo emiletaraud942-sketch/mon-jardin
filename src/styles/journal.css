@@ -1,0 +1,203 @@
+/* Journal d'une plante : frise des photos datées, avant / après. Couleurs : variables de :root seulement. */
+
+.journal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.journal h3,
+.journal .journal-intro {
+  margin: 0;
+}
+.journal-add {
+  gap: 8px;
+}
+.journal-add .photo-add.journal-add-btn {
+  flex-direction: row;
+  min-height: var(--tap);
+  width: 100%;
+  gap: 8px;
+  cursor: pointer;
+}
+.journal-add .photo-add.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.journal-empty {
+  margin: 0;
+}
+
+/* Frise verticale : un fil à gauche, une entrée par photo. */
+.journal-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 12px;
+  border-left: 2px solid var(--border-strong);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.journal-item {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+.journal-item::before {
+  content: '';
+  position: absolute;
+  left: -19px;
+  top: 28px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  border: 2px solid var(--surface);
+}
+.journal-item.editing {
+  flex-direction: column;
+}
+.journal-item.editing .journal-body {
+  width: 100%;
+}
+.journal-ago {
+  display: block;
+}
+.journal-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.journal-date,
+.journal-note,
+.journal-hint {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.journal-note {
+  color: var(--text);
+}
+.journal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.journal-actions .btn.small {
+  min-width: var(--tap);
+  min-height: var(--tap);
+  padding-inline: 14px;
+}
+.journal-edit {
+  gap: 8px;
+}
+
+/* Avant / après : deux photos l'une sur l'autre, un curseur dessous. */
+.compare {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-strong);
+}
+.compare-title {
+  margin: 0;
+}
+.compare-help {
+  margin: 0;
+}
+.compare-pick {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 8px;
+}
+.compare-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 18px;
+  border: var(--border-w) solid var(--border-strong);
+  background: var(--surface-2);
+}
+.compare-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.compare-missing {
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  text-align: center;
+  color: var(--muted);
+  background: var(--surface-2);
+}
+.compare-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  margin-left: -1.5px;
+  background: var(--surface);
+  box-shadow: 0 0 0 1px var(--border-strong);
+  pointer-events: none;
+}
+.compare-tag {
+  position: absolute;
+  top: 8px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  font-size: calc(13 * var(--px));
+  font-weight: var(--fw-strong);
+  pointer-events: none;
+}
+.compare-tag-before {
+  left: 8px;
+}
+.compare-tag-after {
+  right: 8px;
+}
+.compare-range {
+  width: 100%;
+  height: var(--tap);
+  min-height: var(--tap);
+  margin: 0;
+  accent-color: var(--accent-2);
+  cursor: ew-resize;
+}
+.compare-range:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.compare-captions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.compare-span,
+.compare-captions li {
+  overflow-wrap: anywhere;
+}
+.compare-span {
+  margin: 0;
+  color: var(--text);
+}
+
+@media (min-width: 761px) {
+  .compare-stage {
+    max-width: 30rem;
+  }
+}

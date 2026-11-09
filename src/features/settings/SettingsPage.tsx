@@ -453,7 +453,7 @@ function Backup() {
       <details className="np-details">
         <summary>Copie de sécurité et conseils</summary>
         <p className="small muted">Gardez-le en lieu sûr : ordinateur, clé USB, ou e-mail à vous-même.</p>
-        <p className="small muted">La sauvegarde simple n’a pas les photos : elles restent sur cet appareil. « Sauvegarde avec photos » les met dans le fichier, qui est plus lourd. « Reprendre une sauvegarde » lit les deux.</p>
+        <p className="small muted">La sauvegarde simple n’a pas les images des photos : elles restent sur cet appareil. Elle garde leurs dates et leurs notes. « Sauvegarde avec photos » les met dans le fichier, qui est plus lourd. « Reprendre une sauvegarde » lit les deux.</p>
         {persistent === false && <p className="small muted">Si l’espace manque, cet appareil peut effacer vos données. Une sauvegarde les protège.</p>}
         <p className="small muted">Avant de remplacer vos données, l’appli en garde une copie sur cet appareil. Vous pouvez la télécharger.</p>
         <div className="row" data-feat="copie-securite">

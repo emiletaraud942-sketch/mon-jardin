@@ -64,6 +64,8 @@ export function placePlant(
     plantedAt: isoDate(),
     status,
     photos: pendingPhotos ?? [],
+    // Photos d'identification ou de scan : prises à l'instant, elles ouvrent le journal de la plante à la date du jour (modifiable).
+    ...(pendingPhotos?.length ? { photoMeta: Object.fromEntries(pendingPhotos.map((photo) => [photo, { at: isoDate() }])) } : {}),
   })
   if (opts.silent) return id
   if (placingSeries) {

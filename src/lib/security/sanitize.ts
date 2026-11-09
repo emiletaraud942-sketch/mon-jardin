@@ -15,6 +15,14 @@ export function clipText(s: string, max: number): string {
   return out
 }
 
+/** Caractères de commande et de sens d'écriture (invisibles : ils servent à tromper l'affichage). */
+const LINE_STRIP = /[\u0000-\u001f\u007f-\u009f\u061c\u200b\u200e\u200f\u202a-\u202e\u2066-\u2069\ufeff]+/g
+
+/** Texte d'une seule ligne : caractères invisibles et de commande retirés (retours à la ligne = espace), espaces réduits, borné à `max`. */
+export function cleanLine(s: string, max: number): string {
+  return clipText(s.replace(/[\r\n\t]+/g, ' ').replace(LINE_STRIP, '').replace(/\s+/g, ' ').trim(), max).trim()
+}
+
 /** Identifiant de photo valide : « photo: » suivi de lettres/chiffres. Évite de lire ou effacer une autre clé IndexedDB. */
 export const PHOTO_ID_RE = /^photo:[A-Za-z0-9]{1,64}$/
 export const isPhotoId = (v: unknown): v is string => typeof v === 'string' && PHOTO_ID_RE.test(v)

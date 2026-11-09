@@ -238,8 +238,19 @@ export interface Plant {
   status: PlantStatus
   notes?: string
   photos: string[] // ids de photos (IndexedDB)
+  /**
+   * Journal : date (jour local AAAA-MM-JJ, posée à la prise) et note (140 caractères au plus) de chaque photo, par identifiant de `photos`.
+   * Absent pour les photos anciennes : « date inconnue », jamais inventée. Voyage avec l'état (sauvegardes, synchro) ; les images, non.
+   */
+  photoMeta?: Record<string, PhotoMeta>
   /** Mesures saisies (hauteur, envergure en m) : recalent la courbe de croissance. */
   measurements?: PlantMeasurement[]
+}
+
+export interface PhotoMeta {
+  /** Jour local AAAA-MM-JJ ; absent = date inconnue (la note seule peut exister). */
+  at?: string
+  note?: string
 }
 
 export interface PlantMeasurement {

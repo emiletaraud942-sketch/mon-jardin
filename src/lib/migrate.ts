@@ -4,6 +4,7 @@ import type { Building, Garden, Panorama, PanoramaShot, Plant, PlantMeasurement,
 import { isoDate } from './dates'
 import { isValidCalibration } from './calibration'
 import { uid } from './geo'
+import { sanitizePhotoMeta } from './journal'
 import { LIMITS } from './security/limits'
 import { cleanExtras, clipText, isPhotoId, isSafeId } from './security/sanitize'
 
@@ -37,7 +38,7 @@ const inRange = (n: number, max: number) => Math.abs(n) <= max
 const text = (v: string, max: number = LIMITS.shortText) => clipText(v, max)
 
 const GARDEN_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'address', 'center', 'altitudeM', 'parcel', 'parcelRefs', 'areaM2', 'buildings', 'terrain', 'sol', 'lastFrostDoy', 'firstFrostDoy', 'minAbsC', 'climateZone', 'rainMmPerYear', 'calibration', 'panoramas', 'createdAt'])
-const PLANT_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'speciesId', 'customName', 'position', 'plantedAt', 'ageAtPlanting', 'purchase', 'status', 'notes', 'photos', 'measurements'])
+const PLANT_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'speciesId', 'customName', 'position', 'plantedAt', 'ageAtPlanting', 'purchase', 'status', 'notes', 'photos', 'photoMeta', 'measurements'])
 const TASK_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'taskKey', 'status', 'until', 'doneAt'])
 
 /** Date ISO plausible : « 2024-03-10 » ou date-heure complète. Rejette « 2024-13-45 ». */
@@ -282,6 +283,11 @@ function sanitizePlant(raw: unknown, gardenIds: Set<string>, report: Report): Pl
     p.status = 'en-place'
     report.add('p-statut', '{n} plante avec un statut inconnu a été remise « en place ».', '{n} plantes avec un statut inconnu ont été remises « en place ».')
   }
+  // Journal des photos : seulement les entrées des photos gardées, dates réelles, notes courtes.
+  const journal = sanitizePhotoMeta(raw.photoMeta, photos)
+  if (journal.meta) p.photoMeta = journal.meta
+  else delete p.photoMeta
+  if (journal.dropped > 0) report.add('p-journal', "{n} plante avait des dates ou notes de photos invalides : elles ont été corrigées ou écartées.", "{n} plantes avaient des dates ou notes de photos invalides : elles ont été corrigées ou écartées.")
   if (isNum(raw.ageAtPlanting) && raw.ageAtPlanting >= 0 && raw.ageAtPlanting <= 1000) p.ageAtPlanting = raw.ageAtPlanting
   const meas = validMeasurements(raw.measurements)
   if (meas) {

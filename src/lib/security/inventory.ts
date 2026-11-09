@@ -22,7 +22,7 @@ export interface DataItem {
 export const DATA_INVENTORY: readonly DataItem[] = [
   {
     id: 'jardins',
-    donnee: 'Jardins : nom, adresse, position du centre, contour de parcelle, bâtiments, relief, plantes (position au mètre près, notes, informations d’achat facultatives : forme, hauteur, lieu et prix), tâches faites',
+    donnee: 'Jardins : nom, adresse, position du centre, contour de parcelle, bâtiments, relief, plantes (position au mètre près, notes, informations d’achat facultatives : forme, hauteur, lieu et prix ; date et note facultative liées à chaque photo, dans le journal de la plante), tâches faites',
     stockage: 'IndexedDB du navigateur (clé permajardin:state:v1) ; copies de sécurité (« avant migration », « précédente », « illisible ») : l’état d’avant une correction au chargement, un remplacement par la synchro ou l’import, ou des données illisibles ; copie de secours dans le localStorage (clé permajardin:state:v1:miroir) qui évite de perdre la dernière modification si le navigateur se ferme trop vite',
     destinataires: [],
     finalite: 'Fournir le service : carte, 3D, calendrier d’entretien',
@@ -32,13 +32,13 @@ export const DATA_INVENTORY: readonly DataItem[] = [
   },
   {
     id: 'photos',
-    donnee: 'Photos de plantes (réduites à 1280 px maximum, sans EXIF ni position GPS : elles sont ré-encodées par le navigateur)',
+    donnee: 'Photos de plantes (réduites à 1280 px maximum, sans EXIF ni position GPS : elles sont ré-encodées par le navigateur). La date du jour de la prise et une note facultative de 140 caractères au plus sont gardées avec la plante (journal), pas dans la photo',
     stockage: 'IndexedDB du navigateur (clés photo:…)',
     destinataires: [],
     finalite: 'Illustrer les plantes',
     base: 'execution',
     duree: 'Jusqu’à suppression de la plante ou effacement',
-    effacement: 'Supprimer la plante, ou Effacer toutes mes données. Les photos ne sont jamais synchronisées.',
+    effacement: 'Supprimer la photo ou la plante (la date et la note partent avec), ou Effacer toutes mes données. Les images des photos ne sont jamais synchronisées ; leurs dates et notes font partie des données du jardin.',
   },
   {
     id: 'identification',
@@ -82,7 +82,7 @@ export const DATA_INVENTORY: readonly DataItem[] = [
   },
   {
     id: 'compte',
-    donnee: 'Adresse e-mail du compte, instantané en ligne des jardins (sans photos), jeton de session',
+    donnee: 'Adresse e-mail du compte, instantané en ligne des jardins (sans les images des photos, mais avec leurs dates et notes), jeton de session',
     stockage: 'Supabase (table garden_snapshots, protégée par RLS) ; jeton dans le localStorage (clé sb-…-auth-token)',
     destinataires: ['Supabase (sous-traitant : hébergement et authentification)'],
     finalite: 'Sauvegarder et retrouver ses jardins sur un autre appareil. Fonction facultative.',

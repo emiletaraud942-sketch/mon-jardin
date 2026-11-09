@@ -2,10 +2,8 @@ import { SPECIES_BY_ID } from '../../data/species'
 import { CATEGORY_LABEL, STATUS_LABEL, SUN_LABEL, TASK_ICON, WATER_LABEL } from '../../data/labels'
 import { Icon } from '../../components/Icon'
 import { Blob, PlantPot, PlantScene } from '../../components/illustrations'
-import { PhotoThumb } from '../../components/PhotoThumb'
 import { RiskNotes } from '../../components/RiskNotes'
-import { isFullError, MESSAGE_FULL, savePhoto } from '../../lib/photos'
-import { addPlant, getState, removePlant, updatePlant, useGardenPlants } from '../../lib/store'
+import { addPlant, removePlant, updatePlant, useGardenPlants } from '../../lib/store'
 import { recordWithToast } from '../../lib/history'
 import { goHome } from '../../lib/goHome'
 import { cleanCustomName } from '../../lib/customName'
@@ -19,6 +17,7 @@ import { markHarvested } from './harvest'
 import type { Garden, Plant, PlantStatus } from '../../types'
 import { Fragment, useEffect, useState, type ComponentType, type ReactNode } from 'react'
 import { MeasureSection } from './MeasureSection'
+import { PlantJournal } from './PlantJournal'
 import { PurchaseSummary } from './PurchaseDialog'
 import { NoteAssist } from './NoteAssist'
 import { useTasks } from '../tasks/useTasks'
@@ -67,40 +66,6 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
 
   const [name, setName] = useState(plant.customName ?? '')
   useEffect(() => setName(plant.customName ?? ''), [plant.id, plant.customName])
-  const [photoBusy, setPhotoBusy] = useState(false)
-  const [photoError, setPhotoError] = useState<string>()
-
-  async function addPhotos(input: HTMLInputElement) {
-    const files = Array.from(input.files ?? [])
-    input.value = '' // permet de rechoisir la même photo
-    if (!files.length) return
-    setPhotoBusy(true)
-    setPhotoError(undefined)
-    const ids: string[] = []
-    let failed = 0
-    let full = false
-    for (const f of files) {
-      try {
-        ids.push(await savePhoto(f))
-      } catch (e) {
-        failed++
-        if (isFullError(e)) full = true
-        console.warn('Photo non enregistrée', e)
-      }
-    }
-    if (ids.length) updatePlant(plant.id, { photos: [...(getState().plants.find((p) => p.id === plant.id)?.photos ?? plant.photos), ...ids] })
-    if (failed && full) setPhotoError(MESSAGE_FULL)
-    else if (failed) setPhotoError(failed === files.length ? "La photo n’a pas pu être enregistrée. Essayez une autre photo, ou libérez de la place sur l’appareil." : `${failed} photo(s) sur ${files.length} n’ont pas pu être enregistrées.`)
-    setPhotoBusy(false)
-  }
-
-  function removePhoto(id: string) {
-    const before = plant.photos
-    updatePlant(plant.id, { photos: plant.photos.filter((x) => x !== id) })
-    const set = (photos: string[]) => updatePlant(plant.id, { photos })
-    recordWithToast({ label: 'Suppression d’une photo', undo: () => set(before), redo: () => set(before.filter((x) => x !== id)) }, 'Photo supprimée.')
-  }
-
   function remove() {
     const name = plantName(plant)
     removePlant(plant.id, { keepPhotos: true }) // les photos restent : purgées au démarrage suivant seulement si la plante n'est pas revenue
@@ -293,27 +258,7 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
         </div>
       )}
 
-      <div data-feat="photos-plante">
-        <h3>Photos</h3>
-        <div className="row photo-row">
-          {plant.photos.map((id) => (
-            <div key={id} style={{ position: 'relative' }}>
-              <PhotoThumb id={id} zoomable />
-              <button className="photo-remove" aria-label="Supprimer cette photo" onClick={() => removePhoto(id)}>
-                <span aria-hidden>
-                  <Icon name="x" size={14} />
-                </span>
-              </button>
-            </div>
-          ))}
-          <label className="btn small photo-add">
-            {photoBusy ? <span className="spinner" /> : <Icon name="camera" />}
-            <span className="small">Ajouter une photo</span>
-            <input className="sr-only" type="file" accept="image/*" multiple disabled={photoBusy} onChange={(e) => void addPhotos(e.target)} />
-          </label>
-        </div>
-        {photoError && <p className="alert error small" role="alert" style={{ marginTop: 8 }}>{photoError}</p>}
-      </div>
+      <PlantJournal plant={plant} />
 
       {(report.amis.length > 0 || report.ennemis.length > 0) && (
         <div className="small stack">

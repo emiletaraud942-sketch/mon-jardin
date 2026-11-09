@@ -4,6 +4,9 @@ import { mockNetwork } from './mocks'
 // Parcours de fumée : premier lancement, jardin d'exemple, ajout d'une plante, À faire, « Tout ce que je peux faire », Réglages.
 // Un seul test par projet (mobile 390×844 et bureau 1280×800) : le jardin d'exemple est créé une fois, les étapes s'enchaînent.
 
+/** Une image PNG de 1 pixel : assez pour passer par le flux photo (décodage, recompression, rangement). */
+const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64')
+
 /** Dépassement horizontal de la page (0 attendu). */
 async function overflowX(page: Page): Promise<number> {
   return page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth)
@@ -63,6 +66,39 @@ test('parcours de base', async ({ page, baseURL }) => {
   expect(await ouvrirPlantes(page), 'nombre de plantes dans « Mes plantes »').toBe(avant + 1)
   await expect(page.locator('[data-feat=liste-plantes]').getByText(/Lavande/i).first()).toBeVisible()
   await noOverflow('mes plantes')
+
+  // 2 bis. Journal de la plante : deux photos datées d'aujourd'hui, modification de la date, comparaison avant / après au clavier.
+  await page.locator('[data-feat=liste-plantes]').getByText(/Lavande/i).first().click()
+  const journal = page.locator('[data-feat=journal]').filter({ visible: true })
+  await journal.scrollIntoViewIfNeeded()
+  await expect(journal.getByText('Aucune photo pour l’instant')).toBeVisible()
+  await journal.locator('input[type=file]').setInputFiles([
+    { name: 'a.png', mimeType: 'image/png', buffer: PNG },
+    { name: 'b.png', mimeType: 'image/png', buffer: PNG },
+  ])
+  const aujourdhui = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' })
+  await expect(journal.locator('.journal-item')).toHaveCount(2, { timeout: 30_000 })
+  await expect(journal.locator('.journal-item').first()).toContainText(aujourdhui)
+  await noOverflow('journal : deux photos')
+  await journal.locator('.journal-item').last().getByRole('button', { name: /^Modifier/ }).click()
+  await journal.getByLabel('Date de la photo').fill('2025-03-04')
+  await journal.getByLabel('Note (facultatif)').fill('Avant la taille')
+  await journal.getByRole('button', { name: /Enregistrer/ }).click()
+  await expect(journal.locator('.journal-item').last()).toContainText('4 mars 2025')
+  await expect(journal.locator('.journal-item').last()).toContainText('Avant la taille')
+  const curseur = journal.locator('.compare-range')
+  await expect(curseur).toBeVisible()
+  await curseur.focus()
+  await page.keyboard.press('ArrowRight')
+  await expect(curseur).toHaveValue('51')
+  await page.keyboard.press('End')
+  await expect(curseur).toHaveValue('100')
+  await expect(journal.locator('.compare-span')).toContainText('entre les deux photos')
+  await noOverflow('journal : avant / après')
+  await journal.locator('.journal-item').last().getByRole('button', { name: /^Supprimer/ }).click()
+  await expect(journal.locator('.journal-item')).toHaveCount(1)
+  await expect(journal.locator('.compare')).toHaveCount(0)
+  await page.locator('.fiche-home, button.close-btn').filter({ visible: true }).first().click()
 
   // 3. À faire s'ouvre.
   await retourAccueil(page)

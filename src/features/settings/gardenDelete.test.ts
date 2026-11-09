@@ -29,6 +29,15 @@ describe('suppression d’un jardin avec annulation', () => {
     expect(photosOf(snapshot!)).toEqual(['ph2', 'photo:v1'])
   })
 
+  it('le journal des photos part avec les plantes du jardin et revient avec l’annulation', () => {
+    const st = state()
+    st.plants[2] = { ...st.plants[2], photoMeta: { ph2: { at: '2026-03-04', note: 'Bien' } } }
+    const { next, snapshot } = removeGardenData(st, 'b')
+    expect(JSON.stringify(next)).not.toContain('"note":"Bien"')
+    const back = restoreGardenData(next, snapshot!)
+    expect(back.plants.find((x) => x.id === '3')?.photoMeta).toEqual({ ph2: { at: '2026-03-04', note: 'Bien' } })
+  })
+
   it('annuler remet tout à sa place', () => {
     const before = state()
     const { next, snapshot } = removeGardenData(before, 'b')

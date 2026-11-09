@@ -14,6 +14,7 @@ import { openScan } from '../scan/scanUi'
 const ASK_TITLE: Record<PlantAsk, string> = {
   fiche: 'Quelle plante voulez-vous ouvrir ?',
   photos: 'À quelle plante ajouter une photo ?',
+  journal: 'De quelle plante voulez-vous voir le journal ?',
   croissance: 'Quelle plante voulez-vous suivre ?',
   recoltee: 'Quelle plante est récoltée ?',
   supprimer: 'Quelle plante voulez-vous supprimer ?',

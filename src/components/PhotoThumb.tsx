@@ -3,7 +3,7 @@ import { getPhoto } from '../lib/photos'
 import { Modal } from './Modal'
 
 /** URL d'objet d'une photo stockée ; révoquée au démontage, y compris si la lecture finit après coup. */
-function usePhotoUrl(id: string): { url?: string; missing: boolean } {
+export function usePhotoUrl(id: string): { url?: string; missing: boolean } {
   const [state, setState] = useState<{ url?: string; missing: boolean }>({ missing: false })
   useEffect(() => {
     let alive = true

@@ -78,6 +78,51 @@ describe('sauvegarde complète : aller-retour', () => {
   })
 })
 
+describe('sauvegarde complète : journal des photos (dates et notes)', () => {
+  const journal = { 'photo:aaa': { at: '2026-03-04', note: 'Après la taille' }, 'photo:manquante': { at: '2026-05-01' } }
+
+  it('rend les dates et les notes avec les photos, aussi pour une photo absente de l’appareil', async () => {
+    fixture.plants = [{ ...plant, photoMeta: journal }]
+    const out = await buildFullBackup()
+    photoDb.clear()
+    const r = await readFullBackup(out.blob)
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.data.plants[0].photoMeta).toEqual(journal)
+    expect(r.warnings).toEqual([])
+    expect(await restorePhotos(r.photos)).toBe(2)
+  })
+
+  it('l’en-tête garde les dates et notes dans l’état, jamais ailleurs', async () => {
+    fixture.plants = [{ ...plant, photoMeta: journal }]
+    const text = await (await buildFullBackup()).blob.text()
+    expect(text).toContain('"note":"Après la taille"')
+    expect(text.split('"note":"Après la taille"')).toHaveLength(2)
+  })
+
+  it('à l’import, une entrée dont la photo n’est pas à la plante est retirée, une note longue est coupée', async () => {
+    const head = JSON.stringify({
+      format: 'permajardin-complet', version: 1,
+      state: { version: 2, gardens: [garden], plants: [{ ...plant, photos: ['photo:aaa'], photoMeta: { 'photo:aaa': { at: '2026-03-04', note: 'n'.repeat(400) }, 'photo:autre': { at: '2026-03-05' }, 'photo:aaa2': 'oops' } }], tasksDone: [] },
+      photos: [{ id: 'photo:aaa', type: 'image/jpeg', size: (await jpeg(1).arrayBuffer()).byteLength }],
+    })
+    const r = await readFullBackup(new Blob([`${FULL_MAGIC}${String(head.length).padStart(10, '0')}\n`, head, jpeg(1)]))
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    const meta = r.data.plants[0].photoMeta!
+    expect(Object.keys(meta)).toEqual(['photo:aaa'])
+    expect(meta['photo:aaa'].note).toHaveLength(140)
+    expect(r.warnings.join(' ')).toMatch(/dates ou notes de photos/)
+  })
+
+  it('la sauvegarde sans photos (état seul) garde aussi dates et notes mais aucune image', async () => {
+    const { serializeState } = await import('./migrate')
+    const out = JSON.stringify(serializeState({ gardens: [garden], plants: [{ ...plant, photoMeta: journal }], tasksDone: [] }))
+    expect(out).toContain('"at":"2026-03-04"')
+    expect(out).not.toMatch(/base64|data:image/)
+  })
+})
+
 describe('sauvegarde complète : fichiers hostiles ou abîmés', () => {
   const read = (parts: BlobPart[]) => readFullBackup(new Blob(parts))
   const build = async () => (await buildFullBackup()).blob

@@ -2,6 +2,7 @@ import { del, get, keys, set } from 'idb-keyval'
 import { useMemo, useSyncExternalStore } from 'react'
 import type { Garden, Plant, TaskDone } from '../types'
 import { compactTasksDone, migrateState, STATE_VERSION, type StateData } from './migrate'
+import { pruneMeta } from './journal'
 import { deletePhoto, listPhotoIds } from './photos'
 
 export interface AppState {
@@ -637,7 +638,19 @@ export function addPlant(p: Plant) {
 }
 
 export function updatePlant(id: string, patch: Partial<Plant>) {
-  setState((s) => ({ plants: s.plants.map((p) => (p.id === id ? { ...p, ...patch } : p)) }))
+  setState((s) => ({
+    plants: s.plants.map((p) => {
+      if (p.id !== id) return p
+      const next = { ...p, ...patch }
+      // Une photo retirée emporte sa date et sa note (journal) : jamais d'entrée sans photo.
+      if (patch.photos && !('photoMeta' in patch)) {
+        const meta = pruneMeta(next.photoMeta, next.photos)
+        if (meta) next.photoMeta = meta
+        else delete next.photoMeta
+      } else if ('photoMeta' in patch && next.photoMeta === undefined) delete next.photoMeta
+      return next
+    }),
+  }))
 }
 
 /** Retire une plante et ses photos. `keepPhotos` : garde les photos (pour pouvoir annuler ; les orphelines sont purgées au prochain démarrage). */

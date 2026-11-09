@@ -494,6 +494,59 @@ describe('photos orphelines', () => {
   })
 })
 
+describe('journal des photos (photoMeta)', () => {
+  const withJournal = { ...plant, photos: ['photo:a', 'photo:b'], photoMeta: { 'photo:a': { at: '2026-03-04', note: 'Bien' }, 'photo:b': { at: '2026-05-01' } } }
+
+  it('retirer une photo emporte sa date et sa note, jamais celles des autres', async () => {
+    db.set(KEY, { gardens: [garden], plants: [withJournal], tasksDone: [] })
+    const s = await freshStore()
+    await s.loadState()
+    s.updatePlant('p1', { photos: ['photo:b'] })
+    expect(s.getState().plants[0].photoMeta).toEqual({ 'photo:b': { at: '2026-05-01' } })
+    s.updatePlant('p1', { photos: [] })
+    expect('photoMeta' in s.getState().plants[0]).toBe(false)
+  })
+
+  it('l’annulation (photos et journal ensemble) remet tout', async () => {
+    db.set(KEY, { gardens: [garden], plants: [withJournal], tasksDone: [] })
+    const s = await freshStore()
+    await s.loadState()
+    const before = { photos: s.getState().plants[0].photos, photoMeta: s.getState().plants[0].photoMeta }
+    s.updatePlant('p1', { photos: ['photo:b'], photoMeta: { 'photo:b': { at: '2026-05-01' } } })
+    s.updatePlant('p1', before)
+    expect(s.getState().plants[0].photoMeta).toEqual(withJournal.photoMeta)
+  })
+
+  it('supprimer la plante supprime son journal avec elle, et les photos orphelines partent', async () => {
+    db.set(KEY, { gardens: [garden], plants: [withJournal], tasksDone: [] })
+    db.set('photo:a', new Blob(['x']))
+    db.set('photo:b', new Blob(['x']))
+    const s = await freshStore()
+    await s.loadState()
+    s.removePlant('p1')
+    await vi.advanceTimersByTimeAsync(300)
+    expect(s.getState().plants).toEqual([])
+    expect(JSON.stringify(db.get(KEY))).not.toContain('photoMeta')
+    expect(db.has('photo:a') || db.has('photo:b')).toBe(false)
+  })
+
+  it('un journal enregistré revient tel quel au chargement, sans message', async () => {
+    db.set(KEY, { version: 2, gardens: [garden], plants: [withJournal], tasksDone: [] })
+    const s = await freshStore()
+    await s.loadState()
+    expect(s.getState().plants[0].photoMeta).toEqual(withJournal.photoMeta)
+    expect(s.getLoadWarnings()).toEqual([])
+  })
+
+  it('un journal abîmé dans le stockage est corrigé sans perdre la plante', async () => {
+    db.set(KEY, { gardens: [garden], plants: [{ ...withJournal, photoMeta: { 'photo:a': { at: 'jamais' }, 'photo:zzz': { at: '2026-01-01' } } }], tasksDone: [] })
+    const s = await freshStore()
+    await s.loadState()
+    expect(s.getState().plants).toHaveLength(1)
+    expect(s.getState().plants[0].photoMeta).toBeUndefined()
+  })
+})
+
 describe('photos des points de vue (panoramas)', () => {
   const panoGarden = { ...garden, panoramas: [{ id: 'pv1', x: 1, y: 2, takenAt: '2026-05-03T10:00:00.000Z', kind: 'guide', shots: [{ photoId: 'photo:v1', headingDeg: 0, fovDeg: 60 }, { photoId: 'photo:v2', headingDeg: 45, fovDeg: 60 }] }] }
 

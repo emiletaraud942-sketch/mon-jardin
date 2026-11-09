@@ -7,9 +7,9 @@ import { DATA_INVENTORY, type LegalBasis } from './security/inventory'
 export const DRAFT_BANNER = 'BROUILLON À FAIRE VALIDER PAR UN PROFESSIONNEL'
 export const DRAFT_NOTE = 'Texte provisoire, à faire valider par un professionnel avant publication. Il ne constitue pas un avis juridique.'
 
-export const LEGAL_VERSION = '1.7'
+export const LEGAL_VERSION = '1.8'
 /** Dernière mise à jour (AAAA-MM-JJ). */
-export const LEGAL_UPDATED = '2026-11-08'
+export const LEGAL_UPDATED = '2026-11-09'
 
 // ---------- Champs à compléter par l'éditeur (aucune donnée personnelle pré-remplie) ----------
 export const TO_COMPLETE = '[à compléter]'
@@ -421,7 +421,7 @@ export const CONSENT_TEXT: Record<'plantnet' | 'sync' | 'voisins' | 'notificatio
   sync: {
     titre: 'Enregistrer vos données en ligne ?',
     paragraphes: [
-      'Vos jardins, plantes et tâches (sans les photos) seront enregistrés sur un serveur (Supabase ; région d’hébergement à confirmer par l’éditeur) lié à votre adresse e-mail, pour les retrouver sur un autre appareil.',
+      'Vos jardins, plantes et tâches (sans les images des photos, mais avec leurs dates et notes) seront enregistrés sur un serveur (Supabase ; région d’hébergement à confirmer par l’éditeur) lié à votre adresse e-mail, pour les retrouver sur un autre appareil.',
       `Destinataire : ${(compte?.destinataires ?? []).join(' ; ')}.`,
       'Vous pouvez retirer votre autorisation et supprimer vos données en ligne à tout moment dans Réglages.',
     ],

@@ -1,5 +1,5 @@
 // Contrôle des cibles tactiles : tous les button, summary, a[href], [role=tab] et les lignes de cases (label.check-row) visibles
-// doivent faire au moins 44 px de haut (56 px avec « Grandes touches »), à 360 et 390 px de large, sur huit écrans.
+// doivent faire au moins 44 px de haut (56 px avec « Grandes touches »), à 360 et 390 px de large, sur neuf écrans.
 // Usage : npm run dev (autre terminal), puis  node scripts/qa/targets.mjs [--big] [--url=http://127.0.0.1:5173/] [--json]
 // Playwright n'est pas une dépendance du dépôt : PLAYWRIGHT_DIR (défaut /opt/node-tools/node_modules) dit où le trouver.
 // Aucun réseau externe n'est joint : /ext et /api répondent 404, la météo est simulée.
@@ -17,7 +17,9 @@ const iso = (y) => new Date(now - y * 365.25 * 86400000).toISOString().slice(0, 
 const seed = () => {
   const g = { id: 'g1', name: 'Chez Marie', address: '12 rue des Lilas 44400 Rezé', center: { lon: -1.55583, lat: 47.17582 }, parcel: [{ x: -15, y: -15 }, { x: 15, y: -15 }, { x: 15, y: 15 }, { x: -15, y: 15 }], areaM2: 900, buildings: [], createdAt: iso(1), lastFrostDoy: 100, firstFrostDoy: 300 }
   const mk = (i, sp, x, y, yrs, status = 'en-place') => ({ id: 'p' + i, gardenId: 'g1', speciesId: sp, position: { x, y }, plantedAt: iso(yrs), status, photos: [], ageAtPlanting: yrs >= 1 ? 2 : 0 })
-  const plants = [mk(1, 'pommier', -5, -5, 4), mk(2, 'tomate', 3, 2, 0.3), mk(3, 'lavande', 6, -4, 2), mk(4, 'basilic', 4, 3, 0.3), mk(5, 'figuier', 8, 8, 0, 'projet')]
+  // Le pommier a un journal (deux photos datées, une troisième sans date) : la frise et l'avant / après sont mesurés.
+  const journal = { photos: ['photo:aaa', 'photo:bbb', 'photo:ccc'], photoMeta: { 'photo:aaa': { at: '2026-03-04', note: 'Après la taille' }, 'photo:bbb': { at: '2026-10-01' } } }
+  const plants = [{ ...mk(1, 'pommier', -5, -5, 4), ...journal }, mk(2, 'tomate', 3, 2, 0.3), mk(3, 'lavande', 6, -4, 2), mk(4, 'basilic', 4, 3, 0.3), mk(5, 'figuier', 8, 8, 0, 'projet')]
   return JSON.stringify({ savedAt: now + 1000, data: { version: 2, gardens: [g], plants, tasksDone: [], activeGardenId: 'g1' } })
 }
 
@@ -60,6 +62,12 @@ const SCREENS = [
   { id: 'reglages', go: (p) => p.getByRole('button', { name: /Compte/ }).first().click() },
   { id: 'tout', go: (p) => p.locator('[data-home=tout]').click() },
   { id: 'ennuis', go: ouvrirEnnuis },
+  { id: 'fiche-journal', go: async (p) => {
+    await p.locator('.sidenav .navbtn', { hasText: 'Mon jardin' }).click()
+    await p.getByRole('tab', { name: 'Plantes' }).click()
+    await p.locator('[data-feat=liste-plantes]').getByText(/Pommier/i).first().click()
+    await p.locator('[data-feat=journal]').waitFor()
+  } },
   { id: 'ennuis-fiche', go: async (p) => { await ouvrirEnnuis(p); await p.locator('[data-ennui-id]').first().click() } },
 ]
 

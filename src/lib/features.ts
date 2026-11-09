@@ -82,7 +82,7 @@ const gardenPlants = () => {
 export function applyToPlant(ask: PlantAsk, plantId: string) {
   if (ask === 'deplacer') return startMoving(plantId)
   setUi({ tab: 'plantes', selectedPlantId: plantId, speciesId: undefined })
-  const path: Record<Exclude<PlantAsk, 'deplacer'>, string> = { fiche: 'fiche', photos: 'photos-plante', croissance: 'croissance', recoltee: 'recoltee', supprimer: 'supprimer' }
+  const path: Record<Exclude<PlantAsk, 'deplacer'>, string> = { fiche: 'fiche', photos: 'photos-plante', journal: 'journal', croissance: 'croissance', recoltee: 'recoltee', supprimer: 'supprimer' }
   void reveal([path[ask]])
 }
 
@@ -143,8 +143,9 @@ export const FEATURES: Feature[] = [
 
   // Mes plantes
   F('mes-plantes', 'Voir mes plantes', 'plantes', 'La liste de vos plantes, rangées par type, avec leur état.', ['liste', 'plantes', 'jardin', 'rechercher'], 'liste-plantes', go('plantes', { path: ['liste-plantes'] })),
-  F('fiche-plante', 'Ouvrir la fiche d’une plante', 'plantes', 'Son état, ses tâches, ses voisines, ses photos et ses réglages.', ['fiche', 'plante', 'détail', 'état'], 'fiche', () => askPlant('fiche')),
+  F('fiche-plante', 'Ouvrir la fiche d’une plante', 'plantes', 'Son état, ses tâches, ses voisines, son journal de photos et ses réglages.', ['fiche', 'plante', 'détail', 'état'], 'fiche', () => askPlant('fiche')),
   F('photo-plante', 'Ajouter une photo à une plante', 'plantes', 'Gardez le souvenir de sa pousse avec des photos prises sur place.', ['photo', 'ajouter une photo', 'image', 'appareil photo'], 'photos-plante', () => askPlant('photos')),
+  F('journal-jardin', 'Voir le journal d’une plante', 'plantes', 'Les photos d’une plante rangées par date, avec une comparaison avant et après.', ['journal', 'photo', 'avant', 'après', 'croissance', 'évolution', 'comparer', 'date'], 'journal', () => askPlant('journal')),
   F('deplacer', 'Déplacer une plante', 'plantes', 'Choisissez la plante, puis touchez la carte au nouvel endroit.', ['déplacer', 'changer de place', 'bouger', 'glisser'], 'placing-banner', () => askPlant('deplacer')),
   F('croissance', 'Suivre la croissance d’une plante', 'plantes', 'Notez sa hauteur et sa largeur : la prévision s’ajuste à la réalité.', ['mesurer', 'croissance', 'hauteur', 'largeur', 'grandir', 'suivre'], 'croissance', () => askPlant('croissance')),
   F('recoltee', 'Marquer une plante comme récoltée', 'plantes', 'Pour une annuelle arrachée : elle ne génère plus de tâches.', ['récoltée', 'fin de saison', 'arracher', 'annuelle'], 'recoltee', () => askPlant('recoltee')),
@@ -202,7 +203,7 @@ export const FEATURES: Feature[] = [
   F('visite', 'Refaire les 5 étapes de départ', 'compte', 'Reprend « Votre jardin en 5 étapes » depuis le début : adresse, terrain, plantes.', ['étapes', 'départ', 'bienvenue', 'adresse', 'recommencer', 'guide'], 'parcours', () => restartOnboarding()),
   F('visite-fonctions', 'Revoir la visite des fonctions', 'compte', 'Six écrans rapides pour retrouver les boutons importants : Tout, Aide, Je suis perdu.', ['visite', 'tutoriel', 'présentation', 'boutons', 'découvrir', 'revoir'], 'visite-fonctions', () => tourOpen.set(true)),
   F('grandes-touches', 'Grandes touches', 'compte', 'Des boutons plus hauts, plus faciles à toucher avec un gros doigt.', ['touches', 'boutons', 'gros', 'taille', 'toucher', 'doigt', 'agrandir', 'trembler'], 'grandes-touches', go('reglages', { path: ['grandes-touches'] })),
-  F('sauvegarde', 'Sauvegarder mes données', 'compte', 'Un fichier à garder : vos jardins et vos plantes, sans les photos.', ['sauvegarde', 'exporter', 'fichier', 'copie', 'données', 'json'], 'sauvegarde', go('reglages', { path: ['sauvegarde'] })),
+  F('sauvegarde', 'Sauvegarder mes données', 'compte', 'Un fichier à garder : vos jardins et vos plantes, sans les images des photos.', ['sauvegarde', 'exporter', 'fichier', 'copie', 'données', 'json'], 'sauvegarde', go('reglages', { path: ['sauvegarde'] })),
   F('sauvegarde-photos', 'Sauvegarde avec photos', 'compte', 'Un seul fichier avec vos données et toutes vos photos.', ['sauvegarde', 'photos', 'permajardin', 'tout sauvegarder'], 'sauvegarde-complete', go('reglages', { path: ['sauvegarde-complete'] })),
   F('reprise', 'Reprendre une sauvegarde', 'compte', 'Retrouvez vos données depuis un fichier de sauvegarde.', ['restaurer', 'reprendre', 'importer', 'récupérer', 'nouveau téléphone'], 'reprise', go('reglages', { path: ['reprise'] })),
   F('copie-securite', 'Récupérer la copie de sécurité', 'compte', 'L’appli garde une copie avant chaque remplacement de vos données.', ['copie de sécurité', 'récupérer', 'perdu', 'erreur', 'secours'], 'copie-securite', go('reglages', { path: ['copie-securite'] })),

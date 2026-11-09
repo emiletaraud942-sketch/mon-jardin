@@ -42,7 +42,7 @@ export const ennuisOpen = createValue<{ id?: string } | undefined>(undefined)
 export const openEnnui = (id?: string) => ennuisOpen.set({ id })
 
 /** Ce qu'on veut faire avec une plante qu'il faut d'abord choisir. */
-export type PlantAsk = 'fiche' | 'photos' | 'croissance' | 'recoltee' | 'supprimer' | 'deplacer'
+export type PlantAsk = 'fiche' | 'photos' | 'journal' | 'croissance' | 'recoltee' | 'supprimer' | 'deplacer'
 export const plantChoice = createValue<PlantAsk | undefined>(undefined)
 
 // ---------- Demandes à un écran ----------
