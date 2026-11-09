@@ -12,6 +12,7 @@ import { hasConsent } from './lib/consent'
 import { neighborsEnabled } from './lib/neighbors/enabled'
 import { setUi } from './lib/ui'
 import { installDiagnostics } from './lib/diagnostics'
+import { startAutoSync } from './lib/autoSync'
 
 installDiagnostics()
 
@@ -55,7 +56,7 @@ function startSync() {
     .then((m) => m.initSync())
     .then((r) => {
       // Synchronisation automatique (compte connecté et accord donné) : jamais d'écrasement silencieux (voir autoSync.ts).
-      void import('./lib/autoSync').then((a) => a.startAutoSync()).catch((e) => console.warn('Synchronisation automatique indisponible', e))
+      void startAutoSync().catch((e) => console.warn('Synchronisation automatique indisponible', e))
       if (!r.handled) return
       setUi({ tab: 'reglages' })
       if (r.error) showToast({ message: r.error, tone: 'error' })

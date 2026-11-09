@@ -10,6 +10,7 @@
 // - couverture progressive du territoire : hors zone, le service renvoie une erreur XML ou du « pas de donnée ».
 // À faire avant mise en production : un GetMap réel sur une adresse couverte, puis une fixture de test.
 import type { LonLat, TerrainGrid, XY } from '../types'
+import { get, set } from 'idb-keyval'
 import { pointInRing, toLocal, toLonLat } from './geo'
 import { fetchWithTimeout } from './http'
 import { heightAt } from './terrain'
@@ -325,7 +326,6 @@ export function isFreshEntry(e: unknown, now = Date.now()): e is CacheEntry {
 
 async function readCache(key: string): Promise<LidarData | null> {
   try {
-    const { get } = await import('idb-keyval')
     const e = await get(key)
     return isFreshEntry(e) ? e.data : null
   } catch {
@@ -335,7 +335,6 @@ async function readCache(key: string): Promise<LidarData | null> {
 
 async function writeCache(key: string, data: LidarData): Promise<void> {
   try {
-    const { set } = await import('idb-keyval')
     await set(key, { v: CACHE_VERSION, at: Date.now(), data } satisfies CacheEntry)
   } catch {
     // cache facultatif

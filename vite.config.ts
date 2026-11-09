@@ -1,5 +1,5 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { readFileSync } from 'node:fs'
@@ -177,5 +177,6 @@ export default defineConfig({
       ]),
     ),
   },
-  test: { environment: 'node' },
+  // e2e/ : tests Playwright (npm run e2e), jamais lancés par vitest.
+  test: { environment: 'node', exclude: [...configDefaults.exclude, 'e2e/**'] },
 })

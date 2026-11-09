@@ -32,6 +32,36 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npx vite build
+      # Budget de taille (gzip) : entrée, précache du service worker, chunks three et maplibre. Seuils dans scripts/check-bundle.mjs.
+      - run: npm run check:bundle
+
+  e2e:
+    name: Test de bout en bout (Chromium, réseau simulé)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: verifier
+    # Construit le site, le sert avec `vite preview` (port 4793) et déroule e2e/smoke.spec.ts à 390 et 1280 px.
+    # Aucun accès à Internet : les appels IGN, météo et Supabase sont simulés (e2e/mocks.ts). Rapport en artefact seulement en cas d'échec.
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npx vite build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: rapport-e2e
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
 
   audit:
     name: Audit des dépendances de production

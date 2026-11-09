@@ -3,7 +3,7 @@
 Guide pas à pas, gratuit (offre Hobby de Vercel + offre gratuite de Supabase). Comptez 15 minutes.
 
 ## 1. Avant de commencer
-- Le dépôt est sur GitHub et `npm run typecheck && npm test && npm run build` passe en local.
+- Le dépôt est sur GitHub et `npm run typecheck && npm test && npm run build && npm run check:bundle` passe en local (`npm run e2e` déroule en plus le test de bout en bout : il sert le dossier `dist/` ; hors CI, il lui faut un Chromium, via `npx playwright install chromium` ou `PW_CHROMIUM_PATH`).
 - Un compte Vercel (connexion avec GitHub).
 - Facultatif : un compte Supabase (synchronisation) et une clé Pl@ntNet (identification par photo).
 
@@ -100,6 +100,11 @@ Remplacez `<domaine>` par votre adresse.
 4. **En-têtes de sécurité** : `curl -I https://<domaine>/` montre `Content-Security-Policy`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options`. `curl -I https://<domaine>/sw.js` montre `Cache-Control: no-cache`.
 5. **PWA** : DevTools > Application > *Manifest* (4 icônes, aucune erreur) et *Service Workers* (activé).
 6. Créez un jardin de démonstration : la carte, la 3D et les tâches s'affichent.
+
+### Contrôles de la CI avant déploiement
+- `check:bundle` échoue si le bundle grossit trop (gzip : entrée 250 Ko, précache 1,2 Mo, three 270 Ko, maplibre 330 Ko) : voir `scripts/check-bundle.mjs`.
+- Le job `e2e` rejoue le parcours de base sur le site construit (réseau simulé, aucun accès à Internet). En cas d'échec, le rapport est dans les artefacts du run.
+- Ces contrôles ne remplacent pas la vérification après déploiement ci-dessus : ils ne testent ni l'IGN réel, ni Supabase, ni un téléphone.
 
 ## 6. Installer l'appli sur le téléphone
 - **iPhone / iPad (Safari uniquement)** : ouvrir le site > bouton Partager > **Sur l'écran d'accueil** > Ajouter. Les notifications ne fonctionnent qu'une fois installée (iOS 16.4 minimum).
