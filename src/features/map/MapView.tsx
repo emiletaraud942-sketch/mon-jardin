@@ -29,12 +29,13 @@ import { SeasonPicker } from '../../components/SeasonPicker'
 import type { Garden, LonLat, Plant, XY } from '../../types'
 import { GardenDataBanner } from '../settings/GardenDataBanner'
 import { plantName } from '../plants/PlantPanel'
+import { reviewToolsEnabled } from '../../lib/debugFlag'
 import { cssVar } from './colors'
 import { GardenSide, PlacingBanner, useSheetHead } from './GardenSide'
 import { SidePanel } from './SidePanel'
 import { movePlant, moveWithUndo, placePlant } from './placing'
 import { confirmBeforePlacing, registerAim, setPlacingInfo, usePlacingInfo } from './aimBridge'
-import { PHOTO_MAP_MAXZOOM, PHOTO_NOTE_ZOOM, cadastreOpacityExpression, gridStepM, mapMaxZoomFor, orthoPaint, review } from './photoZoom'
+import { PHOTO_MAP_MAXZOOM, PHOTO_NOTE_ZOOM, cadastreOpacityExpression, gridStepM, mapMaxZoomFor } from './photoZoom'
 import { LOUPE_HOLD_MS, LOUPE_SIZE, LOUPE_SLOP_PX, LOUPE_ZOOM, gpsCircleRadiusM, loupeCenter, loupeSource, rulerSummary } from './placeAids'
 import { useGps } from '../scan/useGps'
 import { gpsMessage } from '../scan/gps'
@@ -150,7 +151,6 @@ function MapViewInner({ garden }: { garden: Garden }) {
   const { selectedPlantId, placingSpeciesId, movingPlantId, aim, placingSpot, season } = useUi()
   const head = useSheetHead(garden)
   const placingInfo = usePlacingInfo()
-  const rv = review()
   const [base, setBase] = useState<'ortho' | 'plan'>('ortho')
   const [schema, setSchema] = useState(false)
   const [gridOn, setGridOn] = useState(readGrid)
@@ -460,7 +460,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
         },
         layers: [
           { id: 'schema', type: 'background', paint: { 'background-color': SCHEMA_BG }, layout: { visibility: 'none' } },
-          { id: 'ortho', type: 'raster', source: 'ortho', paint: orthoPaint(rv.ortho) },
+          { id: 'ortho', type: 'raster', source: 'ortho' },
           { id: 'plan', type: 'raster', source: 'plan', layout: { visibility: 'none' } },
           // Raster étiré au-delà de son maxzoom : estompé après 18,5 ; la parcelle jaune vectorielle reste nette.
           { id: 'cadastre', type: 'raster', source: 'cadastre', paint: { 'raster-opacity': cadastreOpacityExpression() as never } },
@@ -602,7 +602,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
       }
     })
     map.current = m
-    if (rv.debug) (window as unknown as { __pjMap?: MLMap }).__pjMap = m
+    if (reviewToolsEnabled()) (window as unknown as { __pjMap?: MLMap }).__pjMap = m
     const detachLoupe = attachLoupe(m)
     return () => {
       detachLoupe()

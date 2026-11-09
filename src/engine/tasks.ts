@@ -179,52 +179,6 @@ function ruleIds(sp: Species): string[] {
   })
 }
 
-const FREQUENT_PREFIX = /^(\d{4}-\d{2}-\d{2}|\d{4}-W\d{2})$/
-
-/**
- * Purge de l'historique des tâches faites (à appeler au chargement) :
- *  - supprime les entrées de plus de 400 jours ;
- *  - pour les tâches fréquentes (période = jour ou semaine), ne garde que la dernière entrée
- *    qui couvre chaque plante (les anciennes ne servent plus à rien) ;
- *  - garde les tâches saisonnières et les alertes de gel de moins de 400 jours.
- * Les entrées à date illisible sont conservées. Ne modifie pas l'entrée, garde l'ordre.
- */
-export function purgeTasksDone(done: TaskDone[], now: Date): TaskDone[] {
-  const limit = now.getTime() - 400 * DAY_MS
-  const timeOf = (t: TaskDone) => {
-    const at = new Date(t.doneAt).getTime()
-    return Number.isFinite(at) ? at : null
-  }
-  // Un refus (« je ne veux pas le faire ») ou un report (« pas maintenant ») n'est jamais purgé par l'âge : il vaut tant que la personne ne le retire pas.
-  const isChoice = (t: TaskDone) => t.status === 'refuse' || t.status === 'reporte'
-  const fresh = done.filter((t) => {
-    if (isChoice(t)) return true
-    const at = timeOf(t)
-    return at == null || at >= limit
-  })
-  const state = new Map<string, { all: boolean; tags: Set<string> }>()
-  const drop = new Set<TaskDone>()
-  const newestFirst = [...fresh].sort((a, b) => (timeOf(b) ?? -Infinity) - (timeOf(a) ?? -Infinity))
-  for (const t of newestFirst) {
-    if (isChoice(t)) continue
-    const k = parseTaskKey(t.taskKey)
-    if (!FREQUENT_PREFIX.test(k.prefix) || k.base.startsWith('jardin:protection')) continue
-    const id = `${t.gardenId ?? ''}|${k.base}`
-    const st = state.get(id) ?? { all: false, tags: new Set<string>() }
-    state.set(id, st)
-    if (st.all) {
-      drop.add(t)
-    } else if (!k.tags) {
-      st.all = true
-    } else {
-      const added = k.tags.filter((x) => !st.tags.has(x))
-      if (!added.length) drop.add(t)
-      for (const x of added) st.tags.add(x)
-    }
-  }
-  return fresh.filter((t) => !drop.has(t))
-}
-
 // ---------- Noms ----------
 
 const INVARIABLE = /[sxz]$/

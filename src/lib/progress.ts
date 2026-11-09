@@ -35,10 +35,6 @@ export interface ProgressOpts {
   openedEntretien?: boolean
 }
 
-/** « Premiers pas » : les 3 étapes qui demandent un geste de l'utilisateur (les deux autres se font toutes seules). */
-export const FIRST_STEP_IDS: StepId[] = ['premier-arbre', 'cinq-plantes', 'sol']
-export const firstSteps = (p: Progress): ProgressStep[] => FIRST_STEP_IDS.map((id) => p.steps.find((s) => s.id === id)!).filter(Boolean)
-
 const TREE_STRATES = new Set(['canopee', 'arbre-bas', 'arbuste'])
 export const PLANTS_GOAL = 5
 /** Seuil de la proposition « passer à l'entretien ». */
@@ -90,17 +86,6 @@ export function computeProgress(garden: Garden, plants: Plant[], opts: ProgressO
     placedCount: placed.length,
     openedEntretien: !!opts.openedEntretien,
   }
-}
-
-export type SuggestedMode = 'jardin' | 'entretenir' | 'planifier'
-
-/**
- * Mode conseillé. « entretenir » dès que le jardin est assez modélisé (≥ 70 % et ≥ 3 plantes en place) ;
- * « planifier » seulement si l'utilisateur a déjà ouvert Entretien ; sinon « jardin ».
- */
-export function suggestedMode(p: Progress): SuggestedMode {
-  if (p.percent < READY_PERCENT || p.placedCount < READY_PLANTS) return 'jardin'
-  return p.openedEntretien ? 'planifier' : 'entretenir'
 }
 
 // ---------- « Prochaine étape » (accueil) ----------

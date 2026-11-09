@@ -313,6 +313,7 @@ export const LOCAL_STORAGE_KEYS: readonly StorageKeyInfo[] = [
 /** Clés sessionStorage (effacées à la fermeture de l'onglet ; « Effacer toutes mes données » les retire aussi). */
 export const SESSION_STORAGE_KEYS: readonly StorageKeyInfo[] = [
   { cle: 'pj.force3d', contenu: '« Essayer quand même » choisi pour la 3D (session seulement)' },
+  { cle: 'pj.debug', contenu: 'Outils de mesure des recettes (mesures 3D, accès à la carte) : posée à la main par un script de test, jamais par l’appli' },
   { cle: 'pj.errors', contenu: 'Les 20 dernières erreurs de l’appli (texte nettoyé), pour le diagnostic ; jamais envoyées' },
 ]
 

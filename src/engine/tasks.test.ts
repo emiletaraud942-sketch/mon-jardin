@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, afterEach, describe, expect, it, vi } from 'vitest'
 import type { DailyWeather, Garden, Plant, Species, TaskDone, WeatherBundle } from '../types'
 import { SPECIES_BY_ID } from '../data/species'
-import { annualSeasonOver, generateTasks, harvestMinAgeYears, pluralFr, purgeTasksDone, waterBalance, weekKey, yearPlan, type TaskContext } from './tasks'
+import { annualSeasonOver, generateTasks, harvestMinAgeYears, pluralFr, waterBalance, weekKey, yearPlan, type TaskContext } from './tasks'
 
 const garden: Garden = { id: 'g1', name: 'Test', address: '', center: { lat: 48.85, lon: 2.35 }, createdAt: '2026-01-01' }
 
@@ -746,55 +746,6 @@ describe('règles explicites de semis / plantation et dernières gelées', () =>
   })
 })
 
-// ---------- Purge de l'historique ----------
-
-describe('purgeTasksDone', () => {
-  const now = new Date('2026-10-18T10:00:00Z')
-
-  it('supprime les entrées de plus de 400 jours, garde les autres', () => {
-    const vieux = done('2024-W10:a:taille:m1', '2024-03-01T10:00:00Z')
-    const limite = done('2025:pommier:taille:m1:aaaa', '2025-09-20T10:00:00Z') // 393 jours
-    const recent = done('2026:pommier:taille:m1:aaaa', '2026-03-01T10:00:00Z')
-    expect(purgeTasksDone([vieux, limite, recent], now)).toEqual([limite, recent])
-  })
-
-  it('tâche fréquente : ne garde que la dernière entrée par clé de base', () => {
-    const k = (week: string, tags?: string) => `${week}:tomate:arrosage:m6.7.8${tags ? ':' + tags : ''}`
-    const e1 = done(k('2026-W38'), '2026-09-17T08:00:00Z')
-    const e2 = done(k('2026-W40'), '2026-09-30T08:00:00Z')
-    const e3 = done(k('2026-W41'), '2026-10-10T08:00:00Z')
-    const autre = done('2026-W41:laitue:desherbage:m3.4', '2026-10-10T08:00:00Z')
-    expect(purgeTasksDone([e1, e2, e3, autre], now)).toEqual([e3, autre])
-  })
-
-  it('tâche fréquente par plante : garde la dernière entrée qui couvre chaque plante', () => {
-    const k = (week: string, tags: string) => `${week}:tomate:arrosage:m6.7.8:${tags}`
-    const ab1 = done(k('2026-W39', 'aaaa.bbbb'), '2026-09-24T08:00:00Z')
-    const ab2 = done(k('2026-W40', 'aaaa.bbbb'), '2026-10-01T08:00:00Z')
-    const c = done(k('2026-W41', 'cccc'), '2026-10-10T08:00:00Z')
-    const kept = purgeTasksDone([ab1, ab2, c], now)
-    expect(kept).toEqual([ab2, c])
-  })
-
-  it('tâches saisonnières et alertes de gel : toutes conservées dans l’année', () => {
-    const s1 = done('2026:pommier:taille:m1:aaaa', '2026-01-10T10:00:00Z')
-    const s2 = done('2026:pommier:taille:m1:bbbb', '2026-02-10T10:00:00Z')
-    const g1 = done('2026-01-14:jardin:protection:gel', '2026-01-13T10:00:00Z')
-    const g2 = done('2026-02-03:jardin:protection:gel', '2026-02-02T10:00:00Z')
-    expect(purgeTasksDone([s1, s2, g1, g2], now)).toEqual([s1, s2, g1, g2])
-  })
-
-  it('ne modifie pas l’entrée, conserve l’ordre, tolère une date illisible', () => {
-    const bad = done('2026:x:taille:m1', 'pas-une-date')
-    const input = [done('2026:y:taille:m1', '2026-03-01T10:00:00Z'), bad]
-    const copy = [...input]
-    const out = purgeTasksDone(input, now)
-    expect(input).toEqual(copy)
-    expect(out).toEqual(copy)
-    expect(out).not.toBe(input)
-  })
-})
-
 // ---------- Dates locales ----------
 
 describe('dates locales (fuseau Europe/Paris)', () => {
@@ -989,14 +940,5 @@ describe('tâches reportées ou refusées', () => {
     const later = new Date(2026, 3, 20, 9)
     const w2 = weather(later, [], [{ tMin: -3 }])
     expect(run({ plants: [plant('citronnier')], today: later, weather: w2, tasksDone: [refuse] }).some((t) => t.key.endsWith(':jardin:protection:gel'))).toBe(true)
-  })
-  it('purgeTasksDone garde les refus et les reports, même très anciens', () => {
-    const old = '2020-01-01T00:00:00.000Z'
-    const list: TaskDone[] = [
-      { id: 'a', gardenId: 'g1', taskKey: '2020-W01:pommier:taille:m1', doneAt: old },
-      { id: 'b', gardenId: 'g1', taskKey: '2020-W01:pommier:taille:m1:abcd', doneAt: old, status: 'refuse' },
-      { id: 'c', gardenId: 'g1', taskKey: '2020-W01:tomate:arrosage:m6', doneAt: old, status: 'reporte', until: '2020-02-01T00:00:00.000Z' },
-    ]
-    expect(purgeTasksDone(list, new Date(2026, 0, 13)).map((t) => t.id)).toEqual(['b', 'c'])
   })
 })

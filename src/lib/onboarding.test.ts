@@ -9,7 +9,6 @@ import {
   isFinished,
   markStep,
   parseOnboarding,
-  percentDone,
   restartTour,
   settledCount,
   shouldShowRoute,
@@ -36,7 +35,6 @@ describe('étapes du parcours', () => {
     expect(currentStep(s, true)).toBe('plantes')
     expect(stepStatus(s, 'terrain')).toBe('skipped')
     expect(settledCount(s, true)).toBe(2)
-    expect(percentDone(s, true)).toBe(40)
   })
 
   it('passer une étape puis la faire (ou l’inverse) ne la compte qu’une fois', () => {
@@ -66,7 +64,6 @@ describe('étapes du parcours', () => {
     expect(isFinished(s, true)).toBe(false)
     expect(shouldShowRoute(s, false)).toBe(false)
     expect(shouldShowRoute(s, true)).toBe(true)
-    expect(percentDone(s, false)).toBe(100)
   })
 
   it('la carte de route reste tant que ce n’est pas fini, jusqu’à « Passer et découvrir »', () => {

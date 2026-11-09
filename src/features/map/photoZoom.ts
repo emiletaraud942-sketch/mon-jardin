@@ -1,4 +1,4 @@
-// Zoom utile de la photo aérienne, plafond de zoom et réglages de revue masqués (`?ortho=…`, `?debug=map`).
+// Zoom utile de la photo aérienne, plafond de zoom.
 // Pur, sans DOM : tout est testé dans photoZoom.test.ts.
 //
 // Convention MapLibre : une carte de zoom Z dessine le monde sur 512 × 2^Z pixels. Avec des tuiles de 256 px,
@@ -99,44 +99,3 @@ export function cadastreOpacityExpression(): unknown[] {
 
 /** Zoom à partir duquel la mention « la photo n'est pas plus précise » s'affiche. */
 export const PHOTO_NOTE_ZOOM = PHOTO_MAX_MAP_ZOOM - 0.1
-
-// ---------- réglages de revue masqués (jamais actifs par défaut) ----------
-
-export type OrthoTweak = 'net' | 'nearest'
-
-export interface ReviewParams {
-  /** `?ortho=net,nearest` : réglages de netteté de la photo (NON validés visuellement). */
-  ortho: OrthoTweak[]
-  /** `?debug=map` : expose la carte dans `window.__pjMap` (mesures). */
-  debug: boolean
-}
-
-export function parseReview(search: string): ReviewParams {
-  const q = new URLSearchParams(search)
-  const ortho = (q.get('ortho') ?? '')
-    .split(',')
-    .map((t) => t.trim())
-    .filter((t): t is OrthoTweak => t === 'net' || t === 'nearest')
-  return { ortho, debug: q.get('debug') === 'map' }
-}
-
-let cached: ReviewParams | undefined
-export function review(): ReviewParams {
-  if (!cached) cached = parseReview(typeof location === 'undefined' ? '' : location.search)
-  return cached
-}
-
-/**
- * Réglages de peinture de la couche photo selon `?ortho=…`. Aucun réglage par défaut.
- * `net` : contraste et saturation légèrement relevés. `nearest` : pixels non lissés.
- * `raster-brightness-min/max` n'est pas proposé : il ne fait que comprimer la plage des tons (0 à 1), il n'affûte rien.
- */
-export function orthoPaint(tweaks: OrthoTweak[]): Record<string, number | string> {
-  const paint: Record<string, number | string> = {}
-  if (tweaks.includes('net')) {
-    paint['raster-contrast'] = 0.2
-    paint['raster-saturation'] = 0.1
-  }
-  if (tweaks.includes('nearest')) paint['raster-resampling'] = 'nearest'
-  return paint
-}

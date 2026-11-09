@@ -221,11 +221,6 @@ export const FEATURES: Feature[] = [
 /** Fonctions proposées sur cet appareil (la synthèse vocale ou l’entraide peuvent manquer). */
 export const visibleFeatures = (): Feature[] => FEATURES.filter((f) => !f.visibleSi || f.visibleSi())
 
-/** Lance une fonction : même chemin pour « Tout ce que je peux faire » et la recherche. */
-export function runFeature(f: Feature) {
-  f.run()
-}
-
 // ---------- Recherche ----------
 
 /** Minuscules, sans accents, « œ » devenu « oe », apostrophes en espaces. */

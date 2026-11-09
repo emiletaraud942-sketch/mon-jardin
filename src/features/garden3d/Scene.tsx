@@ -404,7 +404,7 @@ export function Scene(props: SceneProps) {
   })
   const visualsRef = useRef(visuals)
   visualsRef.current = visuals
-  // Mesures de développement (?debug=1) : projection d'une plante à l'écran, compteurs de rendu et de reconstruction.
+  // Mesures de recette (voir debugFlag.ts) : projection d'une plante à l'écran, compteurs de rendu et de reconstruction.
   useEffect(() => {
     if (!DEBUG_3D) return
     const w = window as unknown as { __g3d?: unknown }

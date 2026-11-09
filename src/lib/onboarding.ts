@@ -48,7 +48,6 @@ export const currentStep = (s: OnboardingState, neighbors: boolean): OnboardingS
 export const isFinished = (s: OnboardingState, neighbors: boolean) => currentStep(s, neighbors) === undefined
 /** Étapes faites ou passées. */
 export const settledCount = (s: OnboardingState, neighbors: boolean) => activeSteps(neighbors).filter((id) => stepStatus(s, id) !== 'todo').length
-export const percentDone = (s: OnboardingState, neighbors: boolean) => Math.round((settledCount(s, neighbors) / activeSteps(neighbors).length) * 100)
 /** La carte « Votre jardin en N étapes » reste en haut de l'accueil tant que tout n'est pas fait ou passé, sauf si l'utilisateur l'a masquée. */
 export const shouldShowRoute = (s: OnboardingState, neighbors: boolean) => !s.legacy && !s.hidden && !isFinished(s, neighbors)
 

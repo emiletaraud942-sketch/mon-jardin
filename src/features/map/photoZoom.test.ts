@@ -18,8 +18,6 @@ import {
   PHOTO_MAP_MAXZOOM,
   gridStepM,
   mapZoomForTileZoom,
-  orthoPaint,
-  parseReview,
   photoPixelM,
   photoStretch,
   photoUsefulMapZoom,
@@ -71,20 +69,6 @@ describe('grille d\'aide', () => {
   })
   it('la grille 1 m reste disponible au zoom plafond de la variante « repères »', () => {
     expect(gridStepM(PHOTO_MAX_MAP_ZOOM, 49.5)).toBe(1)
-  })
-})
-
-describe('réglages de revue masqués', () => {
-  it('lit ?ortho et ?debug ; ?zoom n\'existe plus', () => {
-    expect(parseReview('')).toEqual({ ortho: [], debug: false })
-    expect(parseReview('?zoom=plan&zoom=reperes')).toEqual({ ortho: [], debug: false })
-    expect(parseReview('?debug=map')).toEqual({ ortho: [], debug: true })
-    expect(parseReview('?ortho=net,nearest,x').ortho).toEqual(['net', 'nearest'])
-  })
-  it('aucun réglage de peinture par défaut', () => {
-    expect(orthoPaint([])).toEqual({})
-    expect(orthoPaint(['net'])).toEqual({ 'raster-contrast': 0.2, 'raster-saturation': 0.1 })
-    expect(orthoPaint(['nearest'])).toEqual({ 'raster-resampling': 'nearest' })
   })
 })
 

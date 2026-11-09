@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Garden, Plant } from '../types'
-import { computeProgress, firstSteps, nextStep, suggestedMode, warmWord, type NextStepContext, type ProgressOpts } from './progress'
+import { computeProgress, nextStep, warmWord, type NextStepContext, type ProgressOpts } from './progress'
 
 const SPECIES: ProgressOpts['speciesById'] = {
   pommier: { strate: 'arbre-bas' },
@@ -72,10 +72,6 @@ describe('computeProgress : étapes', () => {
     expect(step(garden({ sol: 'argileux' }), [], 'sol').done).toBe(true)
   })
 
-  it('« Premiers pas » : 3 étapes qui demandent un geste', () => {
-    expect(firstSteps(computeProgress(garden(), [], opts())).map((x) => x.id)).toEqual(['premier-arbre', 'cinq-plantes', 'sol'])
-  })
-
   it('les étapes faites n’ont pas de bouton d’action utile, les autres en ont un', () => {
     const p = computeProgress(garden(), [], opts())
     expect(p.steps.find((s) => s.id === 'adresse')?.action).toBeUndefined()
@@ -97,31 +93,6 @@ describe('pourcentage', () => {
     const g = garden({ sol: 'sableux' })
     expect(computeProgress(g, [], opts()).percent).toBe(40) // 2 sur 5
     expect(computeProgress(g, [plant('pommier')], opts()).percent).toBe(60) // 3 sur 5
-  })
-})
-
-describe('suggestedMode', () => {
-  const parcel = [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }]
-  const three = [plant('pommier'), plant('tomate'), plant('tomate')]
-  const ready = garden({ parcel, buildings: [], sol: 'argileux' }) // adresse + données + sol + arbre = 4 sur 5 (80 %)
-
-  it('jardin vide : « jardin »', () => {
-    expect(suggestedMode(computeProgress(garden(), [], opts()))).toBe('jardin')
-  })
-  it('80 % et 3 plantes : « entretenir »', () => {
-    const p = computeProgress(ready, three, opts())
-    expect(p.percent).toBe(80)
-    expect(suggestedMode(p)).toBe('entretenir')
-  })
-  it('80 % mais moins de 3 plantes : « jardin »', () => {
-    expect(suggestedMode(computeProgress(ready, three.slice(0, 2), opts()))).toBe('jardin')
-  })
-  it('3 plantes mais moins de 70 % : « jardin »', () => {
-    expect(suggestedMode(computeProgress(garden(), three, opts()))).toBe('jardin')
-  })
-  it('« planifier » seulement si Entretien a déjà été ouvert', () => {
-    expect(suggestedMode(computeProgress(ready, three, opts({ openedEntretien: true })))).toBe('planifier')
-    expect(suggestedMode(computeProgress(garden(), three, opts({ openedEntretien: true })))).toBe('jardin')
   })
 })
 

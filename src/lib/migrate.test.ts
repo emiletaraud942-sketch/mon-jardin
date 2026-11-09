@@ -288,6 +288,16 @@ describe('compactTasksDone', () => {
   it('conserve une entrée à la date illisible plutôt que de la perdre', () => {
     expect(compactTasksDone([t('1', 'a:b', 'nope')], now)).toHaveLength(1)
   })
+
+  it('garde un refus même très ancien, et un report jusqu’à 30 jours après son retour', () => {
+    const old = '2020-01-01T00:00:00.000Z'
+    const list = [
+      { ...t('r', '2020-W01:pommier:taille:m1:abcd', old), status: 'refuse' as const },
+      { ...t('p', '2026-W40:tomate:arrosage:m6', '2026-10-01T00:00:00.000Z'), status: 'reporte' as const, until: '2026-11-01T00:00:00.000Z' },
+      { ...t('x', '2020-W01:tomate:arrosage:m6', old), status: 'reporte' as const, until: '2020-02-01T00:00:00.000Z' },
+    ]
+    expect(compactTasksDone(list, now).map((x) => x.id)).toEqual(['r', 'p'])
+  })
 })
 
 describe('points de vue en photos (panoramas)', () => {

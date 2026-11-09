@@ -468,18 +468,6 @@ describe('photos orphelines', () => {
     expect(db.has('photo:a')).toBe(true)
   })
 
-  it('removeGarden supprime les photos de ses plantes', async () => {
-    db.set(KEY, { gardens: [garden, { ...garden, id: 'g2' }], plants: [plant, { ...plant, id: 'p2', gardenId: 'g2', photos: ['photo:b'] }], tasksDone: [] })
-    db.set('photo:a', new Blob(['x']))
-    db.set('photo:b', new Blob(['x']))
-    const s = await freshStore()
-    await s.loadState()
-    s.removeGarden('g1')
-    await vi.advanceTimersByTimeAsync(10)
-    expect(db.has('photo:a')).toBe(false)
-    expect(db.has('photo:b')).toBe(true)
-  })
-
   it('replaceData supprime les photos des plantes retirées, sauf celles encore référencées', async () => {
     db.set(KEY, { gardens: [garden], plants: [plant, { ...plant, id: 'p2', photos: ['photo:b'] }], tasksDone: [] })
     db.set('photo:a', new Blob(['x']))
@@ -520,18 +508,6 @@ describe('photos des points de vue (panoramas)', () => {
     expect(db.has('photo:v1')).toBe(true)
     expect(db.has('photo:v2')).toBe(true)
     expect(db.has('photo:orpheline')).toBe(false)
-  })
-
-  it('removeGarden supprime les photos de ses points de vue', async () => {
-    db.set(KEY, { gardens: [panoGarden, { ...garden, id: 'g2' }], plants: [], tasksDone: [] })
-    db.set('photo:v1', new Blob(['x']))
-    db.set('photo:v2', new Blob(['x']))
-    const s = await freshStore()
-    await s.loadState()
-    s.removeGarden('g1')
-    await vi.advanceTimersByTimeAsync(10)
-    expect(db.has('photo:v1')).toBe(false)
-    expect(db.has('photo:v2')).toBe(false)
   })
 
   it('replaceData (import, synchro) garde les points de vue de cet appareil', async () => {

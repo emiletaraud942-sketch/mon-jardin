@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { SPECIES_BY_ID } from '../data/species'
 import type { Plant } from '../types'
 import { migrateState } from './migrate'
-import { formsFor, isTree, measureAdvice, purchaseFormLabel, purchasePatch, PURCHASE_FORMS, shouldAskPurchase, suggestedAgeYears, suggestedHeightCm } from './purchase'
+import { formsFor, isTree, measureAdvice, purchaseFormLabel, purchasePatch, PURCHASE_FORMS, suggestedAgeYears, suggestedHeightCm } from './purchase'
 
 const sp = (id: string) => SPECIES_BY_ID[id]
 const plant = (extra: Partial<Plant> = {}): Plant => ({ id: 'p1', gardenId: 'g1', speciesId: 'pommier', position: { x: 0, y: 0 }, plantedAt: '2026-03-10', status: 'en-place', photos: [], ...extra })
@@ -53,15 +53,9 @@ describe('purchasePatch', () => {
   it('« je ne veux pas le renseigner » : mémorisé, sans âge ni mesure inventés', () => {
     const patch = purchasePatch(plant(), sp('pommier'), { skipped: true })
     expect(patch).toEqual({ purchase: { skipped: true } })
-    expect(shouldAskPurchase({ status: 'en-place', purchase: patch.purchase })).toBe(false)
   })
   it('rien de renseigné : pas d’achat', () => {
     expect(purchasePatch(plant(), sp('pommier'), { shop: '   ' }).purchase).toBeUndefined()
-  })
-  it('on ne demande l’achat qu’une fois, pour une plante en place', () => {
-    expect(shouldAskPurchase({ status: 'en-place' })).toBe(true)
-    expect(shouldAskPurchase({ status: 'projet' })).toBe(false)
-    expect(shouldAskPurchase({ status: 'en-place', purchase: { form: 'godet' } })).toBe(false)
   })
 })
 

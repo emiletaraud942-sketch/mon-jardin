@@ -82,9 +82,6 @@ export function purchasePatch(plant: Plant, sp: Pick<Species, 'strate' | 'vivace
   return patch
 }
 
-/** Faut-il demander l'achat ? Oui pour une plante en place, sans achat renseigné et sans « je ne veux pas ». */
-export const shouldAskPurchase = (plant: Pick<Plant, 'status' | 'purchase'>): boolean => plant.status === 'en-place' && !plant.purchase
-
 export interface MeasureAdvice {
   text: string
   /** Vrai si c'est le moment (première mesure, ou mesure ancienne en saison de croissance). */

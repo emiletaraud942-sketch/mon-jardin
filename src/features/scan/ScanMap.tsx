@@ -12,7 +12,7 @@ import { IGN_ATTRIBUTION, ORTHO_MAXZOOM, ORTHO_TILES, TILE_SIZE } from '../../li
 import { toLocal, toLonLat } from '../../lib/geo'
 import type { Garden, Plant, XY } from '../../types'
 import { cssVar } from '../map/colors'
-import { PHOTO_MAP_MAXZOOM, orthoPaint, review } from '../map/photoZoom'
+import { PHOTO_MAP_MAXZOOM } from '../map/photoZoom'
 import { dragThresholdPx, nudgePosition } from '../map/nudge'
 
 /** Point fixe avec une étiquette courte (repère, point choisi…). */
@@ -122,7 +122,7 @@ function ScanMapInner({ garden, plants, onTap, dots = [], pending = [], onSelect
       style: {
         version: 8,
         sources: { ortho: { type: 'raster', tiles: [ORTHO_TILES], tileSize: TILE_SIZE, maxzoom: ORTHO_MAXZOOM, attribution: IGN_ATTRIBUTION } },
-        layers: [{ id: 'ortho', type: 'raster', source: 'ortho', paint: orthoPaint(review().ortho) }],
+        layers: [{ id: 'ortho', type: 'raster', source: 'ortho' }],
       },
     })
     m.addControl(new maplibregl.AttributionControl({ compact: true }))
