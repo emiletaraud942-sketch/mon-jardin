@@ -79,6 +79,34 @@ function estimatedWinterMinC(lastFrostDoy: number): number {
   return Math.max(-25, Math.min(-2, -3 - (lastFrostDoy - 45) * 0.15))
 }
 
+/**
+ * Froid de référence du jardin pour la rusticité : le plus fort froid observé sur 5 ans (`minAbsC`) s'il est connu,
+ * sinon l'estimation d'après la date des dernières gelées. `undefined` si le jardin n'a aucune des deux données.
+ */
+export function winterReference(garden: Pick<Garden, 'minAbsC' | 'lastFrostDoy'>): { tMinC: number; observed: boolean } | undefined {
+  if (garden.minAbsC != null) return { tMinC: garden.minAbsC, observed: true }
+  if (garden.lastFrostDoy != null) return { tMinC: estimatedWinterMinC(garden.lastFrostDoy), observed: false }
+  return undefined
+}
+
+export type WinterVerdict = 'oui' | 'proteger' | 'non'
+
+/**
+ * La plante passe-t-elle l'hiver du jardin ? Même règle que le score de `scoreSpecies` (vivaces seulement) :
+ * marge = froid supporté − froid du jardin. Marge ≤ 0 : oui. Entre 0 et 5 °C : à protéger (voile, pot rentré).
+ * Plus de 5 °C : non, sans abri (le score la pénalise alors deux fois plus). Une plante à semer chaque année : `undefined`.
+ */
+export function winterVerdict(
+  species: Pick<Species, 'vivace' | 'rusticiteC'>,
+  garden: Pick<Garden, 'minAbsC' | 'lastFrostDoy'>,
+): { verdict: WinterVerdict; tMinC: number; observed: boolean } | undefined {
+  if (!species.vivace) return undefined
+  const ref = winterReference(garden)
+  if (!ref) return undefined
+  const margin = species.rusticiteC - ref.tMinC
+  return { ...ref, verdict: margin > 5 ? 'non' : margin > 0 ? 'proteger' : 'oui' }
+}
+
 export function legalDistance(
   species: Species,
   spot: XY,
@@ -205,10 +233,10 @@ export function scoreSpecies(
   }
 
   // 4. Rusticité (seulement si on connaît les gelées locales, et pour les vivaces)
-  if ((garden.minAbsC != null || garden.lastFrostDoy != null) && species.vivace) {
+  const winter = species.vivace ? winterReference(garden) : undefined
+  if (winter) {
     // Froid observé sur 5 ans si on l'a ; sinon estimation d'après la date des dernières gelées.
-    const observed = garden.minAbsC != null
-    const tMin = observed ? garden.minAbsC! : estimatedWinterMinC(garden.lastFrostDoy!)
+    const { tMinC: tMin, observed } = winter
     const margin = species.rusticiteC - tMin
     if (margin > 0) {
       factors.push({ label: `Rusticité limite (${species.rusticiteC} °C, ${observed ? `hiver le plus froid observé ${Math.round(tMin)} °C` : `hivers ≈ ${Math.round(tMin)} °C estimés`})`, points: margin > 5 ? -20 : -10 })

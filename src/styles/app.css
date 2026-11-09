@@ -4771,6 +4771,47 @@ html[data-immersive] body {
   font-size: calc(30 * var(--px));
   line-height: 1;
 }
+/* Alertes de jardin (canicule, sécheresse, vent fort) : icône et mot dans la pastille, jamais la couleur seule. */
+.badge.alert-canicule {
+  background: var(--give-bg);
+  color: var(--give-text);
+}
+.badge.alert-secheresse {
+  background: var(--warn-soft);
+  color: var(--warn-text);
+}
+.badge.alert-vent {
+  background: var(--water-bg);
+  color: var(--water-text);
+}
+.tcard.tcard-alert .tcard-tile {
+  background: var(--warn-soft);
+  color: var(--warn-text);
+}
+/* Accueil : une phrase discrète sous « Chez … » quand une alerte est active (mène à À faire). */
+.home-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--warn-soft);
+  color: var(--warn-text);
+  font: inherit;
+  font-size: calc(14 * var(--px));
+  font-weight: var(--fw-strong);
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+}
+.home-alert > span {
+  flex: 1;
+  min-width: 0;
+}
 .afaire-frost {
   display: flex;
   align-items: center;

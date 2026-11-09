@@ -1,5 +1,6 @@
 // Climat du jardin : phrase d'affichage, zone de rusticité, repérage de la France métropolitaine.
-import type { Garden, LonLat } from '../types'
+import type { Garden, LonLat, Species } from '../types'
+import { winterVerdict, type WinterVerdict } from './planting'
 
 /** Nombre à la française : 1 200 (espace insécable). */
 const frInt = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
@@ -12,15 +13,46 @@ export function zoneCode(zone: string | undefined): string | undefined {
 
 /**
  * Phrase simple sur le climat enregistré : « Votre jardin : zone 8a, environ 650 mm de pluie par an ».
- * La pluie est arrondie à 10 mm. `undefined` si le jardin n'a ni zone ni pluie (ancien jardin, calcul en échec).
+ * La pluie est arrondie à 10 mm. `short` : sans « Votre jardin : ». `undefined` si le jardin n'a ni zone ni pluie (ancien jardin, calcul en échec).
  */
-export function climateSummary(garden: Pick<Garden, 'climateZone' | 'rainMmPerYear'>): string | undefined {
+export function climateSummary(garden: Pick<Garden, 'climateZone' | 'rainMmPerYear'>, opts: { short?: boolean } = {}): string | undefined {
   const parts: string[] = []
   const zone = zoneCode(garden.climateZone)
   if (zone) parts.push(`zone ${zone}`)
   const rain = garden.rainMmPerYear
   if (rain != null && Number.isFinite(rain) && rain >= 0) parts.push(`environ ${frInt(Math.round(rain / 10) * 10)} mm de pluie par an`)
-  return parts.length ? `Votre jardin : ${parts.join(', ')}` : undefined
+  if (!parts.length) return undefined
+  // Forme courte, pour la carte « Chez … » de l'accueil où le mot « jardin » est déjà dit : « Zone 8a, environ 650 mm de pluie par an ».
+  if (opts.short) return `${parts.join(', ').replace(/^./, (c) => c.toUpperCase())}`
+  return `Votre jardin : ${parts.join(', ')}`
+}
+
+/** Nombre signé avec un vrai signe moins : −8. */
+const signed = (n: number) => (Math.round(n) < 0 ? `−${Math.abs(Math.round(n))}` : String(Math.round(n)))
+
+const WINTER_LABEL: Record<WinterVerdict, string> = { oui: 'Oui', proteger: 'À protéger', non: 'Non, pas sans abri' }
+
+/**
+ * « Passe l'hiver chez vous ? » pour la fiche d'une plante : un mot (oui, à protéger, non) et une phrase en mots simples.
+ * Même règle de rusticité que « Où planter ? » (`winterVerdict`, planting.ts) : froid supporté contre le froid observé sur 5 ans
+ * (`Garden.minAbsC`) ou, à défaut, estimé d'après les dernières gelées (`lastFrostDoy`).
+ * Rien (`undefined`) pour une plante à semer chaque année, un jardin sans donnée de froid, ou hors France métropolitaine :
+ * ces conseils n'y sont pas calibrés, on ne promet rien.
+ */
+export function winterAdvice(
+  species: Pick<Species, 'vivace' | 'rusticiteC'>,
+  garden: Pick<Garden, 'center' | 'minAbsC' | 'lastFrostDoy'>,
+): { verdict: WinterVerdict; label: string; sentence: string } | undefined {
+  if (!isMetropolitan(garden.center)) return undefined
+  const w = winterVerdict(species, garden)
+  if (!w) return undefined
+  const supports = `Elle supporte ${signed(species.rusticiteC)} °C`
+  const here = w.observed
+    ? `votre hiver le plus froid, sur 5 ans, est descendu à ${signed(w.tMinC)} °C`
+    : `vos hivers descendent vers ${signed(w.tMinC)} °C (estimation)`
+  const tail =
+    w.verdict === 'oui' ? '' : w.verdict === 'proteger' ? ' Prévoyez un voile ou un pot à rentrer.' : " Gardez-la en pot, à rentrer l'hiver."
+  return { verdict: w.verdict, label: WINTER_LABEL[w.verdict], sentence: `${supports} ; ${here}.${tail}` }
 }
 
 // Contour grossier de la France continentale (lon, lat), mer comprise à quelques dizaines de km : sert à dire

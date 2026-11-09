@@ -16,6 +16,7 @@ import type {
 import { isoDate } from '../lib/dates'
 import { localDate, plantAgeYears } from './growth'
 import { MONTH_NAMES, formatDoy, frostGate, plantingCalendar } from './calendar'
+import { ALERT_BASE, alertKey, detectAlerts, type AlertKind } from './alerts'
 
 export interface TaskContext {
   garden: Garden
@@ -135,6 +136,8 @@ function seasonKey(months: Month[], today: Date): string {
 //    Elles disent quelles plantes ont été couvertes : une plante ajoutée plus tard fait réapparaître la tâche.
 // Anciennes clés (règle = index, pas de plantes) : encore reconnues, elles couvrent toutes les plantes.
 // Alerte gel : `date-de-la-première-nuit:jardin:protection:gel`.
+// Alertes canicule, sécheresse, vent fort (alerts.ts) : `date:jardin:protection:canicule` (1er jour de la vague),
+// `date:jardin:arrosage:secheresse` (jour même), `date:jardin:protection:vent` (1er jour de vent fort).
 
 interface ParsedKey {
   prefix: string
@@ -528,6 +531,40 @@ export function generateTasks(ctx: TaskContext): GeneratedTask[] {
           plantIds: atRisk.map((p) => p.id),
           priority: 'haute',
           reason: `Gel prévu ${dayLabel(first.date, todayIso)} (${fmtT(first.tMin)} °C${stronger}) : ${list} ${verb} de geler.`,
+        })
+      }
+    }
+  }
+
+  // 2 bis. Alertes de jardin : canicule, sécheresse, vent fort (alerts.ts). Même mécanisme que le gel : clé datée,
+  // « Urgent », et « Pas maintenant » / « Je ne veux pas » ne valent que pour cette clé (l'alerte revient avec la suivante).
+  // Il faut au moins une plante en place : sans plante, rien à protéger.
+  if (weather) {
+    const live = plants.filter((p) => isActive(p) && speciesById[p.speciesId] && !annualSeasonOver(p, speciesById[p.speciesId], today))
+    const isYoung = (p: Plant) => {
+      const planted = new Date(p.plantedAt).getTime()
+      return Number.isFinite(planted) && today.getTime() - planted < 365.25 * DAY_MS
+    }
+    const concerned = (kind: AlertKind) =>
+      kind === 'secheresse'
+        ? live.filter((p) => speciesById[p.speciesId].eau !== 'faible' || isYoung(p))
+        : live.filter(isYoung)
+    if (live.length) {
+      for (const a of detectAlerts(weather, today, balance)) {
+        const key = alertKey(a)
+        // Sécheresse : la clé change chaque jour ; un arrosage fait il y a moins de 3 jours la met de côté (comme l'arrosage météo).
+        if (doneKeys.has(key) || choiceKeys.has(key)) continue
+        if (a.kind === 'secheresse' && recentlyDone(ALERT_BASE.secheresse, 3)) continue
+        tasks.push({
+          key,
+          type: a.kind === 'secheresse' ? 'arrosage' : 'protection',
+          title: a.title,
+          howTo: a.howTo,
+          plantIds: concerned(a.kind).map((p) => p.id),
+          priority: 'haute',
+          reason: a.reason,
+          detail: a.detail,
+          alert: a.kind,
         })
       }
     }

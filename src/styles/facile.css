@@ -594,6 +594,22 @@ dialog.modal.full .modal-head .modal-home {
   display: block;
   font-size: calc(14 * var(--px));
 }
+/* Zone climatique : une ligne sous le résumé, sur toute la largeur de la carte (le pot est plus petit et remonte) ; deux lignes au plus sur très petit écran. */
+.accueil .chez.has-climate .chez-art {
+  top: 6px;
+  transform: none;
+  width: 48px;
+}
+.accueil .chez-climate {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-right: -68px;
+  font-size: calc(13 * var(--px));
+  line-height: 1.3;
+  color: var(--muted-2);
+}
 .accueil .nextstep {
   margin-top: 8px;
   padding: 8px 8px 8px 14px;

@@ -8,7 +8,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 /**
  * Libellé lisible d'une tâche faite, d'après sa clé (`période:espèce:type:suite`, ou `période:jardin:type:suite`).
  * Exemples : `2026-W41:pommier:arrosage:0` → « Arrosage · Pommier » ; `…:jardin:arrosage:meteo` → « Arrosage (météo) » ;
- * `…:jardin:protection:gel` → « Protection gel ». Tolère les clés inattendues : renvoie « Tâche » plutôt que du jargon.
+ * `…:jardin:protection:gel` → « Protection gel » (de même canicule, sécheresse, vent fort). Tolère les clés inattendues : renvoie « Tâche » plutôt que du jargon.
  */
 export function doneTaskLabel(taskKey: string, speciesName: (id: string) => string | undefined): string {
   const parts = taskKey.split(':')
@@ -21,6 +21,9 @@ export function doneTaskLabel(taskKey: string, speciesName: (id: string) => stri
   if (subject === 'jardin') {
     if (rest[0] === 'meteo') return `${label} (météo)`
     if (rest[0] === 'gel') return `${label} gel`
+    if (rest[0] === 'canicule') return `${label} canicule`
+    if (rest[0] === 'secheresse') return `${label} sécheresse`
+    if (rest[0] === 'vent') return `${label} vent fort`
     return label
   }
   const name = subject ? speciesName(subject) : undefined

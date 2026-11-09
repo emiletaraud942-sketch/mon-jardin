@@ -4,6 +4,7 @@ import { Icon } from '../../components/Icon'
 import { MonthGrid } from '../../components/MonthGrid'
 import { RiskNotes } from '../../components/RiskNotes'
 import { MONTH_NAMES, plantingCalendar } from '../../engine/calendar'
+import { winterAdvice } from '../../engine/climate'
 import { openSpecies, startPlacing } from '../../lib/ui'
 import { EnnuisLine } from '../ravageurs/EnnuisLine'
 import type { Garden, Species, TaskCondition } from '../../types'
@@ -41,6 +42,8 @@ function SpeciesLinks({ ids }: { ids: string[] }) {
 
 export function SpeciesSheet({ species: s, garden }: { species: Species; garden: Garden }) {
   const cal = plantingCalendar(s, garden)
+  // Même règle de rusticité que « Où planter ? » ; rien hors France métropolitaine ni sans donnée de froid.
+  const winter = winterAdvice(s, garden)
   return (
     <div className="stack plants-ui" style={{ gap: 14 }}>
       <div>
@@ -60,6 +63,13 @@ export function SpeciesSheet({ species: s, garden }: { species: Species; garden:
             {CATEGORY_LABEL[s.categorie]} · {STRATE_LABEL[s.strate]} · {s.vivace ? 'revient chaque année' : 'à semer chaque année'}
           </dd>
         </dl>
+        {winter && (
+          <p className="np-winter" data-winter={winter.verdict}>
+            <strong>Passe l’hiver chez vous ?</strong>{' '}
+            <span className={'badge ' + (winter.verdict === 'oui' ? 'green' : winter.verdict === 'proteger' ? 'warn' : 'danger')}>{winter.label}</span>{' '}
+            <span className="np-winter-why">{winter.sentence}</span>
+          </p>
+        )}
         <ul className="list small" style={{ marginTop: 8 }}>
           {s.fixateurAzote && (
             <li>

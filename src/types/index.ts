@@ -271,6 +271,8 @@ export interface DailyWeather {
   tMax: number
   rainMm: number
   et0Mm: number
+  /** Rafale maximale du jour (km/h). Absent des anciens caches et des fournisseurs qui ne la donnent pas : pas d'alerte de vent. */
+  gustKmh?: number
 }
 
 export interface WeatherBundle {
@@ -298,4 +300,6 @@ export interface GeneratedTask {
   blockedBy?: string
   /** Détail chiffré (météo) à afficher en option ; `reason` et `blockedBy` restent en langage simple. */
   detail?: string
+  /** Alerte de jardin nommée (canicule, sécheresse, vent fort) : l'écran ajoute une icône et un mot. Jamais stocké. */
+  alert?: 'canicule' | 'secheresse' | 'vent'
 }

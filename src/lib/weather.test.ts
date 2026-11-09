@@ -17,6 +17,10 @@ const FORECAST = {
   },
 }
 
+/** Même réponse avec les rafales (champ ajouté en v4A) : 25 km/h partout, 64,4 le 17 octobre, une valeur manquante le 18. */
+const GUSTS = [25, 25, 25, 25, 25, 25, 25, 64.4, null, 25, 25, 25, 25, 25]
+const WITH_GUSTS = { ...FORECAST, daily: { ...FORECAST.daily, wind_gusts_10m_max: GUSTS } }
+
 // Extrait réel de l'archive (Nantes, 14–20/02/2025).
 const ARCHIVE_SNIPPET = {
   daily: {
@@ -68,8 +72,25 @@ describe('prévisions', () => {
     expect(b.fetchedAt).toBe('X')
     expect(b.past).toHaveLength(7)
     expect(b.forecast).toHaveLength(7)
+    // Réponse sans rafales (ancienne, ou cache d'avant la v4A) : le champ reste absent, pas 0.
     expect(b.forecast[0]).toEqual({ date: '2026-10-17', tMin: 8.4, tMax: 16.8, rainMm: 0, et0Mm: 2.54 })
+    expect('gustKmh' in b.forecast[0]).toBe(false)
     expect(b.past[6].date).toBe('2026-10-16')
+  })
+
+  it('lit les rafales ; une valeur manquante laisse le champ absent', () => {
+    const b = parseForecast(WITH_GUSTS, '2026-10-17', 'X')
+    expect(b.forecast[0].gustKmh).toBe(64.4)
+    expect(b.forecast[1].date).toBe('2026-10-18')
+    expect('gustKmh' in b.forecast[1]).toBe(false)
+    expect(b.forecast[2].gustKmh).toBe(25)
+    expect(b.past[0].gustKmh).toBe(25)
+  })
+
+  it('rafales négatives ou non numériques : ignorées', () => {
+    const json = { daily: { ...FORECAST.daily, wind_gusts_10m_max: [-3, ...Array(13).fill('fort')] } }
+    const b = parseForecast(json as never, '2026-10-17', 'X')
+    expect([...b.past, ...b.forecast].every((d) => !('gustKmh' in d))).toBe(true)
   })
 
   it('ignore les jours sans température', () => {
@@ -85,8 +106,8 @@ describe('prévisions', () => {
     expect(b.forecast[0].date).toBe('2026-10-17')
     expect(b.stale).toBeUndefined()
     expect(calls[0]).toMatch(/^\/ext\/meteo\/v1\/forecast\?latitude=47\.23&longitude=-1\.53/)
-    expect(calls[0]).toContain('daily=temperature_2m_max,temperature_2m_min,precipitation_sum,et0_fao_evapotranspiration')
-    expect(calls[0]).toContain('past_days=7&forecast_days=7&timezone=auto')
+    expect(calls[0]).toContain('daily=temperature_2m_max,temperature_2m_min,precipitation_sum,et0_fao_evapotranspiration,wind_gusts_10m_max')
+    expect(calls[0]).toContain('wind_speed_unit=kmh&past_days=7&forecast_days=7&timezone=auto')
   })
 
   it('erreur HTTP en français', async () => {
@@ -133,6 +154,27 @@ describe('prévisions', () => {
     expect(b.past).toHaveLength(7)
     expect(b.past[6].date).toBe('2026-10-17')
     expect(b.stale).toBeUndefined()
+  })
+
+  it('cache : les rafales survivent au re-découpage ; un ancien cache sans rafales se lit sans erreur', async () => {
+    const m = stubStorage()
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(WITH_GUSTS))))
+    const p = { lon: -1.5308, lat: 47.2257 }
+    const a = await fetchWeather(p, new Date('2026-10-17T10:00:00Z'))
+    expect(a.forecast[0].gustKmh).toBe(64.4)
+    const b = await fetchWeather(p, new Date('2026-10-18T09:00:00Z'))
+    expect(b.past.at(-1)?.gustKmh).toBe(64.4)
+    // Entrée écrite par la version précédente (sans gustKmh) : lue telle quelle.
+    m.clear()
+    const old = parseForecast(FORECAST, '2026-10-17', 'X')
+    const [key] = [`pj-meteo:open-meteo:47.23,-1.53`]
+    m.set(key, JSON.stringify({ t: Date.now(), v: old, off: 7200 }))
+    const f = vi.fn()
+    vi.stubGlobal('fetch', f)
+    const c = await fetchWeather(p, new Date('2026-10-17T10:00:00Z'))
+    expect(f).not.toHaveBeenCalled()
+    expect(c.forecast).toHaveLength(7)
+    expect(c.forecast.every((d) => d.gustKmh === undefined)).toBe(true)
   })
 
   it('cache expiré + réseau en panne : repli stale avec fetchedAt d’origine', async () => {

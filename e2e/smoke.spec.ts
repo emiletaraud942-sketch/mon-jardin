@@ -127,3 +127,37 @@ async function ouvrirPlantes(page: Page): Promise<number> {
 async function ouvrirReglages(page: Page) {
   await page.getByRole('button', { name: 'Compte et réglages' }).filter({ visible: true }).first().click()
 }
+
+test('alerte de canicule : phrase sur l’accueil, badge « Canicule » dans À faire', async ({ page, baseURL }) => {
+  const external = await mockNetwork(page, baseURL!, { heatWave: true, gust: 75 })
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(`pageerror : ${e.message}`))
+  page.on('console', (m) => {
+    if (m.type() === 'error') errors.push(`console : ${m.text()}`)
+  })
+  await page.addInitScript(() => {
+    try {
+      if (sessionStorage.getItem('e2e-init')) return
+      sessionStorage.setItem('e2e-init', '1')
+      localStorage.setItem('permajardin:consent', JSON.stringify({ v: 1, voisins: new Date().toISOString(), plantnet: new Date().toISOString() }))
+      localStorage.setItem('pj.tourSeen', '1')
+    } catch {
+      /* stockage indisponible */
+    }
+  })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Visiter un jardin d’exemple' }).click()
+  await expect(page.locator('[data-home=afaire]')).toBeVisible({ timeout: 60_000 })
+  // Canicule et vent fort : la phrase de l'accueil nomme les deux et mène à À faire.
+  const alerte = page.locator('[data-home-alert]')
+  await expect(alerte).toBeVisible({ timeout: 30_000 })
+  await expect(alerte).toContainText(/canicule/i)
+  expect(await overflowX(page), 'débordement horizontal : accueil avec alerte').toBeLessThanOrEqual(0)
+  await alerte.click()
+  const urgent = page.locator('section.afaire-group', { has: page.getByRole('heading', { name: /^Urgent/ }) })
+  await expect(urgent.locator('.badge.alert-canicule')).toContainText('Canicule')
+  await expect(urgent.locator('.badge.alert-vent')).toContainText('Vent fort')
+  expect(await overflowX(page), 'débordement horizontal : À faire avec alertes').toBeLessThanOrEqual(0)
+  expect(external, 'requêtes hors de notre origine').toEqual([])
+  expect(errors, 'erreurs de console').toEqual([])
+})

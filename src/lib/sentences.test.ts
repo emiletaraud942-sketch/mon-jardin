@@ -10,6 +10,7 @@ import { INVITE_TEXT, inviteMessage } from './invite'
 import { PERMISSION_TEXT, SUPPORT_TEXT } from './neighbors/push'
 import { FAIL_HELP, INITIAL_STEPS } from '../features/settings/createGarden'
 import { HOWTO_ARROSAGE, HOWTO_GEL, HOWTO_PLANTATION, HOWTO_RECOLTE, HOWTO_SEMIS } from '../engine/tasks'
+import { HOWTO_CANICULE, HOWTO_SECHERESSE, HOWTO_VENT } from '../engine/alerts'
 import { describeReadFailure } from './store'
 import { MESSAGE_READ_FAILED } from './sync'
 
@@ -92,13 +93,13 @@ describe('longueur des phrases', () => {
       const d = describeReadFailure(k)
       return [d.title, d.message, d.primaryLabel, d.startOverWarning ?? '']
     })
-    const texts = [HOWTO_SEMIS, HOWTO_PLANTATION, HOWTO_RECOLTE, HOWTO_ARROSAGE, HOWTO_GEL, MESSAGE_READ_FAILED, ...readFailures]
+    const texts = [HOWTO_SEMIS, HOWTO_PLANTATION, HOWTO_RECOLTE, HOWTO_ARROSAGE, HOWTO_GEL, HOWTO_CANICULE, HOWTO_SECHERESSE, HOWTO_VENT, MESSAGE_READ_FAILED, ...readFailures]
     expect(texts.flatMap(tooLong)).toEqual([])
   })
 
   it('moteur des tâches, stockage, synchro : aucune chaîne de plus de 20 mots par phrase', () => {
     const found: string[] = []
-    for (const file of ['engine/tasks.ts', 'lib/store.ts', 'lib/sync.ts']) {
+    for (const file of ['engine/tasks.ts', 'engine/alerts.ts', 'lib/store.ts', 'lib/sync.ts']) {
       const src = readFileSync(join(ROOT, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
       for (const m of src.matchAll(/'((?:[^'\\\n]|\\.)+)'|"((?:[^"\\\n]|\\.)+)"|`((?:[^`\\]|\\.)+)`/g)) {
         const clean = (m[1] ?? m[2] ?? m[3]).replace(/\$\{[^}]*\}/g, ' x ')

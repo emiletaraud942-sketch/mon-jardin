@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { climateSummary, isMetropolitan, zoneCode } from './climate'
+import { climateSummary, isMetropolitan, winterAdvice, zoneCode } from './climate'
+import { winterVerdict } from './planting'
+import { sentencesOf, wordCount } from '../lib/sentences'
 
 describe('climateSummary', () => {
   it('zone et pluie arrondie à 10 mm', () => {
@@ -15,6 +17,11 @@ describe('climateSummary', () => {
     expect(climateSummary({ climateZone: '7b' })).toBe('Votre jardin : zone 7b')
     expect(climateSummary({ climateZone: 'n’importe quoi', rainMmPerYear: -3 })).toBeUndefined()
     expect(climateSummary({})).toBeUndefined()
+  })
+  it('forme courte pour l’accueil : sans « Votre jardin : », majuscule au début', () => {
+    expect(climateSummary({ climateZone: '8a', rainMmPerYear: 647 }, { short: true })).toBe('Zone 8a, environ 650 mm de pluie par an')
+    expect(climateSummary({ rainMmPerYear: 1243 }, { short: true })).toBe('Environ 1 240 mm de pluie par an')
+    expect(climateSummary({}, { short: true })).toBeUndefined()
   })
   it('une pluie de 0 mm est une valeur valide', () => {
     expect(climateSummary({ rainMmPerYear: 0 })).toBe('Votre jardin : environ 0 mm de pluie par an')
@@ -45,5 +52,56 @@ describe('isMetropolitan', () => {
   it.each(no)('%s : hors métropole', (_n, lon, lat) => expect(isMetropolitan({ lon, lat })).toBe(false))
   it('coordonnées invalides', () => {
     expect(isMetropolitan({ lon: NaN, lat: 48 })).toBe(false)
+  })
+})
+
+describe('winterAdvice : « Passe l’hiver chez vous ? »', () => {
+  const lyon = { lon: 4.83, lat: 45.76 }
+  const garden = (minAbsC?: number, lastFrostDoy?: number) => ({ center: lyon, minAbsC, lastFrostDoy })
+  const sp = (rusticiteC: number, vivace = true) => ({ vivace, rusticiteC })
+
+  it('oui : le froid supporté couvre le froid observé', () => {
+    const a = winterAdvice(sp(-15), garden(-8))!
+    expect(a.verdict).toBe('oui')
+    expect(a.label).toBe('Oui')
+    expect(a.sentence).toBe('Elle supporte −15 °C ; votre hiver le plus froid, sur 5 ans, est descendu à −8 °C.')
+  })
+
+  it('bords : marge de 0 = oui, juste au-dessus = à protéger, 5 °C = à protéger, au-delà = non', () => {
+    expect(winterVerdict(sp(-8), garden(-8))!.verdict).toBe('oui')
+    expect(winterVerdict(sp(-7.9), garden(-8))!.verdict).toBe('proteger')
+    expect(winterVerdict(sp(-3), garden(-8))!.verdict).toBe('proteger')
+    expect(winterVerdict(sp(-2.9), garden(-8))!.verdict).toBe('non')
+  })
+
+  it('à protéger et non : le conseil suit', () => {
+    const p = winterAdvice(sp(-5), garden(-8))!
+    expect(p.verdict).toBe('proteger')
+    expect(p.label).toBe('À protéger')
+    expect(p.sentence).toContain('un voile ou un pot à rentrer')
+    const n = winterAdvice(sp(-1), garden(-12))!
+    expect(n.verdict).toBe('non')
+    expect(n.sentence).toContain('Gardez-la en pot')
+  })
+
+  it('le froid observé prime sur l’estimation ; sans lui, estimation d’après les dernières gelées', () => {
+    // dernière gelée au jour 100 : estimation −3 − 55 × 0,15 = −11,25 °C
+    const est = winterAdvice(sp(-15), garden(undefined, 100))!
+    expect(est.sentence).toContain('vos hivers descendent vers −11 °C (estimation)')
+    expect(winterAdvice(sp(-15), garden(-3, 100))!.sentence).toContain('est descendu à −3 °C')
+    // même règle que le score de « Où planter ? »
+    expect(winterVerdict(sp(-5), garden(undefined, 100))!.verdict).toBe('non')
+  })
+
+  it('rien : annuelle, jardin sans donnée de froid, hors métropole', () => {
+    expect(winterAdvice(sp(-15, false), garden(-8))).toBeUndefined()
+    expect(winterAdvice(sp(-15), garden())).toBeUndefined()
+    expect(winterAdvice(sp(-15), { center: { lon: -61.5, lat: 16.2 }, minAbsC: 12 })).toBeUndefined() // Guadeloupe
+  })
+
+  it('phrases de 20 mots au plus', () => {
+    for (const [r, m] of [[-15, -8], [-5, -8], [-1, -12]] as const) {
+      for (const s of sentencesOf(winterAdvice(sp(r), garden(m))!.sentence)) expect(wordCount(s)).toBeLessThanOrEqual(20)
+    }
   })
 })

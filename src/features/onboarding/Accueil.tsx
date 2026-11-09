@@ -1,4 +1,6 @@
 import { Icon } from '../../components/Icon'
+import { ALERT_ICON, alertHomeSentence, type AlertKind } from '../../engine/alerts'
+import { climateSummary } from '../../engine/climate'
 import { PageHead } from '../../components/PageHead'
 import { PlantPot } from '../../components/illustrations'
 import { PlaceAction } from '../../components/PlaceAction'
@@ -164,7 +166,7 @@ function HomeButton({ a, badge }: { a: HomeAction; badge?: number }) {
 }
 
 /** Écran « Que voulez-vous faire ? » : le résumé du jardin, la prochaine étape, puis de gros boutons étiquetés, dans un ordre fixe. */
-export function Accueil({ garden, openTasks, newsCount }: { garden: Garden; openTasks: number; newsCount: number }) {
+export function Accueil({ garden, openTasks, newsCount, alerts = [] }: { garden: Garden; openTasks: number; newsCount: number; alerts?: AlertKind[] }) {
   const { state, neighbors } = useOnboarding()
   const plants = useGardenPlants(garden.id)
   const route = shouldShowRoute(state, neighbors)
@@ -172,20 +174,30 @@ export function Accueil({ garden, openTasks, newsCount }: { garden: Garden; open
   const tasksText = openTasks === 0 ? 'rien à faire' : `${openTasks} chose${openTasks > 1 ? 's' : ''} à faire`
   const shown = new Set(visibleFeatures().map((f) => f.id))
   const actions = HOME_ACTIONS.filter((a) => !a.featureId || shown.has(a.featureId))
+  const climate = climateSummary(garden, { short: true })
+  const alertText = alertHomeSentence(alerts)
 
   return (
     <div className="page accueil">
       {route && <RouteCard garden={garden} />}
       <PageHead compact kicker={who ? `Bonjour ${who}` : 'Bonjour'} title="Que voulez-vous faire ?" onHelp={openHelp} />
-      <button className="chez" onClick={() => setUi({ tab: 'carte' })}>
+      <button className={'chez' + (climate ? ' has-climate' : '')} onClick={() => setUi({ tab: 'carte' })}>
         <span className="chez-title">{demoHomeTitle(garden, chezTitle(garden.name))}</span>
         <span className="chez-sum">
           {plants.length} plante{plants.length > 1 ? 's' : ''}
           {'\u00a0· '}
           {tasksText}
         </span>
+        {climate && <span className="chez-climate">{climate}</span>}
         <PlantPot size={64} className="chez-art" />
       </button>
+      {alertText && (
+        <button className="home-alert" data-home-alert onClick={() => setUi({ tab: 'entretien' })}>
+          <Icon name={alerts.length > 1 ? 'alert' : ALERT_ICON[alerts[0]]} size={20} />
+          <span>{alertText}</span>
+          <Icon name="forward" size={18} />
+        </button>
+      )}
       {!route && <NextStepCard garden={garden} openTasks={openTasks} />}
       <div className="home-grid" role="group" aria-label="Que voulez-vous faire ?">
         {actions.map((a) => (

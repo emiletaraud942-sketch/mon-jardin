@@ -41,6 +41,9 @@ describe('arrondi des coordonnées', () => {
     expect(calls[0]).toContain('latitude=47.23&longitude=-1.53&')
     expect(calls[1]).toContain('latitude=47.23&longitude=-1.53&')
     expect(calls.join()).not.toContain('47.2257')
+    // Rafales demandées sur la même route /ext/meteo (aucun nouveau domaine).
+    expect(calls[0]).toMatch(/^\/ext\/meteo\/v1\/forecast\?/)
+    expect(calls[0]).toContain('wind_gusts_10m_max')
   })
 })
 

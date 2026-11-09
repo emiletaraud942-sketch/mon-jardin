@@ -10,10 +10,16 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
 const square = (d: number) => [[[LON - d, LAT - d], [LON + d, LAT - d], [LON + d, LAT + d], [LON - d, LAT + d], [LON - d, LAT - d]]]
 const place = { type: 'Feature', geometry: { type: 'Point', coordinates: [LON, LAT] }, properties: { label: '12 Rue des Lilas 69001 Lyon', city: 'Lyon', postcode: '69001', context: '69, Rhône' } }
 
-function weather() {
+/** Météo simulée. `heatWave` : 36 °C pendant 4 jours à partir d'aujourd'hui (alerte canicule) ; `gust` : rafales de ce jour-là, en km/h (25 par défaut). */
+export interface WeatherMock {
+  heatWave?: boolean
+  gust?: number
+}
+
+function weather(opts: WeatherMock = {}) {
   const t0 = Date.now()
   const days = Array.from({ length: 16 }, (_, i) => new Date(t0 + (i - 3) * 86_400_000).toISOString().slice(0, 10))
-  const tmax = [14, 11, 13, 9, 10, 12, 12, 12, 13, 14, 15, 15, 14, 13, 12, 12]
+  const tmax = [14, 11, 13, 9, 10, 12, 12, 12, 13, 14, 15, 15, 14, 13, 12, 12].map((t, i) => (opts.heatWave && i >= 3 && i < 7 ? 36 : t))
   return {
     latitude: LAT,
     longitude: LON,
@@ -26,6 +32,7 @@ function weather() {
       weather_code: days.map(() => 1),
       et0_fao_evapotranspiration: days.map(() => 2),
       wind_speed_10m_max: days.map(() => 10),
+      wind_gusts_10m_max: days.map((_, i) => (opts.gust != null && i === 3 ? opts.gust : 25)),
     },
     current: { temperature_2m: 12 },
   }
@@ -49,7 +56,7 @@ function archive() {
   return { latitude: LAT, longitude: LON, daily: { time, temperature_2m_min: mn, temperature_2m_max: mx, precipitation_sum: pr } }
 }
 
-function ext(route: Route) {
+function ext(route: Route, wx: WeatherMock) {
   const url = route.request().url()
   const json = (body: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) })
   if (url.includes('geocodage/search') || url.includes('geocodage/reverse')) return json({ type: 'FeatureCollection', features: [place] })
@@ -61,7 +68,7 @@ function ext(route: Route) {
     return json({ elevations: Array.from({ length: n }, () => 170) })
   }
   if (url.includes('meteo-archive')) return json(archive())
-  if (url.includes('/ext/meteo')) return json(weather())
+  if (url.includes('/ext/meteo')) return json(weather(wx))
   if (url.includes('wmts')) return route.fulfill({ status: 200, contentType: 'image/png', body: PNG })
   if (url.includes('wms')) return route.fulfill({ status: 200, contentType: 'image/jpeg', body: PNG })
   // WFS (bâtiments, etc.) et tout le reste de l'IGN : réponse vide valide.
@@ -69,7 +76,7 @@ function ext(route: Route) {
 }
 
 /** Installe les simulations. Renvoie la liste des requêtes sorties vers un autre domaine (doit rester vide). */
-export async function mockNetwork(page: Page, baseURL: string): Promise<string[]> {
+export async function mockNetwork(page: Page, baseURL: string, wx: WeatherMock = {}): Promise<string[]> {
   const external: string[] = []
   const origin = new URL(baseURL).origin
   // Une seule règle, évaluée pour chaque requête : notre origine passe (proxys /ext/* et /api/* simulés), Supabase répond « vide ».
@@ -82,7 +89,7 @@ export async function mockNetwork(page: Page, baseURL: string): Promise<string[]
       return route.abort()
     }
     const path = new URL(url).pathname
-    if (path.startsWith('/ext/')) return ext(route)
+    if (path.startsWith('/ext/')) return ext(route, wx)
     if (path.startsWith('/api/identify')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ results: [] }) })
     return route.continue()
   })

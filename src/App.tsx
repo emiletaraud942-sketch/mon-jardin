@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef } from 'react'
 import { notifyDailyTasks } from './lib/notify'
 import { Icon } from './components/Icon'
 import { PageHead } from './components/PageHead'
@@ -120,6 +120,8 @@ function AppShell() {
   const firstPaint = useRef(true)
   const open = tasks.filter((t) => !t.blockedBy && !t.done).length
   const weatherReady = !weatherLoading && !!weather
+  // Alertes de jardin actives (canicule, sécheresse, vent fort) : une phrase sur l'accueil.
+  const alertKinds = useMemo(() => tasks.flatMap((t) => (t.alert && !t.blockedBy && !t.done ? [t.alert] : [])), [tasks])
   // Bandeau « jardin d'exemple » : un seul bandeau à la fois (file d'attente), jamais pendant un placement.
   const demoWants = !!garden && !parcours && isDemoGarden(garden) && !guide.demoHidden && tab !== 'accueil'
   const demoTurn = useBanner('exemple', demoWants)
@@ -318,7 +320,7 @@ function AppShell() {
       </nav>
       <main id="main-panel" ref={mainRef} tabIndex={-1} aria-label={TAB_LABEL[tab]} className={'main' + (full ? ' full' : '')}>
         <ErrorBoundary inline resetKey={tab}>
-          {tab === 'accueil' && <Accueil garden={garden} openTasks={open} newsCount={newsCount} />}
+          {tab === 'accueil' && <Accueil garden={garden} openTasks={open} newsCount={newsCount} alerts={alertKinds} />}
           {tab === 'carte' && (
             <Suspense fallback={<Loading label="Chargement de la carte…" />}>
               <MapView garden={garden} />

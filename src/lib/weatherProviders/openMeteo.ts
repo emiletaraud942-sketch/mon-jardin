@@ -39,6 +39,8 @@ export interface ForecastJson {
     temperature_2m_min: Num[]
     precipitation_sum: Num[]
     et0_fao_evapotranspiration: Num[]
+    /** Rafales maximales (km/h). Optionnel : absent d'une réponse ancienne ou d'un cache d'avant la v4A. */
+    wind_gusts_10m_max?: Num[]
   }
 }
 
@@ -50,12 +52,15 @@ export function parseForecast(json: ForecastJson, today: string, fetchedAt = new
     const tMin = d.temperature_2m_min?.[i]
     const tMax = d.temperature_2m_max?.[i]
     if (tMin == null || tMax == null) return
+    const gust = d.wind_gusts_10m_max?.[i]
     days.push({
       date,
       tMin,
       tMax,
       rainMm: d.precipitation_sum?.[i] ?? 0,
       et0Mm: d.et0_fao_evapotranspiration?.[i] ?? 0,
+      // Valeur manquante : on ne met pas 0 (ce serait « pas de vent »), on laisse le champ absent.
+      ...(typeof gust === 'number' && Number.isFinite(gust) && gust >= 0 ? { gustKmh: gust } : {}),
     })
   })
   return {
@@ -82,8 +87,8 @@ export const openMeteo: WeatherProvider = {
     const q = roundCoord(p)
     const url =
       `/ext/meteo/v1/forecast?latitude=${q.lat.toFixed(2)}&longitude=${q.lon.toFixed(2)}` +
-      '&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,et0_fao_evapotranspiration' +
-      '&past_days=7&forecast_days=7&timezone=auto'
+      '&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,et0_fao_evapotranspiration,wind_gusts_10m_max' +
+      '&wind_speed_unit=kmh&past_days=7&forecast_days=7&timezone=auto'
     const json = await getJson<ForecastJson>(url, signal)
     const utcOffsetSec = typeof json.utc_offset_seconds === 'number' ? json.utc_offset_seconds : undefined
     return { bundle: parseForecast(json, todayLocal(utcOffsetSec, now), now.toISOString()), utcOffsetSec }

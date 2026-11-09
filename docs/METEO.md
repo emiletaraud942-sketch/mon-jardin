@@ -11,6 +11,26 @@ La météo et le climat passent par un fournisseur interchangeable (`src/lib/wea
 
 Mention exposée à l'interface : `getWeatherLicense()` renvoie `{ id, label, commercialUse, attribution, url }`. Exemple : « Météo : Open-Meteo (CC BY 4.0, usage non commercial) ». L'affichage reste à brancher côté interface.
 
+## Champs demandés à Open-Meteo (prévision)
+
+Une seule requête, route `/ext/meteo/v1/forecast` (aucun nouveau domaine, CSP inchangée), 7 jours passés et 7 jours de prévision, `timezone=auto` :
+`daily=temperature_2m_max, temperature_2m_min, precipitation_sum, et0_fao_evapotranspiration, wind_gusts_10m_max` et `wind_speed_unit=kmh`.
+
+- `wind_gusts_10m_max` (rafale maximale du jour, km/h) est le champ ajouté pour l'alerte « Vent fort » (lot 4A). Il devient `DailyWeather.gustKmh`, champ **optionnel** : absent d'un cache écrit avant ce lot (3 h au plus), d'une réponse sans cette valeur ou d'un autre fournisseur. Valeur manquante = champ absent (jamais 0) : l'alerte de vent ne se déclenche pas, sans erreur.
+- **Non vérifié sur le service réel** (Open-Meteo injoignable depuis le conteneur de travail) : le nom du paramètre et l'unité par défaut viennent de la documentation. Testé avec des réponses simulées (`weather.test.ts`, `providers.test.ts`). À contrôler une fois en ligne : `curl "https://api.open-meteo.com/v1/forecast?latitude=45.76&longitude=4.83&daily=wind_gusts_10m_max&wind_speed_unit=kmh&forecast_days=2&timezone=auto"`.
+
+## Alertes de jardin (canicule, sécheresse, vent fort)
+
+Calculées dans `src/engine/alerts.ts` (module pur, `alerts.test.ts`) sur la météo déjà chargée, sans appel de plus. Seuils (`ALERT_THRESHOLDS`) :
+
+| Alerte | Règle | Pourquoi ce seuil |
+| --- | --- | --- |
+| Canicule | maximale de 32 °C ou plus, 3 jours de suite (jours passés de la vague compris, un jour manquant la coupe) | Météo-France fixe un seuil par département (31 à 36 °C, trois jours et trois nuits) : 32 °C est un seuil unique au milieu de cette fourchette. |
+| Sécheresse | manque d'eau d'au moins 30 mm sur 7 jours (bilan de `waterBalance`), au moins 5 jours passés connus, et moins de 5 mm de pluie prévue sous 5 jours | 3 fois le seuil de l'arrosage météo (10 mm) : en été l'évaporation est de 4 à 6 mm par jour, donc presque aucune pluie pendant une semaine chaude. |
+| Vent fort | rafale de 60 km/h ou plus, sur les 3 prochains jours | Beaufort 8 (coup de vent) ; la prévision des rafales est peu fiable au-delà de 3 jours. |
+
+Clés de tâche : `date:jardin:protection:canicule` (1er jour de la vague), `date:jardin:arrosage:secheresse` (jour même), `date:jardin:protection:vent` (1er jour de vent fort). Comme l'alerte de gel, elles sont « Urgent » et « Pas maintenant » ou « Je ne veux pas » ne valent que pour leur clé. Aucune alerte sans plante en place.
+
 ## Changer de fournisseur
 
 1. Définir `VITE_WEATHER_PROVIDER` (ex. `meteo-france`) dans les variables d'environnement Vercel.

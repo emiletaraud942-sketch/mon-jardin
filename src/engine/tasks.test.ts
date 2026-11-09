@@ -942,3 +942,126 @@ describe('tâches reportées ou refusées', () => {
     expect(run({ plants: [plant('citronnier')], today: later, weather: w2, tasksDone: [refuse] }).some((t) => t.key.endsWith(':jardin:protection:gel'))).toBe(true)
   })
 })
+
+// ---------- Alertes de jardin : canicule, sécheresse, vent fort (alerts.ts) ----------
+
+describe('alertes de jardin dans generateTasks', () => {
+  const today = new Date(2026, 6, 15, 9) // mercredi 15 juillet 2026
+  const alertTasks = (extra: Partial<TaskContext>) => run({ today, ...extra }).filter((t) => t.alert)
+  const heat = (n = 3) => weather(today, [], Array.from({ length: n }, () => ({ tMax: 34 })))
+  const jeune = () => plant('tomate', { plantedAt: '2026-05-20' })
+  const vieux = () => plant('pommier', { plantedAt: '2018-03-01' })
+
+  it('canicule : tâche « Urgent » du jardin, clé du 1er jour, jeunes plantes concernées', () => {
+    const j = jeune()
+    const [a] = alertTasks({ plants: [j, vieux()], weather: heat() })
+    expect(a.alert).toBe('canicule')
+    expect(a.key).toBe('2026-07-15:jardin:protection:canicule')
+    expect(a.priority).toBe('haute')
+    expect(a.type).toBe('protection')
+    expect(a.blockedBy).toBeUndefined()
+    expect(a.plantIds).toEqual([j.id])
+    expect(a.howTo).toContain('Arrosez le soir')
+  })
+
+  it('2 jours de chaleur : pas de tâche ; sans météo : pas de tâche', () => {
+    expect(alertTasks({ plants: [jeune()], weather: heat(2) })).toEqual([])
+    expect(alertTasks({ plants: [jeune()] })).toEqual([])
+  })
+
+  it('sans plante en place (vide, prévue, morte) : aucune alerte', () => {
+    expect(alertTasks({ plants: [], weather: heat() })).toEqual([])
+    expect(alertTasks({ plants: [plant('tomate', { status: 'projet' }), plant('tomate', { status: 'mort' })], weather: heat() })).toEqual([])
+  })
+
+  it('vent fort : sans rafales dans la météo, rien ; avec, une alerte « Urgent »', () => {
+    const plants = [jeune()]
+    expect(alertTasks({ plants, weather: weather(today, [], [{}, {}]) })).toEqual([])
+    const [a] = alertTasks({ plants, weather: weather(today, [], [{}, { gustKmh: 75 }]) })
+    expect(a.alert).toBe('vent')
+    expect(a.key).toBe('2026-07-16:jardin:protection:vent')
+    expect(a.priority).toBe('haute')
+    expect(a.reason).toContain('demain')
+  })
+
+  it('sécheresse : arrosage « Urgent », plantes assoiffées ou jeunes ; l’arrosage météo reste à part', () => {
+    const sec = Array.from({ length: 7 }, () => ({ et0Mm: 6, rainMm: 0 }))
+    const tom = jeune()
+    const lav = plant('lavande', { plantedAt: '2018-03-01' }) // eau faible, établie : non concernée
+    const tasks = run({ today, plants: [tom, lav], weather: weather(today, sec, []) })
+    const a = tasks.find((t) => t.alert === 'secheresse')!
+    expect(a.key).toBe('2026-07-15:jardin:arrosage:secheresse')
+    expect(a.type).toBe('arrosage')
+    expect(a.priority).toBe('haute')
+    expect(a.plantIds).toEqual([tom.id])
+    expect(tasks.some((t) => t.key.includes('jardin:arrosage:meteo'))).toBe(true)
+    // Sans bilan suffisant (une semaine ordinaire) : pas d'alerte, l'arrosage météo suffit.
+    const ordinaire = Array.from({ length: 7 }, () => ({ et0Mm: 4, rainMm: 0 }))
+    expect(run({ today, plants: [tom], weather: weather(today, ordinaire, []) }).some((t) => t.alert)).toBe(false)
+  })
+
+  it('« Fait » éteint l’alerte pour cette vague ; la suivante (autre 1er jour) revient', () => {
+    const plants = [jeune()]
+    const w = heat()
+    const [a] = alertTasks({ plants, weather: w })
+    expect(alertTasks({ plants, weather: w, tasksDone: [done(a.key, today.toISOString())] })).toEqual([])
+    const later = new Date(2026, 6, 25, 9)
+    const w2 = weather(later, [], [{ tMax: 35 }, { tMax: 35 }, { tMax: 35 }])
+    expect(run({ plants, today: later, weather: w2, tasksDone: [done(a.key, today.toISOString())] }).some((t) => t.alert === 'canicule')).toBe(true)
+  })
+
+  it('« Je ne veux pas » ne coupe jamais une alerte pour de bon : seulement sa clé', () => {
+    const plants = [jeune()]
+    const w = weather(today, [], [{ gustKmh: 80 }])
+    const [a] = alertTasks({ plants, weather: w })
+    const refuse: TaskDone = { id: 'r1', gardenId: 'g1', taskKey: a.key, doneAt: today.toISOString(), status: 'refuse' }
+    expect(alertTasks({ plants, weather: w, tasksDone: [refuse] })).toEqual([])
+    // Même vent un autre jour (autre clé) : l'alerte revient.
+    const later = new Date(2026, 6, 20, 9)
+    expect(run({ plants, today: later, weather: weather(later, [], [{ gustKmh: 80 }]), tasksDone: [refuse] }).some((t) => t.alert === 'vent')).toBe(true)
+    // « Pas maintenant » : masquée jusqu'à la date, pas au-delà.
+    const reporte: TaskDone = { id: 'c1', gardenId: 'g1', taskKey: a.key, doneAt: today.toISOString(), status: 'reporte', until: new Date(2026, 6, 16).toISOString() }
+    expect(alertTasks({ plants, weather: w, tasksDone: [reporte] })).toEqual([])
+    const expired: TaskDone = { ...reporte, until: new Date(2026, 6, 15, 8).toISOString() }
+    expect(alertTasks({ plants, weather: w, tasksDone: [expired] })).toHaveLength(1)
+  })
+
+  it('sécheresse : un arrosage fait il y a moins de 3 jours la met de côté', () => {
+    const sec = Array.from({ length: 7 }, () => ({ et0Mm: 6, rainMm: 0 }))
+    const plants = [jeune()]
+    const w = weather(today, sec, [])
+    const hier = new Date(2026, 6, 14, 20).toISOString()
+    expect(run({ today, plants, weather: w, tasksDone: [done('2026-07-14:jardin:arrosage:secheresse', hier)] }).some((t) => t.alert)).toBe(false)
+    const vieille = new Date(2026, 6, 10, 20).toISOString()
+    expect(run({ today, plants, weather: w, tasksDone: [done('2026-07-10:jardin:arrosage:secheresse', vieille)] }).some((t) => t.alert === 'secheresse')).toBe(true)
+  })
+
+  it('non-régression : l’alerte de gel garde sa clé et son texte, les alertes ne la gênent pas', () => {
+    const winter = new Date(2026, 0, 13, 9)
+    const w = weather(winter, [], [{ tMin: -2 }, { tMin: -1, gustKmh: 90 }])
+    const tasks = run({ today: winter, plants: [plant('citronnier', { plantedAt: '2025-05-01' })], weather: w })
+    const gel = tasks.find((t) => t.key.endsWith(':jardin:protection:gel'))!
+    expect(gel.key).toBe('2026-01-13:jardin:protection:gel')
+    expect(gel.alert).toBeUndefined()
+    expect(gel.howTo).toContain("voile d'hivernage")
+    expect(tasks.find((t) => t.alert)!.alert).toBe('vent')
+  })
+
+  it('sans nouvelle donnée, les tâches des espèces sont identiques (aucune alerte, mêmes clés)', () => {
+    const plants = [plant('pommier'), plant('lavande')]
+    const w = weather(new Date(2026, 0, 13, 9), [], [{ tMin: 2 }, { tMin: 1 }])
+    const keys = run({ plants, weather: w }).map((t) => t.key)
+    expect(keys.length).toBeGreaterThan(0)
+    expect(run({ plants, weather: w }).some((t) => t.alert)).toBe(false)
+    expect(run({ plants }).map((t) => t.key).filter((k) => !k.includes('jardin'))).toEqual(keys.filter((k) => !k.includes('jardin')))
+  })
+
+  it('bord de mois : une canicule du 30 juillet au 1er août ouvre une seule tâche', () => {
+    const t0 = new Date(2026, 6, 30, 9)
+    const tasks = run({ today: t0, plants: [jeune()], weather: weather(t0, [], [{ tMax: 33 }, { tMax: 33 }, { tMax: 33 }]) })
+    const a = tasks.filter((t) => t.alert === 'canicule')
+    expect(a).toHaveLength(1)
+    expect(a[0].key).toBe('2026-07-30:jardin:protection:canicule')
+    expect(a[0].reason).toContain("d'aujourd'hui à samedi") // 1er août 2026 : samedi
+  })
+})

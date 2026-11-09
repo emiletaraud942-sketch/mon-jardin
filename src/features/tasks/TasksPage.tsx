@@ -17,6 +17,7 @@ import { buildIcs } from "../../lib/ics";
 import { openHelp, setUi } from "../../lib/ui";
 import { useIntent } from "../../lib/overlays";
 import { MONTH_NAMES } from "../../engine/calendar";
+import { ALERT_ICON, ALERT_LABEL } from "../../engine/alerts";
 import { waterBalance, yearPlan } from "../../engine/tasks";
 import { seasonOverPlants } from "../../engine/annuelles";
 import { markHarvested } from "../plants/harvest";
@@ -185,20 +186,27 @@ function TaskItem({
     <li
       className={
         "tcard" +
+        (task.alert ? " tcard-alert" : "") +
         (task.blockedBy ? " blocked" : "") +
         (weatherPending ? " weather-pending" : "")
       }
     >
       <div className="tcard-tile" aria-hidden>
-        <span className="tcard-emoji">{TASK_ICON[task.type]}</span>
+        {task.alert ? <Icon name={ALERT_ICON[task.alert]} size={30} /> : <span className="tcard-emoji">{TASK_ICON[task.type]}</span>}
       </div>
       <div className="tcard-body">
         <strong className="tcard-title">{task.title}</strong>
         <span className="tcard-sub">{task.reason}</span>
-        {(task.priority === "haute" && !task.blockedBy) ||
+        {task.alert ||
+        (task.priority === "haute" && !task.blockedBy) ||
         task.blockedBy ||
         weatherPending ? (
           <span className="tcard-badges">
+            {task.alert && (
+              <span className={"badge alert-" + task.alert}>
+                <Icon name={ALERT_ICON[task.alert]} size={16} /> {ALERT_LABEL[task.alert]}
+              </span>
+            )}
             {task.priority === "haute" && !task.blockedBy && (
               <span className="badge warn">À faire vite</span>
             )}
@@ -376,7 +384,11 @@ export function TasksPage({ garden }: { garden: Garden }) {
     notificationsSupported() ? Notification.permission : "denied",
   );
   const open = useMemo(
-    () => [...tasks.filter((t) => !t.blockedBy)].sort((a, b) => Number(b.priority === "haute") - Number(a.priority === "haute")),
+    // Urgentes d'abord ; parmi elles, les alertes de jardin (canicule, sécheresse, vent fort) en tête.
+    () =>
+      [...tasks.filter((t) => !t.blockedBy)].sort(
+        (a, b) => Number(b.priority === "haute") - Number(a.priority === "haute") || Number(!!b.alert) - Number(!!a.alert),
+      ),
     [tasks],
   );
   const [showAll, setShowAll] = useState(false);
@@ -394,7 +406,9 @@ export function TasksPage({ garden }: { garden: Garden }) {
     .reverse();
   const finished = useMemo(() => seasonOverPlants(plants, SPECIES_BY_ID, new Date()), [plants]);
   const aside = useMemo(() => activeChoices(allDone, garden.id, new Date()), [allDone, garden.id]);
-  const shown = showAll ? open : open.slice(0, TASKS_SHOWN);
+  // Une alerte n'est jamais cachée derrière « Voir tout » : la liste courte garde au moins toutes les alertes.
+  const shownCount = Math.max(TASKS_SHOWN, open.filter((t) => t.alert).length);
+  const shown = showAll ? open : open.slice(0, shownCount);
   useStopSpeakingOnLeave();
   const frost = weather ? frostSentence(weather.forecast) : undefined;
 
@@ -515,7 +529,7 @@ export function TasksPage({ garden }: { garden: Garden }) {
                       </ul>
                     </section>
                   ))}
-                {(open.length > TASKS_SHOWN || aside.length > 0) && (
+                {(open.length > shownCount || aside.length > 0) && (
                   <button className="btn afaire-all" aria-expanded={showAll} onClick={() => setShowAll(!showAll)}>
                     {showAll
                       ? "Voir moins"

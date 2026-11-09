@@ -17,6 +17,24 @@ const speciesName = (id: string) => names[id]
 const now = new Date(2026, 10, 9) // lundi 9 novembre 2026
 
 describe('Ma semaine', () => {
+  it('les alertes de jardin (canicule, vent fort) sont dans « Urgent », avec leur titre et leur raison', () => {
+    const s = buildWeekSheet({
+      tasks: [
+        task({ key: '2026-11-09:jardin:protection:canicule', title: 'Canicule : protéger le jardin', priority: 'haute', alert: 'canicule', reason: 'Canicule prévue de demain à jeudi. Maximum prévu : 35 °C.' }),
+        task({ key: '2026-11-10:jardin:protection:vent', title: 'Vent fort : protéger les plantes', priority: 'haute', alert: 'vent', reason: 'Vent fort prévu demain : rafales jusqu’à 75 km/h.' }),
+      ],
+      plants: [],
+      speciesName,
+      gardenName: 'Chez moi',
+      now,
+    })
+    expect(s.groups).toHaveLength(1)
+    expect(s.groups[0].title).toBe('Urgent')
+    expect(s.groups[0].rows.map((r) => r.title)).toEqual(['Canicule : protéger le jardin', 'Vent fort : protéger les plantes'])
+    const text = weekSheetText(s)
+    expect(text).toContain('☐ Canicule : protéger le jardin')
+    expect(text).toContain('rafales jusqu’à 75 km/h')
+  })
   it('semaine du lundi au dimanche, avec le mois et l’année', () => {
     expect(weekRange(now)).toBe('Du lundi 9 au dimanche 15 novembre 2026')
     expect(weekRange(new Date(2026, 10, 12))).toBe('Du lundi 9 au dimanche 15 novembre 2026')

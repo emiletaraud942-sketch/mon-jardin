@@ -14,6 +14,9 @@ describe('doneTaskLabel', () => {
   })
   it('protection contre le gel', () => {
     expect(doneTaskLabel('2026-10-19:jardin:protection:gel', lookup)).toBe('Protection gel')
+    expect(doneTaskLabel('2026-07-15:jardin:protection:canicule', lookup)).toBe('Protection canicule')
+    expect(doneTaskLabel('2026-07-15:jardin:arrosage:secheresse', lookup)).toBe('Arrosage sécheresse')
+    expect(doneTaskLabel('2026-07-16:jardin:protection:vent', lookup)).toBe('Protection vent fort')
   })
   it('espèce inconnue : le type seul', () => {
     expect(doneTaskLabel('2026:fantome:taille:1', lookup)).toBe('Taille')
