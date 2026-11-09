@@ -1089,7 +1089,8 @@ function MapViewInner({ garden }: { garden: Garden }) {
           )}
           <GardenDataBanner garden={garden} compact />
         </div>
-        {plants.length === 0 && !placingSpeciesId && !movingPlantId && (
+        {/* L'invite se cache tant que les Options ou la légende sont ouvertes : elle les recouvrait (ordinateur). « Ajouter une plante » reste dans le panneau de droite. */}
+        {plants.length === 0 && !placingSpeciesId && !movingPlantId && !optionsOpen && !legendOpen && (
           <div className="floating map-empty">
             <PlantScene size={72} className="map-empty-art" />
             <p>

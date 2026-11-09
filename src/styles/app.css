@@ -1532,6 +1532,12 @@ label.field > span {
   gap: 8px;
   pointer-events: none;
 }
+@media (min-width: 761px) {
+  /* Ordinateur : la colonne défile si elle est trop haute et laisse libres l'attribution IGN et l'échelle, en bas de la carte. */
+  .map-top {
+    max-height: calc(100% - 60px);
+  }
+}
 .map-top > * {
   pointer-events: auto;
   position: static;
@@ -3887,6 +3893,12 @@ html[data-immersive] body {
 }
 .map-empty-art {
   margin: 0 auto 4px;
+}
+@media (max-width: 760px) {
+  /* Téléphone : la carte est basse ; sans le dessin, l'invite ne recouvre plus Annuler et Rétablir. */
+  .map-empty-art {
+    display: none;
+  }
 }
 .nb-empty .il-scene {
   margin-bottom: 4px;

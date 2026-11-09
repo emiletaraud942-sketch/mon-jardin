@@ -876,7 +876,8 @@ html[data-big-taps] .app .btn.small,
 html[data-big-taps] .app .btn.ghost {
   min-height: 56px;
 }
-html[data-big-taps] dialog.modal :is(button, summary, [role='tab'], a.btn, .check-row) {
+/* Hors carte MapLibre : le « i » de l'attribution (un summary) gardait 56 px et un second « i » dépassait sous la carte. */
+html[data-big-taps] dialog.modal :is(button, summary, [role='tab'], a.btn, .check-row):not(.maplibregl-map *) {
   min-height: 56px;
 }
 html[data-big-taps] .home-btn {

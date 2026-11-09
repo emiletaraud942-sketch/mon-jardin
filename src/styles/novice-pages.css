@@ -388,7 +388,8 @@
   color: var(--accent);
 }
 .location-map {
-  height: min(60dvh, 420px);
+  /* Plein écran sur téléphone : la carte laisse la place de l'en-tête (2 lignes en Grandes touches), de la consigne et du bouton, sans les recouvrir. */
+  height: clamp(220px, calc(100dvh - 320px), 420px);
 }
 
 /* Liste de courses et de semis */
