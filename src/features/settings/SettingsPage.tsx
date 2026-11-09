@@ -32,6 +32,7 @@ import { lidarMessage, setLidarEnabled, useLidarScene } from '../../lib/useLidar
 import { LIDAR_ATTRIBUTION } from '../../lib/lidar'
 import type { Garden, SoilTexture } from '../../types'
 import { GardenCreator } from './GardenCreator'
+import { SoilHelper } from './SoilHelper'
 import { GardenDataBanner } from './GardenDataBanner'
 import { InstallCard } from '../../components/InstallButton'
 import { HelpSheet } from '../../components/HelpSheet'
@@ -136,6 +137,7 @@ function GardenInfo({ garden }: { garden: Garden }) {
           </select>
         </label>
       </div>
+      <SoilHelper garden={garden} />
       <ul className="list" style={{ marginTop: 12 }}>
         <li>Adresse : {garden.address}</li>
         <li>Mon terrain : {terrain || 'plan non trouvé'}</li>

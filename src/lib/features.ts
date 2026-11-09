@@ -138,6 +138,7 @@ export const FEATURES: Feature[] = [
   F('scan-photo', 'Placer une plante en la photographiant', 'jardin', 'Photographiez une plante pour la placer là où vous êtes.', ['photographier', 'photo', 'placer', 'scanner'], 'scan-scanner', () => openScan('scanner')),
   F('recalage', 'Ajuster la carte à ma position', 'jardin', 'Améliore la précision de la carte avec quelques repères sur place (facultatif).', ['recaler', 'recalage', 'précision', 'repère', 'décalage'], 'scan-recaler', () => openScan('recaler')),
   F('infos-terrain', 'Infos du terrain et du sol', 'jardin', 'Adresse, surface, nature du sol, dates de gel et maisons voisines.', ['sol', 'terrain', 'argile', 'surface', 'gel', 'adresse', 'parcelle'], 'infos-terrain', go('reglages', { path: ['infos-terrain'] })),
+  F('test-sol', 'Reconnaître mon sol', 'jardin', 'Trois questions avec une poignée de terre : l’appli propose la nature de votre sol.', ['sol', 'terre', 'boudin', 'argile', 'sable', 'limon', 'reconnaître', 'test'], 'test-sol', go('reglages', { path: ['infos-terrain', 'test-sol'] })),
   F('relief', 'Relief et arbres des environs', 'jardin', 'Choisissez d’utiliser le relevé IGN pour la pente et les arbres voisins.', ['relief', 'lidar', 'pente', 'arbres voisins', 'ombre', 'actualiser'], 'lidar', go('reglages', { path: ['lidar'] })),
 
   // Mes plantes
