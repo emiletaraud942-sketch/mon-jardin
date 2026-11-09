@@ -1,0 +1,126 @@
+import type { Ennui } from './types'
+
+const SOURCE = 'Savoirs de jardinage courants ; INRAE/Ecophyto (principes généraux)'
+
+export const MOLLUSQUES_ANIMAUX_AUTRES: Ennui[] = [
+  {
+    id: 'limace-escargot',
+    nom: 'Limaces et escargots',
+    alias: ['limace', 'limaces', 'escargot', 'escargots', 'limace grise', 'limace rouge', 'baves argentées', 'loche'],
+    type: 'mollusque',
+    planteIds: ['laitue', 'chicoree', 'fraisier', 'haricot-nain', 'courgette', 'basilic', 'chou-pomme', 'blette', 'epinard', 'dahlia', 'hortensia'],
+    signes: [
+      'De gros trous irréguliers apparaissent dans les feuilles, surtout sur les jeunes plants.',
+      'Des traces de bave argentée brillent le matin sur le sol et les feuilles.',
+      'Des semis entiers disparaissent en une nuit, surtout après la pluie.',
+    ],
+    signesMots: ['trous dans les feuilles', 'gros trous dans les feuilles', 'bave argentée', 'salades mangées', 'jeunes plants coupés', 'semis disparus', 'fraises grignotées'],
+    mois: [3, 4, 5, 6, 9, 10, 11],
+    prevenir: [
+      'Arrosez le matin plutôt que le soir : le sol est sec quand les limaces sortent.',
+      'Gardez le jardin aéré, sans tas de planches ou de pots où elles dorment.',
+      'Attirez leurs ennemis : hérissons (un tas de feuilles), crapauds, carabes, oiseaux, orvets.',
+      'Plantez de jeunes plants déjà bien développés : ils résistent mieux que les semis.',
+    ],
+    agir: [
+      'Ramassez-les le soir ou tôt le matin, avec une lampe, et éloignez-les du jardin.',
+      'Posez une planche ou un pot retourné : elles s’y cachent, vous les ramassez le matin.',
+      'Une soucoupe de bière enterrée au ras du sol peut en piéger quelques-unes.',
+      'Des granulés au phosphate ferrique, admis en agriculture biologique, peuvent aider, selon l’étiquette du produit.',
+    ],
+    inquietude: 'Si tous vos semis disparaissent plusieurs fois de suite, demandez conseil à un voisin jardinier ou à une jardinerie.',
+    avertissement:
+      'Si vous utilisez des granulés, suivez l’étiquette du produit. Choisissez ceux permis en agriculture biologique pour protéger hérissons, oiseaux et animaux de compagnie. Éparpillez-les en petite quantité, jamais en tas.',
+    source: SOURCE,
+  },
+  {
+    id: 'campagnol-taupe',
+    nom: 'Campagnols et taupes',
+    alias: ['campagnol', 'campagnols', 'taupe', 'taupes', 'taupinières', 'taupinière', 'rat taupier', 'mulot', 'rongeurs du jardin'],
+    type: 'animal',
+    planteIds: ['pomme-de-terre', 'carotte', 'tulipe', 'topinambour', 'pommier'],
+    signes: [
+      'Des petits tas de terre ronds (taupinières) bossellent la pelouse : c’est la taupe.',
+      'Des trous plats et des galeries sous l’herbe, des racines, des bulbes ou des tubercules rongés : c’est le campagnol.',
+      'En hiver, l’écorce est rongée au pied des jeunes arbres.',
+    ],
+    signesMots: ['tas de terre dans la pelouse', 'taupinières', 'bulbes mangés', 'racines rongées', 'écorce rongée', 'trous dans le jardin', 'pommes de terre grignotées'],
+    mois: [1, 2, 3, 4, 9, 10, 11, 12],
+    prevenir: [
+      'Entourez les bulbes de tulipe et les jeunes arbres d’un grillage à mailles fines enterré (panier grillagé).',
+      'Protégez le pied des jeunes arbres avec une gaine ou un grillage contre les rongeurs.',
+      'Coupez l’herbe haute au pied des arbres : le campagnol aime s’y cacher.',
+      'Installez un perchoir pour les rapaces et un nichoir pour la chouette effraie.',
+      'Un chat ou un chien qui patrouille dans le jardin aide à les tenir à distance.',
+    ],
+    agir: [
+      'La taupe mange des vers et des larves, pas vos racines : étalez ses tas de terre, c’est un bon terreau.',
+      'Pour le campagnol, utilisez des pièges à pincer vendus en jardinerie, posés dans les galeries, avec des gants.',
+      'Vérifiez les pièges chaque jour, hors de portée des chats et des enfants.',
+      'Ne mettez jamais de poison : il tue aussi les rapaces, les chats et les chiens.',
+    ],
+    inquietude: 'Si les campagnols envahissent le terrain, demandez conseil à la mairie, à un voisin agriculteur ou à une jardinerie.',
+    avertissement: 'Pas de poison : il met en danger les animaux sauvages et domestiques. En cas de doute sur le piégeage, demandez conseil à la mairie.',
+    source: SOURCE,
+  },
+  {
+    id: 'oiseaux-fruits',
+    nom: 'Oiseaux qui mangent les fruits',
+    alias: ['merles', 'merle', 'étourneaux', 'pigeons', 'oiseaux qui mangent les cerises', 'cerises picorées', 'fruits becquetés', 'oiseaux dans les fraises'],
+    type: 'animal',
+    planteIds: ['cerisier', 'framboisier', 'groseillier', 'cassissier', 'myrtillier', 'fraisier', 'vigne', 'prunier'],
+    signes: [
+      'Les fruits mûrs sont picorés, avec de petits coups de bec nets.',
+      'Les cerises disparaissent dès qu’elles rougissent.',
+      'Des fruits entamés pourrissent ensuite, parfois colonisés par des guêpes.',
+    ],
+    signesMots: ['cerises mangées', 'fruits picorés', 'fraises mangées', 'fruits entamés', 'petits fruits disparus', 'raisins picorés'],
+    mois: [5, 6, 7, 8, 9],
+    prevenir: [
+      'Posez un filet à mailles fines dès que les fruits commencent à colorer.',
+      'Tendez-le bien, fixez-le au sol ou au tronc sans laisser de trou : les oiseaux ne doivent pas s’y prendre.',
+      'Des bandes brillantes ou de vieux CD peuvent aider quelques jours, mais les oiseaux s’y habituent.',
+      'Récoltez dès que les fruits sont mûrs.',
+    ],
+    agir: [
+      'Cueillez les fruits un peu plus tôt : ils finissent de mûrir à la maison.',
+      'Vérifiez le filet chaque jour. Si un oiseau s’y prend, libérez-le doucement en coupant les mailles.',
+      'Laissez une part de fruits aux oiseaux : un cerisier ou un sureau de plus peut les occuper.',
+    ],
+    inquietude: 'Si malgré le filet les oiseaux vident le jardin, demandez conseil à un voisin jardinier ou à une jardinerie.',
+    avertissement: 'Les oiseaux sauvages sont protégés : ne les piégez pas et ne les empoisonnez pas. Ne dérangez pas les nids : la nidification court du 15 mars au 31 juillet.',
+    source: SOURCE,
+  },
+  {
+    id: 'feuilles-jaunes',
+    nom: 'Feuilles jaunes (manque d’eau, excès d’eau ou carence)',
+    alias: ['feuilles qui jaunissent', 'jaunissement des feuilles', 'plante qui jaunit', 'chlorose', 'carence en fer', 'feuilles pâles', 'feuilles jaunes'],
+    type: 'autre',
+    planteIds: ['tomate', 'courgette', 'laitue', 'rosier', 'hortensia', 'citronnier', 'myrtillier', 'pecher'],
+    signes: [
+      'Feuilles du bas jaunes, plante pâle et chétive : souvent un manque de nourriture, ou la fin normale du cycle.',
+      'Jeunes feuilles jaune pâle aux nervures vertes : souvent une carence en fer (chlorose), fréquente en sol calcaire.',
+      'Feuilles jaunes et molles avec une terre détrempée : souvent trop d’eau, les racines manquent d’air.',
+      'Feuilles jaunes aux bords secs et terre sèche : souvent un manque d’eau.',
+    ],
+    signesMots: ['feuilles jaunes', 'feuilles qui jaunissent', 'feuilles pâles', 'nervures vertes', 'feuilles jaunes en pot', 'jaunissement du bas', 'feuilles molles jaunes'],
+    mois: [4, 5, 6, 7, 8, 9, 10],
+    prevenir: [
+      'Arrosez à fond mais moins souvent, plutôt que souvent et peu.',
+      'Paillez le sol pour garder une humidité régulière.',
+      'Vérifiez que l’eau s’écoule : une terre lourde peut rester détrempée, et un pot doit avoir des trous.',
+      'Pour myrtillier et hortensia bleu, préférez une terre acide (terre de bruyère) et l’eau de pluie.',
+      'Apportez du compost mûr au printemps.',
+    ],
+    agir: [
+      'Enfoncez un doigt dans la terre sur quelques centimètres : sèche, arrosez ; détrempée, attendez et laissez ressuyer.',
+      'Si la terre est détrempée, arrêtez d’arroser et aérez le sol autour du pied sans abîmer les racines.',
+      'Sur les feuilles jaunes aux nervures vertes, un engrais riche en fer peut aider, selon l’étiquette du produit.',
+      'Retirez les feuilles du bas jaunies : cela ne fait aucun mal à la plante.',
+    ],
+    inquietude:
+      'Si tout le feuillage jaunit vite ou si le pied sent mauvais à la base, demandez conseil. Une jardinerie ou un voisin jardinier peut vous aider.',
+    avertissement: 'Si vous utilisez un engrais, suivez l’étiquette du produit : trop en donner abîme les racines.',
+    source: SOURCE,
+  },
+]
