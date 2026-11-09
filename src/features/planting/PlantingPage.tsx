@@ -12,6 +12,8 @@ import { doyToLabel } from '../../lib/weather'
 import { obstaclesFor, seasonalSunHours } from '../../engine/sun'
 import { recommendSpecies } from '../../engine/planting'
 import { plainReason } from '../../engine/plain'
+import { rotationWarning } from '../../engine/rotation'
+import { RotationNote } from '../../components/RotationNote'
 import { RiskNotes } from '../../components/RiskNotes'
 import { MetroNote } from '../../components/MetroNote'
 import { MONTH_NAMES, whatToSowNow } from '../../engine/calendar'
@@ -97,7 +99,10 @@ function BestForSpot({ garden }: { garden: Garden }) {
     const slope = lidar.terrain ? slopeAt(lidar.terrain, spot) : undefined
     const ctx = { garden, plants, speciesById: SPECIES_BY_ID, spot, sunHours: sun.moyenne, slopePct: slope?.pct }
     const recos = recommendSpecies(SPECIES, ctx, { categories: cat ? [cat] : undefined, limit: 15 })
-    return { sun, slope, recos }
+    // Rotation des cultures : la même famille de légumes a-t-elle poussé tout près ces dernières années ?
+    const today = new Date()
+    const rotation = Object.fromEntries(recos.map((r) => [r.species.id, rotationWarning(r.species.id, spot, plants, SPECIES_BY_ID, today)]))
+    return { sun, slope, recos, rotation }
   }, [spot, garden, plants, cat, lidar.trees, lidar.terrain])
 
   const results = analysis && spot && (
@@ -160,6 +165,7 @@ function BestForSpot({ garden }: { garden: Garden }) {
                 </span>
               </div>
               <RiskNotes species={r.species} />
+              <RotationNote warning={analysis.rotation[r.species.id]} />
               {r.warnings.length > 0 && <div className="small warn-text">Attention : {r.warnings.map(plainReason).join(' · ')}</div>}
               <div className="row" style={{ marginTop: 6 }}>
                 <button className="btn" onClick={() => placePlant(garden, r.species.id, spot, 'projet', { tab: 'carte' })}>

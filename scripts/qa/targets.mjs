@@ -1,5 +1,5 @@
 // Contrôle des cibles tactiles : tous les button, summary, a[href], [role=tab] et les lignes de cases (label.check-row) visibles
-// doivent faire au moins 44 px de haut (56 px avec « Grandes touches »), à 360 et 390 px de large, sur neuf écrans.
+// doivent faire au moins 44 px de haut (56 px avec « Grandes touches »), à 360 et 390 px de large, sur dix écrans.
 // Usage : npm run dev (autre terminal), puis  node scripts/qa/targets.mjs [--big] [--url=http://127.0.0.1:5173/] [--json]
 // Playwright n'est pas une dépendance du dépôt : PLAYWRIGHT_DIR (défaut /opt/node-tools/node_modules) dit où le trouver.
 // Aucun réseau externe n'est joint : /ext et /api répondent 404, la météo est simulée.
@@ -54,6 +54,14 @@ async function ouvrirEnnuis(p) {
   await p.locator('[data-feat=guide-ennuis]').waitFor()
 }
 
+/** « Tout » → « Voir la rotation de mon potager » : l'écran de rotation des cultures. */
+async function ouvrirRotation(p) {
+  await p.locator('[data-home=tout]').click()
+  await p.locator('.tf-overlay input[type=search]').fill('rotation')
+  await p.getByRole('button', { name: /Voir la rotation de mon potager/ }).first().click()
+  await p.locator('[data-feat=rotation]').waitFor()
+}
+
 const SCREENS = [
   { id: 'accueil', go: async () => {} },
   { id: 'carte', go: (p) => p.locator('.sidenav .navbtn', { hasText: 'Mon jardin' }).click() },
@@ -68,6 +76,7 @@ const SCREENS = [
     await p.locator('[data-feat=liste-plantes]').getByText(/Pommier/i).first().click()
     await p.locator('[data-feat=journal]').waitFor()
   } },
+  { id: 'rotation', go: ouvrirRotation },
   { id: 'ennuis-fiche', go: async (p) => { await ouvrirEnnuis(p); await p.locator('[data-ennui-id]').first().click() } },
 ]
 

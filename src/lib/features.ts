@@ -1,7 +1,7 @@
 import { neighborsEnabled } from './neighbors/enabled'
 import { speechSupported } from './speech'
 import { getState } from './store'
-import { addPicker, ennuisOpen, guideOpen, identifyOpen, plantChoice, postIntent, shoppingOpen, tourOpen, type PlantAsk } from './overlays'
+import { addPicker, ennuisOpen, guideOpen, identifyOpen, plantChoice, postIntent, rotationOpen, shoppingOpen, tourOpen, type PlantAsk } from './overlays'
 import { reveal } from './reveal'
 import { redoWithToast, undoWithToast } from './history'
 import { showToast } from './toast'
@@ -184,6 +184,7 @@ export const FEATURES: Feature[] = [
   F('ou-planter', 'Où planter ?', 'afaire', 'Touchez un endroit : l’appli classe les plantes qui s’y plairont.', ['où planter', 'conseil', 'emplacement', 'soleil', 'pente', 'recommander'], 'ou-planter', go('planter', { path: ['ou-planter'] })),
   F('semer-mois', 'Que semer ce mois-ci', 'afaire', 'Les semis, plantations et récoltes possibles ce mois-ci chez vous.', ['semer', 'planter', 'mois', 'semis', 'quand', 'récolter'], 'semer-ce-mois', go('planter', { path: ['semer-ce-mois'] })),
   F('guide-ravageurs', 'Reconnaître un ennui du jardin', 'afaire', 'Pucerons, limaces, taches sur les feuilles : cherchez ce que vous voyez, et que faire.', ['puceron', 'limace', 'maladie', 'feuilles', 'mildiou', 'bestiole', 'traitement', 'insecte', 'champignon', 'taches', 'trous', 'jaunes', 'ennui', 'oïdium'], 'guide-ennuis', () => ennuisOpen.set({})),
+  F('rotation-potager', 'Voir la rotation de mon potager', 'afaire', 'Quels légumes ne pas remettre au même endroit, et quoi planter l’an prochain.', ['rotation', 'potager', 'famille', 'légumes', 'assolement', 'cultures', 'an prochain', 'tomate'], 'rotation', () => rotationOpen.set(true)),
   F('aide-ecran', 'Aide de cet écran', 'afaire', 'Explique l’écran où vous êtes, en quelques phrases.', ['aide', 'comment faire', 'explication', 'besoin d’aide', 'problème'], 'help', () => openHelp()),
   F('guide', 'Je ne sais pas par où commencer', 'afaire', 'Quelques questions simples, une à la fois : l’appli vous amène au bon endroit.', ['guide', 'commencer', 'par où', 'aide', 'débuter', 'perdu', 'questions'], 'guide', () => guideOpen.set(true)),
   F('lire-ecran', 'Lire cet écran à voix haute', 'afaire', 'Le téléphone lit l’aide de l’écran où vous êtes. Un bouton arrête la lecture.', ['lire', 'voix', 'écouter', 'audio', 'haut-parleur', 'aide', 'écran'], 'lire-ecran', () => {

@@ -132,6 +132,18 @@ test('parcours de base', async ({ page, baseURL }) => {
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog', { name: /Pucerons|Reconnaître un ennui/ })).toBeHidden()
 
+  // 4 ter. Rotation du potager : « Tout » → « Voir la rotation de mon potager » → l'écran s'ouvre (liste ou état vide) et se ferme avec Échap.
+  await retourAccueil(page)
+  await page.locator('[data-home=tout]').click()
+  await tout.getByRole('searchbox').fill('rotation')
+  await tout.getByRole('button', { name: /Voir la rotation de mon potager/ }).first().click()
+  const rotation = page.getByRole('dialog', { name: 'Rotation de mon potager' })
+  await expect(rotation).toBeVisible()
+  await expect(rotation.getByText(/Ce sont des conseils généraux/)).toBeVisible()
+  await noOverflow('rotation du potager')
+  await page.keyboard.press('Escape')
+  await expect(rotation).toBeHidden()
+
   // 5. Réglages affiche « Version ».
   await retourAccueil(page)
   await ouvrirReglages(page)

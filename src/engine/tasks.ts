@@ -301,19 +301,27 @@ export function annualSeasonOver(p: Plant, sp: Species, today: Date): boolean {
   if (!isAnnualSpecies(sp) || !isActive(p)) return false
   const planted = localDate(p.plantedAt)
   if (!Number.isFinite(planted.getTime())) return false
-  const harvest = new Set(sp.recolte ?? [])
-  let end: Date | undefined
-  if (harvest.size > 0 && harvest.size < 12) {
-    // Premier mois, à partir de la plantation, qui est le dernier d'une fenêtre de récolte.
-    for (let i = 0; i < 24 && !end; i++) {
-      const d = new Date(planted.getFullYear(), planted.getMonth() + i, 1)
-      const m = (d.getMonth() + 1) as Month
-      const next = ((m % 12) + 1) as Month
-      if (harvest.has(m) && !harvest.has(next)) end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59)
-    }
-  }
-  end ??= new Date(planted.getFullYear() + 1, planted.getMonth(), planted.getDate())
+  const end = annualHarvestEnd(p, sp) ?? new Date(planted.getFullYear() + 1, planted.getMonth(), planted.getDate())
   return today.getTime() > end.getTime() + ANNUAL_GRACE_DAYS * DAY_MS
+}
+
+/**
+ * Fin de la fenêtre de récolte qui suit la plantation (dernier jour du dernier mois de récolte), ou `undefined` si la fiche
+ * n'a pas de fenêtre de récolte (aucun mois, ou les douze). Sert à `annualSeasonOver` et à la rotation des cultures (rotation.ts).
+ */
+export function annualHarvestEnd(p: Plant, sp: Species): Date | undefined {
+  const planted = localDate(p.plantedAt)
+  if (!Number.isFinite(planted.getTime())) return undefined
+  const harvest = new Set(sp.recolte ?? [])
+  if (harvest.size === 0 || harvest.size >= 12) return undefined
+  // Premier mois, à partir de la plantation, qui est le dernier d'une fenêtre de récolte.
+  for (let i = 0; i < 24; i++) {
+    const d = new Date(planted.getFullYear(), planted.getMonth() + i, 1)
+    const m = (d.getMonth() + 1) as Month
+    const next = ((m % 12) + 1) as Month
+    if (harvest.has(m) && !harvest.has(next)) return new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59)
+  }
+  return undefined
 }
 const isSowing = (t: TaskType) => t === 'semis' || t === 'plantation'
 

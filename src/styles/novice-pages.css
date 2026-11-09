@@ -419,3 +419,19 @@
 .tcard-read {
   min-height: var(--tap);
 }
+
+/* Avertissement de rotation dans « Où planter ? » : discret, jamais bloquant. */
+.rot-note {
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  border-left: 4px solid var(--warn);
+  border-radius: 8px;
+  background: var(--warn-soft);
+  color: var(--warn-text);
+}
+.rot-note strong {
+  font-weight: var(--fw-key);
+}
+.rot-note p {
+  margin: 2px 0 0;
+}

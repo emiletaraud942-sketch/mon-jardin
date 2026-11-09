@@ -40,6 +40,9 @@ export const shoppingOpen = createValue(false)
 /** Guide « bestioles et maladies » ouvert ; `id` : la fiche à montrer d'emblée (depuis la fiche d'une plante). */
 export const ennuisOpen = createValue<{ id?: string } | undefined>(undefined)
 export const openEnnui = (id?: string) => ennuisOpen.set({ id })
+/** Écran « Rotation de mon potager » ouvert. */
+export const rotationOpen = createValue(false)
+export const openRotation = () => rotationOpen.set(true)
 
 /** Ce qu'on veut faire avec une plante qu'il faut d'abord choisir. */
 export type PlantAsk = 'fiche' | 'photos' | 'journal' | 'croissance' | 'recoltee' | 'supprimer' | 'deplacer'

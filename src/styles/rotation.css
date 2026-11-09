@@ -1,0 +1,99 @@
+/* Rotation de mon potager : une carte par zone. Couleurs : variables de :root seulement. */
+
+.rotation .tf-head h1 {
+  overflow-wrap: anywhere;
+}
+.rot-intro {
+  margin: 0;
+}
+.rot-zone {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius-btn-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+.rot-zone h2 {
+  margin: 0;
+  font-family: var(--font-title);
+  font-weight: var(--fw-text);
+  font-size: calc(21 * var(--px));
+  line-height: 1.2;
+  color: var(--title);
+}
+.rot-plants {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rot-plants li {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow-wrap: anywhere;
+}
+.rot-plants strong {
+  font-weight: var(--fw-strong);
+}
+.rot-plants span {
+  font-size: calc(14 * var(--px));
+  color: var(--muted);
+}
+.rot-last,
+.rot-zone p {
+  margin: 0;
+}
+.rot-block {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 1px solid var(--warn);
+  border-radius: var(--radius-btn-lg);
+  background: var(--warn-soft);
+  color: var(--warn-text);
+}
+.rot-block svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--warn);
+}
+.rot-block p + p {
+  margin-top: 4px;
+}
+.rot-block strong {
+  font-weight: var(--fw-key);
+}
+.rot-next {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.rot-next svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--muted-2);
+}
+.rot-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--radius-btn-lg);
+  background: var(--surface-2);
+  color: var(--text);
+}
+.rot-empty p {
+  margin: 0;
+}
+.rot-caution {
+  margin: 4px 0 0;
+}
