@@ -1,0 +1,107 @@
+/* ---------- Impression : « Ma semaine » ----------
+   À l'écran, la feuille est cachée. À l'impression, noir sur blanc, 12 pt, sans couleur obligatoire.
+   Couleurs : variables de :root seulement (ici aucune : le papier reste blanc et noir). */
+.print-week {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 16mm;
+  }
+
+  /* Partout : ni barres, ni navigation, ni boutons, ni « Je suis perdu », ni bandeaux. */
+  .topbar,
+  .sidenav,
+  .modebar,
+  .phead-slot,
+  .pagehead,
+  .lost-fab,
+  .overlay-stack,
+  .toast-host,
+  .skip-link,
+  .offline-chip,
+  .update-banner,
+  dialog,
+  button {
+    display: none !important;
+  }
+
+  /* Pendant « Imprimer ma semaine » : seule la feuille reste. */
+  html[data-print-week] body > *:not(.print-week) {
+    display: none !important;
+  }
+  html[data-print-week] body {
+    background: #fff;
+    color: #000;
+    overflow: visible;
+    height: auto;
+  }
+  html[data-print-week] .print-week {
+    display: block;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-size: 12pt;
+    line-height: 1.4;
+    color: #000;
+    background: #fff;
+  }
+  /* Titres dans la police du texte et en noir : la police des titres n'est pas encore chargée quand la feuille s'ouvre. */
+  .print-week h1,
+  .print-week h2 {
+    font-family: inherit;
+    color: #000;
+  }
+  .print-week h1 {
+    font-size: 22pt;
+    margin: 0 0 2pt;
+    font-weight: var(--fw-key);
+  }
+  .print-week .pw-range {
+    margin: 0 0 14pt;
+    font-size: 12pt;
+  }
+  .print-week h2 {
+    font-size: 15pt;
+    font-weight: var(--fw-key);
+    margin: 14pt 0 6pt;
+    padding-bottom: 2pt;
+    border-bottom: 1.5pt solid #000;
+    break-after: avoid;
+  }
+  .print-week ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .print-week li {
+    display: flex;
+    gap: 10pt;
+    padding: 6pt 0;
+    border-bottom: 0.5pt solid #999;
+    break-inside: avoid;
+  }
+  /* Case à cocher dessinée : un carré vide, pas une image. */
+  .print-week .pw-box {
+    flex: none;
+    width: 14pt;
+    height: 14pt;
+    margin-top: 2pt;
+    border: 1.5pt solid #000;
+    border-radius: 2pt;
+  }
+  .print-week .pw-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1pt;
+  }
+  .print-week .pw-text strong {
+    font-weight: var(--fw-key);
+  }
+  .print-week .pw-footer {
+    margin: 18pt 0 0;
+    padding-top: 6pt;
+    border-top: 0.5pt solid #000;
+    font-size: 10pt;
+    break-inside: avoid;
+  }
+}

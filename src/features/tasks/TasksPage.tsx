@@ -30,6 +30,7 @@ import type {
 } from "../../types";
 import { PlaceAction } from "../../components/PlaceAction";
 import { useTasks } from "./useTasks";
+import { WeekActions } from "./WeekSheet";
 import { doneOnLabel, doneTaskLabel } from "./taskLabel";
 import { frostSentence, rainWord, weatherSentences } from "./weatherText";
 import "../../styles/novice-pages.css";
@@ -606,6 +607,7 @@ export function TasksPage({ garden }: { garden: Garden }) {
             </ul>
           </div>
         )}
+        {view === "semaine" && plants.length > 0 && <WeekActions garden={garden} tasks={tasks} plants={plants} />}
         <button
           className="btn afaire-view"
           onClick={() => setView(view === "annee" ? "semaine" : "annee")}
