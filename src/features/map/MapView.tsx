@@ -3,6 +3,7 @@ import * as maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css' // chargé avec la carte seulement (pas au démarrage de l'appli)
 import { MAP_LOCALE_FR } from './mapLocale'
 import { hiddenLabelIds, type LabelBox } from './labelLayout'
+import { sameIds, selectMarkerIds } from './markerBudget'
 import '../../lib/mapWorker'
 import { HistoryButtons } from '../../components/HistoryButtons'
 import { webgl2Supported } from '../../lib/webgl'
@@ -475,7 +476,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
       m.addSource('parcel', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       m.addSource('buildings', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       m.addSource('canopy', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-      for (const id of ['grid', 'uncert', 'guides', 'ruler', 'ghost', 'adult', 'gpsfix']) m.addSource(id, { type: 'geojson', data: emptyFc() })
+      for (const id of ['grid', 'uncert', 'guides', 'ruler', 'ghost', 'adult', 'gpsfix', 'plant-dots']) m.addSource(id, { type: 'geojson', data: emptyFc() })
       m.addLayer({ id: 'buildings', type: 'fill', source: 'buildings', paint: { 'fill-color': '#ffffff', 'fill-opacity': 0.18, 'fill-outline-color': '#ffffff' } })
       // Contour net des maisons voisines (BD TOPO) : il ne dépend pas de la netteté de la photo.
       m.addLayer({ id: 'buildings-line', type: 'line', source: 'buildings', paint: { 'line-color': '#ffffff', 'line-width': 2, 'line-opacity': 0.95 } })
@@ -487,6 +488,13 @@ function MapViewInner({ garden }: { garden: Garden }) {
         paint: { 'fill-color': ['get', 'color'], 'fill-opacity': ['case', ['get', 'projet'], 0.2, ['get', 'opacity']] },
       })
       m.addLayer({ id: 'canopy-line', type: 'line', source: 'canopy', paint: { 'line-color': '#ffffff', 'line-width': 1, 'line-opacity': 0.7 } })
+      // Plantes sans marqueur interactif (au-delà du plafond de `markerBudget.ts`) : un point dessiné par la carte, au même endroit et de la même taille.
+      m.addLayer({
+        id: 'plant-dots',
+        type: 'circle',
+        source: 'plant-dots',
+        paint: { 'circle-radius': 8, 'circle-color': ['get', 'color'], 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2, 'circle-opacity': ['case', ['get', 'projet'], 0.6, 1] },
+      })
       // Placement : cercles des plantes en place à leur taille adulte, puis cercle de la plante à poser avec son point central.
       m.addLayer({ id: 'adult-line', type: 'line', source: 'adult', paint: { 'line-color': '#ffffff', 'line-width': 1.25, 'line-opacity': 0.85, 'line-dasharray': [3, 2] } })
       m.addLayer({ id: 'gpsfix-fill', type: 'fill', source: 'gpsfix', paint: { 'fill-color': cssVar('--cta', '#b8532d'), 'fill-opacity': 0.16 } })
@@ -543,6 +551,33 @@ function MapViewInner({ garden }: { garden: Garden }) {
     }
     m.on('move', scheduleLabels)
     m.on('resize', scheduleLabels)
+    // Marqueurs interactifs : seuls ceux de la vue (plafonnés) existent ; on refait le choix pendant et après le déplacement.
+    let markerFrame = 0
+    const scheduleMarkers = () => {
+      if (markerFrame) return
+      markerFrame = requestAnimationFrame(() => {
+        markerFrame = 0
+        reselectMarkersRef.current()
+      })
+    }
+    m.on('move', scheduleMarkers)
+    m.on('moveend', scheduleMarkers)
+    m.on('resize', scheduleMarkers)
+    // Un point dessiné (hors plafond) se touche comme un marqueur : on prend le plus proche dans 16 px. Pendant un placement, la carte garde le toucher.
+    m.on('click', (e) => {
+      if (placingRef.current || movingRef.current) return
+      const { x, y } = e.point
+      const hits = m.queryRenderedFeatures([[x - 16, y - 16], [x + 16, y + 16]], { layers: ['plant-dots'] })
+      let best: { id: string; d: number } | undefined
+      for (const f of hits) {
+        const g = f.geometry as GeoJSON.Point
+        const q = m.project([g.coordinates[0], g.coordinates[1]])
+        const d = Math.hypot(q.x - x, q.y - y)
+        const id = f.properties?.id as string | undefined
+        if (id && (!best || d < best.d)) best = { id, d }
+      }
+      if (best) setUi({ selectedPlantId: best.id })
+    })
     // Mention discrète quand la photo ne peut plus gagner en précision (variantes de revue).
     let beyond = false
     m.on('zoom', () => {
@@ -641,12 +676,35 @@ function MapViewInner({ garden }: { garden: Garden }) {
   const layoutLabelsRef = useRef(layoutLabels)
   layoutLabelsRef.current = layoutLabels
 
-  // Marqueurs déplaçables (un par plante). Zone tactile de 40 px autour d'un point de 14 px.
-  useEffect(() => {
+  // Marqueurs déplaçables : un par plante de la vue, 150 au plus (`markerBudget.ts`). Zone tactile de 44 px autour d'un point de 18 px.
+  // Les autres plantes sont des points dessinés par la carte (couche `plant-dots`) et restent dans la liste « Mes plantes ».
+  const draggingId = useRef<string>()
+  const [hiddenCount, setHiddenCount] = useState(0)
+  /** Plantes qui doivent avoir un marqueur maintenant (choisie, déplacée, glissée, au focus clavier : toujours). */
+  const chooseMarkers = () => {
+    const m = map.current
+    if (!m) return undefined
+    const keep = [selectedPlantId, movingRef.current, draggingId.current].filter((x): x is string => !!x)
+    const active = document.activeElement
+    if (active) for (const [id, mk] of markers.current) if (mk.getElement() === active) keep.push(id)
+    const c = m.getContainer()
+    const g = gardenRef.current
+    const points = plantsRef.current.map((p) => {
+      const ll = toLonLat(g.center, p.position)
+      const px = m.project([ll.lon, ll.lat])
+      return { id: p.id, x: px.x, y: px.y }
+    })
+    return selectMarkerIds({ points, width: c.clientWidth, height: c.clientHeight, keep, current: new Set(markers.current.keys()) })
+  }
+  const syncMarkers = () => {
     const m = map.current
     if (!m || !ready) return
+    const choice = chooseMarkers()
+    if (!choice) return
+    const wanted = choice.ids
     const seen = new Set<string>()
     for (const p of plants) {
+      if (!wanted.has(p.id)) continue
       seen.add(p.id)
       const s = SPECIES_BY_ID[p.speciesId]
       const ll = toLonLat(garden.center, p.position)
@@ -682,6 +740,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
         mk = new maplibregl.Marker({ element: hit, draggable: true, clickTolerance: dragThresholdPx(isTouch()) }).setLngLat([ll.lon, ll.lat]).addTo(m)
         let from: XY | undefined
         mk.on('dragstart', () => {
+          draggingId.current = p.id
           from = plantsRef.current.find((x) => x.id === p.id)?.position
         })
         // Glisser : l'aimant ramène le point sur la limite, la façade ou l'alignement le plus proche.
@@ -697,6 +756,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
           a.draw(r, p.id)
         })
         mk.on('dragend', () => {
+          draggingId.current = undefined
           const pos = mk!.getLngLat()
           const g = gardenRef.current
           aidRef.current?.clear()
@@ -731,8 +791,29 @@ function MapViewInner({ garden }: { garden: Garden }) {
         markers.current.delete(id)
       }
     }
+    // Les plantes sans marqueur gardent leur point : dessiné par la carte, au même endroit.
+    const dots: GeoJSON.Feature[] = []
+    for (const p of plants) {
+      if (seen.has(p.id)) continue
+      const s = SPECIES_BY_ID[p.speciesId]
+      const ll = toLonLat(garden.center, p.position)
+      dots.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [ll.lon, ll.lat] }, properties: { id: p.id, color: s?.couleurAccent ?? s?.couleur ?? cssVar('--accent-2', '#4f8a4b'), projet: p.status === 'projet' } })
+    }
+    ;(m.getSource('plant-dots') as GeoJSONSource | undefined)?.setData({ type: 'FeatureCollection', features: dots })
+    setHiddenCount(choice.overflow)
     layoutLabelsRef.current()
-  }, [plants, selectedPlantId, garden.center, ready, names])
+  }
+  const syncMarkersRef = useRef(syncMarkers)
+  syncMarkersRef.current = syncMarkers
+  // Pendant le déplacement : on ne touche au DOM que si le choix change.
+  const reselectMarkersRef = useRef(() => {})
+  reselectMarkersRef.current = () => {
+    const choice = chooseMarkers()
+    if (choice && !sameIds(choice.ids, new Set(markers.current.keys()))) syncMarkersRef.current()
+  }
+  useEffect(() => {
+    syncMarkers()
+  }, [plants, selectedPlantId, garden.center, ready, names]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // « 📍 plante » d'une tâche, « Voir sur la carte » : la carte se centre sur la plante.
   // Plantes scannées « à valider » : pastilles en pointillés, un appui rouvre la revue.
@@ -953,6 +1034,11 @@ function MapViewInner({ garden }: { garden: Garden }) {
     <div className="workspace">
       <div className={'canvas-wrap map-wrap' + (placingSpeciesId || movingPlantId ? ' placing' : '')}>
         <div ref={el} className="map" data-feat="carte" />
+        {hiddenCount > 0 && (
+          <p className="sr-only" role="status">
+            Beaucoup de plantes dans la vue : {hiddenCount} ne sont pas atteignables au clavier ici. Zoomez, ou ouvrez la liste Mes plantes.
+          </p>
+        )}
         <div className="map-top">
           {!placingNow && (
           <div className="floating row map-toolbar" role="toolbar" aria-label="Réglages de la carte" data-feat="fond-carte">
