@@ -1,5 +1,5 @@
 // Contrôle des cibles tactiles : tous les button, summary, a[href], [role=tab] et les lignes de cases (label.check-row) visibles
-// doivent faire au moins 44 px de haut (56 px avec « Grandes touches »), à 360 et 390 px de large, sur six écrans.
+// doivent faire au moins 44 px de haut (56 px avec « Grandes touches »), à 360 et 390 px de large, sur huit écrans.
 // Usage : npm run dev (autre terminal), puis  node scripts/qa/targets.mjs [--big] [--url=http://127.0.0.1:5173/] [--json]
 // Playwright n'est pas une dépendance du dépôt : PLAYWRIGHT_DIR (défaut /opt/node-tools/node_modules) dit où le trouver.
 // Aucun réseau externe n'est joint : /ext et /api répondent 404, la météo est simulée.
@@ -44,6 +44,14 @@ function measure(min) {
   return out
 }
 
+/** « Tout » → « Reconnaître un ennui du jardin » : la liste du guide des bestioles et maladies. */
+async function ouvrirEnnuis(p) {
+  await p.locator('[data-home=tout]').click()
+  await p.locator('.tf-overlay input[type=search]').fill('ennui')
+  await p.getByRole('button', { name: /Reconnaître un ennui du jardin/ }).first().click()
+  await p.locator('[data-feat=guide-ennuis]').waitFor()
+}
+
 const SCREENS = [
   { id: 'accueil', go: async () => {} },
   { id: 'carte', go: (p) => p.locator('.sidenav .navbtn', { hasText: 'Mon jardin' }).click() },
@@ -51,6 +59,8 @@ const SCREENS = [
   { id: 'ou-planter', go: (p) => p.locator('.sidenav .navbtn', { hasText: /Planter|Où planter/ }).first().click() },
   { id: 'reglages', go: (p) => p.getByRole('button', { name: /Compte/ }).first().click() },
   { id: 'tout', go: (p) => p.locator('[data-home=tout]').click() },
+  { id: 'ennuis', go: ouvrirEnnuis },
+  { id: 'ennuis-fiche', go: async (p) => { await ouvrirEnnuis(p); await p.locator('[data-ennui-id]').first().click() } },
 ]
 
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] })

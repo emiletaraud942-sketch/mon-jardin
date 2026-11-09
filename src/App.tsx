@@ -11,7 +11,7 @@ import { LostButton, LostSheet } from './features/aide/Perdu'
 import { Guide } from './features/aide/Guide'
 import { Visite } from './features/aide/Visite'
 import { tourSeen } from './lib/featureTour'
-import { guideOpen, lostSheet, toutFaire, tourOpen } from './lib/overlays'
+import { ennuisOpen, guideOpen, lostSheet, toutFaire, tourOpen } from './lib/overlays'
 import { SubTabs } from './components/SubTabs'
 import { StorageBanner } from './components/StorageBanner'
 import { ToastHost } from './components/Toast'
@@ -59,6 +59,7 @@ const View3D = lazy(() => import('./features/garden3d/View3D'))
 const NeighborsPage = lazy(() => import('./features/neighbors/NeighborsPage').then((m) => ({ default: m.NeighborsPage })))
 const ScanHost = lazy(() => import('./features/scan/ScanHost'))
 const PanoHost = lazy(() => import('./features/panorama/PanoHost'))
+const EnnuisScreen = lazy(() => import('./features/ravageurs/EnnuisScreen'))
 const MapView = lazy(() => import('./features/map/MapView').then((m) => ({ default: m.MapView })))
 
 const Loading = ({ label }: { label: string }) => (
@@ -114,6 +115,7 @@ function AppShell() {
   const lostOpen = lostSheet.use()
   const guideShown = guideOpen.use()
   const tourShown = tourOpen.use()
+  const ennuisShown = ennuisOpen.use()
   const mainRef = useRef<HTMLElement>(null)
   const firstPaint = useRef(true)
   const open = tasks.filter((t) => !t.blockedBy && !t.done).length
@@ -366,6 +368,11 @@ function AppShell() {
       {lostOpen && <LostSheet />}
       {toutOpen && <ToutFaire />}
       {guideShown && <Guide />}
+      {ennuisShown && (
+        <Suspense fallback={null}>
+          <EnnuisScreen initialId={ennuisShown.id} />
+        </Suspense>
+      )}
       {tourShown && <Visite />}
       <LostButton />
     </div>

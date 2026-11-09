@@ -2,6 +2,8 @@
 
 Contenu à relire par un jardinier ou un agronome avant diffusion large. Les fiches sont rédigées d'après des savoirs de jardinage courants et des principes généraux (INRAE, Ecophyto) : aucune citation précise, aucun lien, et les faits n'ont pas été revérifiés en ligne pour cette version.
 
+Écran : `src/features/ravageurs/` ; tant que ce tableau n'est pas validé, l'écran affiche « Contenu à relire par un jardinier » (constante `A_RELIRE` de `EnnuisScreen.tsx`, à passer à `false` après la relecture).
+
 Données : `src/data/ravageurs/` (types dans `types.ts`, tests dans `ennuis.test.ts`). Règles appliquées : phrases de 20 mots au plus, aucune dose chiffrée, aucun produit cité hors cuivre, soufre, savon insecticide, huile de colza, Bacillus thuringiensis, phosphate ferrique et engrais riche en fer (toujours « selon l'étiquette du produit »), rappel pour les abeilles.
 
 | id | Nom | Plantes | Points à vérifier |

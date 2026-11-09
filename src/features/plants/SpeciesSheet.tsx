@@ -5,6 +5,7 @@ import { MonthGrid } from '../../components/MonthGrid'
 import { RiskNotes } from '../../components/RiskNotes'
 import { MONTH_NAMES, plantingCalendar } from '../../engine/calendar'
 import { openSpecies, startPlacing } from '../../lib/ui'
+import { EnnuisLine } from '../ravageurs/EnnuisLine'
 import type { Garden, Species, TaskCondition } from '../../types'
 import '../../styles/novice-pages.css'
 
@@ -115,6 +116,8 @@ export function SpeciesSheet({ species: s, garden }: { species: Species; garden:
           ))}
         </ul>
       </div>
+
+      <EnnuisLine speciesId={s.id} />
 
       <details className="np-details">
         <summary>Taille, sol et voisines</summary>

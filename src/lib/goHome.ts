@@ -1,6 +1,6 @@
 import { closeScan } from '../features/scan/scanUi'
 import { closePanorama } from '../features/panorama/panoUi'
-import { guideOpen, lostSheet, toutFaire, tourOpen } from './overlays'
+import { ennuisOpen, guideOpen, lostSheet, toutFaire, tourOpen } from './overlays'
 import { setHelpOpen, setUi } from './ui'
 
 /**
@@ -14,6 +14,7 @@ export function goHome() {
   toutFaire.set(false)
   lostSheet.set(false)
   guideOpen.set(false)
+  ennuisOpen.set(undefined)
   tourOpen.set(false)
   setUi({ tab: 'accueil', selectedPlantId: undefined, speciesId: undefined })
 }

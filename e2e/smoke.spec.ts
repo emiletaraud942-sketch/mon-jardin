@@ -81,6 +81,21 @@ test('parcours de base', async ({ page, baseURL }) => {
   await page.keyboard.press('Escape')
   await expect(tout).toBeHidden()
 
+  // 4 bis. Guide des ennuis : « Tout » → « Reconnaître un ennui du jardin » → recherche « puceron » → la fiche s'ouvre.
+  await retourAccueil(page)
+  await page.locator('[data-home=tout]').click()
+  await tout.getByRole('searchbox').fill('puceron')
+  await tout.getByRole('button', { name: /Reconnaître un ennui du jardin/ }).first().click()
+  const ennuis = page.getByRole('dialog', { name: /Reconnaître un ennui du jardin/ })
+  await expect(ennuis).toBeVisible()
+  await ennuis.getByRole('searchbox').fill('puceron')
+  await ennuis.getByRole('button', { name: /Pucerons/ }).first().click()
+  await expect(page.getByRole('dialog', { name: 'Pucerons' }).getByRole('heading', { name: 'Ce que je vois' })).toBeVisible()
+  await noOverflow('guide des ennuis')
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog', { name: /Pucerons|Reconnaître un ennui/ })).toBeHidden()
+
   // 5. Réglages affiche « Version ».
   await retourAccueil(page)
   await ouvrirReglages(page)

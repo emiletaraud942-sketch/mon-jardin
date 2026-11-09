@@ -37,6 +37,9 @@ export const tourOpen = createValue(false)
 export const addPicker = createValue<{ then?: string[] } | undefined>(undefined)
 export const identifyOpen = createValue(false)
 export const shoppingOpen = createValue(false)
+/** Guide « bestioles et maladies » ouvert ; `id` : la fiche à montrer d'emblée (depuis la fiche d'une plante). */
+export const ennuisOpen = createValue<{ id?: string } | undefined>(undefined)
+export const openEnnui = (id?: string) => ennuisOpen.set({ id })
 
 /** Ce qu'on veut faire avec une plante qu'il faut d'abord choisir. */
 export type PlantAsk = 'fiche' | 'photos' | 'croissance' | 'recoltee' | 'supprimer' | 'deplacer'

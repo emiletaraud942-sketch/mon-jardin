@@ -34,6 +34,7 @@ const TEXT_PAIRS: [string, string][] = [
   ['muted', 'surface'],
   ['muted-2', 'surface-2'],
   ['muted-2', 'track'],
+  ['muted-2', 'bg'],
   ['warn-text', 'warn-soft'],
   ['warn', 'warn-soft'],
   ['danger', 'danger-soft'],
