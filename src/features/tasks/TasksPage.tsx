@@ -15,7 +15,8 @@ import { showToast } from "../../lib/toast";
 import { downloadBlob } from "../../lib/backup";
 import { buildIcs } from "../../lib/ics";
 import { openHelp, setUi } from "../../lib/ui";
-import { useIntent } from "../../lib/overlays";
+import { openConseil, useIntent } from "../../lib/overlays";
+import { ALERT_CONSEIL } from "../conseils/links";
 import { MONTH_NAMES } from "../../engine/calendar";
 import { ALERT_ICON, ALERT_LABEL } from "../../engine/alerts";
 import { waterBalance, yearPlan } from "../../engine/tasks";
@@ -249,6 +250,11 @@ function TaskItem({
       <details className="tcard-more np-details">
         <summary>Comment faire ?</summary>
         <div className="small">{task.howTo}</div>
+        {task.alert && ALERT_CONSEIL[task.alert] && (
+          <button type="button" className="btn small tcard-read" onClick={() => openConseil(ALERT_CONSEIL[task.alert!]!.id)}>
+            <Icon name="drop" size={16} /> {ALERT_CONSEIL[task.alert]!.label}
+          </button>
+        )}
         {task.tool && <div className="small muted">Outil : {task.tool}.</div>}
         {task.detail && <div className="small muted">{task.detail}</div>}
         {speechSupported() && (

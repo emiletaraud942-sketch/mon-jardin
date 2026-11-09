@@ -9,6 +9,11 @@
   display: none;
 }
 
+/* Les blocs de la colonne gardent leur hauteur : sinon une case à cocher (min-height fixe) se tasse sur le champ, texte très grand. */
+.ennuis .ennui-body > * {
+  flex-shrink: 0;
+}
+
 .ennui-ask {
   margin: 0;
   font-size: calc(15 * var(--px));

@@ -54,6 +54,14 @@ async function ouvrirEnnuis(p) {
   await p.locator('[data-feat=guide-ennuis]').waitFor()
 }
 
+/** « Tout » → « Lire les conseils compost et économie d'eau » : la liste des conseils. */
+async function ouvrirConseils(p) {
+  await p.locator('[data-home=tout]').click()
+  await p.locator('.tf-overlay input[type=search]').fill('compost')
+  await p.getByRole('button', { name: /Lire les conseils compost/ }).first().click()
+  await p.locator('[data-feat=conseils]').waitFor()
+}
+
 /** « Tout » → « Voir la rotation de mon potager » : l'écran de rotation des cultures. */
 async function ouvrirRotation(p) {
   await p.locator('[data-home=tout]').click()
@@ -77,6 +85,8 @@ const SCREENS = [
     await p.locator('[data-feat=journal]').waitFor()
   } },
   { id: 'rotation', go: ouvrirRotation },
+  { id: 'conseils', go: ouvrirConseils },
+  { id: 'conseils-fiche', go: async (p) => { await ouvrirConseils(p); await p.locator('[data-conseil-id]').first().click() } },
   { id: 'ennuis-fiche', go: async (p) => { await ouvrirEnnuis(p); await p.locator('[data-ennui-id]').first().click() } },
 ]
 

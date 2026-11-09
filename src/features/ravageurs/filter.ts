@@ -54,7 +54,7 @@ const searchable = (e: Ennui) => ({ nomCommun: e.nom, nomLatin: '', alias: [...e
 const STOP = new Set(['de', 'des', 'du', 'la', 'le', 'les', 'un', 'une', 'sur', 'dans', 'en', 'au', 'aux', 'et', 'ou', 'd', 'l', 'mes', 'ma', 'mon'])
 
 /** Mots utiles de la requête (sans les petits mots de liaison). */
-function usefulWords(query: string): string[] {
+export function usefulWords(query: string): string[] {
   return normalizeSearch(query)
     .split(' ')
     .filter((w) => w.length > 1 && !STOP.has(w))

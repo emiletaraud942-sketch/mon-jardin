@@ -132,6 +132,23 @@ test('parcours de base', async ({ page, baseURL }) => {
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog', { name: /Pucerons|Reconnaître un ennui/ })).toBeHidden()
 
+  // 4 bis 2. Conseils compost et eau : « Tout » → « Lire les conseils… » → recherche « paillage » → la fiche s'ouvre ; une recherche sans résultat dit « Rien ne correspond ».
+  await retourAccueil(page)
+  await page.locator('[data-home=tout]').click()
+  await tout.getByRole('searchbox').fill('compost')
+  await tout.getByRole('button', { name: /Lire les conseils compost et économie d’eau/ }).first().click()
+  const conseils = page.getByRole('dialog', { name: /Conseils compost et économie d’eau/ })
+  await expect(conseils).toBeVisible()
+  await conseils.getByRole('searchbox').fill('xylophone')
+  await expect(conseils.getByText('Rien ne correspond')).toBeVisible()
+  await conseils.getByRole('searchbox').fill('paillage')
+  await conseils.getByRole('button', { name: /Pailler pour garder l’humidité/ }).first().click()
+  await expect(page.getByRole('dialog', { name: /Pailler pour garder l’humidité/ }).getByRole('heading', { name: 'Étape par étape' })).toBeVisible()
+  await noOverflow('conseils')
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog', { name: /Pailler|Conseils compost/ })).toBeHidden()
+
   // 4 ter. Rotation du potager : « Tout » → « Voir la rotation de mon potager » → l'écran s'ouvre (liste ou état vide) et se ferme avec Échap.
   await retourAccueil(page)
   await page.locator('[data-home=tout]').click()

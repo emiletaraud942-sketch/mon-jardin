@@ -40,6 +40,9 @@ export const shoppingOpen = createValue(false)
 /** Guide « bestioles et maladies » ouvert ; `id` : la fiche à montrer d'emblée (depuis la fiche d'une plante). */
 export const ennuisOpen = createValue<{ id?: string } | undefined>(undefined)
 export const openEnnui = (id?: string) => ennuisOpen.set({ id })
+/** Conseils « compost » et « économiser l'eau » ouverts ; `id` : la fiche à montrer d'emblée (depuis une alerte de À faire). */
+export const conseilsOpen = createValue<{ id?: string } | undefined>(undefined)
+export const openConseil = (id?: string) => conseilsOpen.set({ id })
 /** Écran « Rotation de mon potager » ouvert. */
 export const rotationOpen = createValue(false)
 export const openRotation = () => rotationOpen.set(true)

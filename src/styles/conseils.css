@@ -1,0 +1,91 @@
+/* Conseils compost et eau : tuiles de thème, étapes numérotées. Le reste vient de ennuis.css. Couleurs : variables de :root seulement. */
+
+.conseil-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+/* « Tout » : une rangée basse sur toute la largeur, au-dessus des deux sujets. */
+.conseil-tiles .conseil-tile-all {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  min-height: 56px;
+}
+.conseil-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 76px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-btn-lg);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.conseil-tile strong {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: var(--fw-key);
+  overflow-wrap: anywhere;
+}
+.conseil-tile > span:last-child {
+  font-size: calc(14 * var(--px));
+  color: var(--muted);
+}
+.conseil-tile.on {
+  border-width: 2px;
+  padding: 9px 11px;
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.conseil-tile.on > span:last-child {
+  color: var(--muted-2);
+}
+.conseil-tile:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.conseil-tile-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--muted-2);
+}
+.conseil-tile.on .conseil-tile-icon {
+  background: var(--surface);
+}
+.conseil-tile-eau .conseil-tile-icon,
+.ennui-row-icon.conseil-icon-eau {
+  background: var(--water-bg);
+  color: var(--water-text);
+}
+
+.conseil-resume {
+  font-size: calc(17 * var(--px));
+}
+.conseil-steps {
+  margin: 0;
+  padding-left: 1.6em;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.conseil-steps li {
+  padding-left: 4px;
+  overflow-wrap: anywhere;
+}
+.conseil-steps li::marker {
+  font-weight: var(--fw-key);
+  color: var(--title);
+}

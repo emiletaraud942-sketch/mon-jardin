@@ -231,12 +231,12 @@ describe('modifier le journal', () => {
 })
 
 describe('registre', () => {
-  it('journal-jardin existe et le registre compte 84 fonctions', () => {
+  it('journal-jardin existe et le registre compte 85 fonctions', () => {
     const f = FEATURES.find((x) => x.id === 'journal-jardin')!
     expect(f).toBeTruthy()
     expect(f.cible).toBe('journal')
     expect(f.rubrique).toBe('plantes')
     expect(f.motsCles).toEqual(expect.arrayContaining(['journal', 'photo', 'avant', 'après', 'croissance', 'évolution']))
-    expect(FEATURES).toHaveLength(84)
+    expect(FEATURES).toHaveLength(85)
   })
 })

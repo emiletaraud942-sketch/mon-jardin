@@ -11,7 +11,7 @@ import { LostButton, LostSheet } from './features/aide/Perdu'
 import { Guide } from './features/aide/Guide'
 import { Visite } from './features/aide/Visite'
 import { tourSeen } from './lib/featureTour'
-import { ennuisOpen, guideOpen, lostSheet, rotationOpen, toutFaire, tourOpen } from './lib/overlays'
+import { conseilsOpen, ennuisOpen, guideOpen, lostSheet, rotationOpen, toutFaire, tourOpen } from './lib/overlays'
 import { SubTabs } from './components/SubTabs'
 import { StorageBanner } from './components/StorageBanner'
 import { ToastHost } from './components/Toast'
@@ -60,6 +60,7 @@ const NeighborsPage = lazy(() => import('./features/neighbors/NeighborsPage').th
 const ScanHost = lazy(() => import('./features/scan/ScanHost'))
 const PanoHost = lazy(() => import('./features/panorama/PanoHost'))
 const EnnuisScreen = lazy(() => import('./features/ravageurs/EnnuisScreen'))
+const ConseilsScreen = lazy(() => import('./features/conseils/ConseilsScreen'))
 const RotationScreen = lazy(() => import('./features/rotation/RotationScreen'))
 const MapView = lazy(() => import('./features/map/MapView').then((m) => ({ default: m.MapView })))
 
@@ -117,6 +118,7 @@ function AppShell() {
   const guideShown = guideOpen.use()
   const tourShown = tourOpen.use()
   const ennuisShown = ennuisOpen.use()
+  const conseilsShown = conseilsOpen.use()
   const rotationShown = rotationOpen.use()
   const mainRef = useRef<HTMLElement>(null)
   const firstPaint = useRef(true)
@@ -375,6 +377,11 @@ function AppShell() {
       {ennuisShown && (
         <Suspense fallback={null}>
           <EnnuisScreen initialId={ennuisShown.id} />
+        </Suspense>
+      )}
+      {conseilsShown && (
+        <Suspense fallback={null}>
+          <ConseilsScreen initialId={conseilsShown.id} />
         </Suspense>
       )}
       {rotationShown && (
