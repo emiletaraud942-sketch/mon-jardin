@@ -10,14 +10,14 @@ const plantationRacinesNues: TaskRule = {
   type: 'plantation',
   months: [11, 12, 1, 2, 3],
   condition: 'hors-gel',
-  howTo: "Praliner les racines (terre + bouse + eau), planter dans un trou ameubli de 40 × 40 cm sans enterrer le collet, tasser au pied et arroser 10 L même s'il pleut.",
+  howTo: "Praliner les racines (terre + bouse + eau). Planter dans un trou ameubli de 40 × 40 cm, sans enterrer le collet. Tasser au pied et arroser 10 L, même s'il pleut.",
   tool: 'bêche',
 }
 
 const paillageBrf: TaskRule = {
   type: 'paillage',
   months: [3, 4, 10, 11],
-  howTo: 'Étaler 8 à 10 cm de BRF ou de feuilles mortes sur 1 m autour du pied, en dégageant le collet de quelques centimètres.',
+  howTo: 'Étaler 8 à 10 cm de BRF ou de feuilles mortes sur 1 m autour du pied. Dégager le collet de quelques centimètres.',
   tool: 'fourche',
 }
 
@@ -27,7 +27,7 @@ const arrosageJeunes: TaskRule = {
   condition: 'chaleur',
   frequencyDays: 7,
   maxAgeYears: 2,
-  howTo: 'Les deux premiers étés, arroser 10 à 15 L au pied en une fois plutôt que peu souvent, de préférence le soir et sous paillis.',
+  howTo: 'Les deux premiers étés, arroser 10 à 15 L au pied en une fois plutôt que peu souvent. Le faire de préférence le soir, sous paillis.',
   tool: 'arrosoir',
 }
 
@@ -84,7 +84,7 @@ export const PETITS_FRUITS: Species[] = [
         type: 'taille',
         months: [2, 3],
         condition: 'hors-gel',
-        howTo: "Variétés remontantes : soit rabattre toutes les cannes au ras du sol pour une seule grosse récolte d'automne, soit ne couper que la partie haute ayant fructifié à l'automne pour une seconde récolte en juin.",
+        howTo: "Variétés remontantes : soit rabattre toutes les cannes au ras du sol pour une seule grosse récolte d'automne. Soit ne couper que la partie haute ayant fructifié à l'automne, pour une seconde récolte en juin.",
         tool: 'sécateur',
       },
       {
@@ -109,7 +109,7 @@ export const PETITS_FRUITS: Species[] = [
       },
     ],
     entretien:
-      "Le framboisier aime un sol frais, humifère et légèrement acide : un paillage permanent de BRF ou de feuilles imite la lisière forestière dont il est issu. Distinguez bien les variétés non remontantes (taille des cannes ayant fructifié juste après la récolte) des remontantes (taille en fin d'hiver). Contenez les drageons au printemps et renouvelez la plantation tous les 8 à 10 ans, ailleurs.",
+      "Le framboisier aime un sol frais, humifère et légèrement acide. Un paillage permanent de BRF ou de feuilles imite la lisière forestière dont il est issu. Distinguez bien les deux types de variétés. Non remontantes : taille des cannes ayant fructifié juste après la récolte ; remontantes : taille en fin d'hiver. Contenez les drageons au printemps et renouvelez la plantation tous les 8 à 10 ans, ailleurs.",
     couleur: '#4f8a3e',
     couleurAccent: '#c81d4a',
   },
@@ -164,7 +164,7 @@ export const PETITS_FRUITS: Species[] = [
         months: [8, 9],
         frequencyDays: 3,
         minAgeYears: 1,
-        howTo: "Cueillir les mûres noires et brillantes qui se détachent sans effort, tous les 3 jours ; les mûres rouges sont acides et ne mûrissent plus. Les consommer sous 2 jours, ou les congeler, en confiture ou en gelée.",
+        howTo: "Cueillir les mûres noires et brillantes qui se détachent sans effort, tous les 3 jours. Les mûres rouges sont acides et ne mûrissent plus. Les consommer sous 2 jours, ou les congeler, en confiture ou en gelée.",
       },
       paillageBrf,
     ],
@@ -204,7 +204,7 @@ export const PETITS_FRUITS: Species[] = [
         type: 'taille',
         months: [2, 3],
         condition: 'hors-gel',
-        howTo: "Garder 8 à 10 branches charpentières bien réparties en gobelet : couper au ras du sol les plus vieilles (plus de 4 ans, écorce sombre) et le bois mort, aérer le centre. Raccourcir les pousses latérales à 2 yeux pour favoriser les bouquets fruitiers.",
+        howTo: "Garder 8 à 10 branches charpentières bien réparties en gobelet. Couper au ras du sol les plus vieilles (plus de 4 ans, écorce sombre) et le bois mort. Aérer le centre. Raccourcir les pousses latérales à 2 yeux pour favoriser les bouquets fruitiers.",
         tool: 'sécateur',
       },
       {
@@ -221,7 +221,7 @@ export const PETITS_FRUITS: Species[] = [
         months: [6, 7],
         frequencyDays: 7,
         minAgeYears: 2,
-        howTo: "Cueillir les grappes entières quand les baies sont bien colorées, en les coupant par la rafle au sécateur ou en les égrenant à la fourchette. Elles se conservent plusieurs jours au frais sur la grappe ; le surplus se congèle ou part en gelée.",
+        howTo: "Cueillir les grappes entières quand les baies sont bien colorées. Les couper par la rafle au sécateur, ou les égrener à la fourchette. Elles se conservent plusieurs jours au frais sur la grappe ; le surplus se congèle ou part en gelée.",
       },
       paillageBrf,
       compostAutomne,
@@ -262,7 +262,7 @@ export const PETITS_FRUITS: Species[] = [
         type: 'taille',
         months: [12, 1, 2, 3],
         condition: 'hors-gel',
-        howTo: "Le cassis fructifie sur le bois d'un et deux ans : couper chaque hiver au ras du sol environ un tiers des tiges, les plus vieilles (plus de 3 ans, écorce noire), pour garder 8 à 10 tiges jeunes. Supprimer les bourgeons anormalement gonflés et ronds (phytopte).",
+        howTo: "Le cassis fructifie sur le bois d'un et deux ans. Couper chaque hiver au ras du sol environ un tiers des tiges. Choisir les plus vieilles (plus de 3 ans, écorce noire). Garder 8 à 10 tiges jeunes. Supprimer les bourgeons anormalement gonflés et ronds (phytopte).",
         tool: 'sécateur',
       },
       {
@@ -311,7 +311,7 @@ export const PETITS_FRUITS: Species[] = [
         type: 'taille',
         months: [11, 12, 1, 2],
         condition: 'hors-gel',
-        howTo: "Former un gobelet bien ouvert sur 6 à 8 branches : supprimer le bois de plus de 4 ans, les branches basses qui touchent le sol et celles du centre. Raccourcir les rameaux latéraux à 2–3 yeux. Gants épais indispensables.",
+        howTo: "Former un gobelet bien ouvert sur 6 à 8 branches. Supprimer le bois de plus de 4 ans, les branches basses qui touchent le sol et celles du centre. Raccourcir les rameaux latéraux à 2–3 yeux. Gants épais indispensables.",
         tool: 'sécateur',
       },
       {
@@ -325,7 +325,7 @@ export const PETITS_FRUITS: Species[] = [
         type: 'traitement',
         months: [5, 6],
         condition: 'temps-sec',
-        howTo: 'Surveiller les fausses-chenilles de tenthrède qui dévorent les feuilles du centre : les ramasser à la main ou pulvériser un purin de tanaisie.',
+        howTo: 'Surveiller les fausses-chenilles de tenthrède qui dévorent les feuilles du centre. Les ramasser à la main ou pulvériser un purin de tanaisie.',
         tool: 'pulvérisateur',
       },
       {
@@ -333,7 +333,7 @@ export const PETITS_FRUITS: Species[] = [
         months: [6, 7, 8],
         frequencyDays: 7,
         minAgeYears: 2,
-        howTo: "Cueillir à la main, avec des gants épais : un peu avant maturité (fermes, pour la confiture) ou bien mûres, translucides et sucrées (pour manger frais). Le fruit se détache avec sa petite queue.",
+        howTo: "Cueillir à la main, avec des gants épais. Choisir des fruits un peu avant maturité (fermes, pour la confiture) ou bien mûrs, translucides et sucrés (pour manger frais). Le fruit se détache avec sa petite queue.",
       },
       paillageBrf,
     ],
@@ -372,7 +372,7 @@ export const PETITS_FRUITS: Species[] = [
         type: 'plantation',
         months: [10, 11, 12, 1, 2, 3],
         condition: 'hors-gel',
-        howTo: "Uniquement en sol acide : sinon creuser une fosse de 60 × 60 cm remplie de terre de bruyère, de compost de feuilles et d'écorce de pin. Planter au moins deux variétés pour la pollinisation croisée.",
+        howTo: "Uniquement en sol acide. Sinon, creuser une fosse de 60 × 60 cm. La remplir de terre de bruyère, de compost de feuilles et d'écorce de pin. Planter au moins deux variétés pour la pollinisation croisée.",
         tool: 'bêche',
       },
       {
@@ -380,7 +380,7 @@ export const PETITS_FRUITS: Species[] = [
         months: [2, 3],
         condition: 'hors-gel',
         minAgeYears: 4,
-        howTo: 'Taille légère : supprimer le bois mort et couper au ras une ou deux des plus vieilles tiges (plus de 5–6 ans) pour stimuler des repousses depuis la base.',
+        howTo: 'Taille légère : supprimer le bois mort. Couper au ras une ou deux des plus vieilles tiges (plus de 5–6 ans). Cela stimule des repousses depuis la base.',
         tool: 'sécateur',
       },
       {
@@ -388,7 +388,7 @@ export const PETITS_FRUITS: Species[] = [
         months: [6, 7, 8],
         condition: 'chaleur',
         frequencyDays: 3,
-        howTo: "Racines superficielles qui sèchent vite : arroser à l'eau de pluie (l'eau calcaire du robinet fait jaunir les feuilles), 10 L au pied.",
+        howTo: "Racines superficielles qui sèchent vite. Arroser à l'eau de pluie, 10 L au pied. L'eau calcaire du robinet fait jaunir les feuilles.",
         tool: 'arrosoir',
       },
       {
@@ -401,7 +401,7 @@ export const PETITS_FRUITS: Species[] = [
         months: [7, 8, 9],
         frequencyDays: 4,
         minAgeYears: 2,
-        howTo: "Cueillir les myrtilles bien bleues qui se détachent d'un léger roulement du pouce : elles mûrissent sur 4 à 6 semaines, repasser tous les 4 jours. Se conservent une semaine au réfrigérateur et se congèlent très bien.",
+        howTo: "Cueillir les myrtilles bien bleues qui se détachent d'un léger roulement du pouce. Elles mûrissent sur 4 à 6 semaines : repasser tous les 4 jours. Se conservent une semaine au réfrigérateur et se congèlent très bien.",
       },
       {
         type: 'protection',
@@ -446,7 +446,7 @@ export const PETITS_FRUITS: Species[] = [
         type: 'taille',
         months: [12, 1, 2, 3],
         condition: 'hors-gel',
-        howTo: 'Supprimer au ras du sol les branches de plus de 4 ans et le bois mort, éclaircir le centre et raccourcir d’un tiers les rameaux trop longs.',
+        howTo: 'Supprimer au ras du sol les branches de plus de 4 ans et le bois mort. Éclaircir le centre et raccourcir d’un tiers les rameaux trop longs.',
         tool: 'sécateur',
       },
       filetOiseaux,
@@ -455,7 +455,7 @@ export const PETITS_FRUITS: Species[] = [
         months: [7],
         frequencyDays: 5,
         minAgeYears: 2,
-        howTo: "Cueillir les baies quand elles sont bien colorées, en grappes ou une à une, en repassant tous les 5 jours car la maturité est échelonnée. À consommer frais, en gelée ou en sirop.",
+        howTo: "Cueillir les baies quand elles sont bien colorées, en grappes ou une à une. Repasser tous les 5 jours : la maturité est échelonnée. À consommer frais, en gelée ou en sirop.",
       },
       paillageBrf,
       arrosageJeunes,
@@ -502,7 +502,7 @@ export const PETITS_FRUITS: Species[] = [
         type: 'taille',
         months: [2, 3],
         condition: 'hors-gel',
-        howTo: "Former 3 à 5 charpentières, supprimer le bois mort et raccourcir les rameaux latéraux à 3–4 yeux : les fruits naissent sur les pousses de l'année.",
+        howTo: "Former 3 à 5 charpentières, supprimer le bois mort et raccourcir les rameaux latéraux à 3–4 yeux. Les fruits naissent sur les pousses de l'année.",
         tool: 'sécateur',
       },
       {
@@ -556,14 +556,14 @@ export const PETITS_FRUITS: Species[] = [
         months: [12, 1, 2],
         condition: 'hors-gel',
         minAgeYears: 4,
-        howTo: 'Taille légère : couper au ras du sol quelques tiges de plus de 5 ans et le bois mort, supprimer les drageons qui s’éloignent.',
+        howTo: 'Taille légère : couper au ras du sol quelques tiges de plus de 5 ans et le bois mort. Supprimer les drageons qui s’éloignent.',
         tool: 'sécateur',
       },
       {
         type: 'recolte',
         months: [8, 9],
         minAgeYears: 3,
-        howTo: 'Récolter les corymbes entiers quand les baies sont noires et légèrement molles ; elles sont astringentes crues et meilleures en jus, confiture ou séchées.',
+        howTo: 'Récolter les corymbes entiers quand les baies sont noires et légèrement molles. Elles sont astringentes crues et meilleures en jus, confiture ou séchées.',
         tool: 'sécateur',
       },
       paillageBrf,
@@ -602,7 +602,7 @@ export const PETITS_FRUITS: Species[] = [
         type: 'plantation',
         months: [3, 4, 10, 11],
         condition: 'hors-gel',
-        howTo: "Plante dioïque : installer un pied mâle pour 6 à 8 femelles (ou une variété autofertile) au pied d'une pergola solide ou de fils tendus, à l'abri des vents froids.",
+        howTo: "Plante dioïque (pieds mâles et femelles séparés) : installer un pied mâle pour 6 à 8 femelles (ou une variété autofertile). Les placer au pied d'une pergola solide ou de fils tendus, à l'abri des vents froids.",
         tool: 'bêche',
       },
       {
@@ -610,7 +610,7 @@ export const PETITS_FRUITS: Species[] = [
         months: [12, 1, 2],
         condition: 'hors-gel',
         minAgeYears: 3,
-        howTo: "Taille d'hiver : rabattre les rameaux ayant fructifié à 2–3 yeux au-delà du dernier fruit et supprimer le bois de plus de 3 ans au profit de jeunes pousses partant des bras. Ne pas tailler après février : la sève pleure abondamment.",
+        howTo: "Taille d'hiver : rabattre les rameaux ayant fructifié à 2–3 yeux au-delà du dernier fruit. Supprimer le bois de plus de 3 ans au profit de jeunes pousses partant des bras. Ne pas tailler après février : la sève pleure abondamment.",
         tool: 'sécateur',
       },
       {
@@ -631,7 +631,7 @@ export const PETITS_FRUITS: Species[] = [
         months: [6, 7, 8, 9],
         condition: 'chaleur',
         frequencyDays: 4,
-        howTo: 'Le kiwi a de grands besoins en eau en été : arroser 20 à 30 L par pied sous un épais paillis.',
+        howTo: 'Le kiwi a de grands besoins en eau en été. Arroser 20 à 30 L par pied sous un épais paillis.',
         tool: 'tuyau',
       },
       {
@@ -675,7 +675,7 @@ export const PETITS_FRUITS: Species[] = [
         type: 'plantation',
         months: [3, 4, 10, 11],
         condition: 'hors-gel',
-        howTo: 'Installer un mâle pour 6 femelles (ou la variété autofertile « Issai ») au pied d’un support solide, d’un arbre mort ou d’une pergola.',
+        howTo: 'Installer un mâle pour 6 femelles (ou la variété autofertile « Issai »). Les placer au pied d’un support solide, d’un arbre mort ou d’une pergola.',
         tool: 'bêche',
       },
       {
@@ -683,7 +683,7 @@ export const PETITS_FRUITS: Species[] = [
         months: [1, 2],
         condition: 'hors-gel',
         minAgeYears: 3,
-        howTo: "Raccourcir les rameaux ayant fructifié à 3 yeux au-delà du dernier fruit et éclaircir les tiges enchevêtrées ; tailler avant la montée de sève.",
+        howTo: "Raccourcir les rameaux ayant fructifié à 3 yeux au-delà du dernier fruit et éclaircir les tiges enchevêtrées. Tailler avant la montée de sève.",
         tool: 'sécateur',
       },
       {
@@ -736,20 +736,20 @@ export const PETITS_FRUITS: Species[] = [
         type: 'plantation',
         months: [11, 12, 1, 2, 3, 4],
         condition: 'hors-gel',
-        howTo: 'Planter le point de greffe 5 cm au-dessus du sol, au pied d’un mur ou d’un treillage bien exposé, et rabattre la tige à 2 yeux.',
+        howTo: 'Planter le point de greffe 5 cm au-dessus du sol, au pied d’un mur ou d’un treillage bien exposé. Rabattre la tige à 2 yeux.',
         tool: 'bêche',
       },
       {
         type: 'taille',
         months: [12, 1, 2],
         condition: 'hors-gel',
-        howTo: "Taille d'hiver en cordon : tailler chaque sarment de l'an dernier à 2 yeux bien formés (coursons), supprimer le vieux bois et les sarments mal placés. Coupe à 2 cm au-dessus de l'œil, en biseau opposé.",
+        howTo: "Taille d'hiver en cordon : tailler chaque sarment de l'an dernier à 2 yeux bien formés (coursons). Supprimer le vieux bois et les sarments mal placés. Coupe à 2 cm au-dessus de l'œil, en biseau opposé.",
         tool: 'sécateur',
       },
       {
         type: 'taille',
         months: [4, 5],
-        howTo: "Ébourgeonnage : quand les pousses atteignent 10 cm, supprimer à la main les doubles bourgeons et les gourmands sortant du vieux bois, en gardant une ou deux pousses par courson." + VERIF_NIDS,
+        howTo: "Ébourgeonnage : quand les pousses atteignent 10 cm, supprimer à la main les doubles bourgeons. Supprimer aussi les gourmands sortant du vieux bois. Garder une ou deux pousses par courson." + VERIF_NIDS,
       },
       {
         type: 'taille',
@@ -762,7 +762,7 @@ export const PETITS_FRUITS: Species[] = [
         months: [5, 6, 7],
         condition: 'temps-sec',
         frequencyDays: 14,
-        howTo: 'Contre le mildiou et l’oïdium, la prévention passe d’abord par des variétés résistantes, une bonne aération (palissage, ébourgeonnage, effeuillage) et un sol peu arrosé. En dernier recours, un produit cuivré préventif (type bouillie bordelaise) selon l’étiquette : le cuivre s’accumule dans le sol.',
+        howTo: 'Contre le mildiou et l’oïdium, la prévention passe d’abord par des variétés résistantes. Elle passe aussi par une bonne aération (palissage, ébourgeonnage, effeuillage) et un sol peu arrosé. En dernier recours, un produit cuivré préventif (type bouillie bordelaise) selon l’étiquette : le cuivre s’accumule dans le sol.',
         tool: 'pulvérisateur',
       },
       {
@@ -774,7 +774,7 @@ export const PETITS_FRUITS: Species[] = [
       },
     ],
     entretien:
-      "La vigne aime les sols pauvres, chauds et caillouteux : évitez de trop la nourrir. Tout se joue à la taille d'hiver courte puis à l'ébourgeonnage et au rognage au printemps et en été. Préférez des variétés résistantes au mildiou et à l'oïdium et aérez bien la ramure : le cuivre, qui s'accumule dans le sol, ne doit rester qu'un dernier recours. Un enherbement fleuri au pied attire les auxiliaires.",
+      "La vigne aime les sols pauvres, chauds et caillouteux : évitez de trop la nourrir. Tout se joue à la taille d'hiver courte puis à l'ébourgeonnage et au rognage au printemps et en été. Préférez des variétés résistantes au mildiou et à l'oïdium, et aérez bien la ramure. Le cuivre, qui s'accumule dans le sol, ne doit rester qu'un dernier recours. Un enherbement fleuri au pied attire les auxiliaires.",
     couleur: '#5a8a3a',
     couleurAccent: '#4b2a5c',
   },
@@ -816,7 +816,7 @@ export const PETITS_FRUITS: Species[] = [
         months: [8, 9],
         condition: 'apres-recolte',
         minAgeYears: 4,
-        howTo: 'Taille légère : supprimer le bois mort et une ou deux des plus vieilles branches au ras du sol pour renouveler l’arbuste.',
+        howTo: 'Taille légère : supprimer le bois mort. Couper aussi une ou deux des plus vieilles branches au ras du sol pour renouveler l’arbuste.',
         tool: 'sécateur',
       },
       {
@@ -830,7 +830,7 @@ export const PETITS_FRUITS: Species[] = [
         months: [5, 6],
         frequencyDays: 4,
         minAgeYears: 2,
-        howTo: "Cueillir les baies allongées quand la pulpe est violette à l'intérieur (coupez-en une pour vérifier), pas seulement bleue à l'extérieur ; elles sont trop acides sinon. Étendre une bâche sous l'arbuste et secouer pour récolter plus vite.",
+        howTo: "Cueillir les baies allongées quand la pulpe est violette à l'intérieur (coupez-en une pour vérifier), pas seulement bleue à l'extérieur. Sinon, elles sont trop acides. Étendre une bâche sous l'arbuste et secouer pour récolter plus vite.",
       },
       paillageBrf,
       arrosageJeunes,

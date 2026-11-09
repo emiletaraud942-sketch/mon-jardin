@@ -44,7 +44,7 @@ export const AJOUTS: Species[] = [
         type: 'plantation',
         months: [11, 12, 1, 2, 3],
         condition: 'hors-gel',
-        howTo: 'Praliner les racines (terre, bouse et eau), planter le point de greffe 5 cm sous la surface, arroser puis butter le pied.',
+        howTo: 'Praliner les racines (terre, bouse et eau). Planter le point de greffe 5 cm sous la surface, arroser puis butter le pied.',
         tool: 'bêche',
       },
       {
@@ -52,7 +52,7 @@ export const AJOUTS: Species[] = [
         months: [2, 3],
         condition: 'hors-gel',
         minAgeYears: 1,
-        howTo: 'Rosiers remontants : à la fin des fortes gelées (avant le 15 mars), quand les bourgeons gonflent, enlever le bois mort et les tiges fines. Rabattre les autres à 3 à 5 yeux, juste au-dessus d’un bourgeon tourné vers l’extérieur. Coupe nette en biseau, outil désinfecté.',
+        howTo: 'Rosiers remontants : à la fin des fortes gelées (avant le 15 mars), quand les bourgeons gonflent. Enlever alors le bois mort et les tiges fines. Rabattre les autres à 3 à 5 yeux, juste au-dessus d’un bourgeon tourné vers l’extérieur. Coupe nette en biseau, outil désinfecté.',
         tool: 'sécateur',
       },
       {
@@ -90,7 +90,7 @@ export const AJOUTS: Species[] = [
       },
     ],
     entretien:
-      'Le rosier aime le soleil, un sol riche et un peu de place. Plantez-le en hiver en racines nues, taillez les remontants à la fin de l’hiver et les rosiers à floraison unique juste après leur floraison. Coupez les fleurs fanées des remontants pour qu’ils refleurissent. Associé à la lavande, à l’ail et au souci, il a moins de pucerons. Évitez les feuilles mouillées le soir : c’est ce qui amène les taches noires.',
+      'Le rosier aime le soleil, un sol riche et un peu de place ; plantez-le en hiver en racines nues. Taillez les remontants à la fin de l’hiver et les rosiers à floraison unique juste après leur floraison. Coupez les fleurs fanées des remontants pour qu’ils refleurissent. Associé à la lavande, à l’ail et au souci, il a moins de pucerons. Évitez les feuilles mouillées le soir : c’est ce qui amène les taches noires.',
     couleur: '#4f7a3c',
     couleurAccent: '#d6406a',
   },
@@ -123,13 +123,13 @@ export const AJOUTS: Species[] = [
         type: 'taille',
         months: [3, 4],
         condition: 'hors-gel',
-        howTo: 'Il fleurit sur le bois de l’an passé : au printemps seulement, couper les fleurs séchées juste au-dessus de la première paire de gros bourgeons, et retirer le bois mort. Pas de taille d’automne. Vérifiez qu’aucun nid n’est occupé.',
+        howTo: 'Il fleurit sur le bois de l’an passé. Au printemps seulement, couper les fleurs séchées juste au-dessus de la première paire de gros bourgeons. Retirer aussi le bois mort. Pas de taille d’automne. Vérifiez qu’aucun nid n’est occupé.',
         tool: 'sécateur',
       },
       {
         type: 'protection',
         months: [11, 12],
-        howTo: 'Garder les fleurs séchées sur les tiges et pailler le pied de 10 cm de feuilles : ils protègent les bourgeons du gel jusqu’au printemps.',
+        howTo: 'Garder les fleurs séchées sur les tiges et pailler le pied de 10 cm de feuilles. Ils protègent les bourgeons du gel jusqu’au printemps.',
         tool: 'fourche',
       },
       { type: 'paillage', months: [3, 4], howTo: 'Couvrir le pied de 5 à 10 cm de feuilles mortes ou de broyat : le sol reste frais et acide.', tool: 'fourche' },
@@ -182,7 +182,7 @@ export const AJOUTS: Species[] = [
       {
         type: 'paillage',
         months: [11, 12, 1, 2, 3],
-        howTo: 'Couvrir le sol de 10 cm de broyat ou de paille sur 1 m de large : il remplace désherbage et arrosage les premières années.',
+        howTo: 'Couvrir le sol de 10 cm de broyat ou de paille sur 1 m de large. Il remplace désherbage et arrosage les premières années.',
         tool: 'fourche',
       },
       {
@@ -191,12 +191,12 @@ export const AJOUTS: Species[] = [
         frequencyDays: 7,
         condition: 'chaleur',
         maxAgeYears: 2,
-        howTo: 'Les deux premiers étés, apporter 15 L par plant en une fois, une fois par semaine par forte chaleur : le thuya jeune sèche vite.',
+        howTo: 'Les deux premiers étés, apporter 15 L par plant en une fois, une fois par semaine par forte chaleur. Le thuya jeune sèche vite.',
         tool: 'arrosoir',
       },
     ],
     entretien:
-      'Le thuya fait une haie dense et persistante en quelques années. Plantez-le à 80 cm, arrosez bien les deux premiers étés et taillez une fois par an, en fin d’été ou à l’automne, en évitant le printemps et le début d’été (nidification). Une haie d’une seule espèce abrite peu d’oiseaux : mêlez-la à quelques arbustes à baies ou à fleurs.',
+      'Le thuya fait une haie dense et persistante en quelques années. Plantez-le à 80 cm et arrosez bien les deux premiers étés. Taillez une fois par an, en fin d’été ou à l’automne, en évitant le printemps et le début d’été (nidification). Une haie d’une seule espèce abrite peu d’oiseaux : mêlez-la à quelques arbustes à baies ou à fleurs.',
     couleur: '#2f5f3a',
   },
   {
@@ -229,7 +229,7 @@ export const AJOUTS: Species[] = [
         months: [2],
         condition: 'hors-gel',
         maxAgeYears: 2,
-        howTo: 'Taille de formation, avant le 15 mars : raccourcir les jeunes pousses d’un tiers pour que la haie se garnisse dès le bas.',
+        howTo: 'Taille de formation, avant le 15 mars. Raccourcir les jeunes pousses d’un tiers pour que la haie se garnisse dès le bas.',
         tool: 'sécateur',
       },
       {
@@ -242,7 +242,7 @@ export const AJOUTS: Species[] = [
       {
         type: 'paillage',
         months: [11, 12, 1, 2, 3],
-        howTo: 'Couvrir le sol de 10 cm de broyat sur 1 m de large : il remplace désherbage et arrosage les premières années.',
+        howTo: 'Couvrir le sol de 10 cm de broyat sur 1 m de large. Il remplace désherbage et arrosage les premières années.',
         tool: 'fourche',
       },
       {
@@ -256,7 +256,7 @@ export const AJOUTS: Species[] = [
       },
     ],
     entretien:
-      'Le laurier-palme pousse vite, même à l’ombre, et fait un écran épais. Il est toxique et ses graines sont semées par les oiseaux : ramassez les petits plants qui sortent ailleurs. Taillez-le au sécateur en fin d’été, en évitant le printemps et le début d’été (nidification), et mêlez-le à d’autres arbustes pour les oiseaux.',
+      'Le laurier-palme pousse vite, même à l’ombre, et fait un écran épais. Il est toxique et ses graines sont semées par les oiseaux : ramassez les petits plants qui sortent ailleurs. Taillez-le au sécateur en fin d’été, en évitant le printemps et le début d’été (nidification). Mêlez-le à d’autres arbustes pour les oiseaux.',
     couleur: '#2d6a3e',
   },
   {
@@ -296,7 +296,7 @@ export const AJOUTS: Species[] = [
         months: [11, 12, 1, 2],
         condition: 'hors-gel',
         minAgeYears: 3,
-        howTo: 'Arracher à la base les rejets qui sortent loin du pied (drageons) et couper un vieux tronc sur trois, au ras du sol, pour renouveler le buisson.',
+        howTo: 'Arracher à la base les rejets qui sortent loin du pied (drageons). Couper un vieux tronc sur trois, au ras du sol, pour renouveler le buisson.',
         tool: 'scie à main',
       },
       { type: 'paillage', months: [3, 4], howTo: 'Couvrir le pied de 5 cm de compost ou de broyat, sans toucher le tronc.', tool: 'fourche' },
@@ -344,11 +344,11 @@ export const AJOUTS: Species[] = [
         type: 'plantation',
         months: [4, 5],
         condition: 'hors-gel',
-        howTo: 'Planter le tubercule à 10 cm de profondeur, œil vers le haut, après les Saints de glace (en pot sous abri dès avril). Poser le tuteur avant de reboucher. Arroser peu jusqu’à la sortie des pousses.',
+        howTo: 'Planter le tubercule à 10 cm de profondeur, œil vers le haut, après les Saints de glace. Possible aussi en pot sous abri dès avril. Poser le tuteur avant de reboucher. Arroser peu jusqu’à la sortie des pousses.',
         tool: 'bêche',
       },
       { type: 'tuteurage', months: [5, 6], howTo: 'Attacher la tige au tuteur en 8 sans serrer, et relier au fur et à mesure qu’elle grandit.', tool: 'raphia' },
-      { type: 'taille', months: [6], howTo: 'Quand la plante a 4 paires de feuilles, pincer la pointe au-dessus de la 3e paire : elle se ramifie et fait plus de fleurs.' },
+      { type: 'taille', months: [6], howTo: 'Quand la plante a 4 paires de feuilles, pincer la pointe au-dessus de la 3e paire. Elle se ramifie et fait plus de fleurs.' },
       {
         type: 'taille',
         months: [7, 8, 9, 10],
@@ -373,7 +373,7 @@ export const AJOUTS: Species[] = [
       {
         type: 'protection',
         months: [10, 11],
-        howTo: 'Après la première gelée, couper les tiges à 10 cm, arracher la touffe, laisser sécher quelques jours, puis ranger les tubercules dans du sable sec à 5–8 °C, à l’abri du gel. En sol drainant et doux, un paillis de 20 cm peut suffire.',
+        howTo: 'Après la première gelée, couper les tiges à 10 cm, arracher la touffe et laisser sécher quelques jours. Ranger ensuite les tubercules dans du sable sec à 5–8 °C, à l’abri du gel. En sol drainant et doux, un paillis de 20 cm peut suffire.',
         tool: 'fourche',
       },
     ],
@@ -426,7 +426,7 @@ export const AJOUTS: Species[] = [
         type: 'division',
         months: [9, 10],
         minAgeYears: 3,
-        howTo: 'Tous les 4 à 5 ans, arracher la touffe, la couper en éclats de 3 ou 4 éventails et les replanter aussitôt.',
+        howTo: 'Tous les 4 à 5 ans, arracher la touffe et la couper en éclats de 3 ou 4 éventails. Les replanter aussitôt.',
         tool: 'bêche',
       },
       {
@@ -488,7 +488,7 @@ export const AJOUTS: Species[] = [
       {
         type: 'taille',
         months: [10, 11],
-        howTo: 'Couper le feuillage au ras du sol à l’automne et le jeter à la poubelle, pas au compost : cela limite les maladies.',
+        howTo: 'Couper le feuillage au ras du sol à l’automne et le jeter à la poubelle, pas au compost. Cela limite les maladies.',
         tool: 'sécateur',
       },
       {
@@ -502,7 +502,7 @@ export const AJOUTS: Species[] = [
       },
     ],
     entretien:
-      'La pivoine vit des décennies si on ne la dérange pas. Plantez-la à l’automne, bourgeons à 3 à 5 cm de profondeur, et laissez-la tranquille : elle met deux ou trois ans à fleurir. Posez un support au printemps et coupez le feuillage à l’automne.',
+      'La pivoine vit des décennies si on ne la dérange pas. Plantez-la à l’automne, bourgeons à 3 à 5 cm de profondeur, et laissez-la tranquille. Elle met deux ou trois ans à fleurir. Posez un support au printemps et coupez le feuillage à l’automne.',
     couleur: '#4a7a3a',
     couleurAccent: '#e07a9a',
   },
@@ -593,7 +593,7 @@ export const AJOUTS: Species[] = [
       },
     ],
     entretien:
-      'L’ortie est une alliée : ses jeunes pousses se mangent, ses feuilles font un purin qui nourrit les tomates, et ses tiges abritent des chenilles de papillons. Elle s’étend dans les sols riches. Gardez-lui un coin du jardin, fauchez-la avant qu’elle ne grène, et portez des gants.',
+      'L’ortie est une alliée. Ses jeunes pousses se mangent. Ses feuilles font un purin qui nourrit les tomates, et ses tiges abritent des chenilles de papillons. Elle s’étend dans les sols riches. Gardez-lui un coin du jardin, fauchez-la avant qu’elle ne grène, et portez des gants.',
     couleur: '#3f7a2e',
   },
   // ---------- Légumes ----------
@@ -628,7 +628,7 @@ export const AJOUTS: Species[] = [
       {
         type: 'plantation',
         months: [5, 6, 7],
-        howTo: 'Repiquer à 50 cm en enterrant la tige jusqu’aux premières feuilles, et tasser fermement au pied : le chou aime un sol ferme. Apporter du compost bien décomposé.',
+        howTo: 'Repiquer à 50 cm en enterrant la tige jusqu’aux premières feuilles. Tasser fermement au pied : le chou aime un sol ferme. Apporter du compost bien décomposé.',
         tool: 'transplantoir',
       },
       {
@@ -707,7 +707,7 @@ export const AJOUTS: Species[] = [
       {
         type: 'protection',
         months: [10],
-        howTo: 'Blanchir les côtes : par temps sec, lier les feuilles en botte puis envelopper la plante de carton ou de paille, de la base jusqu’à mi-hauteur. Compter 3 à 4 semaines avant la récolte.',
+        howTo: 'Blanchir les côtes : par temps sec, lier les feuilles en botte. Envelopper ensuite la plante de carton ou de paille, de la base jusqu’à mi-hauteur. Compter 3 à 4 semaines avant la récolte.',
         tool: 'raphia',
       },
       {
@@ -775,7 +775,7 @@ export const AJOUTS: Species[] = [
         type: 'recolte',
         months: [6, 7, 9, 10, 11],
         frequencyDays: 7,
-        howTo: 'Couper le pied entier au ras du sol 45 à 60 jours après le semis, quand les côtes sont épaisses et tendres. On peut aussi cueillir quelques feuilles extérieures. Récolter avant les fortes gelées.',
+        howTo: 'Couper le pied entier au ras du sol quand les côtes sont épaisses et tendres. Compter 45 à 60 jours après le semis. On peut aussi cueillir quelques feuilles extérieures. Récolter avant les fortes gelées.',
         tool: 'couteau',
       },
     ],
@@ -809,7 +809,7 @@ export const AJOUTS: Species[] = [
     semisPleineTerre: [6, 7],
     recolte: [10, 11, 12, 1, 2],
     taches: [
-      { type: 'semis', months: [6, 7], howTo: 'Semer en place, à 1 cm de profondeur, en rangs espacés de 40 cm, puis éclaircir à 30 cm quand les plants ont 4 feuilles.' },
+      { type: 'semis', months: [6, 7], howTo: 'Semer en place, à 1 cm de profondeur, en rangs espacés de 40 cm. Éclaircir ensuite à 30 cm quand les plants ont 4 feuilles.' },
       {
         type: 'protection',
         months: [6, 7, 8],
@@ -877,7 +877,7 @@ export const AJOUTS: Species[] = [
         type: 'recolte',
         months: [4, 5, 6, 10, 11],
         frequencyDays: 7,
-        howTo: 'Couper aux ciseaux, à 3 cm du sol, 2 à 3 semaines après le semis, quand les plants font 8 à 10 cm. Il repart parfois une fois.',
+        howTo: 'Couper aux ciseaux, à 3 cm du sol, quand les plants font 8 à 10 cm. Compter 2 à 3 semaines après le semis. Il repart parfois une fois.',
         tool: 'ciseaux',
       },
     ],
@@ -935,7 +935,7 @@ export const AJOUTS: Species[] = [
         type: 'recolte',
         months: [9, 10],
         condition: 'temps-sec',
-        howTo: 'Récolter avant les gelées, quand l’écorce est dure et jaune et que le pédoncule est sec, en gardant 5 cm de tige. Se conserve plusieurs mois à 12–15 °C. Cuite, la chair se défait en filaments.',
+        howTo: 'Récolter avant les gelées, quand l’écorce est dure et jaune et que le pédoncule est sec. Garder 5 cm de tige. Se conserve plusieurs mois à 12–15 °C. Cuite, la chair se défait en filaments.',
         tool: 'sécateur',
       },
     ],

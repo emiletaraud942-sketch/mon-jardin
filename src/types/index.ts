@@ -62,7 +62,7 @@ export interface TaskRule {
   minAgeYears?: number
   /** Ne concerne plus les plantes de plus de N années (ex. arrosage des jeunes plants : 3). */
   maxAgeYears?: number
-  /** Comment faire : geste, outil, précaution. 1 à 3 phrases. */
+  /** Comment faire : geste, outil, précaution. 1 à 6 phrases courtes (20 mots au plus chacune : `src/data/species/sentences.test.ts`). */
   howTo: string
   tool?: string
 }
@@ -114,7 +114,7 @@ export interface Species {
   plantation?: Month[]
   recolte?: Month[]
   taches: TaskRule[]
-  /** Fiche « comment entretenir » : 2 à 5 phrases. */
+  /** Fiche « comment entretenir » : 2 à 5 phrases de 20 mots au plus. */
   entretien: string
   /** Couleur de feuillage pour la 3D (hex). */
   couleur: string

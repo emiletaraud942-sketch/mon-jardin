@@ -6,7 +6,7 @@ import type { Species, TaskRule } from '../../types'
 const compostAutomne: TaskRule = {
   type: 'fertilisation',
   months: [10, 11],
-  howTo: 'Étaler 2 à 3 cm de compost mûr au pied, sans enfouir, puis recouvrir de feuilles mortes : la vie du sol fera le travail.',
+  howTo: 'Étaler 2 à 3 cm de compost mûr au pied, sans enfouir, puis recouvrir de feuilles mortes. La vie du sol fera le travail.',
   tool: 'fourche',
 }
 
@@ -49,7 +49,7 @@ export const VIVACES: Species[] = [
       {
         type: 'division',
         months: [4, 5],
-        howTo: "Prélever à la bêche les œilletons de 20–25 cm portant un talon et quelques racines, n'en garder que 2 ou 3 par pied mère. Replanter aussitôt à 1 m en tous sens et arroser copieusement.",
+        howTo: "Prélever à la bêche les œilletons de 20–25 cm portant un talon et quelques racines. N'en garder que 2 ou 3 par pied mère. Replanter aussitôt à 1 m en tous sens et arroser copieusement.",
         tool: 'bêche',
       },
       {
@@ -70,13 +70,13 @@ export const VIVACES: Species[] = [
         months: [6, 7, 8],
         condition: 'chaleur',
         frequencyDays: 5,
-        howTo: 'Arroser au pied 10 à 15 L par plante, le soir, sous un paillis épais : un manque d’eau rend les capitules durs.',
+        howTo: 'Arroser au pied 10 à 15 L par plante, le soir, sous un paillis épais. Un manque d’eau rend les capitules durs.',
         tool: 'arrosoir',
       },
       {
         type: 'protection',
         months: [11, 12],
-        howTo: 'Rabattre les grandes feuilles à 30 cm, butter la souche avec de la terre puis couvrir de 20 cm de paille ou de feuilles. Découvrir progressivement en mars.',
+        howTo: 'Rabattre les grandes feuilles à 30 cm. Butter la souche avec de la terre, puis couvrir de 20 cm de paille ou de feuilles. Découvrir progressivement en mars.',
         tool: 'fourche',
       },
       compostAutomne,
@@ -115,7 +115,7 @@ export const VIVACES: Species[] = [
         type: 'plantation',
         months: [3, 4],
         condition: 'hors-gel',
-        howTo: 'Creuser une tranchée de 30 cm, former au fond une butte de compost et y étaler les racines des griffes comme une araignée, 40 cm entre griffes et 1,20 m entre rangs. Recouvrir de 5 cm de terre puis combler progressivement au fil de la pousse.',
+        howTo: 'Creuser une tranchée de 30 cm. Former au fond une butte de compost et y étaler les racines des griffes comme une araignée. Laisser 40 cm entre griffes et 1,20 m entre rangs. Recouvrir de 5 cm de terre puis combler progressivement au fil de la pousse.',
         tool: 'bêche',
       },
       {
@@ -123,7 +123,7 @@ export const VIVACES: Species[] = [
         months: [4, 5, 6],
         minAgeYears: 3,
         frequencyDays: 2,
-        howTo: "Couper les turions de 15–20 cm au ras du sol (asperge verte) ou dégager la butte et couper 15 cm sous terre (asperge blanche). Arrêter la récolte mi-juin pour laisser la griffe reconstituer ses réserves.",
+        howTo: "Couper les turions de 15–20 cm au ras du sol (asperge verte). Pour l’asperge blanche, dégager la butte et couper 15 cm sous terre. Arrêter la récolte mi-juin pour laisser la griffe reconstituer ses réserves.",
         tool: 'gouge à asperges',
       },
       {
@@ -136,7 +136,7 @@ export const VIVACES: Species[] = [
       compostAutomne,
     ],
     entretien:
-      "Une aspergeraie bien installée produit 15 ans : choisissez un sol léger et bien drainé, sans pierres. Aucune récolte la première année, une récolte légère la deuxième, pleine récolte ensuite jusqu'à mi-juin. Désherbez à la main (racines traçantes très superficielles) et laissez le feuillage se développer tout l'été : il nourrit la griffe pour l'année suivante.",
+      "Une aspergeraie bien installée produit 15 ans : choisissez un sol léger et bien drainé, sans pierres. Aucune récolte la première année, une récolte légère la deuxième, pleine récolte ensuite jusqu'à mi-juin. Désherbez à la main (racines traçantes très superficielles). Laissez le feuillage se développer tout l'été : il nourrit la griffe pour l'année suivante.",
     couleur: '#7fa65a',
     couleurAccent: '#c0392b',
   },
@@ -170,7 +170,7 @@ export const VIVACES: Species[] = [
         months: [4, 5, 6, 7],
         minAgeYears: 2,
         frequencyDays: 14,
-        howTo: "Tirer les côtes à la base d'un mouvement de torsion (sans couper), en prélevant au plus un tiers des pétioles à la fois. Arrêter fin juillet ; les limbes vont au compost ou en paillage, jamais dans l'assiette.",
+        howTo: "Tirer les côtes à la base d'un mouvement de torsion (sans couper). Prélever au plus un tiers des pétioles à la fois. Arrêter fin juillet ; les limbes vont au compost ou en paillage, jamais dans l'assiette.",
       },
       {
         type: 'taille',
@@ -182,7 +182,7 @@ export const VIVACES: Species[] = [
         type: 'division',
         months: [2, 3, 10, 11],
         condition: 'hors-gel',
-        howTo: 'Tous les 5 à 6 ans, déterrer la souche et la trancher à la bêche en éclats portant chacun un gros bourgeon. Replanter les éclats dans un trou enrichi de fumier, bourgeon à fleur de sol.',
+        howTo: 'Tous les 5 à 6 ans, déterrer la souche. La trancher à la bêche en éclats portant chacun un gros bourgeon. Replanter les éclats dans un trou enrichi de fumier, bourgeon à fleur de sol.',
         tool: 'bêche',
       },
       {
@@ -235,7 +235,7 @@ export const VIVACES: Species[] = [
         type: 'plantation',
         months: [2, 3, 4],
         condition: 'hors-gel',
-        howTo: 'Planter les tubercules à 10 cm de profondeur, 50 cm en tous sens, dans un coin dédié : la plante est très envahissante. Une bordure enterrée ou un passage tondu limite son extension.',
+        howTo: 'Planter les tubercules à 10 cm de profondeur, 50 cm en tous sens, dans un coin dédié. La plante est très envahissante. Une bordure enterrée ou un passage tondu limite son extension.',
         tool: 'transplantoir',
       },
       {
@@ -248,7 +248,7 @@ export const VIVACES: Species[] = [
         type: 'recolte',
         months: [11, 12, 1, 2, 3],
         condition: 'hors-gel',
-        howTo: "Arracher à la fourche-bêche au fur et à mesure des besoins, après les premières gelées qui sucrent les tubercules : ils se conservent mal hors de terre. Récolter tout, même les plus petits, pour éviter qu'ils n'envahissent.",
+        howTo: "Arracher à la fourche-bêche au fur et à mesure des besoins, après les premières gelées qui sucrent les tubercules. Ils se conservent mal hors de terre. Récolter tout, même les plus petits, pour éviter qu'ils n'envahissent.",
         tool: 'fourche-bêche',
       },
       {
@@ -260,7 +260,7 @@ export const VIVACES: Species[] = [
       },
     ],
     entretien:
-      "Le topinambour pousse presque partout sans soin et sans arrosage. Son principal défaut est sa vigueur : cantonnez-le à une zone dédiée, idéalement en brise-vent au nord du potager où son ombre ne gênera pas. Coupez les tiges sèches en fin d'automne et laissez-les sur place en paillage. Ses fleurs jaunes tardives nourrissent les pollinisateurs en fin de saison.",
+      "Le topinambour pousse presque partout sans soin et sans arrosage. Son principal défaut est sa vigueur. Cantonnez-le à une zone dédiée, idéalement en brise-vent au nord du potager où son ombre ne gênera pas. Coupez les tiges sèches en fin d'automne et laissez-les sur place en paillage. Ses fleurs jaunes tardives nourrissent les pollinisateurs en fin de saison.",
     couleur: '#5e8a3a',
     couleurAccent: '#f2c12e',
   },
@@ -312,7 +312,7 @@ export const VIVACES: Species[] = [
       desherbageManuel,
     ],
     entretien:
-      "Le poireau perpétuel se multiplie seul en touffes et se récolte tout l'hiver sans être ressemé. Un paillage léger et un désherbage manuel suffisent. Divisez les touffes tous les trois ans pour garder des fûts de belle taille, et laissez quelques fleurs pour les pollinisateurs.",
+      "Le poireau perpétuel se multiplie seul en touffes et se récolte tout l'hiver sans être ressemé. Un paillage léger et un désherbage manuel suffisent. Divisez les touffes tous les trois ans pour garder des fûts de belle taille. Laissez quelques fleurs pour les pollinisateurs.",
     couleur: '#5c8a6a',
     couleurAccent: '#c9b3d6',
   },
@@ -344,7 +344,7 @@ export const VIVACES: Species[] = [
       {
         type: 'plantation',
         months: [3, 4, 9, 10],
-        howTo: "Bouturer des tiges de 15–20 cm prélevées sur un pied sain : ôter les feuilles du bas et les enterrer aux deux tiers en terre fraîche, à l'ombre. Elles s'enracinent en 3 à 4 semaines.",
+        howTo: "Bouturer des tiges de 15–20 cm prélevées sur un pied sain. Ôter les feuilles du bas et enterrer les tiges aux deux tiers en terre fraîche, à l'ombre. Elles s'enracinent en 3 à 4 semaines.",
         tool: 'sécateur',
       },
       {
@@ -362,7 +362,7 @@ export const VIVACES: Species[] = [
       {
         type: 'protection',
         months: [6, 7, 8, 9],
-        howTo: 'Couvrir d’un voile anti-insectes en période de vol de la piéride et de l’altise, ou inspecter le revers des feuilles pour ôter les pontes.',
+        howTo: 'Couvrir d’un voile anti-insectes en période de vol de la piéride et de l’altise. Vous pouvez aussi inspecter le revers des feuilles pour ôter les pontes.',
         tool: 'voile anti-insectes',
       },
       compostAutomne,
@@ -419,12 +419,12 @@ export const VIVACES: Species[] = [
         type: 'division',
         months: [6, 9],
         minAgeYears: 3,
-        howTo: 'Après la disparition du feuillage, prélever des touffes de bulbes à la fourche et les replanter ailleurs pour étendre la colonie.',
+        howTo: 'Après la disparition du feuillage, prélever des touffes de bulbes à la fourche. Les replanter ailleurs pour étendre la colonie.',
         tool: 'fourche',
       },
     ],
     entretien:
-      "Plante de sous-bois idéale sous les noisetiers et les arbres caducs : elle profite de la lumière printanière avant la feuillaison puis disparaît en été. Aucun arrosage ni engrais n'est nécessaire si la litière de feuilles est laissée en place. Elle se ressème et forme peu à peu un tapis dense. Attention aux confusions avec des plantes toxiques à la cueillette.",
+      "Plante de sous-bois idéale sous les noisetiers et les arbres caducs. Elle profite de la lumière printanière avant la feuillaison, puis disparaît en été. Aucun arrosage ni engrais n'est nécessaire si la litière de feuilles est laissée en place. Elle se ressème et forme peu à peu un tapis dense. Attention aux confusions avec des plantes toxiques à la cueillette.",
     couleur: '#3f7d3a',
     couleurAccent: '#f5f5f0',
   },
@@ -457,13 +457,13 @@ export const VIVACES: Species[] = [
       {
         type: 'plantation',
         months: [8, 9, 10, 3, 4],
-        howTo: "Planter en sol riche, le cœur (collet) exactement au niveau du sol : enterré il pourrit, trop haut il sèche. 35 cm entre plants, 60 cm entre rangs, arroser abondamment.",
+        howTo: "Planter en sol riche, le cœur (collet) exactement au niveau du sol : enterré il pourrit, trop haut il sèche. Laisser 35 cm entre plants et 60 cm entre rangs. Arroser abondamment.",
         tool: 'transplantoir',
       },
       {
         type: 'paillage',
         months: [4, 5],
-        howTo: 'Glisser de la paille ou des aiguilles de pin sous les feuilles avant la formation des fruits : ils restent propres et la pourriture grise recule.',
+        howTo: 'Glisser de la paille ou des aiguilles de pin sous les feuilles avant la formation des fruits. Ils restent propres et la pourriture grise recule.',
       },
       {
         type: 'taille',
@@ -490,12 +490,12 @@ export const VIVACES: Species[] = [
         type: 'recolte',
         months: [5, 6, 7, 8, 9, 10],
         frequencyDays: 2,
-        howTo: 'Cueillir les fraises entièrement rouges, le matin après la rosée, en pinçant la queue (sans tirer sur le fruit) et en les posant sans les empiler. Repasser tous les 2 jours, retirer les fruits pourris pour éviter la pourriture grise et consommer dans la journée.',
+        howTo: 'Cueillir les fraises entièrement rouges, le matin après la rosée, en pinçant la queue (sans tirer sur le fruit). Les poser sans les empiler. Repasser tous les 2 jours, retirer les fruits pourris pour éviter la pourriture grise et consommer dans la journée.',
       },
       {
         type: 'division',
         months: [8, 9],
-        howTo: 'Tous les 3 à 4 ans, renouveler la planche avec les stolons enracinés les plus vigoureux, sevrés et replantés ailleurs (rotation).',
+        howTo: 'Tous les 3 à 4 ans, renouveler la planche avec les stolons enracinés les plus vigoureux. Les sevrer et les replanter ailleurs (rotation).',
         tool: 'transplantoir',
       },
     ],
@@ -597,7 +597,7 @@ export const VIVACES: Species[] = [
         type: 'recolte',
         months: [4, 5, 6, 7, 8, 9],
         frequencyDays: 14,
-        howTo: 'Au printemps, couper les jeunes pousses de 15 cm comme des asperges ; ensuite cueillir les feuilles une à une à cuire comme l’épinard.',
+        howTo: 'Au printemps, couper les jeunes pousses de 15 cm comme des asperges. Ensuite, cueillir les feuilles une à une, à cuire comme l’épinard.',
         tool: 'couteau',
       },
       {
@@ -610,7 +610,7 @@ export const VIVACES: Species[] = [
       compostAutomne,
     ],
     entretien:
-      "Ancien légume des montagnes, le Bon-Henri prospère dans un sol riche en azote, au pied d'un tas de compost ou à mi-ombre. Il produit dix ans et plus sans soin particulier. Un apport de compost à l'automne et un paillis suffisent ; divisez les vieilles touffes pour les rajeunir.",
+      "Ancien légume des montagnes, le Bon-Henri prospère dans un sol riche en azote. Il se plaît aussi au pied d'un tas de compost ou à mi-ombre. Il produit dix ans et plus sans soin particulier. Un apport de compost à l'automne et un paillis suffisent ; divisez les vieilles touffes pour les rajeunir.",
     couleur: '#4e7d3a',
     couleurAccent: '#a3b84a',
   },

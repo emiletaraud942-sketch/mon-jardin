@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { MAX_WORDS, sentencesOf, wordCount } from './sentences'
 import { HELP, RAYONS_HELP } from './help'
 import { STEP_HINT, STEP_TITLE } from './onboarding'
 import { computeProgress } from './progress'
@@ -13,17 +14,7 @@ import { describeReadFailure } from './store'
 import { MESSAGE_READ_FAILED } from './sync'
 
 // Point 30 du plan : phrases de 20 mots au plus dans les textes de l'interface (public novice et retraité).
-export const MAX_WORDS = 20
-
-/** Phrases d'un texte (coupe sur . ! ? suivis d'une espace ; « … » et les points de liste ne coupent pas). */
-export function sentencesOf(text: string): string[] {
-  return text
-    .replace(/\s+/g, ' ')
-    .split(/(?<=[.!?])\s+(?=[A-ZÀ-ÖØ-Þ«“"'])/)
-    .map((x) => x.trim())
-    .filter(Boolean)
-}
-export const wordCount = (sentence: string) => sentence.split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length
+// La règle est dans ./sentences.ts (partagée avec le test des fiches espèces).
 const tooLong = (text: string) => sentencesOf(text).filter((s) => wordCount(s) > MAX_WORDS)
 
 const ROOT = join(__dirname, '..')
