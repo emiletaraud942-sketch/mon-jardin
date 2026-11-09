@@ -363,7 +363,7 @@ label:focus-within:has(> input.sr-only) {
 /* ---------- Layout ---------- */
 .app {
   display: grid;
-  grid-template-columns: 13.75rem 1fr; /* 220 px à 16 px de base ; suit la taille du texte et l'échelle des grands écrans */
+  grid-template-columns: min(13.75rem, 19vw) 1fr; /* 220 px à 16 px de base ; suit la taille du texte et l'échelle des grands écrans, mais jamais plus de 19 % de la fenêtre (la carte garde sa place à 1024 px et en texte très grand) */
   grid-template-rows: minmax(56px, auto) auto minmax(0, 1fr);
   height: 100%;
 }
@@ -1317,9 +1317,10 @@ label.field > span {
   flex: 1;
   position: relative;
   min-width: 0;
+  min-height: 0;
 }
 .sidepanel {
-  width: 22.5rem; /* 360 px à 16 px de base */
+  width: min(22.5rem, 33vw); /* 360 px à 16 px de base, jamais plus d'un tiers de la fenêtre : la carte reste lisible (≥ 480 px dès 1001 px de large) */
   max-width: 100%;
   background: var(--surface);
   border-left: var(--border-w) solid var(--border);
@@ -1333,6 +1334,28 @@ label.field > span {
 @media (max-width: 760px) {
   .workspace {
     flex-direction: column;
+  }
+}
+/* Fenêtre étroite sur ordinateur (761 à 1000 px, ou zoom 150 %) : deux colonnes laisseraient moins de 480 px à la carte.
+   Le panneau passe sous la carte, qui prend toute la largeur. Pas pour un téléphone en paysage (trop bas : règle plus bas). */
+@media (min-width: 761px) and (max-width: 1000px) and (min-height: 501px) {
+  .workspace {
+    flex-direction: column;
+  }
+  .sidepanel {
+    width: auto;
+    flex: 0 1 auto;
+    max-height: 40%;
+    border-left: 0;
+    border-top: var(--border-w) solid var(--border);
+  }
+  /* Vue 3D : ses commandes (heure, saisons, réglages) ont besoin de hauteur ; le panneau se réduit à un résumé qui défile. */
+  .app[data-tab='3d'] .sidepanel {
+    max-height: 28%;
+  }
+  /* Pendant un placement, la carte prend toute la hauteur (le panneau ne sert pas). */
+  .app.is-placing .sidepanel {
+    display: none;
   }
 }
 /* Feuille du bas (BottomSheet) : trois hauteurs, 96 px, 50 %, 85 %. */

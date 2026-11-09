@@ -15,6 +15,7 @@ import { openScan } from '../scan/scanUi'
 import { openPanorama } from '../panorama/panoUi'
 import { useIsMobile } from '../../components/useMedia'
 import { confirmBeforePlacing, placeAtAim, usePlacingInfo } from './aimBridge'
+import { usePlacingReserve } from './placingReserve'
 
 const MAX_LISTED = 60
 
@@ -139,6 +140,7 @@ export function PlacingBanner() {
   const { tab, placingSpeciesId, placingCustomName, placingSeries, movingPlantId, aim, placingSpot } = useUi()
   const moving = useStore((s) => (movingPlantId ? s.plants.find((p) => p.id === movingPlantId) : undefined))
   const info = usePlacingInfo()
+  const reserve = usePlacingReserve()
   // En Vue 3D, la scène affiche sa propre consigne : une seule bannière.
   if (tab === '3d' || (!placingSpeciesId && !movingPlantId)) return null
   const name = movingPlantId
@@ -156,7 +158,7 @@ export function PlacingBanner() {
         ? `Touchez sur la carte le nouvel endroit de ${yourPlant(name)}.`
         : `Touchez sur la carte l’endroit où se trouve ${yourPlant(name)}.`
   return (
-    <div className="floating placing-banner" role="status">
+    <div className="floating placing-banner" role="status" ref={reserve}>
       <Icon name={movingPlantId ? 'move' : 'pin'} size={28} />
       <span className="placing-text">
         <strong>{text}</strong>

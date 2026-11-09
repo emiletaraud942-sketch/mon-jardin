@@ -1,6 +1,8 @@
 /* ---------- Photos du jardin (points de vue façon Street View) ----------
    Plein écran, fond blanc, cartes à ombre douce. Couleurs : variables de :root seulement. Cibles d'au moins 44 px. */
 .pano-overlay {
+  /* Largeur de lecture : l'en-tête suit la colonne de 720 px de la liste (plus bas), « Fermer » et « Accueil » restent proches sur grand écran. */
+  --pano-pad: max(16px, calc((100vw - 720px) / 2));
   position: fixed;
   inset: 0;
   z-index: 45; /* au-dessus de la fiche plante (35) et de la barre du bas ; sous les messages (50) */
@@ -25,7 +27,7 @@
   align-items: center;
   gap: 12px;
   min-height: 56px;
-  padding: max(10px, env(safe-area-inset-top)) 16px 8px;
+  padding: max(10px, env(safe-area-inset-top)) var(--pano-pad) 8px;
 }
 .pano-pill {
   min-height: var(--tap);
@@ -566,4 +568,9 @@ label.btn.disabled {
   .pano-season .season-picker {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
+}
+
+/* « Accueil » suit la colonne de lecture (même marge que l'en-tête) : à 1920 px, il n'est plus à 1 600 px de « Fermer ». */
+.pano-overlay .pano-home {
+  right: max(14px, calc(var(--pano-pad) - 2px));
 }

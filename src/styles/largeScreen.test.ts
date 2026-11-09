@@ -14,8 +14,8 @@ describe('grands écrans', () => {
     }
   })
   it('la grille et le panneau latéral sont en rem, pas en pixels fixes (sinon ils restent étroits sur grand écran)', () => {
-    expect(css).toMatch(/\.app\s*\{[^}]*grid-template-columns:\s*13\.75rem 1fr/)
-    expect(css).toMatch(/\.sidepanel\s*\{[^}]*width:\s*22\.5rem/)
+    expect(css).toMatch(/\.app\s*\{[^}]*grid-template-columns:\s*min\(13\.75rem, 19vw\) 1fr/)
+    expect(css).toMatch(/\.sidepanel\s*\{[^}]*width:\s*min\(22\.5rem, 33vw\)/)
   })
   it('les règles de grand écran viennent après celles du téléphone et de la taille du texte (elles l’emportent)', () => {
     const phone = css.indexOf("html[data-text-size='tres-grand']")

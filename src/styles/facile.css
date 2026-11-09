@@ -149,6 +149,8 @@
 
 /* ----- « Tout ce que je peux faire » ----- */
 .tf-overlay {
+  /* Largeur de lecture : sur grand écran, le contenu se centre sur 800 px au plus (les lignes de 940 px se lisaient mal) ; 16 px de marge ailleurs. */
+  --read-pad: max(16px, calc((100% - min(46rem, 800px)) / 2));
   position: fixed;
   inset: 0;
   z-index: 44;
@@ -164,7 +166,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 8px 10px;
-  padding: max(10px, env(safe-area-inset-top)) 16px 6px;
+  padding: max(10px, env(safe-area-inset-top)) var(--read-pad) 6px;
 }
 .tf-head h1 {
   flex: 1 1 100%;
@@ -186,7 +188,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 4px 16px 8px;
+  margin: 4px var(--read-pad) 8px;
   padding: 0 12px;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-btn);
@@ -208,7 +210,7 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 4px 16px calc(24px + env(safe-area-inset-bottom));
+  padding: 4px var(--read-pad) calc(24px + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -371,14 +373,19 @@ html[data-immersive] .lost-fab {
   display: none;
 }
 @media (min-width: 761px) {
-  .lost-fab {
-    left: auto;
-    right: 16px;
-    bottom: 16px;
-  }
+  /* Ordinateur : la pastille se pose dans le bas de la barre latérale (réservée par le padding de `.sidenav`), jamais sur le contenu :
+     à droite elle recouvrait « Plus tard », « Fait », une case de Réglages ou le bas du panneau de la carte. */
+  .lost-fab,
   .app[data-tab='carte'] .lost-fab,
   .app[data-tab='3d'] .lost-fab {
-    bottom: 16px;
+    left: 12px;
+    right: auto;
+    bottom: 12px;
+    max-width: calc(min(13.75rem, 19vw) - 20px); /* ne dépasse jamais la colonne du menu */
+    line-height: 1.15;
+  }
+  .sidenav {
+    padding-bottom: calc(var(--tap) + 28px);
   }
   .app[data-tab='carte'] .add-fab,
   .app[data-tab='3d'] .add-fab {
@@ -526,20 +533,14 @@ dialog.modal.full .modal-head .modal-home {
   flex: 1 1 100%;
 }
 
-/* 3D : la barre du bas passe sur deux rangées (les mots sont écrits) ; « Ajouter une plante » et « Je suis perdu » montent d'autant. */
-.app[data-tab='3d'] .add-fab {
-  bottom: 218px;
-}
-.app[data-tab='3d'] .lost-fab {
-  bottom: calc(var(--nav-h) + 296px + env(safe-area-inset-bottom));
-}
-
-/* Ordinateur : un panneau long est ouvert (réglages 3D, options de la carte) : « Je suis perdu » s'efface le temps qu'il est ouvert. */
-@media (min-width: 761px) {
-  .app:has(#g3d-time-panel) .lost-fab,
-  .app:has(#map-options) .lost-fab,
-  .app:has(#map-legend) .lost-fab {
-    display: none;
+/* 3D (téléphone seulement) : la barre du bas passe sur deux rangées (les mots sont écrits) ; « Ajouter une plante » et « Je suis perdu » montent d'autant.
+   Hors de ce bloc, la règle écrasait celle de l'ordinateur et la pastille flottait au milieu du panneau de droite. */
+@media (max-width: 760px) {
+  .app[data-tab='3d'] .add-fab {
+    bottom: 218px;
+  }
+  .app[data-tab='3d'] .lost-fab {
+    bottom: calc(var(--nav-h) + 296px + env(safe-area-inset-bottom));
   }
 }
 
@@ -857,7 +858,7 @@ dialog.modal.full .modal-head .modal-home {
 /* ----- « Tout ce que je peux faire » : réglage « Grandes touches » sous la recherche ----- */
 .tf-taps {
   flex: none;
-  margin: 0 16px 6px;
+  margin: 0 var(--read-pad) 6px;
   padding: 8px 14px;
   border: var(--border-w) solid var(--border);
   border-radius: var(--radius-btn-lg);
@@ -974,4 +975,78 @@ html[data-big-taps] .addr-map-btn {
 }
 .soil-test .muted {
   color: var(--muted-2);
+}
+
+/* ---------- Ordinateur : carte, options sur deux colonnes (correction 4) ---------- */
+/* Le panneau « Options » faisait 500 px de haut : il défilait par-dessus l'échelle et l'attribution. Deux colonnes le raccourcissent d'un tiers. */
+@media (min-width: 761px) {
+  .map-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: min(100%, 25rem);
+  }
+  .map-options > .map-opt-intro,
+  .map-options > .map-opt-label,
+  .map-options > .season-picker,
+  .map-options > :last-child {
+    grid-column: 1 / -1;
+  }
+  .map-options > .btn {
+    white-space: normal;
+    text-align: center;
+    justify-content: center;
+    line-height: 1.15;
+  }
+}
+
+/* Carte sur ordinateur : rien ne recouvre l'échelle ni l'attribution IGN, en bas de la carte.
+   `--placing-h` (posée par PlacingBanner, voir placingReserve.ts) = hauteur de la consigne de placement ; 0 le reste du temps. */
+@media (min-width: 761px) {
+  .map-top {
+    max-height: calc(100% - 60px - var(--placing-h, 0px));
+  }
+  .workspace .maplibregl-map .maplibregl-ctrl-bottom-left,
+  .workspace .maplibregl-map .maplibregl-ctrl-bottom-right {
+    margin-bottom: var(--placing-h, 0px);
+  }
+  /* Jardin vide : la carte d'invite se pose au-dessus de l'échelle. */
+  .map-empty {
+    bottom: 48px;
+  }
+}
+
+/* Fenêtre étroite (761 à 1100 px) : barre latérale plus serrée pour que les noms ne passent pas sur trois lignes. */
+@media (min-width: 761px) and (max-width: 1100px) {
+  .sidenav {
+    padding-inline: 8px;
+  }
+  .navbtn {
+    padding-inline: 12px;
+    gap: 8px;
+  }
+}
+
+/* Petits avis de la carte (photo moins précise, données manquantes) : transparents pour la mise en page sur téléphone,
+   côte à côte sur ordinateur pour ne pas empiler trois rangées sur la parcelle. */
+.map-chips {
+  display: contents;
+}
+@media (min-width: 761px) {
+  .map-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 6px 8px;
+    max-width: 100%;
+  }
+  .map-chips:empty {
+    display: none;
+  }
+}
+
+/* Grandes touches : les curseurs de la 3D (heure, jour, réglages) font 56 px de haut comme le reste. */
+html[data-big-taps] .g3d-hourfield input[type='range'],
+html[data-big-taps] .g3d-field input[type='range'],
+html[data-big-taps] .g3d-stepper input[type='range'] {
+  height: 56px;
 }

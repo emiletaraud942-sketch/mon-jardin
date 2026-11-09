@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { Icon } from './Icon'
 import { goHome } from '../lib/goHome'
+import { modalOpened } from '../lib/modalOpen'
 import { closeLayer, openLayer } from '../lib/ui'
 
 /**
@@ -21,8 +22,11 @@ export function Modal({ title, onClose, children, sheet, full, feat }: { title: 
     if (d && !d.open) d.showModal()
     // Retour (Android) ferme la boîte au lieu de quitter l'écran.
     const layer = openLayer(() => ref.current?.close())
+    // Les messages s'effacent le temps que la boîte est ouverte (ils seraient dessous, inatteignables).
+    const modalDone = modalOpened()
     return () => {
       closeLayer(layer)
+      modalDone()
       // Le démontage retire le <dialog> du DOM : on rend le focus à l'élément d'origine.
       if (opener && opener.isConnected && typeof opener.focus === 'function') opener.focus()
     }

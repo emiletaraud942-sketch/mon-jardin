@@ -5,6 +5,7 @@ import { showToast } from '../../lib/toast'
 import { setUi, useUi } from '../../lib/ui'
 import { obstaclesFor, sunHoursGrid } from '../../engine/sun'
 import type { Garden, XY } from '../../types'
+import { currentViewHint } from './viewHint'
 import { GardenSide, PlacingBanner, useSheetHead } from '../map/GardenSide'
 import { placePlant } from '../map/placing'
 import { SidePanel } from '../map/SidePanel'
@@ -77,7 +78,7 @@ export default function View3D({ garden }: { garden: Garden }) {
         <PlacingBanner />
       </div>
       <SidePanel {...head} tall={!!selectedPlantId}>
-        <GardenSide garden={garden} hint="Tournez la vue à deux doigts. Pour déplacer une plante, glissez-la, ou ouvrez sa fiche et touchez « Déplacer cette plante »." />
+        <GardenSide garden={garden} hint={currentViewHint()} />
       </SidePanel>
     </div>
   )

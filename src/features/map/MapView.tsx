@@ -1033,12 +1033,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
   return (
     <div className="workspace">
       <div className={'canvas-wrap map-wrap' + (placingSpeciesId || movingPlantId ? ' placing' : '')}>
-        <div ref={el} className="map" data-feat="carte" />
-        {hiddenCount > 0 && (
-          <p className="sr-only" role="status">
-            Beaucoup de plantes dans la vue : {hiddenCount} ne sont pas atteignables au clavier ici. Zoomez, ou ouvrez la liste Mes plantes.
-          </p>
-        )}
+        {/* Les boutons de la carte viennent AVANT la carte (et ses repères de plantes) dans le DOM : au clavier, on les atteint sans passer tous les repères. Le z-index les garde au-dessus. */}
         <div className="map-top">
           {!placingNow && (
           <div className="floating row map-toolbar" role="toolbar" aria-label="Réglages de la carte" data-feat="fond-carte">
@@ -1163,18 +1158,27 @@ function MapViewInner({ garden }: { garden: Garden }) {
               </li>
             </ul>
           )}
-          {tileProblem && tileNoticeTurn && (
-            <div className="alert small map-notice" role="status">
-              Les images de la carte ne s’affichent pas. Elles reviendront dès que la connexion reviendra.
-            </div>
-          )}
-          {beyondPhoto && base === 'ortho' && !schema && (
-            <p className="map-photo-note small" role="note">
-              La photo n’est pas plus précise de plus près.
-            </p>
-          )}
-          <GardenDataBanner garden={garden} compact />
+          {/* Les petits avis se rangent côte à côte sur ordinateur (une rangée au lieu de trois). */}
+          <div className="map-chips">
+            {tileProblem && tileNoticeTurn && (
+              <div className="alert small map-notice" role="status">
+                Les images de la carte ne s’affichent pas. Elles reviendront dès que la connexion reviendra.
+              </div>
+            )}
+            {beyondPhoto && base === 'ortho' && !schema && (
+              <p className="map-photo-note small" role="note">
+                La photo n’est pas plus précise de plus près.
+              </p>
+            )}
+            <GardenDataBanner garden={garden} compact />
+          </div>
         </div>
+        <div ref={el} className="map" data-feat="carte" />
+        {hiddenCount > 0 && (
+          <p className="sr-only" role="status">
+            Beaucoup de plantes dans la vue : {hiddenCount} ne sont pas atteignables au clavier ici. Zoomez, ou ouvrez la liste Mes plantes.
+          </p>
+        )}
         {/* L'invite se cache tant que les Options ou la légende sont ouvertes : elle les recouvrait (ordinateur). « Ajouter une plante » reste dans le panneau de droite. */}
         {plants.length === 0 && !placingSpeciesId && !movingPlantId && !optionsOpen && !legendOpen && (
           <div className="floating map-empty">
