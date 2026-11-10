@@ -56,13 +56,35 @@ describe('scène : les commandes se mesurent sur la scène, pas sur la fenêtre'
     const wide = containerBlock(css, '(min-width: 561px) and (max-height: 480px)')
     expect(wide).toMatch(/\.g3d-bar \.g3d-seg\s*\{[^}]*flex:\s*1 1 auto/)
     expect(wide).toMatch(/\.g3d-bar \.g3d-btn--label\s*\{[^}]*flex:\s*1 1 auto/)
-    expect(wide).toMatch(/\.g3d-hourfield\s*\{[^}]*flex:\s*1 1 22rem/)
+    // Lot 6B : base de 15 rem (22 rem renvoyait « Animer » et « Réglages 3D » sur une 2e rangée : les saisons passaient sous la ligne de défilement du panneau)
+    expect(wide).toMatch(/\.g3d-hourfield\s*\{[^}]*flex:\s*1 1 15rem/)
+    expect(wide).not.toMatch(/22rem/)
   })
   it('sur téléphone en portrait rien ne change : joystick 44vw entre 140 et 200 px, boutons Tourner de 64 px, Courir large', () => {
     expect(rule(css, '.g3d-joy')).toMatch(/width:\s*clamp\(140px,\s*44vw,\s*200px\)/)
     expect(rule(css, '.g3d-pad')).toMatch(/grid-template-columns:\s*64px 64px/)
     expect(rule(css, '.g3d-padbtn')).toMatch(/min-width:\s*64px/)
     expect(rule(css, '.g3d-pad-run')).toMatch(/min-height:\s*56px/)
+  })
+})
+
+describe('lot 6B : saisons visibles et panneau de l’heure qui tient dans sa colonne', () => {
+  it('scène basse et large : l’heure, « Animer » et « Réglages 3D » tiennent sur une rangée, les saisons sur la suivante (Très grand + Grandes touches à 853×533 : 128 px, tout visible)', () => {
+    const wide = containerBlock(css, '(min-width: 561px) and (max-height: 480px)')
+    expect(wide).toMatch(/\.g3d-hourfield\s*\{[^}]*flex:\s*1 1 15rem/)
+    // les saisons ne sont jamais réduites sous une cible tactile : aucune hauteur fixe plus petite que --tap sur leurs boutons
+    expect(wide).not.toMatch(/season-picker[^{]*\{[^}]*(?<![-\w])(?:min-)?height:\s*(?:[0-3]\d|40)px/)
+  })
+  it('scène étroite (< 480 px) : le panneau de l’heure de la promenade se coupe en rangées entières (heure, curseur, − et +, Animer) au lieu de déborder sous « Recentrer »', () => {
+    const narrow = containerBlock(css, '(max-width: 479px)')
+    expect(narrow).toMatch(/\.g3d-panel--walk \.g3d-hourrow\s*\{[^}]*flex-wrap:\s*wrap/)
+    expect(narrow).toMatch(/\.g3d-panel--walk \.g3d-hourfield\s*\{[^}]*display:\s*contents/)
+    expect(narrow).toMatch(/\.g3d-panel--walk \.g3d-hourfield input\[type='range'\]\s*\{[^}]*flex:\s*1 0 100%[^}]*order:\s*1/)
+    expect(narrow).toMatch(/\.g3d-panel--walk \.g3d-hourfield \.g3d-field-label\s*\{[^}]*flex:\s*1 0 100%/)
+    expect(narrow).toMatch(/\.g3d-panel--walk \.g3d-hourrow > \.g3d-btn--label\s*\{[^}]*order:\s*3/)
+  })
+  it('− et + du curseur sont aussi larges que hauts en « Grandes touches » (--tap)', () => {
+    expect(rule(css, '.g3d-btn--icon.g3d-step')).toMatch(/width:\s*var\(--tap,\s*44px\)/)
   })
 })
 

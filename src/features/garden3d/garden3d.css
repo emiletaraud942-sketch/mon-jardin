@@ -233,6 +233,9 @@
   width: 44px;
   flex: none;
 }
+.g3d-btn--icon.g3d-step {
+  width: var(--tap, 44px); /* − et + : aussi larges que hauts en « Grandes touches » (56 px) */
+}
 .g3d-btn--small {
   padding: 0 10px;
   font-size: 0.875rem;
@@ -896,7 +899,34 @@
   .g3d-root[data-mode] .g3d-bar .g3d-btn--label {
     flex: 1 1 auto;
   }
+  /* Base courte (15 rem) : avec 22 rem, « Animer » et « Réglages 3D » tombaient sur une 2e rangée et les saisons passaient sous la ligne de défilement
+     (Très grand + Grandes touches à 853×533). Le curseur prend le reste de la rangée ; si elle manque encore, la rangée se coupe, jamais le curseur. */
   .g3d-root[data-mode] .g3d-hourrow .g3d-hourfield {
-    flex: 1 1 22rem;
+    flex: 1 1 15rem;
+  }
+}
+/* Scène étroite (téléphone) : le panneau de l'heure de la promenade tient dans la colonne de gauche, à côté des boutons de droite. Sa rangée « Heure − curseur + »
+   se coupe en rangées entières (heure, curseur, − et +, Animer) au lieu de déborder de 30 px sous « Recentrer ». */
+@container (max-width: 479px) {
+  .g3d-panel--walk .g3d-hourrow {
+    flex-wrap: wrap;
+  }
+  .g3d-panel--walk .g3d-hourfield {
+    display: contents;
+  }
+  .g3d-panel--walk .g3d-hourfield .g3d-field-label {
+    flex: 1 0 100%;
+  }
+  /* Ordre : heure, curseur seul sur sa rangée, puis − et + (côte à côte) et « Animer » qui prend le reste. */
+  .g3d-panel--walk .g3d-hourfield input[type='range'] {
+    flex: 1 0 100%;
+    order: 1;
+  }
+  .g3d-panel--walk .g3d-hourfield .g3d-btn--icon {
+    order: 2;
+  }
+  .g3d-panel--walk .g3d-hourrow > .g3d-btn--label {
+    flex: 1 1 auto;
+    order: 3;
   }
 }
