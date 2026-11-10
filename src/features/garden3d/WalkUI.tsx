@@ -323,6 +323,12 @@ export function MiniMap({ shared, parcel, buildings, plants, speciesById, select
   )
 }
 
+/** Diamètre de la grande carte d'« Aller à » : 180 à 260 px selon la largeur ; 160 px si la fenêtre est basse (le panneau défile, mais la carte doit tenir dedans). */
+export function gotoMapSize(width: number, height: number): number {
+  if (height < 600) return 160
+  return Math.max(180, Math.min(260, width - 64))
+}
+
 interface GotoPanelProps {
   shared: WalkShared
   parcel?: XY[]
@@ -360,7 +366,7 @@ export function GotoPanel({ shared, parcel, buildings, plants, speciesById, sele
     shared.teleport?.(it.stand, it.look)
     onClose()
   }
-  const mapSize = Math.max(180, Math.min(260, (typeof window !== 'undefined' ? window.innerWidth : 360) - 64))
+  const mapSize = gotoMapSize(typeof window !== 'undefined' ? window.innerWidth : 360, typeof window !== 'undefined' ? window.innerHeight : 800)
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     ref.current?.querySelector<HTMLElement>('button')?.focus()

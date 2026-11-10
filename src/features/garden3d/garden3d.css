@@ -13,6 +13,8 @@
   height: 100%;
   min-height: 240px;
   overflow: hidden;
+  /* La scène mesure ses commandes sur sa propre taille (et non sur celle de la fenêtre) : voir « Scène basse ou étroite » en bas. */
+  container-type: size;
   background: var(--g3d-sky);
   color: var(--g3d-text);
   font-size: 1rem;
@@ -241,6 +243,7 @@
 
 /* ----- Colonne de gauche : infos + mini-carte ----- */
 .g3d-left {
+  position: relative; /* « Aller à » s'y accroche */
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
@@ -709,13 +712,16 @@
   touch-action: manipulation;
 }
 .g3d-goto {
+  /* Dans la colonne de gauche de la promenade : sa largeur est celle de la place laissée par les boutons de droite (Recentrer, Aller à…),
+     elle ne les recouvre donc jamais. */
   position: absolute;
-  top: calc(max(6px, env(safe-area-inset-top)) + 56px);
-  left: 50%;
-  transform: translateX(-50%);
+  top: calc(var(--tap, 44px) + 6px); /* sous la rangée Quitter / Heure */
+  left: 0;
   z-index: 13;
-  width: min(360px, calc(100% - 12px));
-  max-height: calc(100% - 200px);
+  width: min(360px, 100%);
+  max-height: 60vh;
+  max-height: calc(100cqh - var(--tap, 44px) - 24px);
+  margin: 0;
   gap: 8px;
   padding: 8px 10px;
 }
@@ -724,6 +730,14 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  /* « Fermer » reste visible quand le panneau défile. */
+  position: sticky;
+  top: -8px;
+  z-index: 1;
+  margin: -8px -10px 0;
+  padding: 8px 10px 4px;
+  background: var(--g3d-surface);
+  border-radius: var(--g3d-radius) var(--g3d-radius) 0 0;
 }
 .g3d-goto-map {
   display: grid;
@@ -776,5 +790,113 @@
 @media (max-width: 760px), (pointer: coarse) {
   html[data-immersive] .add-fab {
     display: none;
+  }
+}
+
+/* ----- Scène basse ou étroite (mesurée sur la scène, pas sur la fenêtre) -----
+   Les commandes ne dépassent jamais la scène : le panneau « Heure et réglages » cède de la place et défile en interne, la barre Dessus / Perspective /
+   Se promener reste entière, et les panneaux de la promenade se posent à côté des boutons, jamais dessus. */
+.g3d-top {
+  flex: none;
+}
+.g3d-bottom {
+  flex: 0 1 auto;
+  min-height: 0;
+}
+.g3d-bottom > * {
+  flex: none;
+}
+.g3d-bottom > .g3d-panel {
+  flex: 0 1 auto;
+  min-height: 4.5rem; /* au plus bas, la rangée de l'heure reste visible ; le reste (saisons, réglages) défile */
+}
+/* « Aller à » est un panneau : pendant qu'il est ouvert, ni la mini-carte (il la remplace) ni le bas (joystick, aide) ne sont à toucher. */
+.g3d-overlay[data-goto] .g3d-bottom {
+  visibility: hidden;
+}
+.g3d-top--walk[data-goto] .g3d-minibtn {
+  display: none;
+}
+/* Scène étroite (téléphone) : le panneau prend toute la largeur et les boutons de droite s'effacent derrière lui. */
+@container (max-width: 479px) {
+  .g3d-top--walk[data-goto] .g3d-tools {
+    display: none;
+  }
+}
+/* Scène basse (≈ 290 px à 853×533) : les boutons de la promenade se rangent sur deux colonnes (152 px au lieu de 252). */
+@container (max-height: 480px) {
+  /* Le panneau de l'heure et la mini-carte ne tiennent pas l'un sous l'autre : « Aller à » reste dans les boutons de droite. */
+  .g3d-top--walk[data-hour] .g3d-minibtn {
+    display: none;
+  }
+  /* Panneau de l'heure ouvert : l'aide « Flèches ou ZQSD… » repasse après sa fermeture plutôt que de déborder de la scène. */
+  .g3d-top--walk[data-hour] ~ .g3d-bottom .g3d-helpchip {
+    visibility: hidden;
+  }
+  .g3d-top--walk .g3d-tools {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-items: stretch;
+    align-items: start;
+    justify-content: end;
+  }
+  .g3d-top--walk .g3d-tools > .g3d-compass {
+    grid-area: 1 / 2;
+    justify-self: end;
+  }
+  .g3d-top--walk .g3d-tools > :nth-child(2) {
+    grid-area: 2 / 1;
+  }
+  .g3d-top--walk .g3d-tools > :nth-child(3) {
+    grid-area: 2 / 2;
+  }
+  .g3d-top--walk .g3d-tools > :nth-child(4) {
+    grid-area: 3 / 1;
+  }
+  .g3d-top--walk .g3d-tools > :nth-child(5) {
+    grid-area: 3 / 2;
+  }
+}
+/* Scène basse et tactile (téléphone en paysage, tablette posée) : le joystick rétrécit avec la scène (112 px au moins, 200 au plus) et « Tourner » / « Courir » se rangent
+   sur une seule rangée de 64 px : sinon « Courir » tombait sous la scène. En portrait (scène haute), rien ne change. */
+@container (max-height: 480px) {
+  .g3d-joy {
+    width: clamp(112px, 34cqh, 200px);
+    height: clamp(112px, 34cqh, 200px);
+  }
+  .g3d-pad {
+    grid-template-columns: 64px auto 64px;
+    margin-bottom: 0;
+  }
+  .g3d-pad > :nth-child(1) {
+    grid-area: 1 / 1;
+  }
+  .g3d-pad > .g3d-pad-run {
+    grid-area: 1 / 2;
+  }
+  .g3d-pad > :nth-child(3) {
+    grid-area: 1 / 3;
+  }
+}
+/* Scène basse mais assez large (ordinateur à 150 %, téléphone en paysage) : une seule rangée pour l'heure, les saisons et la barre de vue. */
+@container (min-width: 561px) and (max-height: 480px) {
+  .g3d-root:not([data-mode='promenade']) .g3d-left {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+  }
+  .g3d-root[data-mode] .g3d-bar {
+    flex-wrap: wrap;
+  }
+  .g3d-root[data-mode] .g3d-bar .g3d-seg {
+    flex: 1 1 auto;
+  }
+  /* Base « auto » : sans elle, les deux boutons comptent pour 44 px et la barre ne passe jamais à la ligne (texte très grand : ils se chevauchaient). */
+  .g3d-root[data-mode] .g3d-bar .g3d-btn--label {
+    flex: 1 1 auto;
+  }
+  .g3d-root[data-mode] .g3d-hourrow .g3d-hourfield {
+    flex: 1 1 22rem;
   }
 }

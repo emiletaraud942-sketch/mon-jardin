@@ -332,6 +332,10 @@ export function Garden3D({
     }
     setWalkHelpOpen(readPref(HELP_SEEN_KEY) !== '1')
   }, [walking, walkShared])
+  const toggleGoto = () => {
+    if (!gotoOpen) setHourOpen(false)
+    setGotoOpen(!gotoOpen)
+  }
   const closeWalkHelp = useCallback(() => {
     setWalkHelpOpen(false)
     writePref(HELP_SEEN_KEY, '1')
@@ -586,9 +590,9 @@ export function Garden3D({
         </Canvas>
       </CanvasErrorBoundary>
 
-      <div className="g3d-overlay">
+      <div className="g3d-overlay" data-goto={(walking && gotoOpen) || undefined}>
         {walking ? (
-          <div className="g3d-top g3d-top--walk" data-feat="promenade-ui">
+          <div className="g3d-top g3d-top--walk" data-feat="promenade-ui" data-goto={gotoOpen || undefined} data-hour={(hourOpen && !gotoOpen) || undefined}>
             <div className="g3d-left">
               <div className="g3d-walkrow">
                 <button type="button" className="g3d-btn g3d-quit" onClick={() => setMode('perspective')} title="Quitter la promenade et revenir à la vue en perspective">
@@ -600,14 +604,17 @@ export function Garden3D({
                   aria-expanded={hourOpen}
                   aria-controls="g3d-hour-panel"
                   title={`Régler l’heure : le soleil et les ombres suivent (${dateShort})`}
-                  onClick={() => setHourOpen((v) => !v)}
+                  onClick={() => {
+                    if (!hourOpen) setGotoOpen(false) // un seul panneau à la fois : « Aller à » ne recouvre pas celui de l'heure
+                    setHourOpen((v) => !v)
+                  }}
                 >
                   <ClockIcon />
                   Heure <b>{formatHour(hour)}</b>
                 </button>
               </div>
-              {hourOpen && <div className="g3d-panel g3d-panel--walk" id="g3d-hour-panel">{hourRow(false)}</div>}
-              <button type="button" className="g3d-minibtn" aria-expanded={gotoOpen} aria-controls="g3d-goto" aria-label="Aller à : ouvrir la carte et la liste des endroits" title="Toucher la carte pour aller quelque part" onClick={() => setGotoOpen((v) => !v)}>
+              {hourOpen && !gotoOpen && <div className="g3d-panel g3d-panel--walk" id="g3d-hour-panel">{hourRow(false)}</div>}
+              <button type="button" className="g3d-minibtn" aria-expanded={gotoOpen} aria-controls="g3d-goto" aria-label="Aller à : ouvrir la carte et la liste des endroits" title="Toucher la carte pour aller quelque part" onClick={toggleGoto}>
                 <MiniMap
                   shared={walkShared}
                   parcel={garden.parcel}
@@ -623,10 +630,26 @@ export function Garden3D({
                   Aller à
                 </span>
               </button>
+              {gotoOpen && (
+                <GotoPanel
+                  shared={walkShared}
+                  parcel={garden.parcel}
+                  buildings={garden.buildings}
+                  plants={plants}
+                  speciesById={speciesById}
+                  selectedPlantId={selectedPlantId}
+                  bounds={frame.bounds}
+                  labelOf={(p) => plantLabel(p, speciesById[p.speciesId])}
+                  points={gotoPoints}
+                  hop={hop}
+                  onToggleHop={toggleHop}
+                  onClose={() => setGotoOpen(false)}
+                />
+              )}
             </div>
             <div className="g3d-tools">
               {compass}
-              <button type="button" className="g3d-btn g3d-btn--label" aria-expanded={gotoOpen} aria-controls="g3d-goto" title="Aller à une plante, à un point photo, ou toucher la carte" onClick={() => setGotoOpen((v) => !v)}>
+              <button type="button" className="g3d-btn g3d-btn--label" aria-expanded={gotoOpen} aria-controls="g3d-goto" title="Aller à une plante, à un point photo, ou toucher la carte" onClick={toggleGoto}>
                 <PinIcon /> Aller à
               </button>
               <button type="button" className="g3d-btn g3d-btn--label" aria-expanded={walkHelpOpen} aria-controls="g3d-walk-help" title="Comment se promener ?" onClick={() => (walkHelpOpen ? closeWalkHelp() : setWalkHelpOpen(true))}>
@@ -667,22 +690,6 @@ export function Garden3D({
           </div>
         )}
 
-        {walking && gotoOpen && (
-          <GotoPanel
-            shared={walkShared}
-            parcel={garden.parcel}
-            buildings={garden.buildings}
-            plants={plants}
-            speciesById={speciesById}
-            selectedPlantId={selectedPlantId}
-            bounds={frame.bounds}
-            labelOf={(p) => plantLabel(p, speciesById[p.speciesId])}
-            points={gotoPoints}
-            hop={hop}
-            onToggleHop={toggleHop}
-            onClose={() => setGotoOpen(false)}
-          />
-        )}
         {walking && (
           <div className="g3d-sr-only" role="status" aria-live="polite" aria-atomic="true">
             {announcement}
