@@ -919,8 +919,17 @@ html[data-big-taps] .parcours .parcours-head .back-circle {
 html[data-big-taps] .parcours .dot-btn {
   height: 56px;
 }
+/* Lien au milieu d'une phrase, Grandes touches : une vraie boîte de 56 px, plus une zone agrandie par ::after. Deux liens sur des lignes voisines
+   (« conditions d'utilisation » puis « politique de confidentialité », parcours de départ) recouvraient chacun la zone de l'autre : toucher le milieu du
+   premier ouvrait le second. La ligne qui porte un lien fait 56 px : les zones se touchent sans se recouvrir. */
+html[data-big-taps] p .legal-link {
+  display: inline-flex;
+  min-height: 56px;
+  padding: 0;
+  vertical-align: middle;
+}
 html[data-big-taps] p .legal-link::after {
-  inset: -16px -6px; /* ligne de 24 px + 2 x 16 = 56 px touchables */
+  content: none;
 }
 /* Champs de saisie, partout (hors cases, curseurs et fichiers) : 56 px. */
 html[data-big-taps] :is(input, select, textarea):not([type='checkbox'], [type='radio'], [type='range'], [type='file'], [type='color'], [type='hidden']):not(.maplibregl-map *, .sr-only) {
@@ -1046,6 +1055,18 @@ html[data-big-taps] .addr-map-btn {
   .map-foot > .map-empty {
     max-width: 360px;
     pointer-events: auto;
+  }
+}
+/* Carte courte (853 × 533 : panneau sous la carte, ≈ 240 px de haut ; texte très grand en 1280 × 600) : outils, avis et invite ne tiennent pas ensemble.
+   L'invite du jardin vide se retire sous 28 rem de haut (unité de texte : elle suit la taille choisie) ; « Ajouter une plante au jardin » reste dans le panneau. */
+@media (min-width: 761px) {
+  .map-wrap {
+    container: mapwrap / size;
+  }
+  @container mapwrap (max-height: 28rem) {
+    .map-foot > .map-empty {
+      display: none;
+    }
   }
 }
 /* Fenêtre peu haute : sans le dessin, l'invite du jardin vide ne monte plus sur les avis du haut (1024 × 768, texte très grand). */

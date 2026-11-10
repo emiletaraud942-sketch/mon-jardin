@@ -1554,6 +1554,8 @@ label.field > span {
   align-items: flex-start;
   gap: 8px;
   pointer-events: none;
+  /* Conteneur de largeur : les mots courts de la barre d'outils se décident sur la largeur réelle de la colonne (`@container maptop`, plus bas). */
+  container: maptop / inline-size;
 }
 @media (min-width: 761px) {
   /* Ordinateur : la colonne défile si elle est trop haute et laisse libres l'attribution IGN et l'échelle, en bas de la carte. */
@@ -1571,8 +1573,29 @@ label.field > span {
   padding: 6px;
   flex-wrap: wrap;
 }
-.map-toolbar .short {
+/* Barre d'outils : « Vue photo », « Vue plan » et « Options de la carte » ont un mot court (`.lbl-short`, nom accessible inchangé).
+   Colonne étroite en unités de texte (rem : elle suit la taille choisie) : les mots courts gardent la barre sur deux rangées au plus
+   (1024 px de large en « Grand » ou « Très grand » : trois rangées avant). */
+.map-toolbar .lbl-short {
   display: none;
+}
+@container maptop (max-width: 19rem) {
+  .map-toolbar .lbl-long {
+    display: none;
+  }
+  .map-toolbar .lbl-short {
+    display: inline;
+  }
+}
+@media (min-width: 761px) {
+  @container maptop (max-width: 24rem) {
+    .map-toolbar .lbl-long {
+      display: none;
+    }
+    .map-toolbar .lbl-short {
+      display: inline;
+    }
+  }
 }
 .map-toolbar .btn.small {
   padding: 4px 10px;

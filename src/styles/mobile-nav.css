@@ -275,7 +275,7 @@
   .map-top {
     right: 12px;
     max-height: calc(100% - 12px - 96px - 32px - 8px);
-    gap: 6px;
+    gap: 4px;
   }
   .app.is-placing .map-top {
     right: 12px;
@@ -293,6 +293,11 @@
   /* « Ajouter une plante » (carte) se pose un peu plus bas, juste au-dessus de l'échelle : les avis du haut ne passent jamais dessous. */
   .app[data-tab='carte'] .add-fab {
     bottom: 132px;
+  }
+  /* « Ajouter une plante » (carte) occupe le bas de la carte (132 px + sa hauteur) : la colonne s'arrête au-dessus, sans quoi son dernier avis passait dessous
+     (360 px, Grandes touches, texte très grand). Options ouvertes, le bouton se cache et la colonne reprend sa hauteur ; légende seule : règle plus bas. */
+  .app[data-tab='carte']:has(.add-fab):not(:has(#map-options)) .map-top {
+    max-height: calc(100% - 12px - 132px - var(--btn-h) - 6px);
   }
   .map-top > .map-empty {
     width: 100%;
@@ -334,6 +339,10 @@
     display: none;
   }
   .app:has(#map-options) .add-fab {
+    display: none;
+  }
+  /* 3D : « Heure et réglages » ouvert (#g3d-time-panel, seulement dans le DOM tant qu'il est ouvert), le bouton passait dessous (360 px) : même règle que pour les Options. */
+  .app:has(#g3d-time-panel) .add-fab {
     display: none;
   }
   /* Légende seule : elle s'allonge (mention sur les limites du cadastre) ; elle défile au-dessus du bouton « Ajouter une plante ». */

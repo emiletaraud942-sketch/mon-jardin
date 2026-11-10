@@ -102,7 +102,7 @@ describe('carte sur ordinateur : rien ne recouvre l’échelle ni l’attributio
     const view = read('../features/map/MapView.tsx')
     // Une seule rangée d'avis en haut (images absentes, données manquantes) ; la mention est rendue dans `map-foot` sur ordinateur seulement.
     expect(view).toMatch(/\{!mobileMap && \(\(!noteInColumn && photoNote\) \|\| emptyCard\) && \(\s*<div className="map-foot">/)
-    expect(view).toContain('{noteInColumn && photoNote}')
+    expect(view).toContain('{noteInColumn && !(mobileMap && emptyCard) && photoNote}')
     expect(view).toContain('const noteInColumn = mobileMap || plants.length === 0 || optionsOpen || legendOpen')
     // Les avis viennent juste sous la barre d'outils, avant le panneau Options : jamais repoussés dans la partie qui défile.
     expect(view.indexOf('className="map-chips"')).toBeGreaterThan(view.indexOf('className="floating row map-toolbar"'))
@@ -156,5 +156,59 @@ describe('carte sur téléphone : la mention sur la photo reste lisible (360 px)
     expect(nav).toMatch(/\.app\[data-tab='carte'\] \.add-fab\s*\{[^}]*bottom:\s*132px/)
     expect(nav).toMatch(/\.app\.is-placing \.workspace \.maplibregl-ctrl-bottom-left\s*\{[^}]*margin-bottom:\s*var\(--placing-h,\s*190px\)/)
     expect(phone.length).toBeGreaterThan(0)
+  })
+})
+
+// Lot 6A : derniers recouvrements de la carte et du parcours (853 × 533, 1024 × 768, 360 px en Grandes touches).
+describe('barre d’outils de la carte : deux rangées au plus (mots courts)', () => {
+  const view = read('../features/map/MapView.tsx')
+  const app = css('app.css')
+  it('« Vue photo », « Vue plan » et « Options de la carte » ont un mot court ; le nom accessible reste le long', () => {
+    for (const [long, short] of [['Vue photo', 'Photo'], ['Vue plan', 'Plan'], ['Options de la carte', 'Options']]) {
+      expect(view).toContain(`aria-label="${long}"`)
+      expect(view).toMatch(new RegExp(`<span className="lbl-long">${long}</span>\\s*<span className="lbl-short" aria-hidden>\\s*${short}\\s*</span>`))
+    }
+  })
+  it('la colonne d’outils est un conteneur de largeur ; les mots courts se décident en rem (ils suivent la taille du texte)', () => {
+    expect(app).toMatch(/\.map-top\s*\{[^}]*container:\s*maptop\s*\/\s*inline-size/)
+    expect(app).toMatch(/\.map-toolbar \.lbl-short\s*\{\s*display:\s*none/)
+    expect(app).toMatch(/@container maptop \(max-width:\s*19rem\)\s*\{\s*\.map-toolbar \.lbl-long\s*\{\s*display:\s*none/)
+    expect(mediaBlock(app, '(min-width: 761px)')).toMatch(/@container maptop \(max-width:\s*24rem\)\s*\{\s*\.map-toolbar \.lbl-long\s*\{\s*display:\s*none/)
+  })
+  it('la barre passe de 3 rangées à 2 : 24 rem couvrent la colonne de 413 px à 1024 px en « Grand » (19 px de base)', () => {
+    const column = 1024 - 0.19 * 1024 - 0.33 * 1024 - 80 // menu, panneau de droite, marge des boutons + et −
+    expect(column / 19).toBeLessThan(24)
+    expect(column / 16).toBeGreaterThan(24) // texte normal : mots longs gardés
+  })
+})
+
+describe('carte courte (853 × 533) : l’invite du jardin vide se retire au lieu de recouvrir les outils', () => {
+  const facile = css('facile.css')
+  it('la carte est un conteneur de taille sur ordinateur seulement', () => {
+    expect(mediaBlock(facile, '(min-width: 761px)')).toMatch(/\.map-wrap\s*\{[^}]*container:\s*mapwrap\s*\/\s*size/)
+  })
+  it('sous 28 rem de haut, l’invite du bas est cachée (le bouton reste dans le panneau)', () => {
+    expect(mediaBlock(facile, '(min-width: 761px)')).toMatch(/@container mapwrap \(max-height:\s*28rem\)\s*\{\s*\.map-foot > \.map-empty\s*\{\s*display:\s*none/)
+    expect(read('../features/map/SidePanel.tsx')).toContain('PlaceAction')
+  })
+})
+
+describe('carte sur téléphone : « Ajouter une plante », 3D et parcours', () => {
+  const nav = css('mobile-nav.css')
+  const facile = css('facile.css')
+  const view = read('../features/map/MapView.tsx')
+  it('la colonne du haut s’arrête au-dessus de « Ajouter une plante » quand il est affiché (pas quand les Options le cachent)', () => {
+    expect(nav).toMatch(/\.app\[data-tab='carte'\]:has\(\.add-fab\):not\(:has\(#map-options\)\) \.map-top\s*\{[^}]*max-height:\s*calc\(100%\s*-\s*12px\s*-\s*132px\s*-\s*var\(--btn-h\)\s*-\s*\d+px\)/)
+  })
+  it('jardin vide : la mention sur la photo laisse la place à l’invite dans la colonne', () => {
+    expect(view).toContain('{noteInColumn && !(mobileMap && emptyCard) && photoNote}')
+  })
+  it('3D : « Heure et réglages » ouvert, le gros bouton « Ajouter une plante » se cache', () => {
+    expect(nav).toMatch(/\.app:has\(#g3d-time-panel\) \.add-fab\s*\{\s*display:\s*none/)
+    expect(read('../features/garden3d/Garden3D.tsx')).toContain('id="g3d-time-panel"')
+  })
+  it('Grandes touches : un lien de phrase est une boîte de 56 px, sans zone ::after qui recouvre le lien de la ligne voisine', () => {
+    expect(facile).toMatch(/html\[data-big-taps\] p \.legal-link\s*\{[^}]*display:\s*inline-flex[^}]*min-height:\s*56px/)
+    expect(facile).toMatch(/html\[data-big-taps\] p \.legal-link::after\s*\{\s*content:\s*none/)
   })
 })

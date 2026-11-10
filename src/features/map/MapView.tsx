@@ -1064,14 +1064,25 @@ function MapViewInner({ garden }: { garden: Garden }) {
         <div className="map-top">
           {!placingNow && (
           <div className="floating row map-toolbar" role="toolbar" aria-label="Réglages de la carte" data-feat="fond-carte">
-            <button className={'btn small' + (base === 'ortho' ? ' primary' : '')} aria-pressed={base === 'ortho'} onClick={() => setBase('ortho')}>
-              Vue photo
+            {/* Colonne étroite ou texte grand : les mots courts (voir `.lbl-short` dans app.css) tiennent la barre sur deux rangées au plus. Le nom accessible reste le long. */}
+            <button className={'btn small' + (base === 'ortho' ? ' primary' : '')} aria-pressed={base === 'ortho'} aria-label="Vue photo" onClick={() => setBase('ortho')}>
+              <span className="lbl-long">Vue photo</span>
+              <span className="lbl-short" aria-hidden>
+                Photo
+              </span>
             </button>
-            <button className={'btn small' + (base === 'plan' ? ' primary' : '')} aria-pressed={base === 'plan'} onClick={() => setBase('plan')}>
-              Vue plan
+            <button className={'btn small' + (base === 'plan' ? ' primary' : '')} aria-pressed={base === 'plan'} aria-label="Vue plan" onClick={() => setBase('plan')}>
+              <span className="lbl-long">Vue plan</span>
+              <span className="lbl-short" aria-hidden>
+                Plan
+              </span>
             </button>
-            <button className={'btn small' + (optionsOpen ? ' on' : '')} aria-expanded={optionsOpen} aria-controls="map-options" onClick={() => setOptionsOpen((o) => !o)}>
-              Options de la carte <span aria-hidden>{optionsOpen ? '▴' : '▾'}</span>
+            <button className={'btn small' + (optionsOpen ? ' on' : '')} aria-expanded={optionsOpen} aria-controls="map-options" aria-label="Options de la carte" onClick={() => setOptionsOpen((o) => !o)}>
+              <span className="lbl-long">Options de la carte</span>
+              <span className="lbl-short" aria-hidden>
+                Options
+              </span>{' '}
+              <span aria-hidden>{optionsOpen ? '▴' : '▾'}</span>
             </button>
             <HistoryButtons />
           </div>
@@ -1131,7 +1142,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
                 Les images de la carte ne s’affichent pas. Elles reviendront dès que la connexion reviendra.
               </div>
             )}
-            {noteInColumn && photoNote}
+            {noteInColumn && !(mobileMap && emptyCard) && photoNote}
             <GardenDataBanner garden={garden} compact />
           </div>
           {optionsOpen && !placingNow && (
