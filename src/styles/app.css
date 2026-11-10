@@ -2749,16 +2749,19 @@ details > summary {
     padding: 2px 6px;
     font-size: 0.9375rem;
   }
+  /* La phrase garde sa place (11 rem) : si elle ne tient pas à côté du bouton, le bouton passe sur la ligne du dessous au lieu de l'écraser
+     (360 px : texte de 4 à 59 px de large sur 117 px de haut, à toute taille de texte). */
   .alert.demo-banner {
-    flex-wrap: nowrap;
-    padding: 2px 4px 2px 16px;
+    flex-wrap: wrap;
+    padding: 4px 4px 4px 16px;
     min-height: 48px;
     font-size: 0.8125rem;
-    gap: 4px;
+    gap: 2px 4px;
     border-radius: 24px;
   }
   .alert.demo-banner > span {
-    flex: 1 1 auto;
+    flex: 1 1 11rem;
+    min-width: 11rem;
   }
   .alert.demo-banner .btn {
     min-height: var(--tap);

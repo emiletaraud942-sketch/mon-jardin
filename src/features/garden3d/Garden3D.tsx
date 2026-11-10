@@ -15,7 +15,7 @@ import { createWalkShared } from './walk'
 import { disposeNeighborTrees } from './NeighborTrees'
 import { disposeContactShadows } from './ContactShadows'
 import { isTouchDevice } from './touch'
-import { essentialsClipped } from './tightPanel'
+import { essentialsClipped, stackOverflows } from './tightPanel'
 import type { DetectedTree } from '../../lib/lidar'
 import { LIDAR_ATTRIBUTION } from '../../lib/lidar'
 import { GotoPanel, Joystick, MiniMap, WalkButtons } from './WalkUI'
@@ -404,6 +404,34 @@ export function Garden3D({
       root.removeAttribute('data-tight')
     }
   }, [panelOpen, walking, collapsed])
+  // Scène très basse (jardin d'exemple et son bandeau, texte « Très grand », « Grandes touches ») : si la barre de vues et la rangée Heure / Recentrer descendent sous
+  // la place laissée par le haut, `data-squeezed` efface la carte de la date puis, si cela ne suffit pas, « Voir l'ensoleillement » (voir la CSS) ; la date reste dans « Heure et réglages ». Mesure sans l'attribut.
+  // On n'observe ni la carte de la date ni le bouton d'ensoleillement : leur taille change avec l'attribut (boucle).
+  useLayoutEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+    if (walking) {
+      root.removeAttribute('data-squeezed')
+      return
+    }
+    // Niveau 1 : la carte de la date s'efface. Niveau 2 (panneau « Heure et réglages » ouvert, il prend de la place) : « Voir l'ensoleillement » aussi.
+    const measure = () => {
+      root.removeAttribute('data-squeezed')
+      if (!stackOverflows(root)) return
+      root.setAttribute('data-squeezed', '1')
+      if (stackOverflows(root)) root.setAttribute('data-squeezed', '2')
+    }
+    measure()
+    if (typeof ResizeObserver === 'undefined') return () => root.removeAttribute('data-squeezed')
+    const ro = new ResizeObserver(measure)
+    ro.observe(root)
+    const bar = root.querySelector('.g3d-bar')
+    if (bar) ro.observe(bar)
+    return () => {
+      ro.disconnect()
+      root.removeAttribute('data-squeezed')
+    }
+  }, [walking, collapsed, panelOpen])
   const compassRef = useRef<HTMLDivElement>(null)
   const hourRef = useRef(hour)
   const hourStart = useRef(hour)

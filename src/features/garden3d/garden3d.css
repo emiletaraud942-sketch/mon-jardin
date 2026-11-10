@@ -936,6 +936,14 @@
    - la date, « Voir l'ensoleillement » et la boussole s'effacent tant que le panneau est ouvert (la mention des arbres IGN reste) ;
    - le panneau prend la place libérée (il se plafonne tout seul à l'espace entre le haut et la barre Dessus / Perspective / Se promener) ;
    - les saisons passent juste sous l'heure ; « Animer » et « Réglages 3D » suivent sur une rangée, puis le reste défile en interne. */
+/* Scène très basse (`data-squeezed`, voir Garden3D.tsx) : la carte de la date s'efface (niveau 1) puis « Voir l'ensoleillement » (niveau 2, panneau de l'heure ouvert) pour que la barre de vues et « Heure » restent au-dessus de la feuille du bas.
+   Pas de condition d'orientation : une scène de 360×321 px est plus large que haute (« paysage ») bien que l'écran soit en portrait. */
+@container (max-width: 479px) {
+  .g3d-root[data-squeezed] .g3d-info,
+  .g3d-root[data-squeezed='2'] .g3d-sunbtn {
+    display: none;
+  }
+}
 @container (max-width: 479px) and (orientation: portrait) {
   .g3d-root[data-tight] .g3d-info,
   .g3d-root[data-tight] .g3d-sunbtn,

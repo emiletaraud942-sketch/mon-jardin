@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { gotoMapSize } from './WalkUI'
-import { essentialsClipped } from './tightPanel'
+import { barOverflows, essentialsClipped } from './tightPanel'
 
 // Lot 5A : à 853×533 (ordinateur à 150 %) la scène ne fait que ≈ 290 px ; ses commandes ne doivent ni déborder ni se recouvrir,
 // et le panneau « Aller à » de la promenade ne doit jamais se poser sur « Recentrer ».
@@ -189,6 +189,32 @@ describe('promenade : « Aller à » ne recouvre jamais « Recentrer » ni les a
     it('tient compte du défilement déjà fait (position naturelle = position + défilement)', () => {
       expect(essentialsClipped(fake({ panelBottom: 368, seasonsBottom: 300, scrollTop: 120 }))).toBe(true)
       expect(essentialsClipped(fake({ panelBottom: 368, seasonsBottom: 300, scrollTop: 40 }))).toBe(false)
+    })
+  })
+  // Scène très basse : jardin d'exemple avec son bandeau, 360×740, « Très grand » + « Grandes touches » (scène de 321 px, rangée Heure à 466–522 px sous une feuille
+  // qui commence à 488 px : un appui tombait sur la poignée de la feuille). Mesuré après : Heure à 426–482 px, au-dessus de la feuille.
+  describe('scène très basse (data-squeezed)', () => {
+    it('barOverflows : vrai si la barre descend sous la marge du bas (à un demi-pixel près)', () => {
+      expect(barOverflows(522.4, 584, 102)).toBe(true)
+      expect(barOverflows(482, 584, 102)).toBe(false)
+      expect(barOverflows(482.4, 584, 102)).toBe(false)
+      expect(barOverflows(483, 584, 102)).toBe(true)
+    })
+    it('le composant mesure sans l’attribut, pose le niveau 1 puis le niveau 2, et ne lance pas la mesure en promenade', () => {
+      const src = read('Garden3D.tsx')
+      expect(src).toMatch(/removeAttribute\('data-squeezed'\)[\s\S]{0,120}stackOverflows\(root\)/)
+      expect(src).toMatch(/setAttribute\('data-squeezed', '1'\)[\s\S]{0,80}stackOverflows\(root\)[\s\S]{0,80}setAttribute\('data-squeezed', '2'\)/)
+      expect(src).toMatch(/if \(walking\) \{\s*root\.removeAttribute\('data-squeezed'\)/)
+    })
+    it('la CSS efface la carte de la date (niveau 1) puis « Voir l’ensoleillement » (niveau 2), sans condition d’orientation (360×321 px est « paysage »)', () => {
+      const block = containerBlock(css, '(max-width: 479px)')
+      expect(block).toMatch(/\.g3d-root\[data-squeezed\] \.g3d-info,\s*\.g3d-root\[data-squeezed='2'\] \.g3d-sunbtn\s*\{[^}]*display:\s*none/)
+    })
+    it('on n’observe jamais la carte de la date ni le bouton d’ensoleillement (leur taille change avec l’attribut : boucle)', () => {
+      const src = read('Garden3D.tsx')
+      const effect = src.slice(src.indexOf("root.removeAttribute('data-squeezed')\n      return\n    }"), src.indexOf('}, [walking, collapsed, panelOpen])\n  const compassRef'))
+      expect(effect).toContain('ro.observe(root)')
+      expect(effect).not.toMatch(/g3d-info|g3d-sunbtn/)
     })
   })
 })

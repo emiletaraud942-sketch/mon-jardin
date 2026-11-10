@@ -46,6 +46,7 @@ Registre : 87 fonctions.
 ## 4. Défauts d'affichage connus (rien de bloquant)
 - ~~À 360 px avec les « Aides au placement » ouvertes en Grandes touches, la feuille des aides recouvre l'échelle, l'attribution et la consigne~~ : corrigé le 10 nov. (en placement, la colonne d'outils s'arrête au-dessus de la consigne et de l'échelle, `--placing-h`, et défile ; mesuré à 360×740, 390×844 et 412×915, texte Normal et Très grand + Grandes touches, 0 px de recouvrement ; Chromium sans carte graphique, rien sur un vrai téléphone).
 - 3D portrait à 360 px en Grandes touches : la rangée « Animer / Réglages 3D » dépasse d'environ 24 px sous le panneau, coupée jusqu'au défilement (pas d'indice de défilement).
+- 3D à 360 px avec le bandeau du jardin d'exemple, « Très grand » + Grandes touches : corrigé le 10 nov. (lot 9, voir `CLAUDE.md`). Il reste que, panneau « Heure et réglages » ouvert, la scène n'a que ≈ 93 px de panneau : l'heure se règle, les saisons demandent de défiler dans le panneau (fermer le bandeau d'exemple rend tout visible).
 - Non vus à l'écran : la carte « Prochaine étape » avec « Leçon suivante » (testée en logique seulement) ; recherche, état vide et clavier des écrans de leçons, d'ennuis et de conseils (pas de jsdom : seulement rendu serveur et e2e).
 - Aucune étape e2e pour l'entraide (le build e2e n'a pas les variables `NEIGHBORS_*`).
 

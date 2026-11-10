@@ -250,4 +250,10 @@ describe('carte sur téléphone : « Ajouter une plante », 3D et parcours', () 
     expect(facile).toMatch(/html\[data-big-taps\] p \.legal-link\s*\{[^}]*display:\s*inline-flex[^}]*min-height:\s*56px/)
     expect(facile).toMatch(/html\[data-big-taps\] p \.legal-link::after\s*\{\s*content:\s*none/)
   })
+  it('téléphone : le bandeau « jardin d’exemple » garde 11 rem à sa phrase et passe son bouton à la ligne au lieu de l’écraser', () => {
+    // Mesuré à 360 px : texte de 4 px (« Très grand ») ou 59 px (Normal) de large sur 117 px de haut ; après : une ligne de 296 px, bandeau de 83 px (66 px en Normal).
+    const app = css('app.css')
+    expect(app).toMatch(/\.alert\.demo-banner\s*\{[^}]*flex-wrap:\s*wrap/)
+    expect(app).toMatch(/\.alert\.demo-banner > span\s*\{[^}]*flex:\s*1 1 11rem[^}]*min-width:\s*11rem/)
+  })
 })
