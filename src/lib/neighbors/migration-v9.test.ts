@@ -13,16 +13,17 @@ const PROBES = ['neighbors_is_blocked', 'neighbors_can_contact', 'neighbors_can_
 const PROBE_RE = new RegExp(`public\\.(${PROBES.join('|')})\\(`)
 
 describe('migration v9 : ordre et idempotence', () => {
-  it('est la dernière migration par ordre de nom, et run.sh la joue en dernier (et deux fois)', () => {
+  it('est l\u2019avant-dernière migration par ordre de nom (la v10 la suit), et run.sh la joue juste avant la v10 (et deux fois)', () => {
     const files = readdirSync(dir).sort()
-    expect(files.at(-1)).toBe(V9)
-    expect(files).toHaveLength(9)
+    expect(files.at(-2)).toBe(V9)
+    expect(files).toHaveLength(10)
     const run = readFileSync('supabase/neighbors/tests/run.sh', 'utf8')
-    const lines = run.split('\n').filter((l) => /-f "\$MIG\d?"|scenarios_/.test(l))
-    const lastMig = lines.map((l, i) => [l, i] as const).filter(([l]) => /-f "\$MIG\d?"/.test(l)).at(-1)!
-    expect(lastMig[0]).toMatch(/\$MIG9/)
+    const lines = run.split('\n').filter((l) => /-f "\$MIG\d*"|scenarios_/.test(l))
+    const migs = lines.filter((l) => /-f "\$MIG\d*"/.test(l))
+    expect(migs.at(-1)).toMatch(/\$MIG10/) // la v10 est la toute dernière, après la v9
+    expect(migs.at(-3)).toMatch(/\$MIG9/)
     expect(run.match(/-f "\$MIG9"/g)!.length).toBeGreaterThanOrEqual(3) // juste après la v8, puis à la fin, deux fois
-    expect(lines.at(-1)).toMatch(/scenarios_v9\.sql/)
+    expect(lines.at(-1)).toMatch(/scenarios_v10\.sql/)
     expect(run).toMatch(/MIG9=\.\.\/migrations\/20261104000000_neighbors_v9_hardening2\.sql/)
   })
   it('ne supprime aucune donnée : pas de delete, truncate, drop table ni drop column', () => {

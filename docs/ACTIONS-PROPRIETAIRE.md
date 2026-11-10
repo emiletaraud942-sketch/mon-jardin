@@ -72,6 +72,7 @@ Dépôt > **Settings** :
   7. `20261027000000_neighbors_v7_hardening.sql` (un changement de quartier par semaine, textes sans caractères invisibles)
   8. `20261029000000_neighbors_v8_gardens.sql` (« Ce que j'ai dans mon jardin », boutures entre voisins)
   9. `20261104000000_neighbors_v9_hardening2.sql` *(à coller en dernier ; rejouable : sondes de blocage dans le schéma privé `neighbors_private`, masquage automatique plus exigeant, contraintes de texte complétées)*
+  10. *(facultatif)* `20261110000000_neighbors_v10_public_events.sql` *(à coller en dernier ; rejouable ; ouvre à tous, sans compte, UNE fonction en lecture qui rend au plus 20 événements ouverts d'organisateurs validés autour d'un point arrondi à 5 km : titre, dates, lieu, nom de l'organisateur, rien d'autre ; aucune table n'est ouverte. Détail, limite connue et façon de la couper : `docs/ENTRAIDE.md`, « Événements sans compte (v10) ». Sans elle, l'appli marche comme avant.)*
   - *Vérifier* : **Table Editor** : toutes les tables ont « RLS enabled » ; **Security Advisor** ne signale rien de critique.
 - [ ] 🔴 **Authentication > Providers** : Email activé (connexion par **code**, modèles d'e-mail avec `{{ .Token }}`, voir §2) ; **Anonymous sign-ins**, Phone et OAuth désactivés.
 - [ ] 🔴 **Authentication > URL Configuration** : comme au §2.

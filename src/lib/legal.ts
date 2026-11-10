@@ -7,7 +7,7 @@ import { DATA_INVENTORY, type LegalBasis } from './security/inventory'
 export const DRAFT_BANNER = 'BROUILLON À FAIRE VALIDER PAR UN PROFESSIONNEL'
 export const DRAFT_NOTE = 'Texte provisoire, à faire valider par un professionnel avant publication. Il ne constitue pas un avis juridique.'
 
-export const LEGAL_VERSION = '1.9'
+export const LEGAL_VERSION = '1.10'
 /** Dernière mise à jour (AAAA-MM-JJ). */
 export const LEGAL_UPDATED = '2026-11-10'
 
@@ -148,7 +148,7 @@ export const CONFIDENTIALITE: LegalDoc = {
           'Annonces et réponses : type (don, échange, prêt, demande ou question), catégorie éventuelle, titre, description, espèce et photo éventuelle. Elles sont visibles des membres situés à moins de 55 km environ, sauf ceux que vous avez bloqués. N’y écrivez ni votre adresse, ni votre téléphone, ni de données concernant d’autres personnes.',
           'Ce que j’ai dans mon jardin (facultatif, désactivé par défaut) : si vous choisissez de le montrer, la liste des espèces de vos plantes (par exemple pommier, romarin) devient visible, avec votre pseudo, des membres situés à moins de 55 km environ, sauf ceux que vous avez bloqués. Jamais la place des plantes, leur nombre, leurs photos ni votre adresse. Un voisin peut alors vous écrire pour demander une bouture ; vous êtes libre de répondre ou non. « Ne plus montrer mon jardin » efface la liste.',
           'Photos : redessinées dans votre navigateur avant l’envoi (position GPS et métadonnées supprimées), 1 Mo au plus, stockées dans un espace privé. Une photo de jardin peut elle-même révéler un lieu : regardez l’arrière-plan.',
-          'Événements : seuls les organisateurs validés par l’éditeur en publient. Un organisateur donne un nom public et une courte description, jamais d’adresse ni d’e-mail. Un événement montre ce nom, un titre, des dates, un lieu en texte libre (à choisir public), un lien d’inscription éventuel, un nombre de places éventuel et le quartier arrondi de l’organisateur. Il est visible des membres situés à moins de 55 km environ, sauf ceux que l’organisateur a bloqués.',
+          'Événements : seuls les organisateurs validés par l’éditeur en publient. Un organisateur donne un nom public et une courte description, jamais d’adresse ni d’e-mail. Un événement montre ce nom, un titre, des dates, un lieu en texte libre (à choisir public), un lien d’inscription éventuel, un nombre de places éventuel et le quartier arrondi de l’organisateur. Il est visible des membres situés à moins de 55 km environ, sauf ceux que l’organisateur a bloqués. Les événements ouverts, à venir et près de chez vous peuvent aussi être vus sans compte, une fois l’entraide acceptée : l’appli envoie alors la zone d’environ 5 km qui contient votre jardin (jamais l’adresse ni la position exacte) et reçoit au plus 20 événements, avec seulement le titre, les dates, le lieu et le nom de l’organisateur.',
           '« Je suis intéressé(e) » : enregistre une ligne à votre nom, que vous seul pouvez lire. Les autres membres et l’organisateur voient seulement le nombre de personnes intéressées, jamais leurs noms. Cela ne vaut pas inscription.',
           'Liens d’inscription : ils mènent vers des sites extérieurs que l’éditeur ne contrôle pas et dont la politique de confidentialité s’applique. L’appli affiche un avertissement « Vous quittez l’appli » avant de les ouvrir ; elle n’accepte que les liens en https.',
           'Messages privés : lisibles seulement par vous et votre correspondant. L’éditeur ne les lit pas, sauf pour traiter un signalement visant l’un d’eux. Pour compter vos messages non lus, le serveur garde la date de votre dernière lecture de chaque conversation ; vous seul pouvez la voir.',
@@ -430,7 +430,7 @@ export const CONSENT_TEXT: Record<'plantnet' | 'sync' | 'voisins' | 'notificatio
   voisins: {
     titre: 'Rejoindre l’entraide entre voisins ?',
     paragraphes: [
-      'Votre adresse e-mail (pour le code de connexion), votre pseudo, votre quartier arrondi (une zone d’environ 2 km, ou d’environ 5 km si vous le choisissez), vos annonces, photos, réponses et messages privés seront enregistrés sur un serveur dédié (Supabase ; région d’hébergement à confirmer par l’éditeur). Votre adresse et votre position exacte ne sont jamais envoyées.',
+      'Votre adresse e-mail (pour le code de connexion), votre pseudo, votre quartier arrondi (une zone d’environ 2 km, ou d’environ 5 km si vous le choisissez), vos annonces, photos, réponses et messages privés seront enregistrés sur un serveur dédié (Supabase ; région d’hébergement à confirmer par l’éditeur). Votre adresse et votre position exacte ne sont jamais envoyées. Avant même de créer un compte, une zone d’environ 5 km autour de votre jardin est envoyée pour afficher les événements près de chez vous.',
       'Votre pseudo, votre quartier, vos annonces et vos réponses sont visibles des autres membres. Vos messages ne sont lus que par votre correspondant. Les annonces disparaissent après 60 jours. Si vous devenez organisateur, le nom de votre organisation et vos événements sont visibles aussi. Si vous choisissez de montrer votre jardin, la liste de vos plantes (jamais leur place) l’est aussi ; vous pouvez l’arrêter à tout moment.',
       'Vous pouvez retirer votre autorisation dans Réglages, et supprimer votre compte et vos annonces à tout moment dans l’entraide.',
     ],

@@ -31,6 +31,7 @@ import { readRadius, saveRadius } from './prefs'
 import { ProfileForm } from './ProfileForm'
 import { ProfileTab } from './ProfileTab'
 import { SignIn } from './SignIn'
+import { PublicEvents } from './PublicEvents'
 
 type Section = 'accueil' | 'fil' | 'jardins' | 'evenements' | 'messages' | 'mes' | 'profil'
 type View =
@@ -162,6 +163,7 @@ function Connected({ garden }: { garden: Garden }) {
       <>
         {sessionError && <ErrorBox message={sessionError} />}
         <SignIn online={online} />
+        <PublicEvents garden={garden} online={online} />
       </>
     )
   }

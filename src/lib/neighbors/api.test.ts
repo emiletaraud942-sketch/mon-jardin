@@ -13,7 +13,7 @@ const state = vi.hoisted(() => ({
   signInWithOtp: vi.fn(async (_a: unknown) => ({ error: null as unknown })),
   exchange: vi.fn(async (_c: string) => ({ error: null as unknown })),
   verifyOtp: vi.fn(async (_a: unknown): Promise<{ data: { session: unknown; user: unknown }; error: unknown }> => ({ data: { session: { user: { id: '11111111-1111-4111-8111-111111111111', email: 'moi@example.org' } }, user: { id: '11111111-1111-4111-8111-111111111111', email: 'moi@example.org' } }, error: null })),
-  rpc: vi.fn(async (_n: string) => ({ data: null, error: null as unknown })),
+  rpc: vi.fn(async (_n: string, _p?: unknown): Promise<{ data: unknown; error: unknown }> => ({ data: null, error: null })),
   upload: vi.fn(async (_p: string, _b: unknown, _o: unknown) => ({ data: {}, error: null as unknown })),
   remove: vi.fn(async (_p: string[]) => ({ data: [], error: null })),
   // Premier appel : deux fichiers ; ensuite le dossier est vide (comme après une suppression réussie).
@@ -843,5 +843,61 @@ describe('jardins partagés (v8)', () => {
     expect(api.translateError({ message: 'quota_exceeded:garden_share' })).toMatch(/Revenez demain/)
     expect(api.translateError({ message: 'violates check constraint "garden_shares_species_check"', code: '23514' })).toMatch(/plante inconnue/)
     expect(api.translateError({ message: "Could not find the table 'public.garden_shares' in the schema cache", code: 'PGRST205' })).toMatch(/pas encore ouverts/)
+  })
+})
+
+describe('événements sans compte (v10) : listPublicEvents', () => {
+  const row = (o: Record<string, unknown> = {}) => ({ title: 'Atelier de taille', starts_at: '2026-11-14T14:00:00Z', ends_at: '2026-11-14T16:00:00Z', place: 'Jardin partagé', organizer_name: 'Les Jardiniers', ...o })
+  const paramsOf = () => (state.rpc.mock.calls[0] as unknown[])[1] as { p_lat: number; p_lon: number }
+
+  it('n’envoie que la grande cellule (≈ 5 km) : jamais la position exacte, jamais plus de deux paramètres', async () => {
+    state.rpc.mockResolvedValueOnce({ data: [row()], error: null })
+    await api.listPublicEvents(45.764123, 4.835712)
+    expect((state.rpc.mock.calls[0] as unknown[])[0]).toBe('neighbors_public_events')
+    expect(paramsOf()).toEqual({ p_lat: 45.75, p_lon: 4.83 })
+    expect(Object.keys(paramsOf())).toEqual(['p_lat', 'p_lon'])
+  })
+  it('refuse une position impossible sans appeler le serveur', async () => {
+    await expect(api.listPublicEvents(91, 2)).rejects.toMatchObject({ code: 'invalid' })
+    await expect(api.listPublicEvents(Number.NaN, 2)).rejects.toMatchObject({ code: 'invalid' })
+    expect(state.rpc).not.toHaveBeenCalled()
+  })
+  it('rend titre, dates, lieu et organisateur ; ignore les lignes sans titre ou sans date valable ; 20 au plus', async () => {
+    const many = Array.from({ length: 25 }, (_, i) => row({ title: `Rendez-vous ${i}` }))
+    state.rpc.mockResolvedValueOnce({ data: [row({ title: '' }), row({ starts_at: 'pas une date' }), row({ ends_at: null }), ...many], error: null })
+    const list = await api.listPublicEvents(48.86, 2.35)
+    expect(list).toHaveLength(20)
+    expect(list[0]).toEqual({ title: 'Rendez-vous 0', startsAt: '2026-11-14T14:00:00Z', endsAt: '2026-11-14T16:00:00Z', place: 'Jardin partagé', organizerName: 'Les Jardiniers' })
+  })
+  it('nettoie les textes reçus : contrôles, invisibles, marques de direction et chevrons retirés, longueurs bornées', async () => {
+    state.rpc.mockResolvedValueOnce({ data: [row({ title: 'A​te<li>er‮', place: 'x'.repeat(300), organizer_name: '  \u0007  ' })], error: null })
+    const [e] = await api.listPublicEvents(48.86, 2.35)
+    expect(e.title).toBe('Atelier') // « A », « te », « li », « er » : seuls les caractères interdits partent
+    expect(e.place).toHaveLength(120)
+    expect(e.organizerName).toBe('Organisateur')
+  })
+  it('un champ qui n’est pas du texte est ignoré (pas d’objet, pas de nombre)', async () => {
+    state.rpc.mockResolvedValueOnce({ data: [row({ place: { x: 1 }, organizer_name: 42 })], error: null })
+    const [e] = await api.listPublicEvents(48.86, 2.35)
+    expect(e.place).toBe('')
+    expect(e.organizerName).toBe('Organisateur')
+  })
+  it('réponse qui n’est pas une liste : liste vide', async () => {
+    state.rpc.mockResolvedValueOnce({ data: { message: 'oups' }, error: null })
+    expect(await api.listPublicEvents(48.86, 2.35)).toEqual([])
+  })
+  it('base pas encore mise à jour (fonction introuvable) : erreur de code not_open', async () => {
+    state.rpc.mockResolvedValueOnce({ data: null, error: { code: 'PGRST202', message: 'Could not find the function public.neighbors_public_events(p_lat, p_lon) in the schema cache' } })
+    await expect(api.listPublicEvents(48.86, 2.35)).rejects.toMatchObject({ code: 'not_open' })
+  })
+  it('autre erreur : message français, jamais le texte brut du serveur', async () => {
+    state.rpc.mockResolvedValueOnce({ data: null, error: { code: '57014', message: 'canceling statement due to statement timeout' } })
+    const err = await api.listPublicEvents(48.86, 2.35).catch((e: Error) => e)
+    expect((err as Error).message).toBe('Une erreur est survenue. Réessayez dans un instant.')
+  })
+  it('ne demande aucune session (marche sans compte)', async () => {
+    state.session = null
+    state.rpc.mockResolvedValueOnce({ data: [], error: null })
+    expect(await api.listPublicEvents(48.86, 2.35)).toEqual([])
   })
 })

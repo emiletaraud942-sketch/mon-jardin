@@ -18,7 +18,8 @@ export interface WeatherMock {
 
 function weather(opts: WeatherMock = {}) {
   const t0 = Date.now()
-  const days = Array.from({ length: 16 }, (_, i) => new Date(t0 + (i - 3) * 86_400_000).toISOString().slice(0, 10))
+  // Jours du fuseau de l'appli (Paris), pas de l'UTC : entre 23 h et minuit UTC les deux ne tombent pas le même jour et la vague de chaleur se décalait d'un jour.
+  const days = Array.from({ length: 16 }, (_, i) => new Date(t0 + (i - 3) * 86_400_000).toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' }))
   const tmax = [14, 11, 13, 9, 10, 12, 12, 12, 13, 14, 15, 15, 14, 13, 12, 12].map((t, i) => (opts.heatWave && i >= 3 && i < 7 ? 36 : t))
   return {
     latitude: LAT,

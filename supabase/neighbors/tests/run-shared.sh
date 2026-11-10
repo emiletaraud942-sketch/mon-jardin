@@ -14,6 +14,7 @@ MIG6=../migrations/20261025040000_neighbors_v6_cell_size.sql
 MIG7=../migrations/20261027000000_neighbors_v7_hardening.sql
 MIG8=../migrations/20261029000000_neighbors_v8_gardens.sql
 MIG9=../migrations/20261104000000_neighbors_v9_hardening2.sql
+MIG10=../migrations/20261110000000_neighbors_v10_public_events.sql
 export PGDATABASE=postgres
 psql -q -c 'drop database if exists shared_test' -c 'create database shared_test' || exit 2
 export PGDATABASE=shared_test
@@ -52,6 +53,8 @@ dump_policies() {
   psql -q -v ON_ERROR_STOP=1 -f "$MIG8" &&   # v8 : elle remplace neighbors_can_contact et profiles_select de la v1
   psql -q -v ON_ERROR_STOP=1 -f "$MIG9" &&   # v9 TOUT À LA FIN : elle remet les fonctions d'aide dans neighbors_private et ré-écrase les anciennes versions rejouées
   psql -q -v ON_ERROR_STOP=1 -f "$MIG9" &&   # et elle est elle-même rejouable
+  psql -q -v ON_ERROR_STOP=1 -f "$MIG10" &&  # v10 (liste publique d'événements), puis rejouée
+  psql -q -v ON_ERROR_STOP=1 -f "$MIG10" &&
   dump_policies >"$POST" &&
   { if diff -q "$PRE" "$POST" >/dev/null; then echo "NOTICE:  PASS  V9 politiques RLS identiques avant/après hors nom de schéma ($(wc -l <"$PRE") politiques)"; else echo "NOTICE:  FAIL  V9 politiques RLS différentes après la v9"; diff "$PRE" "$POST"; fi; } &&
   psql -q -f scenarios.sql &&
@@ -64,6 +67,7 @@ dump_policies() {
   psql -q -f scenarios_v7.sql &&
   psql -q -f scenarios_v8.sql &&
   psql -q -f scenarios_v9.sql &&
+  psql -q -f scenarios_v10.sql &&
   psql -q -f scenarios_shared.sql
 } >"$OUT" 2>&1
 grep -E "PASS|FAIL|ERROR" "$OUT" | sed 's/^psql:[^ ]* //'

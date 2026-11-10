@@ -936,6 +936,55 @@ export async function listEvents(opts: ListEventsOptions = {}): Promise<EventIte
   return rows.map((r) => toEvent(r, uid, center, mine.has(r.id), mySize())).filter((e) => e.distanceKm == null || e.distanceKm <= radius + CELL_SLACK_KM)
 }
 
+/** Un événement vu SANS compte : titre, dates, lieu et nom de l'organisateur, rien d'autre (voir la migration v10). */
+export interface PublicEvent {
+  title: string
+  startsAt: string
+  endsAt: string
+  place: string
+  organizerName: string
+}
+
+/** Nettoie un texte reçu d'un serveur : sans caractères de contrôle, invisibles ni de direction, borné. */
+function cleanReceived(v: unknown, max: number): string {
+  return typeof v === 'string' ? v.replace(/[\u0000-\u001f\u007f-\u009f\u00ad\u061c\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff<>]/g, '').trim().slice(0, max) : ''
+}
+
+/**
+ * Événements ouverts autour de ma position, lisibles SANS compte (fonction `neighbors_public_events`, migration v10).
+ * Seule une position ARRONDIE à la grande cellule (≈ 5 km) quitte l'appareil : l'arrondi est fait ici, puis de nouveau par la base.
+ * Base pas encore mise à jour (v10 non collée) : erreur de code `not_open`, que l'écran traite comme « rien à montrer ».
+ */
+export async function listPublicEvents(lat: number, lon: number): Promise<PublicEvent[]> {
+  if (!isValidCoord(lat, lon)) throw new NeighborsError('Position invalide.', 'invalid')
+  const cell = roundCell(lat, lon, 'large')
+  let res: { data: unknown; error: unknown }
+  try {
+    res = (await sb().rpc('neighbors_public_events', { p_lat: cell.lat, p_lon: cell.lon })) as { data: unknown; error: unknown }
+  } catch (e) {
+    return fail(e)
+  }
+  if (res.error) {
+    const err = res.error as RawError
+    const low = String(err.message ?? '').toLowerCase()
+    if (err.code === 'PGRST202' || err.code === '42883' || /could not find the function|function .* does not exist/.test(low)) {
+      throw new NeighborsError('Les événements ne sont pas encore ouverts sans compte.', 'not_open')
+    }
+    fail(res.error)
+  }
+  const rows = Array.isArray(res.data) ? (res.data as Record<string, unknown>[]) : []
+  const out: PublicEvent[] = []
+  for (const r of rows.slice(0, 100)) {
+    if (out.length >= 20) break
+    const startsAt = typeof r.starts_at === 'string' ? r.starts_at : ''
+    const endsAt = typeof r.ends_at === 'string' ? r.ends_at : ''
+    const title = cleanReceived(r.title, 80)
+    if (!title || !Number.isFinite(Date.parse(startsAt)) || !Number.isFinite(Date.parse(endsAt))) continue
+    out.push({ title, startsAt, endsAt, place: cleanReceived(r.place, 120), organizerName: cleanReceived(r.organizer_name, 60) || 'Organisateur' })
+  }
+  return out
+}
+
 /** Mes propres événements (tous statuts, y compris masqués), les plus récents d'abord. */
 export async function listMyEvents(): Promise<EventItem[]> {
   const uid = await requireUserId()

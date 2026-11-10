@@ -68,11 +68,11 @@ begin
  perform t.expect('S6 schéma privé : aucun droit pour public', (select 'OK '||has_schema_privilege('public', 'neighbors_private', 'usage')), 'OK false');
  perform t.expect('S6 aucune fonction du schéma privé exécutable par anon',
    (select 'OK '||count(*) from pg_proc p where p.pronamespace = 'neighbors_private'::regnamespace and has_function_privilege('anon', p.oid, 'execute')), 'OK 0');
- perform t.expect('S6 aucune fonction exécutable par anon dans public',
-   (select 'OK '||coalesce(string_agg(p.proname, ','), '') from pg_proc p where p.pronamespace = 'public'::regnamespace and has_function_privilege('anon', p.oid, 'execute')), 'OK ');
+ perform t.expect('S6 la seule fonction exécutable par anon dans public est neighbors_public_events (v10)',
+   (select 'OK '||coalesce(string_agg(p.proname, ',' order by p.proname), '') from pg_proc p where p.pronamespace = 'public'::regnamespace and has_function_privilege('anon', p.oid, 'execute')), 'OK neighbors_public_events');   -- v10 : la seule fonction publique ouverte à anon
  perform t.expect('S6 fonctions publiques appelables par les connectés : la liste attendue, rien d''autre',
    (select 'OK '||string_agg(p.proname, ',' order by p.proname) from pg_proc p where p.pronamespace = 'public'::regnamespace and has_function_privilege('authenticated', p.oid, 'execute')),
-   'OK delete_my_account,neighbors_can_see_cell,neighbors_is_member,neighbors_is_organizer,neighbors_my_photo_count,neighbors_species_valid');
+   'OK delete_my_account,neighbors_can_see_cell,neighbors_is_member,neighbors_is_organizer,neighbors_my_photo_count,neighbors_public_events,neighbors_species_valid');   -- neighbors_public_events : v10 (liste publique restreinte, aussi ouverte à anon)
  perform t.expect('S6 aucune politique ne mentionne encore une fonction publique supprimée',
    (select 'OK '||count(*) from pg_policies where coalesce(qual, '') || coalesce(with_check, '') ~ 'public\.neighbors_(is_blocked|can_contact|can_see_user)'), 'OK 0');
 
