@@ -1,0 +1,36 @@
+# Relecture du parcours « Apprendre à jardiner »
+
+Contenu à relire par un jardinier ou un formateur avant diffusion large. Les 14 leçons sont rédigées d'après des savoirs de jardinage courants et des principes de jardinage écologique : aucune citation précise, aucun lien, aucun nom de structure, aucun montant d'aide. Les thèmes et leur ordre s'inspirent seulement de programmes publics de formation (démarrer un jardin, le sol, la fertilité et le compost, les rotations, le semis et la plantation, l'entretien, la santé du jardin, l'été et l'eau). Les faits n'ont pas été revérifiés en ligne pour cette version.
+
+Données : `src/data/lecons/` (types dans `types.ts`, leçons dans `comprendre.ts`, `preparer.ts`, `cultiver.ts` et `vivant.ts`, export dans `index.ts`, tests dans `lecons.test.ts`). Règles appliquées : phrases de 20 mots au plus, 3 questions par leçon (ton encourageant, jamais « faux »), aucune dose chiffrée, aucun produit chimique, aucune règle légale précise, formules prudentes (« souvent », « en général »), pas de jargon (« permaculture » et « matières vertes (fraîches) / brunes (sèches) » expliquées au premier emploi de chaque leçon). Mois valables pour le nord et le centre de la France.
+
+| id | Titre | Niveau | Points à vérifier |
+| --- | --- | --- | --- |
+| observer-jardin | Observer son jardin et le soleil | Comprendre | « Six à huit heures de soleil direct » pour une tomate ; laitues, épinards et persil « souvent » à mi-ombre ; ombre d'hiver plus longue (soleil bas). |
+| connaitre-sol | Connaître son sol | Comprendre | Test du boudin (même logique que `soilTest.ts` : pas de boule = sableux, boudin qui casse = limoneux, anneau = argileux) ; calcaire cité sans promesse (« peut en contenir », hortensia qui jaunit « souvent ») ; analyse en laboratoire seulement mentionnée. |
+| climat-gelees | Le climat et les gelées de chez soi | Comprendre | Saints de glace (11, 12 et 13 mai) présentés comme un repère, pas une règle ; gel possible « en avril, parfois jusqu'à la mi-mai » ; renvoi au Sud et au littoral, plus précoces. |
+| organiser-jardin | Organiser son jardin | Préparer | Zones autour de la maison ; planches « d'environ un mètre vingt » (accès depuis les bords) ; grandes plantes au nord ; distance au voisin : renvoi à la mairie, aucune règle chiffrée. |
+| nourrir-sol | Nourrir le sol | Préparer | Vert (frais) / brun (sec) ; carton brut en matière brune ; engrais verts (phacélie) coupés avant les graines ; déchets à éviter ; phrase générique sur l'aide des collectivités (composteur, broyeur), sans montant ni nom. |
+| eau-jardin | L'eau au jardin | Préparer | Arrosage tôt le matin ou en fin de journée ; arroser au pied, rarement et copieusement ; cuve : eau « pas potable », règles locales et restrictions : renvoi à la mairie. |
+| semer-planter | Semer et planter | Cultiver | Profondeur « deux à trois fois la taille de la graine » (le sachet prime) ; petites graines à peine couvertes ; plantes frileuses après les Saints de glace ; racines nues de novembre à mars hors gel. |
+| entretenir | Entretenir sans produit | Cultiver | Arracher jeunes, biner « sur quelques centimètres », paillage ou carton brun sans encre ; ortie conservée dans un coin ; pas de racines envahissantes ni d'herbes en graines au compost. |
+| rotation-associations | Rotation et associations | Cultiver | « Trois ou quatre ans » avant de remettre la même famille (cohérent avec `engine/rotation.ts`) ; pois et haricots « souvent » bénéfiques à la suite ; associations citées seulement : carotte-poireau, tomate-basilic, œillet d'Inde et capucine au potager (effet variable, mention de prudence). |
+| tailler-debuter | Tailler pour débuter | Cultiver | Pommier et poirier : fin d'hiver hors gel (+ taille en vert en été) ; cerisier, abricotier, prunier, mirabellier : après récolte, en été, jamais en hiver ; coupe en biseau au-dessus d'un bourgeon ; haies hors période de nid (formulé « printemps et début d'été », sans dates légales). |
+| biodiversite | Accueillir la vie au jardin | Un jardin vivant | Haie variée (aubépine, sureau noir, prunellier) ; fleurs utiles aux abeilles ; hôtel à insectes présenté comme un abri « qui peut offrir des cachettes », non indispensable, résultat non garanti ; bois non traité, trous lisses, emplacement abrité au soleil du matin. |
+| sante-jardin | La santé du jardin | Un jardin vivant | Gestes sans produit d'abord (jet d'eau, ramassage des limaces, feuille malade retirée) ; alliés (coccinelles, mésanges) ; plantes très malades hors du compost ; renvoi au guide de l'appli. |
+| permaculture-six-idees | La permaculture en six idées simples | Un jardin vivant | Six idées : observer, utiliser les ressources, sol couvert, diversifier, peu de déchets, petits pas ; « jardiner en imitant la nature » comme définition courte (à confirmer par un formateur). |
+| jardin-saisons | Le jardin au fil des saisons | Un jardin vivant | Gestes par saison (nord et centre) ; renvoi à « À faire » et au calendrier de l'année ; suivre la météo autant que le calendrier. |
+
+Boutons « À essayer » (ids du registre `src/lib/features.ts`) : `ensoleillement`, `test-sol`, `infos-terrain`, `carte`, `conseils-compost-eau`, `meteo`, `semer-mois`, `a-faire`, `rotation-potager`, `catalogue`, `ajouter-plante`, `guide-ravageurs`, `journal-jardin`, `calendrier` (vérifiés par le test).
+
+## Points sensibles à valider
+
+- **Taille des fruits à noyau** : la leçon dit « après la récolte, en été, jamais en hiver » (cerisier, abricotier, prunier, mirabellier) et « fin d'hiver hors gel » pour pommier et poirier. Cohérent avec les règles de l'appli ; à confirmer pour les régions très humides ou très chaudes.
+- **Mois selon la région** : tous les mois sont valables pour le nord et le centre de la France ; plus précoces dans le Sud, plus tardifs en montagne. Les Saints de glace restent un repère, jamais une garantie.
+- **Hôtel à insectes** : aucune promesse (« peut offrir », « n'est pas indispensable », « résultat non garanti »). Certains jardiniers jugent son effet limité ; vérifier que le ton reste neutre. Bois non traité et trous lisses sont des précautions courantes.
+- **Compost et déchets à éviter** : la leçon est volontairement courte (viande, poisson, plantes malades) ; les consignes varient selon les collectivités. La phrase sur les aides à l'achat d'un composteur ou d'un broyeur est générique (« renseignez-vous auprès de votre commune »), sans nom de structure ni montant.
+- **Eau de pluie** : aucune règle légale ; « pas potable » et renvoi à la mairie pour l'installation d'une cuve et les restrictions d'arrosage. Vérifier qu'aucune phrase ne laisse croire qu'une cuve est toujours autorisée.
+- **Haies et nidification** : « éviter la taille au printemps et au début de l'été » ; les dates précises et les règles locales ne sont pas citées (renvoi à la mairie).
+- **Distance aux limites du voisin** : aucune distance donnée ; renvoi à la mairie (voir aussi l'art. 671 dans l'appli).
+- **Définition de la permaculture** : formulation courte, à faire valider par un formateur.
+- **Pas d'écran de relecture** : dès que l'écran existe, y ajouter la mention « Contenu à relire par un jardinier ou un formateur » tant que ce tableau n'est pas validé.

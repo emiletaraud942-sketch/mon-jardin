@@ -1,0 +1,135 @@
+import type { Lecon } from './types'
+
+const SOURCE = 'Savoirs de jardinage courants ; principes de jardinage écologique'
+
+export const PREPARER: Lecon[] = [
+  {
+    id: 'organiser-jardin',
+    niveau: 'preparer',
+    ordre: 4,
+    titre: 'Organiser son jardin',
+    minutes: 4,
+    objectif: 'Placer chaque coin du jardin selon l’usage que vous en avez, pour moins vous fatiguer.',
+    points: [
+      'Dans une démarche de permaculture (jardiner en imitant la nature), on organise le jardin par zones.',
+      'Près de la maison, mettez ce que vous visitez tous les jours : herbes aromatiques, salades, fraises.',
+      'Un peu plus loin, installez le potager ; plus loin encore, le verger, les haies et le coin sauvage.',
+      'Prévoyez des chemins pour ne pas piétiner la terre : des planches d’environ un mètre vingt se travaillent depuis les bords.',
+      'Placez les grandes plantes au nord du potager, pour qu’elles ne fassent pas d’ombre aux petites.',
+      'Les haies et les grands arbres protègent du vent, mais leur ombre grandit avec les années : prévoyez large.',
+      'Gardez de la place pour le compost, un point d’eau et un abri à outils, près de la maison.',
+    ],
+    essayer: { fonction: 'carte', libelle: 'Regarder mon terrain sur la carte' },
+    quiz: [
+      {
+        question: 'Que placer le plus près de la maison ?',
+        choix: ['Ce que l’on cueille tous les jours, comme les herbes', 'Le tas de bois', 'Le grand noyer'],
+        bonne: 0,
+        explication: 'Oui : ce que l’on visite souvent doit rester à portée de main.',
+      },
+      {
+        question: 'Où mettre les grandes plantes, comme le maïs ou les haricots grimpants ?',
+        choix: ['Au sud du potager', 'Au nord du potager', 'Au milieu des laitues'],
+        bonne: 1,
+        explication: 'Exact : au nord, leur ombre ne cache pas les petites plantes.',
+      },
+      {
+        question: 'Pourquoi prévoir des chemins dans le potager ?',
+        choix: ['Pour ne pas tasser la terre où poussent les plantes', 'Pour avoir moins de plantes', 'Pour que l’eau stagne'],
+        bonne: 0,
+        explication: 'Bravo : une terre piétinée se tasse et les racines y poussent moins bien.',
+      },
+    ],
+    plusLoin: ['observer-jardin', 'biodiversite'],
+    planteIds: ['mais', 'haricot-grimpant'],
+    attention: 'Pour la distance entre vos plantations et la limite du voisin, renseignez-vous auprès de votre mairie.',
+    source: SOURCE,
+  },
+  {
+    id: 'nourrir-sol',
+    niveau: 'preparer',
+    ordre: 5,
+    titre: 'Nourrir le sol',
+    minutes: 5,
+    objectif: 'Nourrir le sol avec du compost, du paillage et des engrais verts plutôt qu’avec des produits.',
+    points: [
+      'Un sol vivant est plein de vers, de champignons et de petits êtres qui nourrissent les plantes.',
+      'Le compost transforme les déchets en terreau. Il mélange des matières vertes (fraîches), comme la tonte et les épluchures.',
+      'Ajoutez des matières brunes (sèches), comme les feuilles mortes, les brindilles et le carton brut.',
+      'Le paillage (une couche de paille, de feuilles ou de tonte séchée) couvre le sol et garde son humidité.',
+      'Les engrais verts (plantes semées pour nourrir le sol), comme la phacélie, couvrent une planche libre.',
+      'On les coupe avant la formation des graines, puis on les laisse sur place en paillage.',
+      'Un compost mûr sent la forêt et ressemble à du terreau : on l’étale en couche mince au printemps.',
+    ],
+    essayer: { fonction: 'conseils-compost-eau', libelle: 'Lire les conseils sur le compost' },
+    quiz: [
+      {
+        question: 'La tonte de pelouse fraîche est une matière…',
+        choix: ['Brune (sèche)', 'Verte (fraîche)', 'Jamais utile au jardin'],
+        bonne: 1,
+        explication: 'Oui, la tonte fraîche est verte. Les feuilles mortes sèches sont brunes.',
+      },
+      {
+        question: 'À quoi sert un engrais vert ?',
+        choix: ['À nourrir et protéger le sol', 'À éloigner les limaces', 'À colorer les fleurs'],
+        bonne: 0,
+        explication: 'Bravo : ses feuilles et ses racines couvrent le sol et le nourrissent quand on les laisse sur place.',
+      },
+      {
+        question: 'Que vaut-il mieux éviter de mettre au compost ?',
+        choix: ['Les épluchures de légumes', 'Les plantes malades', 'Les feuilles mortes'],
+        bonne: 1,
+        explication: 'Oui : les plantes malades peuvent garder leurs maladies, mieux vaut les écarter.',
+      },
+    ],
+    plusLoin: ['eau-jardin', 'entretenir'],
+    mois: [4, 5, 9, 10],
+    planteIds: ['phacelie'],
+    attention:
+      'Évitez au compost la viande, le poisson et les plantes malades. Certaines collectivités aident à acheter un composteur ou un broyeur : renseignez-vous auprès de votre commune.',
+    source: SOURCE,
+  },
+  {
+    id: 'eau-jardin',
+    niveau: 'preparer',
+    ordre: 6,
+    titre: 'L’eau au jardin',
+    minutes: 4,
+    objectif: 'Arroser moins et mieux : garder l’eau dans le sol, récupérer la pluie, arroser au bon moment.',
+    points: [
+      'Le meilleur réservoir d’eau, c’est le sol : un sol riche en compost et couvert garde mieux la pluie.',
+      'Un paillage épais limite l’évaporation : la terre reste fraîche et vous arrosez moins souvent.',
+      'Une cuve avec couvercle récupère l’eau du toit. Cette eau sert à l’arrosage, elle n’est pas potable.',
+      'Choisissez des plantes adaptées à votre région et à votre sol : elles demandent moins d’eau.',
+      'Arrosez tôt le matin ou en fin de journée, quand l’eau s’évapore moins.',
+      'Arrosez au pied, sans mouiller les feuilles, copieusement mais rarement : les racines vont chercher l’eau plus profond.',
+      'Un binage (griffer la terre en surface) casse la croûte et aide l’eau à pénétrer.',
+    ],
+    essayer: { fonction: 'meteo', libelle: 'Voir la météo des 7 jours' },
+    quiz: [
+      {
+        question: 'Quel est un bon moment pour arroser en été ?',
+        choix: ['En plein midi', 'Tôt le matin', 'À toute heure, c’est pareil'],
+        bonne: 1,
+        explication: 'Oui : le matin, la chaleur est basse et l’eau profite mieux aux racines.',
+      },
+      {
+        question: 'Que fait un paillage épais ?',
+        choix: ['Il garde la terre fraîche plus longtemps', 'Il fait sécher le sol plus vite', 'Il ne sert qu’à décorer'],
+        bonne: 0,
+        explication: 'Exact : il freine l’évaporation, donc vous arrosez moins souvent.',
+      },
+      {
+        question: 'À quoi peut servir l’eau de pluie d’une cuve ?',
+        choix: ['À arroser le jardin', 'À boire', 'À cuisiner'],
+        bonne: 0,
+        explication: 'Oui, c’est son usage le plus simple. Elle n’est pas potable.',
+      },
+    ],
+    plusLoin: ['nourrir-sol', 'entretenir'],
+    mois: [5, 6, 7, 8, 9],
+    attention:
+      'Pour installer une cuve ou connaître les règles sur l’eau de pluie, demandez à votre mairie. En période de sécheresse, des restrictions d’arrosage peuvent s’appliquer.',
+    source: SOURCE,
+  },
+]
