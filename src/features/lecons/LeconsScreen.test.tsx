@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -16,6 +18,21 @@ const sheet = (id: string, done = false) =>
 const list = (done: string[]) => renderToStaticMarkup(createElement(LeconsList, { done, onOpen: noop }))
 const screen = (initialId?: string) => renderToStaticMarkup(createElement(LeconsScreen, { initialId }))
 const ids = LECON_OUTLINE.map((l) => l.id)
+
+describe('leçons : remettre à zéro', () => {
+  const withReset = (done: string[]) => renderToStaticMarkup(createElement(LeconsList, { done, onOpen: noop, onReset: noop }))
+  it('le bouton n’apparaît que s’il y a un suivi à effacer et une action branchée', () => {
+    expect(withReset(ids.slice(0, 2))).toContain('Remettre à zéro mon suivi')
+    expect(withReset(ids.slice(0, 2))).toContain('data-lecon-reset')
+    expect(withReset([])).not.toContain('Remettre à zéro')
+    expect(list(ids.slice(0, 2))).not.toContain('Remettre à zéro')
+  })
+  it('l’écran branche l’action et propose « Annuler » (30 s) pour remettre les coches', () => {
+    const src = readFileSync(join(__dirname, 'LeconsScreen.tsx'), 'utf8')
+    expect(src).toMatch(/onReset=\{reset\}/)
+    expect(src).toMatch(/resetProgress\(\)[\s\S]{0,160}actionLabel: 'Annuler'[\s\S]{0,80}restoreProgress\(before\)/)
+  })
+})
 
 describe('leçons : liste', () => {
   it('au départ : « Aucune leçon terminée », « Commencer la leçon 1 », 14 lignes en 4 niveaux', () => {

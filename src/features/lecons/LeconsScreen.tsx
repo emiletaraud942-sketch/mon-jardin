@@ -6,11 +6,12 @@ import { goHome } from '../../lib/goHome'
 import { useInertBehind } from '../../lib/inert'
 import { FEATURES } from '../../lib/features'
 import { leconsOpen } from '../../lib/overlays'
+import { showToast } from '../../lib/toast'
 import { openSpecies, useBackLayer } from '../../lib/ui'
 import { RUN_DELAY_MS } from '../aide/ToutFaire'
 import { monthsText } from '../ravageurs/filter'
 import { LeconIcon } from './LeconIcon'
-import { doneSentence, isDone, markDone, nextLesson, percentDone, unmarkDone } from './progress'
+import { doneSentence, isDone, markDone, nextLesson, percentDone, resetProgress, restoreProgress, unmarkDone } from './progress'
 import { Quiz } from './Quiz'
 import { useLessonsDone } from './useDone'
 import '../../styles/novice-pages.css'
@@ -178,7 +179,7 @@ export function LeconSheet({
 }
 
 /** Progression, « Reprendre » et les leçons groupées par niveau. */
-export function LeconsList({ done, onOpen }: { done: string[]; onOpen: (id: string) => void }) {
+export function LeconsList({ done, onOpen, onReset }: { done: string[]; onOpen: (id: string) => void; onReset?: () => void }) {
   const next = nextLesson(done)
   const percent = percentDone(done)
   const groups = NIVEAUX.map((n) => ({ n, list: leconsDuNiveau(n.id) }))
@@ -234,6 +235,14 @@ export function LeconsList({ done, onOpen }: { done: string[]; onOpen: (id: stri
           </ul>
         </section>
       ))}
+
+      {onReset && done.length > 0 && (
+        <p className="lecon-reset">
+          <button type="button" className="btn ghost lecon-btn" data-lecon-reset onClick={onReset}>
+            Remettre à zéro mon suivi
+          </button>
+        </p>
+      )}
     </>
   )
 }
@@ -245,6 +254,13 @@ export default function LeconsScreen({ initialId }: { initialId?: string }) {
   const [openId, setOpenId] = useState<string | undefined>(() => (initialId && getLecon(initialId) ? initialId : undefined))
   const done = useLessonsDone()
   const current = openId ? getLecon(openId) : undefined
+
+  /** Efface les coches ; le message garde 30 s un « Annuler » qui les remet. Le contenu des leçons ne change pas. */
+  const reset = () => {
+    const before = [...done]
+    resetProgress()
+    showToast({ message: 'Votre suivi est remis à zéro.', actionLabel: 'Annuler', onAction: () => restoreProgress(before) })
+  }
 
   const back = () => (current ? setOpenId(undefined) : close())
   const backRef = useRef(back)
@@ -274,7 +290,7 @@ export default function LeconsScreen({ initialId }: { initialId?: string }) {
       </header>
 
       <div className="tf-body ennui-body" hidden={!!current}>
-        <LeconsList done={done} onOpen={setOpenId} />
+        <LeconsList done={done} onOpen={setOpenId} onReset={reset} />
         <p className="small muted ennui-note">{NOTE_CONTENU}</p>
       </div>
 

@@ -100,6 +100,13 @@ export function resetProgress() {
   write([])
 }
 
+/** Remet un suivi gardé avant « Remettre à zéro » (annulation) ; les identifiants inconnus sont ignorés. */
+export function restoreProgress(ids: readonly string[]): string[] {
+  const next = sanitizeDone([...ids])
+  write(next)
+  return next
+}
+
 export const countDone = (done: readonly string[]): number => sanitizeDone(done).length
 export const totalLessons = (): number => LECON_OUTLINE.length
 

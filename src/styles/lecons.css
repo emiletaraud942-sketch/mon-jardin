@@ -50,6 +50,12 @@
 .lecon-resume {
   align-self: stretch;
 }
+/* « Remettre à zéro mon suivi » : discret, en fin de liste (il ne touche pas au contenu des leçons). */
+.lecon-reset {
+  display: flex;
+  justify-content: center;
+  margin: 18px 0 4px;
+}
 .lecon-all {
   margin: 0;
   color: var(--text);

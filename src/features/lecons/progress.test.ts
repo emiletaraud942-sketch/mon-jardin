@@ -12,6 +12,7 @@ import {
   percentDone,
   readDone,
   resetProgress,
+  restoreProgress,
   sanitizeDone,
   subscribeDone,
   totalLessons,
@@ -100,6 +101,15 @@ describe('marquer, rouvrir, effacer', () => {
     resetProgress()
     expect(readDone()).toEqual([])
     expect(isDone(readDone(), 'observer-jardin')).toBe(false)
+  })
+  it('restoreProgress remet le suivi gardé avant « Remettre à zéro » (annulation), sans identifiant inconnu', () => {
+    markDone('observer-jardin')
+    markDone('connaitre-sol')
+    const before = [...readDone()]
+    resetProgress()
+    expect(readDone()).toEqual([])
+    expect(restoreProgress([...before, 'inconnue'])).toEqual(before)
+    expect(readDone()).toEqual(before)
   })
   it('les abonnés sont prévenus à chaque changement, puis plus après désabonnement', () => {
     const l = vi.fn()
