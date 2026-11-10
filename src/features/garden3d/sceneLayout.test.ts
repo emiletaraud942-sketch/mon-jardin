@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { gotoMapSize } from './WalkUI'
+import { essentialsClipped } from './tightPanel'
 
 // Lot 5A : à 853×533 (ordinateur à 150 %) la scène ne fait que ≈ 290 px ; ses commandes ne doivent ni déborder ni se recouvrir,
 // et le panneau « Aller à » de la promenade ne doit jamais se poser sur « Recentrer ».
@@ -138,5 +139,56 @@ describe('promenade : « Aller à » ne recouvre jamais « Recentrer » ni les a
     expect(gotoMapSize(280, 700)).toBe(216)
     expect(gotoMapSize(200, 700)).toBe(180)
     expect(gotoMapSize(1280, 800)).toBe(260)
+  })
+
+  // Lot 8A : à 360×740 en « Très grand » + « Grandes touches », le panneau « Heure et réglages » n'avait que 91 px sur 248 (barre poussée sous la feuille du bas).
+  describe('panneau « Heure et réglages » en portrait étroit', () => {
+    const tight = containerBlock(css, '(max-width: 479px) and (orientation: portrait)')
+    it('la règle se décide sur la scène (largeur et orientation, pas de seuil en hauteur : la scène fait 446 px à 360×740) et non sur la fenêtre', () => {
+      expect(tight).not.toBe('')
+      expect(css).not.toMatch(/@container \(max-width: 479px\) and \(min-height/)
+    })
+    it('sans place, la date, « Voir l’ensoleillement » et la boussole s’effacent ; la mention des arbres IGN reste', () => {
+      expect(tight).toMatch(/\.g3d-root\[data-tight\] \.g3d-info[\s\S]*\.g3d-sunbtn[\s\S]*\.g3d-tools\s*\{[^}]*display:\s*none/)
+      expect(tight).not.toMatch(/g3d-attrib/)
+    })
+    it('l’heure puis les saisons passent avant « Animer » et « Réglages 3D » ; le reste (jour, qualité, années) défile en interne', () => {
+      expect(tight).toMatch(/\.g3d-hourrow\s*\{[^}]*display:\s*contents/)
+      expect(tight).toMatch(/\.g3d-hourfield\s*\{[^}]*order:\s*1/)
+      expect(tight).toMatch(/\[data-feat='saison'\]\s*\{[^}]*order:\s*2/)
+      expect(tight).toMatch(/\.g3d-btn--label\s*\{[^}]*order:\s*3/)
+      expect(tight).toMatch(/#g3d-time-panel > \*\s*\{[^}]*order:\s*4/)
+      expect(rule(css, '.g3d-panel')).toMatch(/overflow-y:\s*auto/)
+    })
+    it('le composant pose data-tight seulement quand les saisons seraient sous la ligne de défilement, en mesurant sans l’attribut, et le retire à la fermeture', () => {
+      const src = read('Garden3D.tsx')
+      expect(src).toMatch(/essentialsClipped\(panel\)/)
+      expect(src).toMatch(/removeAttribute\('data-tight'\)[\s\S]{0,80}essentialsClipped/)
+      expect(src).toMatch(/setAttribute\('data-tight', ''\)/)
+      expect(src).toMatch(/ro\.disconnect\(\)/)
+    })
+  })
+
+  describe('essentialsClipped', () => {
+    const fake = (opts: { panelBottom: number; seasonsBottom: number; scrollTop?: number; clientTop?: number; seasons?: boolean }) => {
+      const seasons = { getBoundingClientRect: () => ({ bottom: opts.seasonsBottom }) }
+      return {
+        scrollTop: opts.scrollTop ?? 0,
+        clientTop: opts.clientTop ?? 1,
+        getBoundingClientRect: () => ({ bottom: opts.panelBottom }),
+        querySelector: () => (opts.seasons === false ? null : seasons),
+      } as unknown as HTMLElement
+    }
+    it('vrai si les saisons dépassent le bas visible du panneau', () => {
+      expect(essentialsClipped(fake({ panelBottom: 368, seasonsBottom: 520 }))).toBe(true)
+    })
+    it('faux si elles tiennent (à la bordure près), ou s’il n’y a pas de saisons', () => {
+      expect(essentialsClipped(fake({ panelBottom: 368, seasonsBottom: 367 }))).toBe(false)
+      expect(essentialsClipped(fake({ panelBottom: 368, seasonsBottom: 999, seasons: false }))).toBe(false)
+    })
+    it('tient compte du défilement déjà fait (position naturelle = position + défilement)', () => {
+      expect(essentialsClipped(fake({ panelBottom: 368, seasonsBottom: 300, scrollTop: 120 }))).toBe(true)
+      expect(essentialsClipped(fake({ panelBottom: 368, seasonsBottom: 300, scrollTop: 40 }))).toBe(false)
+    })
   })
 })

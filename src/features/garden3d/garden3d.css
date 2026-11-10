@@ -930,3 +930,37 @@
     order: 3;
   }
 }
+
+/* Scène étroite et en portrait (téléphone ; la scène fait 446 px de haut à 360×740, donc pas de seuil en hauteur) : le panneau « Heure et réglages » doit montrer l'heure ET les saisons sans défiler.
+   Le composant pose `data-tight` quand elles seraient sous la ligne de défilement (mesure faite sur la mise en page « au naturel », voir `tightPanel.ts`) :
+   - la date, « Voir l'ensoleillement » et la boussole s'effacent tant que le panneau est ouvert (la mention des arbres IGN reste) ;
+   - le panneau prend la place libérée (il se plafonne tout seul à l'espace entre le haut et la barre Dessus / Perspective / Se promener) ;
+   - les saisons passent juste sous l'heure ; « Animer » et « Réglages 3D » suivent sur une rangée, puis le reste défile en interne. */
+@container (max-width: 479px) and (orientation: portrait) {
+  .g3d-root[data-tight] .g3d-info,
+  .g3d-root[data-tight] .g3d-sunbtn,
+  .g3d-root[data-tight] .g3d-top:not(.g3d-top--walk) .g3d-tools {
+    display: none;
+  }
+  .g3d-root[data-tight] #g3d-time-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .g3d-root[data-tight] #g3d-time-panel > * {
+    grid-column: 1 / -1;
+    order: 4;
+  }
+  .g3d-root[data-tight] #g3d-time-panel > .g3d-hourrow {
+    display: contents;
+  }
+  .g3d-root[data-tight] #g3d-time-panel .g3d-hourrow > .g3d-hourfield {
+    grid-column: 1 / -1;
+    order: 1;
+  }
+  .g3d-root[data-tight] #g3d-time-panel > [data-feat='saison'] {
+    order: 2;
+  }
+  .g3d-root[data-tight] #g3d-time-panel .g3d-hourrow > .g3d-btn--label {
+    grid-column: auto;
+    order: 3;
+  }
+}

@@ -1,6 +1,6 @@
 // Vue 3D du jardin : relief + orthophoto, bâtiments, plantes, soleil réel et ombres.
 // Repère : x = est, y = nord (m) ; Three.js : X = est, Y = haut, Z = -nord.
-import { Component, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Component, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Canvas, type RootState } from '@react-three/fiber'
 import type { Garden, Plant, Species, TerrainGrid, XY } from '../../types'
 import { Scene } from './Scene'
@@ -15,6 +15,7 @@ import { createWalkShared } from './walk'
 import { disposeNeighborTrees } from './NeighborTrees'
 import { disposeContactShadows } from './ContactShadows'
 import { isTouchDevice } from './touch'
+import { essentialsClipped } from './tightPanel'
 import type { DetectedTree } from '../../lib/lidar'
 import { LIDAR_ATTRIBUTION } from '../../lib/lidar'
 import { GotoPanel, Joystick, MiniMap, WalkButtons } from './WalkUI'
@@ -378,6 +379,31 @@ export function Garden3D({
   // Sur petit écran (ou écran peu haut), le panneau démarre replié : seul le curseur d'heure reste visible
   // et le jardin dispose de plus de place.
   const [collapsed, setCollapsed] = useState(() => typeof window !== 'undefined' && (window.innerWidth < 480 || window.innerHeight < 900))
+
+  // Panneau « Heure et réglages » sur scène étroite (téléphone en portrait) : si l'heure et les saisons ne tiennent pas sans défiler, `data-tight` laisse
+  // la place aux commandes du haut (date, ensoleillement, boussole : voir la CSS). On mesure toujours la mise en page « au naturel » (attribut retiré).
+  useLayoutEffect(() => {
+    const root = rootRef.current
+    const panel = panelOpen && !walking ? root?.querySelector<HTMLElement>('#g3d-time-panel') : null
+    if (!root) return
+    if (!panel) {
+      root.removeAttribute('data-tight')
+      return
+    }
+    const measure = () => {
+      root.removeAttribute('data-tight')
+      if (essentialsClipped(panel)) root.setAttribute('data-tight', '')
+    }
+    measure()
+    if (typeof ResizeObserver === 'undefined') return () => root.removeAttribute('data-tight')
+    const ro = new ResizeObserver(measure)
+    ro.observe(root)
+    ro.observe(panel)
+    return () => {
+      ro.disconnect()
+      root.removeAttribute('data-tight')
+    }
+  }, [panelOpen, walking, collapsed])
   const compassRef = useRef<HTMLDivElement>(null)
   const hourRef = useRef(hour)
   const hourStart = useRef(hour)
