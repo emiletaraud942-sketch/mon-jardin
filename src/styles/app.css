@@ -1574,19 +1574,24 @@ label.field > span {
   flex-wrap: wrap;
 }
 /* Barre d'outils : « Vue photo », « Vue plan » et « Options de la carte » ont un mot court (`.lbl-short`, nom accessible inchangé).
-   Colonne étroite en unités de texte (rem : elle suit la taille choisie) : les mots courts gardent la barre sur deux rangées au plus
-   (1024 px de large en « Grand » ou « Très grand » : trois rangées avant). */
+   Les mots longs ne restent que si leurs trois boutons tiennent sur UNE rangée (Annuler et Rétablir font la seconde) : le test se fait sur la largeur
+   réelle de la colonne, en unités de texte (rem : elle suit la taille choisie), sinon la barre passait sur trois rangées. */
 .map-toolbar .lbl-short {
   display: none;
 }
-@container maptop (max-width: 19rem) {
-  .map-toolbar .lbl-long {
-    display: none;
-  }
-  .map-toolbar .lbl-short {
-    display: inline;
+/* Téléphone : la barre laisse 56 px aux boutons + et −. Les trois boutons longs demandent 17,3 rem + 95 px (mesuré en Normal, Grand et Très grand),
+   donc la colonne doit mesurer 17,5 rem + 95 px + 56 px + 4 px de marge ; en dessous, mots courts (360 à 412 px : toujours). */
+@media (max-width: 760px) {
+  @container maptop (max-width: calc(17.5rem + 155px)) {
+    .map-toolbar .lbl-long {
+      display: none;
+    }
+    .map-toolbar .lbl-short {
+      display: inline;
+    }
   }
 }
+/* Ordinateur : la barre prend toute la colonne ; sous 24 rem de large (1024 px de large en « Grand » ou « Très grand » : trois rangées avant), mots courts. */
 @media (min-width: 761px) {
   @container maptop (max-width: 24rem) {
     .map-toolbar .lbl-long {

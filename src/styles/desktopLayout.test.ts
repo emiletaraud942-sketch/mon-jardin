@@ -172,13 +172,52 @@ describe('barre d’outils de la carte : deux rangées au plus (mots courts)', (
   it('la colonne d’outils est un conteneur de largeur ; les mots courts se décident en rem (ils suivent la taille du texte)', () => {
     expect(app).toMatch(/\.map-top\s*\{[^}]*container:\s*maptop\s*\/\s*inline-size/)
     expect(app).toMatch(/\.map-toolbar \.lbl-short\s*\{\s*display:\s*none/)
-    expect(app).toMatch(/@container maptop \(max-width:\s*19rem\)\s*\{\s*\.map-toolbar \.lbl-long\s*\{\s*display:\s*none/)
+    expect(mediaBlock(app, '(max-width: 760px)')).toMatch(/@container maptop \(max-width:\s*calc\(17\.5rem \+ 155px\)\)\s*\{\s*\.map-toolbar \.lbl-long\s*\{\s*display:\s*none/)
     expect(mediaBlock(app, '(min-width: 761px)')).toMatch(/@container maptop \(max-width:\s*24rem\)\s*\{\s*\.map-toolbar \.lbl-long\s*\{\s*display:\s*none/)
   })
   it('la barre passe de 3 rangées à 2 : 24 rem couvrent la colonne de 413 px à 1024 px en « Grand » (19 px de base)', () => {
     const column = 1024 - 0.19 * 1024 - 0.33 * 1024 - 80 // menu, panneau de droite, marge des boutons + et −
     expect(column / 19).toBeLessThan(24)
     expect(column / 16).toBeGreaterThan(24) // texte normal : mots longs gardés
+  })
+})
+
+// Lot 8B : à 360 px en texte Normal la barre faisait 3 rangées (seuil de 19 rem < colonne de 21 rem, alors que la barre est 56 px plus étroite).
+describe('barre d’outils sur téléphone : le seuil des mots courts suit la largeur réelle de la barre', () => {
+  const app = css('app.css')
+  const nav = css('mobile-nav.css')
+  // Mesuré (Normal 16 px, Grand 17,8 px, Très grand 20,6 px) : trois boutons longs + écarts = 17,3 rem + 95 px sur une rangée.
+  const longRow = (rem: number) => 17.3 * rem + 95
+  const threshold = (rem: number) => 17.5 * rem + 155 // colonne = barre + 56 px réservés aux boutons + et −, + 4 px de marge
+  const REM = [16, 17.8, 20.6]
+  it('360, 390 et 412 px : colonne de 336, 366 et 388 px, toujours sous le seuil, donc mots courts à toute taille de texte', () => {
+    for (const rem of REM) for (const column of [336, 366, 388]) expect(column).toBeLessThan(threshold(rem))
+  })
+  it('mots courts : trois boutons et Annuler/Rétablir (+ 12 px de marge de la barre) tiennent dans les 280 px de la barre à 360 px', () => {
+    for (const [short, history] of [[230, 212], [245, 224], [269, 243]]) {
+      expect(short).toBeLessThanOrEqual(280)
+      expect(history + 12).toBeLessThanOrEqual(280)
+    }
+  })
+  it('là où les mots longs tenaient déjà sur une rangée, ils sont gardés (téléphone large, 600 px)', () => {
+    for (const rem of REM) {
+      const column = 600 - 24
+      expect(column).toBeGreaterThanOrEqual(threshold(rem))
+      expect(column - 56).toBeGreaterThanOrEqual(longRow(rem))
+    }
+  })
+  it('seuil juste : colonne plus petite que le seuil = les trois boutons longs ne tiennent pas (jamais 3 rangées avec des mots longs)', () => {
+    for (const rem of REM) expect(threshold(rem) - 56).toBeGreaterThanOrEqual(longRow(rem))
+  })
+  it('360 à 430 px : écarts resserrés (colonne, barre, mention) et 2 px d’air sous la colonne, au lieu de 6 px', () => {
+    const block = mediaBlock(nav, '(max-width: 430px)')
+    expect(block).toMatch(/\.map-top\s*\{\s*gap:\s*2px/)
+    expect(block).toMatch(/\.map-top > \.map-toolbar\s*\{\s*gap:\s*4px;\s*padding:\s*4px/)
+    expect(block).toMatch(/\.map-top \.map-photo-note\s*\{\s*padding-block:\s*2px/)
+    expect(block).toMatch(/\.app\[data-tab='carte'\]:has\(\.add-fab\):not\(:has\(#map-options\)\) \.map-top\s*\{[^}]*max-height:\s*calc\(100%\s*-\s*12px\s*-\s*132px\s*-\s*var\(--btn-h\)\s*-\s*2px\)/)
+    // Rien n'est retiré : les avis restent rendus (la mention n'est jamais masquée à la place de l'écart).
+    expect(block).not.toMatch(/display:\s*none/)
+    expect(app).not.toMatch(/map-photo-note[^{]*\{[^}]*display:\s*none/)
   })
 })
 
