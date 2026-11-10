@@ -26,6 +26,7 @@ import { useBanner } from '../../lib/banners'
 import { plantSizeAt } from '../../engine/growth'
 import { canopyLook, seasonDate, seasonSummary, stateAtSeason, type SeasonChoice } from '../../engine/season'
 import { SeasonPicker } from '../../components/SeasonPicker'
+import { useIsMobile } from '../../components/useMedia'
 import type { Garden, LonLat, Plant, XY } from '../../types'
 import { GardenDataBanner } from '../settings/GardenDataBanner'
 import { plantName } from '../plants/PlantPanel'
@@ -157,6 +158,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
   const gridRef = useRef(gridOn)
   gridRef.current = gridOn
   const [beyondPhoto, setBeyondPhoto] = useState(false)
+  const mobileMap = useIsMobile()
   const loupeEl = useRef<HTMLDivElement>(null)
   const loupeCanvas = useRef<HTMLCanvasElement>(null)
   const gps = useGps(garden.center)
@@ -1030,6 +1032,31 @@ function MapViewInner({ garden }: { garden: Garden }) {
     }
   }
 
+  // Ordinateur : la mention reste en haut avec les autres avis quand le jardin est vide (l'invite est haute) ou quand les Options ou la légende sont ouvertes (la colonne descend jusqu'en bas) ;
+  // sinon elle est en bas de la carte. Elle ne se superpose ainsi à rien.
+  const noteInColumn = mobileMap || plants.length === 0 || optionsOpen || legendOpen
+  // Mention sur la photo et invite du jardin vide : en bas de la carte sur ordinateur (`map-foot`), dans la colonne du haut sur téléphone
+  // (la feuille du bas et « Ajouter une plante » les recouvraient ; dans la colonne, rien ne peut se superposer).
+  const photoNote =
+    beyondPhoto && base === 'ortho' && !schema ? (
+      <p className="map-photo-note small" role="note">
+        La photo n’est pas plus précise de plus près.
+      </p>
+    ) : null
+  // L'invite se cache tant que les Options ou la légende sont ouvertes : elle les recouvrait (ordinateur). « Ajouter une plante » reste dans le panneau de droite.
+  const emptyCard =
+    plants.length === 0 && !placingSpeciesId && !movingPlantId && !optionsOpen && !legendOpen ? (
+      <div className="floating map-empty">
+        <PlantScene size={72} className="map-empty-art" />
+        <p>
+          <strong>Votre jardin est vide.</strong> <span className="map-empty-more">Ajoutez votre première plante, puis touchez la carte là où elle pousse.</span>
+        </p>
+        <PlaceAction>
+          <Icon name="plus" /> Ajouter une plante au jardin
+        </PlaceAction>
+      </div>
+    ) : null
+
   return (
     <div className="workspace">
       <div className={'canvas-wrap map-wrap' + (placingSpeciesId || movingPlantId ? ' placing' : '')}>
@@ -1097,6 +1124,16 @@ function MapViewInner({ garden }: { garden: Garden }) {
               )}
             </div>
           )}
+          {/* Les avis (images absentes, données manquantes) viennent juste sous la barre d'outils : jamais repoussés sous les Options. Ordinateur : la mention sur la photo est en bas de la carte (`map-foot`), un seul avis reste ici. */}
+          <div className="map-chips">
+            {tileProblem && tileNoticeTurn && (
+              <div className="alert small map-notice" role="status">
+                Les images de la carte ne s’affichent pas. Elles reviendront dès que la connexion reviendra.
+              </div>
+            )}
+            {noteInColumn && photoNote}
+            <GardenDataBanner garden={garden} compact />
+          </div>
           {optionsOpen && !placingNow && (
             <div id="map-options" className="floating stack map-options" data-feat="map-options">
               <p className="small muted map-opt-intro">Recentrer, limites du terrain, saison, taille adulte, noms, légende.</p>
@@ -1158,20 +1195,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
               </li>
             </ul>
           )}
-          {/* Les petits avis se rangent côte à côte sur ordinateur (une rangée au lieu de trois). */}
-          <div className="map-chips">
-            {tileProblem && tileNoticeTurn && (
-              <div className="alert small map-notice" role="status">
-                Les images de la carte ne s’affichent pas. Elles reviendront dès que la connexion reviendra.
-              </div>
-            )}
-            {beyondPhoto && base === 'ortho' && !schema && (
-              <p className="map-photo-note small" role="note">
-                La photo n’est pas plus précise de plus près.
-              </p>
-            )}
-            <GardenDataBanner garden={garden} compact />
-          </div>
+          {mobileMap && emptyCard}
         </div>
         <div ref={el} className="map" data-feat="carte" />
         {hiddenCount > 0 && (
@@ -1179,16 +1203,11 @@ function MapViewInner({ garden }: { garden: Garden }) {
             Beaucoup de plantes dans la vue : {hiddenCount} ne sont pas atteignables au clavier ici. Zoomez, ou ouvrez la liste Mes plantes.
           </p>
         )}
-        {/* L'invite se cache tant que les Options ou la légende sont ouvertes : elle les recouvrait (ordinateur). « Ajouter une plante » reste dans le panneau de droite. */}
-        {plants.length === 0 && !placingSpeciesId && !movingPlantId && !optionsOpen && !legendOpen && (
-          <div className="floating map-empty">
-            <PlantScene size={72} className="map-empty-art" />
-            <p>
-              <strong>Votre jardin est vide.</strong> Ajoutez votre première plante, puis touchez la carte là où elle pousse.
-            </p>
-            <PlaceAction>
-              <Icon name="plus" /> Ajouter une plante au jardin
-            </PlaceAction>
+        {/* Le bas de la carte (ordinateur) : la mention sur la photo puis l'invite du jardin vide, l'une au-dessus de l'autre, au-dessus de l'échelle et de la consigne de placement. */}
+        {!mobileMap && ((!noteInColumn && photoNote) || emptyCard) && (
+          <div className="map-foot">
+            {!noteInColumn && photoNote}
+            {emptyCard}
           </div>
         )}
         {placingNow && aim && <div className="aim-cross" aria-hidden />}

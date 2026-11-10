@@ -83,8 +83,10 @@ describe('carte sur ordinateur : rien ne recouvre l’échelle ni l’attributio
   it('l’échelle et l’attribution remontent au-dessus de la consigne (préfixe .maplibregl-map)', () => {
     expect(desk).toMatch(/\.workspace \.maplibregl-map \.maplibregl-ctrl-bottom-left,\s*\.workspace \.maplibregl-map \.maplibregl-ctrl-bottom-right\s*\{[^}]*margin-bottom:\s*var\(--placing-h,\s*0px\)/)
   })
-  it('la carte d’invite du jardin vide est au-dessus de l’échelle', () => {
-    expect(desk).toMatch(/\.map-empty\s*\{[^}]*bottom:\s*48px/)
+  it('le bas de la carte (mention sur la photo, invite du jardin vide) est une colonne au-dessus de l’échelle et de la consigne', () => {
+    expect(desk).toMatch(/\.map-foot\s*\{[^}]*bottom:\s*calc\(44px\s*\+\s*var\(--placing-h,\s*0px\)\)[^}]*flex-direction:\s*column/)
+    expect(desk).toMatch(/\.map-foot > \*\s*\{[^}]*position:\s*static/)
+    expect(mediaBlock(facile, '(min-width: 761px) and (max-height: 820px)')).toMatch(/\.map-foot \.map-empty-art\s*\{[^}]*display:\s*none/)
   })
   it('la consigne de placement écrit sa hauteur dans --placing-h', () => {
     const banner = read('../features/map/GardenSide.tsx')
@@ -96,7 +98,15 @@ describe('carte sur ordinateur : rien ne recouvre l’échelle ni l’attributio
     expect(view.indexOf('className="map-top"')).toBeGreaterThan(0)
     expect(view.indexOf('className="map-top"')).toBeLessThan(view.indexOf('className="map" data-feat="carte"'))
   })
-  it('les petits avis se rangent côte à côte (une rangée)', () => {
+  it('la mention sur la photo ne s’empile plus avec les autres avis : en bas de la carte sur ordinateur, sous les outils sur téléphone', () => {
+    const view = read('../features/map/MapView.tsx')
+    // Une seule rangée d'avis en haut (images absentes, données manquantes) ; la mention est rendue dans `map-foot` sur ordinateur seulement.
+    expect(view).toMatch(/\{!mobileMap && \(\(!noteInColumn && photoNote\) \|\| emptyCard\) && \(\s*<div className="map-foot">/)
+    expect(view).toContain('{noteInColumn && photoNote}')
+    expect(view).toContain('const noteInColumn = mobileMap || plants.length === 0 || optionsOpen || legendOpen')
+    // Les avis viennent juste sous la barre d'outils, avant le panneau Options : jamais repoussés dans la partie qui défile.
+    expect(view.indexOf('className="map-chips"')).toBeGreaterThan(view.indexOf('className="floating row map-toolbar"'))
+    expect(view.indexOf('className="map-chips"')).toBeLessThan(view.indexOf('id="map-options"'))
     expect(desk).toMatch(/\.map-chips\s*\{[^}]*display:\s*flex/)
     expect(facile).toMatch(/\.map-chips\s*\{[^}]*display:\s*contents/)
   })
@@ -120,5 +130,31 @@ describe('écrans plein cadre : largeur de lecture', () => {
 describe('Grandes touches : curseurs de la 3D', () => {
   it('« Heure de la journée » fait 56 px', () => {
     expect(css('facile.css')).toMatch(/html\[data-big-taps\] \.g3d-hourfield input\[type='range'\][^{]*\{[^}]*height:\s*56px/)
+  })
+})
+
+describe('carte sur téléphone : la mention sur la photo reste lisible (360 px)', () => {
+  const nav = css('mobile-nav.css')
+  const phone = mediaBlock(nav, '(max-width: 760px)')
+  it('la colonne du haut s’arrête au-dessus de la feuille du bas (96 px) et de l’échelle, et prend toute la largeur', () => {
+    expect(nav).toMatch(/\.map-top\s*\{[^}]*right:\s*12px[^}]*max-height:\s*calc\(100%\s*-\s*12px\s*-\s*96px\s*-\s*32px\s*-\s*8px\)/)
+    expect(nav).toMatch(/\.app\.is-placing \.map-top\s*\{[^}]*max-height:\s*calc\(100%\s*-\s*24px\)/)
+  })
+  it('seuls les outils laissent la place des boutons + et − ; les avis prennent toute la largeur', () => {
+    expect(nav).toMatch(/\.map-top > \.map-toolbar,[^{]*\.map-top > \.season-note\s*\{[^}]*max-width:\s*calc\(100%\s*-\s*56px\)/)
+  })
+  it('l’invite du jardin vide est dans la colonne : plus rien ne la recouvre, ni elle la mention', () => {
+    expect(nav).toMatch(/\.map-top > \.map-empty\s*\{[^}]*width:\s*100%/)
+    const view = read('../features/map/MapView.tsx')
+    expect(view).toContain('{mobileMap && emptyCard}')
+  })
+  it('Options ouvertes : seul « Il manque… » se met de côté ; la mention sur la photo reste', () => {
+    expect(nav).toMatch(/\.app:has\(#map-options\) \.map-top :is\(\.data-chip, \.data-banner\)\s*\{[^}]*display:\s*none/)
+    expect(nav).not.toMatch(/map-photo-note\s*\{[^}]*display:\s*none/)
+  })
+  it('« Ajouter une plante » (carte) laisse la place des avis ; l’échelle suit la hauteur réelle de la consigne', () => {
+    expect(nav).toMatch(/\.app\[data-tab='carte'\] \.add-fab\s*\{[^}]*bottom:\s*132px/)
+    expect(nav).toMatch(/\.app\.is-placing \.workspace \.maplibregl-ctrl-bottom-left\s*\{[^}]*margin-bottom:\s*var\(--placing-h,\s*190px\)/)
+    expect(phone.length).toBeGreaterThan(0)
   })
 })

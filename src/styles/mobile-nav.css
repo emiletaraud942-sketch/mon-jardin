@@ -171,10 +171,7 @@
   /* L'attribution et l'échelle de la carte restent lisibles au-dessus de la consigne. */
   .app.is-placing .workspace .maplibregl-ctrl-bottom-right,
   .app.is-placing .workspace .maplibregl-ctrl-bottom-left {
-    margin-bottom: 190px;
-  }
-  .app.is-placing .map-top {
-    right: 68px;
+    margin-bottom: var(--placing-h, 190px); /* hauteur réelle de la consigne (placingReserve.ts), quelle que soit la taille du texte */
   }
 }
 
@@ -270,11 +267,71 @@
   }
 }
 
+/* ---------- Carte sur téléphone : la colonne du haut s'arrête au-dessus de la feuille du bas ---------- */
+@media (max-width: 760px) {
+  /* La feuille du bas (96 px) recouvre le bas de la carte, puis viennent l'échelle et l'attribution IGN (≈ 32 px) : la colonne (outils, avis,
+     invite du jardin vide) défile dans ce qui reste, rien n'y est caché dessous et l'attribution reste lisible. La mention sur la photo est
+     juste sous les outils, quel que soit l'état (Options, légende, jardin vide, placement). */
+  .map-top {
+    right: 12px;
+    max-height: calc(100% - 12px - 96px - 32px - 8px);
+    gap: 6px;
+  }
+  .app.is-placing .map-top {
+    right: 12px;
+    max-height: calc(100% - 24px);
+  }
+  /* Les outils laissent la place des boutons + et − (en haut à droite) ; les avis, plus bas, prennent toute la largeur : une ligne de moins. */
+  .map-top > .map-toolbar,
+  .map-top > .map-aid,
+  .map-top > .map-options,
+  .map-top > .legend,
+  .map-top > .season-note {
+    max-width: calc(100% - 56px);
+  }
+  /* Jardin vide : l'invite est dans la colonne (rien ne la recouvre) ; son titre et son bouton suffisent, la phrase reste lue à voix haute. */
+  /* « Ajouter une plante » (carte) se pose un peu plus bas, juste au-dessus de l'échelle : les avis du haut ne passent jamais dessous. */
+  .app[data-tab='carte'] .add-fab {
+    bottom: 132px;
+  }
+  .map-top > .map-empty {
+    width: 100%;
+    padding: 10px 12px;
+    gap: 6px;
+  }
+  .map-empty .map-empty-more {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* Téléphone bas (360 × 740) : le bouton seul garde la place, le titre de l'invite reste lu à voix haute. */
+@media (max-width: 760px) and (max-height: 760px) {
+  .map-top > .map-empty > p {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
 /* ---------- Carte, panneau « Options » ouvert sur téléphone ---------- */
 @media (max-width: 760px) {
   /* Le panneau défile au-dessus de la feuille du bas (elle le coupait) ; « Ajouter une plante » se cache le temps qu'il est ouvert. */
-  .app:has(#map-options) .map-top {
-    max-height: max(200px, calc(100dvh - 335px));
+  /* Pendant que les Options sont ouvertes, seul l'avis « Il manque… » se met de côté (il revient à la fermeture) : le panneau garde de la place pour défiler.
+     La mention sur la photo, elle, reste toujours là. */
+  .app:has(#map-options) .map-top :is(.data-chip, .data-banner) {
+    display: none;
   }
   .app:has(#map-options) .add-fab {
     display: none;

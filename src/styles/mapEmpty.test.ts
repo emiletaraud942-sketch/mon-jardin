@@ -10,7 +10,7 @@ describe('carte d’invite du jardin vide et panneau Options', () => {
   const view = read('../features/map/MapView.tsx')
 
   it('l’invite n’est montée ni avec les Options ouvertes ni avec la légende ouverte', () => {
-    const cond = view.match(/\{plants\.length === 0 &&([^\n]*)&& \(\s*<div className="floating map-empty">/)?.[1] ?? ''
+    const cond = view.match(/const emptyCard =\s*plants\.length === 0 &&([^\n]*)\? \(\s*<div className="floating map-empty">/)?.[1] ?? ''
     expect(cond).toContain('!optionsOpen')
     expect(cond).toContain('!legendOpen')
   })
