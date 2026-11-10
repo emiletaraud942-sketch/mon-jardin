@@ -196,6 +196,7 @@ export const FEATURES: Feature[] = [
 
   // Voisins
   F('voisins', 'Entraide entre voisins', 'voisins', 'Dons, échanges, questions et rendez-vous près de chez vous.', ['voisins', 'entraide', 'dons', 'échanges', 'événements', 'boutures'], 'voisins', go('voisins', { path: ['voisins'] }), () => neighborsEnabled),
+  F('evenements-voisins', 'Voir les événements près de chez moi', 'voisins', 'Ateliers, troc de plantes, visites de jardins : ajoutez-les à votre calendrier ou partagez-les.', ['événement', 'événements', 'atelier', 'formation', 'rendez-vous', 'voisins', 'près de chez moi', 'calendrier', 'troc'], 'evenements', go('voisins', { intent: 'voisins:evenements', path: ['evenements'] }), () => neighborsEnabled),
   F('inviter', 'Faire connaître l’appli', 'voisins', 'Envoyez le lien de l’appli à un proche ou à un voisin.', ['inviter', 'partager', 'lien', 'faire connaître', 'ami'], 'inviter', go('reglages', { path: ['inviter'] })),
 
   // Mon compte et mes données

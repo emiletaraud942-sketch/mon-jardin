@@ -5,6 +5,7 @@ import type { EventItem, OrganizerInfo } from '../../lib/neighbors/types'
 import { ErrorBox, ExternalLinkButton, ReportDialog, Spinner } from './common'
 import { errorText, useLoad, type Loaded } from './hooks'
 import { PlantScene } from '../../components/illustrations'
+import { EventShareButtons, OrganizerInviteButton } from './EventShare'
 
 /** « Je suis intéressé(e) » : un simple compteur. Cela n'inscrit à rien et ne dit pas votre nom à l'organisateur. */
 export function InterestButton({ event, online, onChange }: { event: EventItem; online: boolean; onChange: (e: EventItem) => void }) {
@@ -49,6 +50,7 @@ export function EventActions({ event, online, onChange }: { event: EventItem; on
           </button>
         )}
       </div>
+      {open && <EventShareButtons event={event} />}
       {reporting && <ReportDialog target="event" targetId={event.id} what="cet événement" onClose={() => setReporting(false)} />}
     </>
   )
@@ -113,6 +115,33 @@ export function EventCard({ event, online, onOpen, onChange }: { event: EventIte
 }
 
 /** Onglet « Événements » : rendez-vous près de chez vous, par date. Publier est réservé aux organisateurs validés. */
+/** Liste vide : qui publie, qu'il n'y a rien près d'ici, et deux gestes utiles (devenir organisateur, inviter une structure). */
+export function EventsEmpty({ radius, org, onRadius, onOrganizer }: { radius: number; org: OrganizerInfo | null | undefined; onRadius: (r: number) => void; onOrganizer: () => void }) {
+  const empty = emptyEventsText()
+  const max = RADII[RADII.length - 1]
+  return (
+    <div className="card nb-empty" data-feat="evenements-vide">
+      <PlantScene size={104} variant="house" />
+      <h2>{empty.title}</h2>
+      <p style={{ margin: 0 }}>{empty.hint}</p>
+      <p style={{ margin: 0 }}>{empty.ask}</p>
+      <div className="row nb-empty-actions">
+        {radius < max && (
+          <button className="btn" onClick={() => onRadius(max)}>
+            Élargir à {max} km
+          </button>
+        )}
+        {org === null && (
+          <button className="btn primary" onClick={onOrganizer}>
+            Devenir organisateur
+          </button>
+        )}
+        <OrganizerInviteButton />
+      </div>
+    </div>
+  )
+}
+
 export function EventsTab({
   radius,
   online,
@@ -134,13 +163,12 @@ export function EventsTab({
 }) {
   const { data, error, loading, reload, setData } = useLoad(() => listEvents({ radiusKm: radius }), String(radius))
   const events = useMemo(() => data ?? [], [data])
-  const empty = emptyEventsText()
   const org = organizer.data
   const replace = (e: EventItem) => data && setData(data.map((x) => (x.id === e.id ? e : x)))
 
   return (
     <div className="stack nb-feed">
-      <section className="card stack" aria-label="Événements près de chez vous">
+      <section className="card stack" aria-label="Événements près de chez vous" data-feat="evenements">
         <h2>Événements près de chez vous</h2>
         <p style={{ margin: 0 }}>Ateliers, troc de plantes, visites de jardins. Ils sont publiés par des organisateurs vérifiés.</p>
         <div className="row nb-toolbar-row">
@@ -168,20 +196,7 @@ export function EventsTab({
           ))}
         </ul>
       )}
-      {data && events.length === 0 && !error && (
-        <div className="card nb-empty">
-          <PlantScene size={104} variant="house" />
-          <h2>{empty.title}</h2>
-          <p style={{ margin: 0 }}>{empty.hint}</p>
-          {radius < RADII[RADII.length - 1] && (
-            <div className="row">
-              <button className="btn" onClick={() => onRadius(RADII[RADII.length - 1])}>
-                Élargir à {RADII[RADII.length - 1]} km
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+      {data && events.length === 0 && !error && <EventsEmpty radius={radius} org={org} onRadius={onRadius} onOrganizer={onOrganizer} />}
       {!online && <p className="small muted">Pas de réseau : la liste peut être dépassée.</p>}
 
       <section className="card stack" aria-label="Organiser un événement">

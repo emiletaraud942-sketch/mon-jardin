@@ -371,7 +371,10 @@ describe('événements : textes', () => {
     expect(capacityText(40)).toBe('40 places annoncées')
   })
   it('état vide', () => {
-    expect(emptyEventsText().title).toContain('Aucun événement')
+    const t = emptyEventsText()
+    expect(t.title).toContain('Pas encore d’événement')
+    expect(t.hint).toContain('organisateurs vérifiés')
+    expect(t.hint).toContain('associations, mairies, jardins partagés')
   })
 })
 

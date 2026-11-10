@@ -25,7 +25,7 @@ export const HOME_ACTIONS: HomeAction[] = [
   { id: 'scanner', mot: 'Scanner mon jardin', phrase: 'Placez vos plantes en marchant.', icon: 'scan', featureId: 'scanner' },
   { id: 'afaire', mot: 'Ce qu’il y a à faire', phrase: 'Tailler, arroser, récolter.', icon: 'check', featureId: 'a-faire' },
   { id: 'planter', mot: 'Où planter ?', phrase: 'Quelle plante va où, chez vous.', icon: 'leaf', featureId: 'ou-planter' },
-  { id: 'voisins', mot: 'Voisins', phrase: 'Dons, échanges, questions.', icon: 'users', featureId: 'voisins' },
+  { id: 'voisins', mot: 'Voisins', phrase: 'Dons, échanges, rendez-vous.', icon: 'users', featureId: 'voisins' },
   { id: 'tout', mot: 'Tout ce que je peux faire', phrase: 'Chaque fonction, avec recherche.', icon: 'list', special: 'tout' },
   { id: 'aide', mot: 'Aide', phrase: 'Explique l’écran où vous êtes.', icon: 'help', featureId: 'aide-ecran' },
 ]

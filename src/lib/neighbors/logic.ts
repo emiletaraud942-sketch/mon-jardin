@@ -325,8 +325,12 @@ export function interestCountText(n: number): string {
 
 export const capacityText = (c: number | null): string | null => (c == null ? null : `${c} ${c > 1 ? 'places annoncées' : 'place annoncée'}`)
 
-export function emptyEventsText(): { title: string; hint: string } {
-  return { title: 'Aucun événement près de chez vous pour l’instant', hint: 'Les organisateurs vérifiés publient ici les rendez-vous du coin. Revenez bientôt, ou élargissez la distance.' }
+export function emptyEventsText(): { title: string; hint: string; ask: string } {
+  return {
+    title: 'Pas encore d’événement près de chez vous',
+    hint: 'Les rendez-vous sont publiés par des organisateurs vérifiés : associations, mairies, jardins partagés. Il n’y en a pas encore près de chez vous.',
+    ask: 'Vous en connaissez une ? Invitez-la à publier ses ateliers ici.',
+  }
 }
 
 // ---------- Événements : saisie des dates (champs date et heure de l'appareil) ----------

@@ -2406,6 +2406,29 @@ select.nb-cat {
 .nb-event-actions {
   flex-wrap: wrap;
 }
+/* Calendrier et partage : une rangée sous les actions de la carte, textes qui passent à la ligne au lieu de déborder. */
+.nb-event-share .btn,
+.nb-empty-actions .btn {
+  min-width: 0;
+  text-align: center;
+}
+.nb-event-share svg,
+.nb-empty-actions svg {
+  flex: none;
+}
+.nb-empty-actions {
+  align-items: stretch;
+}
+.nb-share-text {
+  flex-basis: 100%;
+  width: 100%;
+  resize: vertical;
+}
+@media (max-width: 560px) {
+  .nb-empty-actions {
+    flex-direction: column;
+  }
+}
 .nb-time-row {
   flex-wrap: wrap;
   align-items: flex-end;

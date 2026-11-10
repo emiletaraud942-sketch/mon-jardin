@@ -1,36 +1,12 @@
 import { TASK_LABEL } from '../data/labels'
 import type { Month, Plant, Species, TaskType } from '../types'
 import { yearPlan } from '../engine/tasks'
+import { icsEscape, icsFold } from './icsText'
 
 // Export du calendrier de l'année au format iCalendar (.ics) : s'ouvre dans l'agenda du téléphone ou de l'ordinateur.
 // Un événement « journée entière » par (tâche, plante, fenêtre de mois), répété chaque année. Aucune donnée n'est envoyée.
 
-/** Échappe un texte de propriété iCalendar (RFC 5545 §3.3.11). */
-export function icsEscape(s: string): string {
-  return s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n')
-}
-
-/** Coupe une ligne à 75 octets UTF-8 (RFC 5545 §3.1) : les lignes suivantes commencent par une espace. */
-export function icsFold(line: string): string {
-  const enc = new TextEncoder()
-  if (enc.encode(line).length <= 75) return line
-  const out: string[] = []
-  let cur = ''
-  let bytes = 0
-  const limit = () => (out.length === 0 ? 75 : 74) // la continuation compte son espace de tête
-  for (const ch of line) {
-    const n = enc.encode(ch).length
-    if (bytes + n > limit()) {
-      out.push(cur)
-      cur = ''
-      bytes = 0
-    }
-    cur += ch
-    bytes += n
-  }
-  out.push(cur)
-  return out.join('\r\n ')
-}
+export { icsEscape, icsFold }
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const day = (y: number, m: number, d: number) => `${y}${pad(m)}${pad(d)}`

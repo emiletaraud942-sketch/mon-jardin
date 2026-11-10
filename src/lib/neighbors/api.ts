@@ -128,7 +128,7 @@ export function translateError(e: unknown): string {
   }
   // Base pas encore mise à jour (migration v4 non collée) : les tables d'événements n'existent pas encore.
   if (err.code === 'PGRST205' || err.code === '42P01' || /could not find the table|relation .* does not exist/.test(low)) {
-    if (/events|organizers|event_interest/.test(low)) return 'Les événements ne sont pas encore ouverts chez vous. Réessayez plus tard.'
+    if (/events|organizers|event_interest/.test(low)) return 'Les événements ne sont pas disponibles pour le moment. Réessayez plus tard.'
   }
   if (low.includes('report_self')) return 'Vous ne pouvez pas vous signaler vous-même.'
   if (low.includes('report_target_not_found')) return 'Ce contenu n’existe plus.'

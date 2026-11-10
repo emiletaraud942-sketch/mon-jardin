@@ -556,8 +556,8 @@ describe('événements : erreurs en français simple', () => {
     [{ message: 'quota_exceeded:event_open' }, 'événements ouverts'],
     [{ message: 'quota_exceeded:interest' }, 'limite du jour'],
     [{ message: 'quota_exceeded:organizer' }, 'limite du jour'],
-    [{ message: "Could not find the table 'public.events' in the schema cache", code: 'PGRST205' }, 'pas encore ouverts'],
-    [{ message: 'relation "public.organizers" does not exist', code: '42P01' }, 'pas encore ouverts'],
+    [{ message: "Could not find the table 'public.events' in the schema cache", code: 'PGRST205' }, 'pas disponibles pour le moment'],
+    [{ message: 'relation "public.organizers" does not exist', code: '42P01' }, 'pas disponibles pour le moment'],
   ])('%j', (e, expected) => {
     expect(api.translateError(e)).toContain(expected)
   })
@@ -657,7 +657,7 @@ describe('événements : lecture', () => {
   })
   it('listEvents : une base sans la version 4 donne une phrase claire', async () => {
     set('events:select', null, { message: "Could not find the table 'public.events' in the schema cache", code: 'PGRST205' })
-    await expect(api.listEvents()).rejects.toThrow(/pas encore ouverts/)
+    await expect(api.listEvents()).rejects.toThrow(/pas disponibles pour le moment/)
   })
   it('listMyEvents : les miens, tous statuts, marqués « mine »', async () => {
     set('events:select', [eventRow({ organizer: ME_ID, status: 'hidden' })])

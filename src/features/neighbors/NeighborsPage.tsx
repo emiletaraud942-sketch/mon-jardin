@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Fold } from '../../components/Fold'
+import { useIntent } from '../../lib/overlays'
 import { useBackLayer } from '../../lib/ui'
 import { Tabs, TabPanel } from '../../components/Tabs'
 import { getMyOrganizer, getProfile, getSession, onSessionChange, resyncPushDevice } from '../../lib/neighbors/api'
@@ -203,6 +204,11 @@ function Main({ userId, profile, email, garden, online, onProfile }: { userId: s
     void resyncPushDevice()
     return () => window.removeEventListener(OPEN_MESSAGES_EVENT, open)
   }, [refreshNews])
+  // « Voir les événements près de chez moi » (Tout ce que je peux faire) : directement sur l'onglet Événements.
+  useIntent('voisins:evenements', () => {
+    setView({ k: 'tabs' })
+    setSection('evenements')
+  })
   const toTabs = useCallback(() => {
     setView({ k: 'tabs' })
     refreshNews()

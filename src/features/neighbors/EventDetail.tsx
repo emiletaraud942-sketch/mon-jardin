@@ -6,6 +6,7 @@ import { EventActions, EventFacts, EventStatusBadges } from './Events'
 /** Détail d'un événement : toutes les informations, les mêmes actions que la carte. */
 export function EventDetail({ event: first, online, onBack }: { event: EventItem; online: boolean; onBack: () => void }) {
   const [event, setEvent] = useState(first)
+  const eventOpen = event.status === 'open' && !eventEnded(event)
   return (
     <div className="stack nb-detail">
       <button className="btn ghost nb-back" onClick={onBack}>
@@ -26,6 +27,7 @@ export function EventDetail({ event: first, online, onBack }: { event: EventItem
             « S’inscrire » ouvre le site de l’organisateur. L’inscription se fait là-bas, pas ici.
           </p>
         )}
+        {eventOpen && <p className="small muted" style={{ margin: 0 }}>« Ajouter à mon calendrier » enregistre un fichier avec deux rappels : la veille et une heure avant.</p>}
         {!event.mine && <p className="small muted" style={{ margin: 0 }}>« Je suis intéressé(e) » ne vous inscrit pas. C’est un simple compteur : l’organisateur ne voit pas votre nom.</p>}
       </article>
       <section className="card stack" aria-label="L’organisateur">

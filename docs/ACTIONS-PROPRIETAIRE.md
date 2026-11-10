@@ -79,13 +79,21 @@ Dépôt > **Settings** :
 - [ ] 🔴 **Authentication > Attack Protection** : activer un CAPTCHA avant l'ouverture publique.
 - [ ] 🔴 **Storage** : le bucket `neighbors-photos` est **privé**, limite **1 Mo**.
 - [ ] 🔴 **Settings > API** : seul le schéma `public` est exposé ; **ne pas activer Realtime** sur les tables.
-- [ ] 🔴 **Planifier le nettoyage quotidien** (la promesse faite aux membres : « les annonces disparaissent après 60 jours, photos comprises »). **Rien ne le lance tout seul** dans le dépôt (la documentation disait le contraire : corrigé) :
-  1. **Database > Extensions** : activer `pg_cron`.
-  2. SQL Editor : `select cron.schedule('neighbors-purge-quotidienne', '0 22 * * *', 'select public.neighbors_purge_expired()');`
-  3. *Vérifier* : `select jobname, schedule from cron.job;` montre la ligne.
-  4. **Les fichiers photo ne sont pas effacés par cette fonction.** Une fois par semaine : `select * from public.neighbors_orphan_photos();` puis effacer ces fichiers dans **Storage > neighbors-photos**. (Pour l'automatiser, il faut une fonction Edge avec la clé `service_role` : demandez-le-moi.)
+- [ ] 🔴 **Planifier la purge quotidienne** (la promesse faite aux membres : « les annonces disparaissent après 60 jours, photos comprises » ; les événements finis depuis 30 jours sont aussi supprimés). **Rien ne la lance tout seul** dans le dépôt : tout `supabase/neighbors/cron.sql` est en commentaire. La méthode à suivre est celle de la v9, décrite dans `docs/ENTRAIDE.md`, « Purge à 60 jours (v9) », « Étapes pour le propriétaire » :
+  1. Choisir un secret d'au moins 32 caractères et le poser : `npx supabase secrets set --project-ref <REF> PURGE_SECRET="<secret>"`.
+  2. Déployer la fonction Edge : `npx supabase functions deploy purge-neighbors-photos --no-verify-jwt --project-ref <REF>` (elle se protège avec `PURGE_SECRET`).
+  3. **Database > Extensions** : activer `pg_cron`, `pg_net` et `supabase_vault`.
+  4. SQL Editor : suivre `supabase/neighbors/cron.sql` en retirant les `--` des étapes 2 à 4 (secret dans le Vault, tâche SQL à 22 h UTC, appel de la fonction à 22 h 30 UTC). La fonction efface aussi les fichiers photo orphelins.
+  5. *Vérifier le lendemain* : `select jobname, schedule, active from cron.job;` et les journaux de la fonction (`{"removed":N,"listed":N,"ignored":0,"capped":false}`).
+  *Sans la fonction Edge*, `neighbors_purge_expired()` ne supprime que les lignes : il faudrait lister les fichiers avec `select * from public.neighbors_orphan_photos();` puis les effacer à la main dans **Storage > neighbors-photos**.
 - [ ] 🔴 **Une adresse de contact pour les signalements**, lue chaque jour pendant le lancement ; la modération se fait avec `supabase/neighbors/moderation.sql` (à copier dans le SQL Editor).
-- [ ] 🔴 **Essai de bout en bout avec deux comptes de test** (deux adresses e-mail à vous) : créer deux profils, publier une annonce avec l'un, la voir avec l'autre, s'écrire, bloquer, signaler. C'est le seul test que je ne peux pas faire à votre place.
+- [ ] 🔴 **Valider un premier organisateur** (sans lui, l'onglet Événements reste vide : « Pas encore d'événement près de chez vous »). Quand une association, une mairie ou un jardin partagé a fait « Devenir organisateur » dans l'appli :
+  1. SQL Editor : copier la requête du **§4 de `supabase/neighbors/moderation.sql`** (« Demandes à examiner », les plus anciennes d'abord : `user_id`, nom public, description, pseudo, date de la demande).
+  2. Vérifier que le nom correspond à une structure réelle (site, mairie, annuaire des associations, appel). Doute : ne pas valider, répondre par e-mail.
+  3. Valider avec la mise à jour du même §4 : `update public.organizers set verified_at = now() where user_id = '<user_id>';` (le journal de modération s'écrit tout seul). Pour retirer : la ligne suivante du §4 (`verified_at = null` masque aussitôt ses événements).
+  4. La personne voit alors « Publier un événement » et « Mes événements » dans Entraide > Événements.
+  **Ne publiez jamais vous-même, à la place d'un organisateur, des événements trouvés ailleurs** (ateliers d'une autre structure, programme d'une mairie, page d'une association) : ce serait parler au nom d'autrui, sans son accord, avec des informations que vous ne pouvez pas tenir à jour. C'est à chaque structure de s'inscrire comme organisateur ; l'appli propose pour cela « Inviter une association ou une mairie à publier » (un texte à envoyer soi-même).
+- [ ] 🔴 **Essai de bout en bout avec deux comptes de test** (deux adresses e-mail à vous) : créer deux profils, publier une annonce avec l'un, la voir avec l'autre, s'écrire, bloquer, signaler. **Puis avec un événement** : faire valider le premier compte comme organisateur (étape ci-dessus), publier un événement ; avec le second compte, le voir dans Entraide > Événements, toucher « Je suis intéressé(e) » (le compteur monte, le nom n'apparaît pas à l'organisateur), « Signaler », puis « Ajouter à mon calendrier » (un fichier `.ics` s'enregistre ; l'ouvrir dans l'agenda : date, lieu, deux rappels la veille et une heure avant) et « Partager » (texte sans pseudo ni position). C'est le seul test que je ne peux pas faire à votre place.
 - [ ] 🟠 **Alertes de nouveaux messages** (facultatif) : suivre « Alertes de nouveaux messages et préférences (v5) » dans `docs/ENTRAIDE.md` (clés VAPID, fonction `notify-message`).
 
 ---
