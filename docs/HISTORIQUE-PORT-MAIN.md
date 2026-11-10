@@ -44,7 +44,7 @@ Registre : 87 fonctions.
 - Seuils d'alerte (`ALERT_THRESHOLDS` : canicule 32 °C sur 3 jours, sécheresse 30 mm sur 7 jours, vent 60 km/h), durées de rotation (`FamilyInfo`, « souvent 2 à 4 ans »), test du boudin (limites : ne reconnaît ni calcaire ni humifère).
 
 ## 4. Défauts d'affichage connus (rien de bloquant)
-- À 360 px avec les « Aides au placement » ouvertes en Grandes touches, la feuille des aides recouvre l'échelle, l'attribution et la consigne (existait avant le lot 8).
+- ~~À 360 px avec les « Aides au placement » ouvertes en Grandes touches, la feuille des aides recouvre l'échelle, l'attribution et la consigne~~ : corrigé le 10 nov. (en placement, la colonne d'outils s'arrête au-dessus de la consigne et de l'échelle, `--placing-h`, et défile ; mesuré à 360×740, 390×844 et 412×915, texte Normal et Très grand + Grandes touches, 0 px de recouvrement ; Chromium sans carte graphique, rien sur un vrai téléphone).
 - 3D portrait à 360 px en Grandes touches : la rangée « Animer / Réglages 3D » dépasse d'environ 24 px sous le panneau, coupée jusqu'au défilement (pas d'indice de défilement).
 - Non vus à l'écran : la carte « Prochaine étape » avec « Leçon suivante » (testée en logique seulement) ; recherche, état vide et clavier des écrans de leçons, d'ennuis et de conseils (pas de jsdom : seulement rendu serveur et e2e).
 - Aucune étape e2e pour l'entraide (le build e2e n'a pas les variables `NEIGHBORS_*`).

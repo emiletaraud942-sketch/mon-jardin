@@ -138,7 +138,7 @@ describe('carte sur téléphone : la mention sur la photo reste lisible (360 px)
   const phone = mediaBlock(nav, '(max-width: 760px)')
   it('la colonne du haut s’arrête au-dessus de la feuille du bas (96 px) et de l’échelle, et prend toute la largeur', () => {
     expect(nav).toMatch(/\.map-top\s*\{[^}]*right:\s*12px[^}]*max-height:\s*calc\(100%\s*-\s*12px\s*-\s*96px\s*-\s*32px\s*-\s*8px\)/)
-    expect(nav).toMatch(/\.app\.is-placing \.map-top\s*\{[^}]*max-height:\s*calc\(100%\s*-\s*24px\)/)
+    expect(nav).toMatch(/\.app\.is-placing \.map-top\s*\{[^}]*max-height:\s*calc\(100%\s*-\s*12px\s*-\s*var\(--placing-h,\s*0px\)\s*-\s*32px\s*-\s*8px\)/)
   })
   it('seuls les outils laissent la place des boutons + et − ; les avis prennent toute la largeur', () => {
     expect(nav).toMatch(/\.map-top > \.map-toolbar,[^{]*\.map-top > \.season-note\s*\{[^}]*max-width:\s*calc\(100%\s*-\s*56px\)/)

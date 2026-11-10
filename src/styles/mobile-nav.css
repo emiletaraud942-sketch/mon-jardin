@@ -277,9 +277,11 @@
     max-height: calc(100% - 12px - 96px - 32px - 8px);
     gap: 4px;
   }
+  /* En placement, la consigne (hauteur réelle dans --placing-h, voir placingReserve.ts) et l'échelle / l'attribution au-dessus d'elle (≈ 32 px)
+     ne recouvrent plus la colonne : elle défile dans ce qui reste (360 px, Grandes touches, texte très grand : aides ouvertes). */
   .app.is-placing .map-top {
     right: 12px;
-    max-height: calc(100% - 24px);
+    max-height: calc(100% - 12px - var(--placing-h, 0px) - 32px - 8px);
   }
   /* Les outils laissent la place des boutons + et − (en haut à droite) ; les avis, plus bas, prennent toute la largeur : une ligne de moins. */
   .map-top > .map-toolbar,
