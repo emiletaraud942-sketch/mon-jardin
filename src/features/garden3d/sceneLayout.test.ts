@@ -217,4 +217,11 @@ describe('promenade : « Aller à » ne recouvre jamais « Recentrer » ni les a
       expect(effect).not.toMatch(/g3d-info|g3d-sunbtn/)
     })
   })
+  it('le panneau de la 3D montre par une ombre qu’il reste du contenu à faire défiler (couches « local » + ombres fixes, sans script)', () => {
+    const panel = rule(css, '.g3d-panel')
+    expect(panel).toMatch(/linear-gradient\(var\(--g3d-panel-bg\) 30%, transparent\) top \/ 100% 16px no-repeat local/)
+    expect(panel).toMatch(/linear-gradient\(transparent, var\(--g3d-panel-bg\) 70%\) bottom \/ 100% 16px no-repeat local/)
+    expect(panel).toMatch(/radial-gradient\(farthest-side at 50% 0, rgb\([^)]*\), transparent\) top \/ 100% 10px no-repeat scroll/)
+    expect(panel).toMatch(/radial-gradient\(farthest-side at 50% 100%, rgb\([^)]*\), transparent\) bottom \/ 100% 10px no-repeat scroll/)
+  })
 })

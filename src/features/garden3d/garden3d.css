@@ -472,8 +472,16 @@
   color: var(--g3d-muted);
 }
 
+/* Indice de défilement (sans script) : une ombre apparaît en haut ou en bas du panneau quand il reste du contenu caché de ce côté. Les deux premières couches
+   (attachées au contenu, couleur du fond) recouvrent l'ombre tant qu'on est au bord ; les deux suivantes (fixes) sont l'ombre. */
 .g3d-panel {
-  background: color-mix(in srgb, var(--g3d-surface) 92%, transparent);
+  --g3d-panel-bg: color-mix(in srgb, var(--g3d-surface) 92%, transparent);
+  background:
+    linear-gradient(var(--g3d-panel-bg) 30%, transparent) top / 100% 16px no-repeat local,
+    linear-gradient(transparent, var(--g3d-panel-bg) 70%) bottom / 100% 16px no-repeat local,
+    radial-gradient(farthest-side at 50% 0, rgb(0 0 0 / 34%), transparent) top / 100% 10px no-repeat scroll,
+    radial-gradient(farthest-side at 50% 100%, rgb(0 0 0 / 34%), transparent) bottom / 100% 10px no-repeat scroll,
+    var(--g3d-panel-bg);
   border: 1px solid var(--g3d-border);
   border-radius: var(--g3d-radius);
   box-shadow: 0 2px 14px rgb(0 0 0 / 14%);
