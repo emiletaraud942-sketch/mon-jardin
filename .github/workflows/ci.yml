@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: verifier
-    # Construit le site, le sert avec `vite preview` (port 4793) et déroule e2e/smoke.spec.ts à 390 et 1280 px.
+    # Construit le site, le sert avec `vite preview` (port 4793) et déroule e2e/smoke.spec.ts à 390 et 1280 px, puis e2e/entraide.spec.ts (connexion par code) sur un second build.
     # Aucun accès à Internet : les appels IGN, météo et Supabase sont simulés (e2e/mocks.ts). Rapport en artefact seulement en cas d'échec.
     steps:
       - uses: actions/checkout@v7
@@ -52,6 +52,8 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npx vite build
+      # Second site (dist-entraide) avec une URL et une clé Supabase FAUSSES : e2e/entraide.spec.ts joue la connexion par code contre un faux serveur.
+      - run: npm run build:e2e-entraide
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e
       - uses: actions/upload-artifact@v4

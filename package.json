@@ -10,6 +10,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.node.json --noEmit",
     "test": "vitest run",
     "check:bundle": "node scripts/check-bundle.mjs",
+    "build:e2e-entraide": "NEIGHBORS_SUPABASE_URL=https://e2e-entraide.supabase.co NEIGHBORS_SUPABASE_PUBLISHABLE=sb_publishable_e2e_faux vite build --outDir dist-entraide --emptyOutDir",
     "e2e": "playwright test"
   },
   "dependencies": {

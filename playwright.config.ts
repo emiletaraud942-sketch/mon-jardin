@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { defineConfig, devices } from '@playwright/test'
 
 // Test de bout en bout (smoke) : `npm run build` puis `npm run e2e`. Le site est servi par `vite preview` sur un port fixe non standard.
@@ -5,6 +6,10 @@ import { defineConfig, devices } from '@playwright/test'
 // PW_CHROMIUM_PATH : chemin d'un Chromium déjà installé (utile hors CI) ; sinon Playwright utilise le sien (`npx playwright install chromium`).
 const PORT = Number(process.env.E2E_PORT ?? 4793)
 const executablePath = process.env.PW_CHROMIUM_PATH || undefined
+// Second site pour l'entraide : `npm run build:e2e-entraide` le construit dans dist-entraide avec une URL et une clé FAUSSES (jamais de vrai projet), servi sur un autre port.
+// Hors CI, l'étape n'existe que si ce dossier existe ; en CI, elle est toujours là (un dossier manquant fait échouer le test au lieu de le sauter en silence).
+const PORT_ENTRAIDE = Number(process.env.E2E_ENTRAIDE_PORT ?? 4794)
+const withEntraide = existsSync('dist-entraide') || !!process.env.CI
 // MapLibre exige WebGL 2 : rendu logiciel (SwiftShader) quand il n'y a pas de GPU, comme sur un serveur d'intégration.
 const args = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']
 
@@ -27,13 +32,34 @@ export default defineConfig({
     launchOptions: { executablePath, args },
   },
   projects: [
-    { name: 'mobile-390', use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 }, launchOptions: { executablePath, args } } },
-    { name: 'bureau-1280', use: { viewport: { width: 1280, height: 800 } } },
+    { name: 'mobile-390', testIgnore: /entraide\.spec/, use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 }, launchOptions: { executablePath, args } } },
+    { name: 'bureau-1280', testIgnore: /entraide\.spec/, use: { viewport: { width: 1280, height: 800 } } },
+    ...(withEntraide
+      ? [
+          {
+            name: 'entraide-390',
+            testMatch: /entraide\.spec/,
+            use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 }, baseURL: `http://127.0.0.1:${PORT_ENTRAIDE}`, launchOptions: { executablePath, args } },
+          },
+        ]
+      : []),
   ],
-  webServer: {
-    command: `npx vite preview --host 127.0.0.1 --port ${PORT} --strictPort`,
-    url: `http://127.0.0.1:${PORT}`,
-    reuseExistingServer: !process.env.CI,
-    timeout: 60_000,
-  },
+  webServer: [
+    {
+      command: `npx vite preview --host 127.0.0.1 --port ${PORT} --strictPort`,
+      url: `http://127.0.0.1:${PORT}`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+    },
+    ...(withEntraide
+      ? [
+          {
+            command: `npx vite preview --outDir dist-entraide --host 127.0.0.1 --port ${PORT_ENTRAIDE} --strictPort`,
+            url: `http://127.0.0.1:${PORT_ENTRAIDE}`,
+            reuseExistingServer: !process.env.CI,
+            timeout: 60_000,
+          },
+        ]
+      : []),
+  ],
 })
