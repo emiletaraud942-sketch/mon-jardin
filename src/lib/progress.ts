@@ -90,7 +90,7 @@ export function computeProgress(garden: Garden, plants: Plant[], opts: ProgressO
 
 // ---------- « Prochaine étape » (accueil) ----------
 
-export type NextStepKind = 'creer' | 'placer' | 'sol' | 'donnees' | 'taches'
+export type NextStepKind = 'creer' | 'placer' | 'sol' | 'donnees' | 'taches' | 'lecon'
 
 /** Une seule action à proposer : un titre court, une phrase, le libellé du bouton et ce qu'il fait (l'interface choisit l'écran). */
 export interface NextStep {
@@ -100,6 +100,8 @@ export interface NextStep {
   action: string
   /** Cette étape peut être sautée par « Je n'ai pas d'arbre ». */
   noTreeChoice?: boolean
+  /** Étape « Leçon suivante » : la leçon à ouvrir. */
+  lessonId?: string
 }
 
 export interface NextStepContext {
@@ -109,11 +111,13 @@ export interface NextStepContext {
   openTasks: number
   /** L'utilisateur a dit « Je n'ai pas d'arbre » : l'étape du premier arbre est sautée. */
   noTree?: boolean
+  /** Prochaine leçon d'« Apprendre à jardiner » (plan léger, rien de la leçon elle-même) : proposée en dernier, quand rien d'autre ne presse. */
+  nextLesson?: { id: string; titre: string }
 }
 
 /**
  * La prochaine chose à faire, une seule, dans cet ordre : créer son vrai jardin (si c'est l'exemple), placer le premier arbre,
- * atteindre 5 plantes, choisir le sol, récupérer les données manquantes, puis les tâches de la semaine. `undefined` : rien à proposer.
+ * atteindre 5 plantes, choisir le sol, récupérer les données manquantes, puis les tâches de la semaine, puis la leçon suivante d'« Apprendre à jardiner ». `undefined` : rien à proposer.
  * Module pur : rien n'est jamais bloqué, ce n'est qu'une suggestion.
  */
 export function nextStep(p: Progress, ctx: NextStepContext): NextStep | undefined {
@@ -131,6 +135,7 @@ export function nextStep(p: Progress, ctx: NextStepContext): NextStep | undefine
   if (ctx.openTasks > 0) {
     return { kind: 'taches', title: ctx.openTasks === 1 ? '1 chose à faire cette semaine' : `${ctx.openTasks} choses à faire cette semaine`, text: 'Cochez-les au fur et à mesure.', action: 'Voir la liste' }
   }
+  if (ctx.nextLesson) return { kind: 'lecon', title: `Leçon suivante : ${ctx.nextLesson.titre}`, text: 'Quelques minutes pour mieux jardiner.', action: 'Lire', lessonId: ctx.nextLesson.id }
   return undefined
 }
 

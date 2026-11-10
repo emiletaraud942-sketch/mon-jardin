@@ -172,8 +172,8 @@ export const DATA_INVENTORY: readonly DataItem[] = [
   },
   {
     id: 'preferences',
-    donnee: 'Préférences et repères : thème, date du dernier export, première utilisation, dernière notification, dernière synchronisation, date de votre dernière visite à l’entraide (pour afficher les nouveautés)',
-    stockage: 'localStorage (clés permajardin:…)',
+    donnee: 'Préférences et repères : thème, date du dernier export, première utilisation, dernière notification, dernière synchronisation, date de votre dernière visite à l’entraide (pour afficher les nouveautés), leçons « Apprendre à jardiner » terminées (liste d’identifiants, jamais envoyée ni synchronisée)',
+    stockage: 'localStorage (clés permajardin:… et pj.lessons)',
     destinataires: [],
     finalite: 'Confort d’usage (rappel de sauvegarde, une notification par jour au plus)',
     base: 'interet-legitime',
@@ -294,6 +294,7 @@ export const LOCAL_STORAGE_KEYS: readonly StorageKeyInfo[] = [
   { cle: 'pj.mode', contenu: 'Ancien mode d’affichage (lu une fois pour retrouver le rayon)' },
   { cle: 'pj.guide', contenu: 'Aides et repères mémorisés : étapes d’accueil, cartes repliées, identifiants des jardins dont la 3D et l’Entretien ont été ouverts' },
   { cle: 'pj.bigTaps', contenu: 'Réglage « Grandes touches » : boutons de 56 px de haut' },
+  { cle: 'pj.lessons', contenu: 'Leçons « Apprendre à jardiner » terminées (liste d’identifiants de leçons, rien d’autre ; jamais envoyée ni synchronisée)' },
   { cle: 'pj.tourSeen', contenu: 'Visite des fonctions déjà montrée au premier lancement (elle se rejoue depuis l’aide)' },
   { cle: 'pj.lidar', contenu: 'Réglage du relevé LiDAR HD' },
   { cle: 'pj.quality3d', contenu: 'Qualité de la vue 3D' },

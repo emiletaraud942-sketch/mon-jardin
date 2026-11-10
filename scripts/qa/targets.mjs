@@ -25,7 +25,7 @@ const seed = () => {
 
 /** Les cibles de la page visibles à l'écran et trop petites. */
 function measure(min) {
-  const sel = "button, summary, a[href], [role='tab'], label.check-row"
+  const sel = "button, summary, a[href], [role='tab'], label.check-row, label.lecon-choice"
   const out = []
   for (const el of document.querySelectorAll(sel)) {
     if (el.closest('.sr-only, [inert], [hidden], .maplibregl-canvas-container')) continue
@@ -62,6 +62,14 @@ async function ouvrirConseils(p) {
   await p.locator('[data-feat=conseils]').waitFor()
 }
 
+/** « Tout » → « Apprendre à jardiner » : la liste des leçons. */
+async function ouvrirLecons(p) {
+  await p.locator('[data-home=tout]').click()
+  await p.locator('.tf-overlay input[type=search]').fill('apprendre')
+  await p.getByRole('button', { name: /Apprendre à jardiner/ }).first().click()
+  await p.locator('[data-feat=lecons]').waitFor()
+}
+
 /** « Tout » → « Voir la rotation de mon potager » : l'écran de rotation des cultures. */
 async function ouvrirRotation(p) {
   await p.locator('[data-home=tout]').click()
@@ -87,6 +95,8 @@ const SCREENS = [
   { id: 'rotation', go: ouvrirRotation },
   { id: 'conseils', go: ouvrirConseils },
   { id: 'conseils-fiche', go: async (p) => { await ouvrirConseils(p); await p.locator('[data-conseil-id]').first().click() } },
+  { id: 'lecons', go: ouvrirLecons },
+  { id: 'lecon-fiche', go: async (p) => { await ouvrirLecons(p); await p.locator('[data-lecon-id]').first().click(); await p.locator('[data-lecon]').waitFor() } },
   { id: 'ennuis-fiche', go: async (p) => { await ouvrirEnnuis(p); await p.locator('[data-ennui-id]').first().click() } },
 ]
 

@@ -14,7 +14,9 @@ import { useGardenPlants } from '../../lib/store'
 import { hideOnboardingRoute, openHelp, openParcours, setGuide, setUi, useUi } from '../../lib/ui'
 import { FEATURES, visibleFeatures } from '../../lib/features'
 import { HOME_ACTIONS, HOME_HELPERS, type HomeAction } from '../../lib/homeActions'
-import { guideOpen, lostSheet, toutFaire } from '../../lib/overlays'
+import { guideOpen, lostSheet, openLecon, toutFaire } from '../../lib/overlays'
+import { nextLesson } from '../lecons/progress'
+import { useLessonsDone } from '../lecons/useDone'
 import type { Garden } from '../../types'
 import { useOnboarding } from './useOnboarding'
 
@@ -99,7 +101,8 @@ function NextStepCard({ garden, openTasks }: { garden: Garden; openTasks: number
   const refresh = useRefreshGarden(garden)
   const { guide } = useUi()
   const noTree = !!guide.noTree?.includes(garden.id)
-  const step: NextStep | undefined = nextStep(progress, { demo: isDemoGarden(garden), openTasks, noTree })
+  const lessonsDone = useLessonsDone()
+  const step: NextStep | undefined = nextStep(progress, { demo: isDemoGarden(garden), openTasks, noTree, nextLesson: nextLesson(lessonsDone) })
   if (!step) return null
   const cls = 'btn small primary nextstep-btn'
   return (
@@ -122,6 +125,7 @@ function NextStepCard({ garden, openTasks }: { garden: Garden; openTasks: number
             if (step.kind === 'creer') openParcours('adresse')
             else if (step.kind === 'sol') setUi({ tab: 'reglages' })
             else if (step.kind === 'taches') setUi({ tab: 'entretien' })
+            else if (step.kind === 'lecon') openLecon(step.lessonId)
             else void refresh.refresh()
           }}
         >

@@ -1,0 +1,263 @@
+/* Apprendre à jardiner : progression, niveaux, quiz. Le reste (liste, fiche, pastilles, attention) vient de ennuis.css et conseils.css. Couleurs : variables de :root seulement. */
+
+/* ----- Progression ----- */
+.lecon-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--radius-btn-lg);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+.lecon-progress-text {
+  margin: 0;
+  font-size: calc(19 * var(--px));
+  color: var(--title);
+}
+.lecon-bar {
+  display: block;
+  width: 100%;
+  height: 12px;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface);
+  appearance: none;
+  -webkit-appearance: none;
+  accent-color: var(--accent-2);
+}
+.lecon-bar::-webkit-progress-bar {
+  background: var(--surface);
+  border-radius: 999px;
+}
+.lecon-bar::-webkit-progress-value {
+  background: var(--accent-2);
+  border-radius: 999px;
+}
+.lecon-bar::-moz-progress-bar {
+  background: var(--accent-2);
+  border-radius: 999px;
+}
+.lecon-btn {
+  min-height: var(--tap);
+  height: auto;
+  white-space: normal;
+  text-align: center;
+  gap: 8px;
+}
+.lecon-resume {
+  align-self: stretch;
+}
+.lecon-all {
+  margin: 0;
+  color: var(--text);
+}
+
+/* ----- Niveaux et liste ----- */
+.lecon-level h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 4px;
+  font-family: var(--font-title);
+  font-weight: var(--fw-text);
+  font-size: calc(22 * var(--px));
+  line-height: 1.2;
+  color: var(--title);
+}
+.lecon-level > p {
+  margin: 0 0 8px;
+}
+.lecon-level-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--muted-2);
+}
+.lecon-num {
+  font-weight: var(--fw-key);
+  font-size: calc(17 * var(--px));
+  color: var(--title);
+}
+.lecon-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 10px;
+}
+.lecon-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: var(--fw-key);
+  color: var(--title);
+}
+.ennui-row-text .lecon-done {
+  color: var(--title);
+}
+.lecon-row-done .lecon-num {
+  background: var(--accent-2);
+  color: var(--surface);
+}
+.ennui-type .lecon-done {
+  margin-left: auto;
+}
+.ennui-type {
+  flex-wrap: wrap;
+}
+
+/* ----- Fiche ----- */
+.lecon-objectif {
+  font-size: calc(17 * var(--px));
+}
+.lecon-points li + li {
+  margin-top: 2px;
+}
+.lecon-sheet .lecon-btn {
+  align-self: flex-start;
+  max-width: 100%;
+}
+.lecon-sheet .lecon-next {
+  align-self: stretch;
+  justify-content: space-between;
+  text-align: left;
+}
+.lecon-end {
+  margin: 0;
+  color: var(--text);
+}
+.lecon-try,
+.lecon-finish,
+.lecon-quiz {
+  padding: 14px;
+  border-radius: var(--radius-btn-lg);
+  background: var(--surface-2);
+}
+.lecon-try h2,
+.lecon-finish h2,
+.lecon-quiz h2 {
+  margin-top: 0;
+}
+.lecon-finish-text {
+  min-height: 1.2em;
+}
+
+/* ----- Quiz ----- */
+.lecon-quiz {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.lecon-quiz > * {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.lecon-q {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.lecon-q legend {
+  padding: 0;
+  margin-bottom: 8px;
+  font-weight: var(--fw-strong);
+  overflow-wrap: anywhere;
+}
+.lecon-q-n {
+  display: block;
+  font-size: calc(14 * var(--px));
+  font-weight: var(--fw-text);
+  color: var(--muted-2);
+}
+.lecon-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.lecon-choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 8px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-btn-lg);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+.lecon-choice input {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+.lecon-choice span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.lecon-choice.on {
+  border-width: 2px;
+  padding: 7px 13px;
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.lecon-choice:focus-within {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.lecon-feedback {
+  min-height: 0;
+}
+.lecon-feedback p {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-btn-lg);
+  color: var(--text);
+}
+.lecon-feedback svg {
+  flex: none;
+  margin-top: 2px;
+}
+.lecon-right {
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-2);
+}
+.lecon-notyet {
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  color: var(--warn-text);
+}
+.lecon-feedback .lecon-notyet {
+  color: var(--warn-text);
+}
+.lecon-status {
+  min-height: 0;
+}
+.lecon-status p {
+  margin: 0;
+  font-weight: var(--fw-strong);
+  color: var(--text);
+}
+
+/* Grandes touches : les choix du quiz (des libellés, pas des boutons) gardent 56 px. */
+html[data-big-taps] .lecon-choice {
+  min-height: 56px;
+}
+
+@media (min-width: 761px) {
+  .lecon-progress {
+    padding: 18px;
+  }
+}

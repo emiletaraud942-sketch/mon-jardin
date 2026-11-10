@@ -149,6 +149,26 @@ test('parcours de base', async ({ page, baseURL }) => {
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog', { name: /Pailler|Conseils compost/ })).toBeHidden()
 
+  // 4 bis 3. Apprendre à jardiner : « Tout » → « Apprendre à jardiner » → leçon 1 → « Marquer comme terminée » → « 1 leçon sur 14 ».
+  await retourAccueil(page)
+  await page.locator('[data-home=tout]').click()
+  await tout.getByRole('searchbox').fill('apprendre')
+  await tout.getByRole('button', { name: /Apprendre à jardiner/ }).first().click()
+  const lecons = page.getByRole('dialog', { name: 'Apprendre à jardiner' })
+  await expect(lecons).toBeVisible()
+  await expect(lecons.getByText('Aucune leçon terminée sur 14')).toBeVisible()
+  await noOverflow('leçons (liste)')
+  await lecons.getByRole('button', { name: /Commencer la leçon 1/ }).click()
+  const lecon = page.getByRole('dialog', { name: 'Observer son jardin et le soleil' })
+  await expect(lecon.getByRole('heading', { name: 'Les points à retenir' })).toBeVisible()
+  await noOverflow('leçon')
+  await lecon.getByRole('button', { name: 'Marquer comme terminée' }).click()
+  await expect(lecon.getByRole('button', { name: 'Rouvrir cette leçon' })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(lecons.getByText('1 leçon sur 14').first()).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog', { name: /Apprendre à jardiner|Observer son jardin/ })).toBeHidden()
+
   // 4 ter. Rotation du potager : « Tout » → « Voir la rotation de mon potager » → l'écran s'ouvre (liste ou état vide) et se ferme avec Échap.
   await retourAccueil(page)
   await page.locator('[data-home=tout]').click()

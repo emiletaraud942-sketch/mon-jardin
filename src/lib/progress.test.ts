@@ -138,6 +138,15 @@ describe('nextStep : une seule prochaine étape', () => {
     const five = [plant('pommier'), plant('tomate'), plant('tomate'), plant('tomate'), plant('tomate')]
     expect(next(full(), five)).toBeUndefined()
   })
+
+  it('la leçon suivante vient en dernier : après le parcours, jamais devant une autre étape', () => {
+    const five = [plant('pommier'), plant('tomate'), plant('tomate'), plant('tomate'), plant('tomate')]
+    const nextLesson = { id: 'connaitre-sol', titre: 'Connaître son sol' }
+    expect(next(full(), five, { demo: false, openTasks: 0, nextLesson })).toMatchObject({ kind: 'lecon', title: 'Leçon suivante : Connaître son sol', lessonId: 'connaitre-sol' })
+    expect(next(full(), five, { demo: false, openTasks: 2, nextLesson })?.kind).toBe('taches')
+    expect(next(full(), [], { demo: false, openTasks: 0, nextLesson })?.kind).toBe('placer')
+    expect(next(garden(), [], { demo: true, openTasks: 0, nextLesson })?.kind).toBe('creer')
+  })
 })
 
 describe('warmWord : un mot à la 1re et à la 5e plante', () => {
