@@ -169,7 +169,8 @@ describe('registre et accueil', () => {
   })
   it('accueil : la phrase de « Voisins » cite les rendez-vous, l’ordre ne change pas', () => {
     const ids = HOME_ACTIONS.map((a) => a.id)
-    expect(ids).toEqual(['ajouter', 'carte', 'promenade', 'photos', 'scanner', 'afaire', 'planter', 'voisins', 'tout', 'aide'])
+    // « apprendre » et « conseils » : mis à l'honneur à la demande du propriétaire (11 nov.) ; le reste garde son ordre.
+    expect(ids).toEqual(['ajouter', 'apprendre', 'conseils', 'carte', 'promenade', 'photos', 'scanner', 'afaire', 'planter', 'voisins', 'tout', 'aide'])
     const v = HOME_ACTIONS.find((a) => a.id === 'voisins')!
     expect(v.phrase).toBe('Dons, échanges, rendez-vous.')
     expect(v.phrase.length).toBeLessThanOrEqual(36)

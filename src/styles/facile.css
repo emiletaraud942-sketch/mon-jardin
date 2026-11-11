@@ -716,6 +716,23 @@ dialog.modal.full .modal-head .modal-home {
 .home-btn.primary .home-btn-text span {
   color: var(--on-btn-green);
 }
+/* « Apprendre à jardiner » : mis à l'honneur (fond sauge, contour vert) sans faire concurrence au bouton plein « Ajouter une plante ». */
+.home-btn.featured {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.home-btn.featured:hover,
+.home-btn.featured:active {
+  background: var(--accent-soft);
+  filter: brightness(0.97);
+}
+.home-btn.featured .home-btn-icon {
+  background: var(--surface);
+  color: var(--title);
+}
+.home-btn.featured .home-btn-text span {
+  color: var(--muted-2); /* --muted ne fait que 4,2:1 sur la sauge */
+}
 .home-btn .badge {
   flex: none;
 }

@@ -11,6 +11,8 @@ describe('gros boutons de l’accueil', () => {
   it('l’ordre est fixe et les mots sont ceux du propriétaire', () => {
     expect(HOME_ACTIONS.map((a) => a.mot)).toEqual([
       'Ajouter une plante',
+      'Apprendre à jardiner',
+      'Compost et économie d’eau',
       'Voir mon jardin',
       'Me promener dans mon jardin en 3D',
       'Photos du jardin',
@@ -22,6 +24,19 @@ describe('gros boutons de l’accueil', () => {
       'Aide',
     ])
     expect(HOME_HELPERS.map((a) => a.mot)).toEqual(['Je ne sais pas par où commencer', 'Je suis perdu'])
+  })
+
+  it('« Apprendre à jardiner » puis « Compost et économie d’eau » sont sur l’accueil, juste après « Ajouter une plante », mis à l’honneur sans être le bouton plein', () => {
+    const i = HOME_ACTIONS.findIndex((a) => a.id === 'apprendre')
+    expect(i).toBe(1)
+    expect(HOME_ACTIONS[i]).toMatchObject({ featureId: 'apprendre-jardiner', featured: true })
+    expect(HOME_ACTIONS[i].primary).toBeFalsy()
+    expect(HOME_ACTIONS[2]).toMatchObject({ id: 'conseils', featureId: 'conseils-compost-eau', featured: true })
+    expect(HOME_ACTIONS[2].primary).toBeFalsy()
+    expect(HOME_ACTIONS.filter((a) => a.featured).map((a) => a.id)).toEqual(['apprendre', 'conseils'])
+    expect(HOME_ACTIONS.filter((a) => a.primary).map((a) => a.id)).toEqual(['ajouter'])
+    expect(css).toMatch(/\.home-btn\.featured \{\s*border-color: var\(--accent\);\s*background: var\(--accent-soft\);/)
+    expect(css).toMatch(/\.home-btn\.featured \.home-btn-text span \{\s*color: var\(--muted-2\);/)
   })
 
   it('chaque bouton lance une fonction du registre, ou une page d’aide', () => {
@@ -56,5 +71,18 @@ describe('gros boutons de l’accueil', () => {
   it('« Je suis perdu » ne flotte plus par-dessus l’accueil ni les écrans du téléphone', () => {
     expect(css).toMatch(/\.app\[data-tab='accueil'\] \.lost-fab \{\s*display: none;/)
     expect(css).toMatch(/@media \(max-width: 760px\) \{[^@]*\.app \.lost-fab,[^}]*position: static/)
+  })
+})
+
+describe('« Apprendre à jardiner » : phrase de progression', () => {
+  it('sans leçon faite : la phrase d’origine ; ensuite où l’on en est ; tout fait : un bravo — toujours 36 caractères au plus', async () => {
+    const { lessonsPhrase } = await import('../features/onboarding/Accueil')
+    const { LECON_OUTLINE } = await import('../features/lecons/outline')
+    const ids = LECON_OUTLINE.map((l) => l.id)
+    expect(lessonsPhrase([])).toBeUndefined()
+    expect(lessonsPhrase(ids.slice(0, 1))).toBe('1 leçon sur 14. On continue ?')
+    expect(lessonsPhrase(ids.slice(0, 5))).toBe('5 leçons sur 14. On continue ?')
+    expect(lessonsPhrase(ids)).toBe('Tout est fait. Bravo !')
+    for (let n = 1; n <= ids.length; n++) expect(lessonsPhrase(ids.slice(0, n))!.length).toBeLessThanOrEqual(36)
   })
 })

@@ -15,7 +15,7 @@ import { hideOnboardingRoute, openHelp, openParcours, setGuide, setUi, useUi } f
 import { FEATURES, visibleFeatures } from '../../lib/features'
 import { HOME_ACTIONS, HOME_HELPERS, type HomeAction } from '../../lib/homeActions'
 import { guideOpen, lostSheet, openLecon, toutFaire } from '../../lib/overlays'
-import { nextLesson } from '../lecons/progress'
+import { countDone, doneSentence, nextLesson, totalLessons } from '../lecons/progress'
 import { useLessonsDone } from '../lecons/useDone'
 import type { Garden } from '../../types'
 import { useOnboarding } from './useOnboarding'
@@ -149,16 +149,24 @@ export function runHomeAction(a: HomeAction) {
   else FEATURES.find((f) => f.id === a.featureId)?.run()
 }
 
+/** Sous « Apprendre à jardiner » : la phrase d'origine au départ, puis où on en est (jamais plus de 36 caractères). */
+export function lessonsPhrase(done: readonly string[]): string | undefined {
+  const n = countDone(done)
+  if (n === 0) return undefined
+  if (n >= totalLessons()) return 'Tout est fait. Bravo !'
+  return `${doneSentence(done)}. On continue ?`
+}
+
 /** Un gros bouton de l'accueil : une icône, un verbe, une phrase. Le nom accessible est le texte écrit. */
-function HomeButton({ a, badge }: { a: HomeAction; badge?: number }) {
+function HomeButton({ a, badge, phrase }: { a: HomeAction; badge?: number; phrase?: string }) {
   return (
-    <button className={'home-btn' + (a.primary ? ' primary' : '')} data-home={a.id} onClick={() => runHomeAction(a)}>
+    <button className={'home-btn' + (a.primary ? ' primary' : '') + (a.featured ? ' featured' : '')} data-home={a.id} onClick={() => runHomeAction(a)}>
       <span className="home-btn-icon" aria-hidden>
         <Icon name={a.icon} size={24} />
       </span>
       <span className="home-btn-text">
         <strong>{a.mot}</strong>
-        <span>{a.phrase}</span>
+        <span>{phrase ?? a.phrase}</span>
       </span>
       {badge ? (
         <span className="badge count" aria-label={badgeAria(badge)}>
@@ -180,6 +188,7 @@ export function Accueil({ garden, openTasks, newsCount, alerts = [] }: { garden:
   const actions = HOME_ACTIONS.filter((a) => !a.featureId || shown.has(a.featureId))
   const climate = climateSummary(garden, { short: true })
   const alertText = alertHomeSentence(alerts)
+  const lessonsDone = useLessonsDone()
 
   return (
     <div className="page accueil">
@@ -205,7 +214,7 @@ export function Accueil({ garden, openTasks, newsCount, alerts = [] }: { garden:
       {!route && <NextStepCard garden={garden} openTasks={openTasks} />}
       <div className="home-grid" role="group" aria-label="Que voulez-vous faire ?">
         {actions.map((a) => (
-          <HomeButton key={a.id} a={a} badge={a.id === 'voisins' ? newsCount : undefined} />
+          <HomeButton key={a.id} a={a} badge={a.id === 'voisins' ? newsCount : undefined} phrase={a.id === 'apprendre' ? lessonsPhrase(lessonsDone) : undefined} />
         ))}
         {HOME_HELPERS.map((a) => (
           <HomeButton key={a.id} a={a} />

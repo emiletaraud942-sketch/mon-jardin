@@ -1,5 +1,6 @@
 // Gros boutons de l'accueil : ordre FIXE, un verbe et une phrase d'une ligne. Chaque bouton lance une fonction du registre
 // (`features.ts`, `featureId`) ou une page de l'aide (`special`). Module pur : textes et identifiants seulement.
+import { LECON_OUTLINE } from '../features/lecons/outline'
 
 export type HomeSpecial = 'tout' | 'guide' | 'perdu'
 
@@ -14,11 +15,15 @@ export interface HomeAction {
   special?: HomeSpecial
   /** Mis en avant (fond plein). */
   primary?: boolean
+  /** Mis à l'honneur sans concurrencer l'action principale : fond sauge et contour (décision du propriétaire, 11 nov. : leçons, puis conseils compost et eau). */
+  featured?: boolean
 }
 
 /** Les actions principales, dans l'ordre. « Voisins » ne s'affiche que si l'entraide est configurée (`visibleSi` du registre). */
 export const HOME_ACTIONS: HomeAction[] = [
   { id: 'ajouter', mot: 'Ajouter une plante', phrase: 'Touchez la carte pour la poser.', icon: 'plus', featureId: 'ajouter-plante', primary: true },
+  { id: 'apprendre', mot: 'Apprendre à jardiner', phrase: `${LECON_OUTLINE.length} leçons courtes et un petit quiz.`, icon: 'book', featureId: 'apprendre-jardiner', featured: true },
+  { id: 'conseils', mot: 'Compost et économie d’eau', phrase: 'Faire son compost, arroser moins.', icon: 'drop', featureId: 'conseils-compost-eau', featured: true },
   { id: 'carte', mot: 'Voir mon jardin', phrase: 'Votre terrain, vu du ciel.', icon: 'map', featureId: 'carte' },
   { id: 'promenade', mot: 'Me promener dans mon jardin en 3D', phrase: 'Marchez dedans, avec le doigt.', icon: 'cube', featureId: 'promenade' },
   { id: 'photos', mot: 'Photos du jardin', phrase: 'Votre jardin en vraies photos.', icon: 'camera', featureId: 'photos-jardin' },
