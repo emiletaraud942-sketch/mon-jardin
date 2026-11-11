@@ -234,18 +234,18 @@ describe('plantes vues depuis un point', () => {
 })
 
 describe('limites et libellés', () => {
-  it('6 points par jardin, message clair au-delà', () => {
-    expect(MAX_POINTS).toBe(6)
-    expect(canAddPoint(5, 0)).toEqual({ ok: true })
-    const r = canAddPoint(6, 0)
+  it('12 points par jardin, message clair au-delà', () => {
+    expect(MAX_POINTS).toBe(12)
+    expect(canAddPoint(11, 0)).toEqual({ ok: true })
+    const r = canAddPoint(12, 0)
     expect(r).toEqual({ ok: false, reason: 'points' })
-    expect(refusalMessage('points')).toMatch(/6 points/)
+    expect(refusalMessage('points')).toMatch(/12 points/)
   })
 
-  it('refuse un nouveau point quand il reste moins de 4 Mo sur les 25 Mo', () => {
-    expect(MAX_BYTES).toBe(25 * 1024 * 1024)
-    expect(canAddPoint(2, 20 * 1024 * 1024)).toEqual({ ok: true })
-    expect(canAddPoint(2, 22 * 1024 * 1024)).toEqual({ ok: false, reason: 'place' })
+  it('refuse un nouveau point quand il reste moins de 4 Mo sur les 50 Mo', () => {
+    expect(MAX_BYTES).toBe(50 * 1024 * 1024)
+    expect(canAddPoint(2, 45 * 1024 * 1024)).toEqual({ ok: true })
+    expect(canAddPoint(2, 47 * 1024 * 1024)).toEqual({ ok: false, reason: 'place' })
     expect(refusalMessage('place')).toMatch(/place/)
   })
 

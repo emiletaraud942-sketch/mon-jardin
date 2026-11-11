@@ -351,10 +351,10 @@ describe('points de vue en photos (panoramas)', () => {
     expect(p[0].shots.map((s) => s.headingDeg)).toEqual([270, 5])
   })
 
-  it('6 points au plus, 12 photos par point, une seule photo pour un import', () => {
-    const seven = Array.from({ length: 7 }, (_, i) => pano('p' + i, { shots: Array.from({ length: 15 }, (_, k) => shot(`x${i}k${k}`)) }))
+  it('12 points au plus, 12 photos par point, une seule photo pour un import', () => {
+    const seven = Array.from({ length: 13 }, (_, i) => pano('p' + i, { shots: Array.from({ length: 15 }, (_, k) => shot(`x${i}k${k}`)) }))
     const r = withPanos(seven)!
-    expect(r).toHaveLength(6)
+    expect(r).toHaveLength(12)
     expect(r[0].shots).toHaveLength(12)
     const imp = withPanos([pano('i', { kind: 'import', shots: [shot('un'), shot('deux')] })])!
     expect(imp[0].shots).toHaveLength(1)

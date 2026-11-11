@@ -25,7 +25,7 @@ export const LIMITS = {
   taskKeyLength: 256,
   photosPerPlant: 20,
   /** Points de vue en photos par jardin, et photos par point. */
-  panoramasPerGarden: 6,
+  panoramasPerGarden: 12,
   shotsPerPanorama: 12,
   parcelRefs: 50,
   parcelRefLength: 100,

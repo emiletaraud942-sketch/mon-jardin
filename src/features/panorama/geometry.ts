@@ -5,7 +5,7 @@ import { LIMITS } from '../../lib/security/limits'
 
 export const MAX_POINTS = LIMITS.panoramasPerGarden
 /** Place maximale pour les photos d'un jardin (octets). */
-export const MAX_BYTES = 25 * 1024 * 1024
+export const MAX_BYTES = 50 * 1024 * 1024
 /** Cible d'une photo prise sur place (octets) et plus grand côté. */
 export const SHOT_BYTES = 300 * 1024
 export const SHOT_SIDE = 1280

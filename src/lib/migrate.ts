@@ -181,7 +181,7 @@ function sanitizeGarden(raw: unknown, report: Report): Garden | undefined {
 
 /**
  * Points de vue en photos : un point sans position, sans date ou sans aucune photo valide est écarté ;
- * une photo à l'identifiant invalide ou au cap absurde est retirée. 6 points au plus, 12 photos par point.
+ * une photo à l'identifiant invalide ou au cap absurde est retirée. 12 points au plus, 12 photos par point.
  * Un identifiant de photo ne sert qu'une fois (sinon supprimer un point effacerait la photo d'un autre).
  */
 export function sanitizePanoramas(raw: unknown, report: { add(id: string, one: string, many: string, n?: number): void }): Panorama[] {
