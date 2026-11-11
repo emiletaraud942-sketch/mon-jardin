@@ -81,6 +81,29 @@ function deleteGardenWithUndo(garden: Garden) {
   })
 }
 
+/** Confirmation avant de supprimer UN jardin (celui de « Infos du terrain » comme n'importe lequel de « Mes jardins »). */
+export function DeleteGardenDialog({ garden, onClose }: { garden: Garden; onClose: () => void }) {
+  const plants = useGardenPlants(garden.id)
+  const hasPhotos = plants.some((p) => p.photos.length > 0)
+  return (
+    <ConfirmModal
+      title={`Supprimer « ${garden.name} » ?`}
+      confirmLabel="Supprimer ce jardin"
+      photosNote={hasPhotos}
+      onBackup={() => exportCurrentState('permajardin-avant-suppression', false)}
+      onCancel={onClose}
+      onConfirm={() => {
+        onClose()
+        deleteGardenWithUndo(garden)
+      }}
+    >
+      <p>
+        Ce jardin et ses {plants.length} plante{plants.length > 1 ? 's' : ''} seront retirés de cet appareil. Vous aurez 15 secondes pour annuler.
+      </p>
+    </ConfirmModal>
+  )
+}
+
 function GardenInfo({ garden }: { garden: Garden }) {
   const plants = useGardenPlants(garden.id)
   const gardens = useStore((s) => s.gardens)
@@ -101,7 +124,6 @@ function GardenInfo({ garden }: { garden: Garden }) {
     }
   }
 
-  const hasPhotos = plants.some((p) => p.photos.length > 0)
   const climate = climateSummary(garden)
   const terrain = [garden.areaM2 ? `${frNumber(garden.areaM2, 0)} m²` : '', garden.altitudeM != null ? `altitude ${frNumber(garden.altitudeM, 0)} m` : ''].filter(Boolean).join(' · ')
 
@@ -171,23 +193,7 @@ function GardenInfo({ garden }: { garden: Garden }) {
           <Icon name="trash" size={16} /> Supprimer ce jardin
         </button>
       </div>
-      {deleting && (
-        <ConfirmModal
-          title={`Supprimer « ${garden.name} » ?`}
-          confirmLabel="Supprimer ce jardin"
-          photosNote={hasPhotos}
-          onBackup={() => exportCurrentState('permajardin-avant-suppression', false)}
-          onCancel={() => setDeleting(false)}
-          onConfirm={() => {
-            setDeleting(false)
-            deleteGardenWithUndo(garden)
-          }}
-        >
-          <p>
-            Ce jardin et ses {plants.length} plante{plants.length > 1 ? 's' : ''} seront retirés de cet appareil. Vous aurez 15 secondes pour annuler.
-          </p>
-        </ConfirmModal>
-      )}
+      {deleting && <DeleteGardenDialog garden={garden} onClose={() => setDeleting(false)} />}
     </Fold>
   )
 }
@@ -760,7 +766,26 @@ function ReadingCard() {
   )
 }
 
-/** Changer de jardin, en créer un autre. */
+/** Une ligne de « Mes jardins » : choisir ce jardin, ou le supprimer (seulement s'il y en a plusieurs ; le dernier se supprime dans « Infos du terrain »). */
+function GardenRow({ g, current, deletable }: { g: Garden; current: boolean; deletable: boolean }) {
+  const [deleting, setDeleting] = useState(false)
+  return (
+    <li className="garden-row">
+      <button className="btn garden-pick" aria-pressed={current} onClick={() => !current && setActiveGarden(g.id)}>
+        <span style={{ flex: 1, textAlign: 'left' }}>{g.name}</span>
+        {current && <span className="muted small">affiché</span>}
+      </button>
+      {deletable && (
+        <button className="btn garden-delete" data-garden-delete={g.id} aria-label={`Supprimer le jardin « ${g.name} »`} onClick={() => setDeleting(true)}>
+          <Icon name="trash" size={16} /> <span aria-hidden>Supprimer</span>
+        </button>
+      )}
+      {deleting && <DeleteGardenDialog garden={g} onClose={() => setDeleting(false)} />}
+    </li>
+  )
+}
+
+/** Changer de jardin, en créer un autre, supprimer ceux dont on ne se sert plus. */
 function GardensCard({ garden, adding, setAdding, addRef }: { garden: Garden; adding: boolean; setAdding: (v: boolean) => void; addRef: React.RefObject<HTMLDivElement> }) {
   const gardens = useStore((s) => s.gardens)
   return (
@@ -768,14 +793,10 @@ function GardensCard({ garden, adding, setAdding, addRef }: { garden: Garden; ad
       <h2>Mes jardins</h2>
       <ul className="list garden-list">
         {gardens.map((g) => (
-          <li key={g.id}>
-            <button className="btn garden-pick" aria-pressed={g.id === garden.id} onClick={() => g.id !== garden.id && setActiveGarden(g.id)}>
-              <span style={{ flex: 1, textAlign: 'left' }}>{g.name}</span>
-              {g.id === garden.id && <span className="muted small">affiché</span>}
-            </button>
-          </li>
+          <GardenRow key={g.id} g={g} current={g.id === garden.id} deletable={gardens.length > 1} />
         ))}
       </ul>
+      {gardens.length > 1 && <p className="small muted garden-list-note">Un jardin dont vous ne vous servez plus ? Touchez « Supprimer » : vous aurez 15 secondes pour annuler.</p>}
       <div style={{ marginTop: 10 }} data-feat="nouveau-jardin">
         {adding ? (
           <GardenCreator onDone={() => setAdding(false)} />

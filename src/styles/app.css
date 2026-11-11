@@ -3830,6 +3830,27 @@ html[data-immersive] body {
   background: var(--accent-soft);
   border-color: var(--accent);
 }
+/* « Mes jardins » : le choix du jardin et, à côté, sa suppression (elle passe à la ligne si la place manque). */
+.garden-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.garden-row .garden-pick {
+  flex: 1 1 12rem;
+  width: auto;
+}
+.garden-delete {
+  flex: 0 0 auto;
+  min-height: var(--tap);
+  gap: 6px;
+  background: var(--surface);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.garden-list-note {
+  margin: 8px 0 0;
+}
 
 /* Bienvenue : titre, forme sauge et plantes, phrase, points, « Commencer » (maquette Leafora : 390 px de large) */
 .welcome-body {

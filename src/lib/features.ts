@@ -219,6 +219,7 @@ export const FEATURES: Feature[] = [
     void reveal(['nouveau-jardin'])
   }),
   F('changer-jardin', 'Changer de jardin', 'compte', 'Passez d’un de vos jardins à un autre.', ['changer', 'jardin', 'plusieurs jardins', 'basculer'], 'mes-jardins', go('reglages', { path: ['mes-jardins'] })),
+  F('supprimer-jardin', 'Supprimer un jardin', 'compte', 'Retire un jardin dont vous ne vous servez plus. Vous pouvez annuler pendant 15 secondes.', ['supprimer', 'effacer', 'enlever', 'retirer', 'jardin', 'plusieurs jardins', 'inutile', 'compte'], 'mes-jardins', go('reglages', { path: ['mes-jardins'] })),
   F('installer', 'Installer l’appli sur mon téléphone', 'compte', 'Une icône sur l’écran d’accueil, et l’appli s’ouvre comme les autres.', ['installer', 'icône', 'écran d’accueil', 'application', 'ajouter'], 'installer', go('reglages', { path: ['installer'] })),
   F('vie-privee', 'Vie privée et tout effacer', 'compte', 'Ce que garde l’appli, vos accords, et l’effacement complet.', ['vie privée', 'effacer', 'supprimer mes données', 'rgpd', 'confidentialité', 'accords'], 'vie-privee', go('reglages', { path: ['vie-privee'] })),
 ]
