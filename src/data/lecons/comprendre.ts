@@ -18,7 +18,7 @@ export const COMPRENDRE: Lecon[] = [
       'Repérez aussi le vent dominant, les creux où l’eau stagne et les coins qui gèlent en premier.',
       'Notez tout sur un plan ou en photos, à chaque saison : vous éviterez bien des erreurs de placement.',
     ],
-    essayer: { fonction: 'ensoleillement', libelle: 'Voir l’ensoleillement de mon terrain' },
+    essayer: { fonction: 'ou-planter', libelle: 'Voir quelle plante va où chez moi' },
     quiz: [
       {
         question: 'Combien de soleil direct aime en général une tomate ?',

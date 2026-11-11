@@ -211,7 +211,7 @@ function LidarCard({ garden }: { garden: Garden }) {
         <span>Utiliser les arbres des environs (données IGN)</span>
       </label>
       <p className="small muted" style={{ margin: '6px 0 0' }}>
-        Leur ombre compte dans « Où planter ? » et la vue 3D. Sans ces données, rien ne change.
+        Leur ombre compte dans « Où planter ? ». Sans ces données, rien ne change.
       </p>
       {lidar.enabled && (
         <div className="stack" style={{ marginTop: 8 }}>

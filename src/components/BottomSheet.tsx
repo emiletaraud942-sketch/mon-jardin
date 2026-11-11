@@ -6,7 +6,7 @@ export type SheetSnap = 'min' | 'mid' | 'max'
 const ORDER: SheetSnap[] = ['min', 'mid', 'max']
 
 /**
- * Feuille du bas partagée (carte, 3D, Où planter ?, Catalogue). Trois hauteurs : réduite (≈ 90 px), mi-hauteur, grande.
+ * Feuille du bas partagée (carte, Où planter ?, Catalogue). Trois hauteurs : réduite (≈ 90 px), mi-hauteur, grande.
  * On change de hauteur en touchant ou en faisant glisser la poignée, ou avec les boutons Agrandir / Réduire.
  * Au-dessus de 760 px : panneau latéral habituel (sans poignée).
  */

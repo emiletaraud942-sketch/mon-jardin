@@ -31,16 +31,6 @@ export const HELP: Record<Tab, HelpContent> = {
       'Pour zoomer, pincez avec deux doigts ou touchez + et −. Le trait jaune montre les limites du terrain.',
     ],
   },
-  '3d': {
-    title: 'La Vue 3D',
-    steps: [
-      'Faites tourner la vue avec deux doigts, ou avec la souris.',
-      'Choisissez « Dessus » ou « Perspective ».',
-      'Le curseur montre vos arbres dans quelques années, avec leur ombre.',
-      '« Heure » règle le soleil et les saisons : les ombres suivent.',
-      'Pour déplacer une plante, glissez-la. Ou ouvrez sa fiche et touchez « Déplacer cette plante ».',
-    ],
-  },
   plantes: {
     title: 'Mes plantes',
     steps: [
@@ -146,7 +136,7 @@ export const RAYONS_HELP = {
   title: 'À quoi servent les 4 parties de l’appli ?',
   intro: 'Les boutons du bas rangent l’appli en 4 parties, plus l’Accueil. Rien n’est bloqué.',
   rayons: [
-    { name: 'Mon jardin', text: 'La carte, vos plantes et la vue 3D. Touchez Carte, Plantes ou Vue 3D, en haut.' },
+    { name: 'Mon jardin', text: 'La carte, vos plantes et vos photos. Touchez Carte, Plantes ou Photos, en haut.' },
     { name: 'À faire', text: 'Quoi faire cette semaine : tailler, désherber, arroser, récolter. Avec la météo et le calendrier.' },
     { name: 'Où planter ?', text: `Où planter chaque plante, et le catalogue des ${SPECIES.length} plantes.` },
     { name: 'Voisins', text: 'Dons, questions et rendez-vous près de chez vous. Facultatif.' },

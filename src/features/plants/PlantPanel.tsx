@@ -279,7 +279,6 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
         <button className="btn plant-move" onClick={() => startMoving(plant.id)}>
           <Icon name="move" size={16} /> Déplacer cette plante
         </button>
-        <p className="small muted plant-move-hint">Sur la carte 3D, vous pouvez aussi la glisser avec le doigt.</p>
         {!fiche && (
           <button className="btn" onClick={() => openScan('mesures', { kind: 'plant', plantId: plant.id })}>
             <Icon name="pin" size={16} /> Placer au mètre

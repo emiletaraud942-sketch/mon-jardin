@@ -113,7 +113,7 @@ function PurchaseForm({ plantId }: { plantId: string }) {
     <Modal title="Comment l’avez-vous achetée ?" onClose={close}>
       <div className="stack purchase-form">
         <p className="small" style={{ margin: 0 }}>
-          {plantName(plant)} : tout est facultatif. Ces informations rendent sa taille plus juste sur la carte et en 3D.
+          {plantName(plant)} : tout est facultatif. Ces informations rendent sa taille plus juste sur la carte.
         </p>
         <div className="label-scan stack" style={{ gap: 6 }}>
           <label className={'btn file-btn' + (ocr.busy ? ' disabled' : '')}>

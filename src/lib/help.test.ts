@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { HELP, HELP_SCREENS, RAYONS_HELP, helpFor } from './help'
 
 // Copie volontaire de la liste des onglets : importer `ui` demande un navigateur.
-const TABS = ['accueil', 'carte', '3d', 'plantes', 'entretien', 'planter', 'catalogue', 'reglages', 'voisins']
+const TABS = ['accueil', 'carte', 'plantes', 'entretien', 'planter', 'catalogue', 'reglages', 'voisins']
 
 describe('aide contextuelle', () => {
   it('chaque écran a un titre et 3 à 6 étapes non vides', () => {
-    expect(HELP_SCREENS.length).toBeGreaterThanOrEqual(9)
+    expect(HELP_SCREENS.length).toBeGreaterThanOrEqual(8)
     for (const t of HELP_SCREENS) {
       const h = helpFor(t)
       expect(h.title.trim()).not.toBe('')

@@ -29,17 +29,9 @@ const mediaBlock = (source: string, query: string): string => mediaBlocks(source
 
 describe('pastille « Je suis perdu » sur ordinateur', () => {
   const facile = css('facile.css')
-  it('la règle de la 3D qui la monte de 296 px ne vaut que pour un téléphone', () => {
-    const rule = /\.app\[data-tab='3d'\] \.lost-fab\s*\{[^}]*296px[^}]*\}/
-    expect(mediaBlock(facile, '(max-width: 760px)')).toMatch(rule)
-    // Retire chaque bloc téléphone : la règle ne doit plus figurer nulle part ailleurs.
-    let rest = facile
-    for (const b of mediaBlocks(facile, '(max-width: 760px)')) rest = rest.replace(b, '')
-    expect(rest).not.toMatch(rule)
-  })
-  it('sur ordinateur elle se pose dans le bas du menu de gauche, y compris en carte et en 3D (jamais sur le contenu)', () => {
+  it('sur ordinateur elle se pose dans le bas du menu de gauche, y compris en carte (jamais sur le contenu)', () => {
     const desk = mediaBlock(facile, '(min-width: 761px)')
-    const rule = desk.match(/\.lost-fab,\s*\.app\[data-tab='carte'\] \.lost-fab,\s*\.app\[data-tab='3d'\] \.lost-fab\s*\{([^}]*)\}/)?.[1] ?? ''
+    const rule = desk.match(/\.lost-fab,\s*\.app\[data-tab='carte'\] \.lost-fab\s*\{([^}]*)\}/)?.[1] ?? ''
     expect(rule).toMatch(/left:\s*12px/)
     expect(rule).toMatch(/right:\s*auto/)
     expect(rule).toMatch(/bottom:\s*12px/)
@@ -49,7 +41,7 @@ describe('pastille « Je suis perdu » sur ordinateur', () => {
     const desk = mediaBlock(facile, '(min-width: 761px)')
     expect(desk).toMatch(/\.sidenav\s*\{[^}]*padding-bottom:\s*calc\(var\(--tap\)\s*\+\s*28px\)/)
   })
-  it('elle ne s’efface plus quand un panneau de la carte ou de la 3D est ouvert (elle ne gêne plus rien)', () => {
+  it('elle ne s’efface plus quand un panneau de la carte est ouvert (elle ne gêne plus rien)', () => {
     expect(facile).not.toMatch(/\.app:has\(#map-options\) \.lost-fab/)
   })
 })
@@ -64,7 +56,6 @@ describe('deux colonnes : la carte garde sa place', () => {
     const b = mediaBlock(app, '(min-width: 761px) and (max-width: 1000px) and (min-height: 501px)')
     expect(b).toMatch(/\.workspace\s*\{[^}]*flex-direction:\s*column/)
     expect(b).toMatch(/\.sidepanel\s*\{[^}]*max-height:\s*40%/)
-    expect(b).toMatch(/\.app\[data-tab='3d'\] \.sidepanel\s*\{[^}]*max-height:\s*28%/)
     expect(b).toMatch(/\.app\.is-placing \.sidepanel\s*\{[^}]*display:\s*none/)
   })
   it('à 1001 px, la carte garde au moins 480 px (calcul sur les plafonds)', () => {
@@ -124,12 +115,6 @@ describe('écrans plein cadre : largeur de lecture', () => {
     expect(p).toMatch(/\.pano-bar,\s*\.pano-top\s*\{[^}]*var\(--pano-pad\)/)
     expect(p).toMatch(/\.pano-overlay \.pano-home\s*\{[^}]*var\(--pano-pad\)/)
     expect(p).toMatch(/\.pano-scroll,[^{]*\{\s*width:\s*min\(100%,\s*720px\)/)
-  })
-})
-
-describe('Grandes touches : curseurs de la 3D', () => {
-  it('« Heure de la journée » fait 56 px', () => {
-    expect(css('facile.css')).toMatch(/html\[data-big-taps\] \.g3d-hourfield input\[type='range'\][^{]*\{[^}]*height:\s*56px/)
   })
 })
 
@@ -232,7 +217,7 @@ describe('carte courte (853 × 533) : l’invite du jardin vide se retire au lie
   })
 })
 
-describe('carte sur téléphone : « Ajouter une plante », 3D et parcours', () => {
+describe('carte sur téléphone : « Ajouter une plante » et parcours', () => {
   const nav = css('mobile-nav.css')
   const facile = css('facile.css')
   const view = read('../features/map/MapView.tsx')
@@ -241,10 +226,6 @@ describe('carte sur téléphone : « Ajouter une plante », 3D et parcours', () 
   })
   it('jardin vide : la mention sur la photo laisse la place à l’invite dans la colonne', () => {
     expect(view).toContain('{noteInColumn && !(mobileMap && emptyCard) && photoNote}')
-  })
-  it('3D : « Heure et réglages » ouvert, le gros bouton « Ajouter une plante » se cache', () => {
-    expect(nav).toMatch(/\.app:has\(#g3d-time-panel\) \.add-fab\s*\{\s*display:\s*none/)
-    expect(read('../features/garden3d/Garden3D.tsx')).toContain('id="g3d-time-panel"')
   })
   it('Grandes touches : un lien de phrase est une boîte de 56 px, sans zone ::after qui recouvre le lien de la ligne voisine', () => {
     expect(facile).toMatch(/html\[data-big-taps\] p \.legal-link\s*\{[^}]*display:\s*inline-flex[^}]*min-height:\s*56px/)

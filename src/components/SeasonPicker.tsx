@@ -4,12 +4,12 @@ interface Props {
   /** Choix affiché comme actif (« aujourdhui » si rien n'est choisi). */
   value: SeasonChoice | undefined
   onChange: (choice: SeasonChoice) => void
-  /** Classe des boutons : celle de la 3D ou celle de l'appli. */
+  /** Classe des boutons. */
   buttonClass?: string
   className?: string
 }
 
-/** Boutons Aujourd'hui · Hiver · Printemps · Été · Automne : un seul choix pour la 3D, la carte et les photos du jardin. */
+/** Boutons Aujourd'hui · Hiver · Printemps · Été · Automne : un seul choix pour la carte et les photos du jardin. */
 export function SeasonPicker({ value, onChange, buttonClass = 'btn small', className = '' }: Props) {
   const current = value ?? 'aujourdhui'
   return (

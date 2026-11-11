@@ -92,7 +92,7 @@
 .add-fab {
   position: absolute;
   left: 50%;
-  bottom: 160px; /* au-dessus de l’échelle, de l’attribution et des commandes de la 3D */
+  bottom: 160px; /* au-dessus de l’échelle et de l’attribution */
   z-index: 8;
   transform: translateX(-50%);
   min-height: var(--btn-h);
@@ -116,7 +116,7 @@
     font-size: min(calc(24 * var(--px)), 5.8vw);
     line-height: 1.1;
   }
-  /* Sélecteur de l'écran (Carte / Plantes / Vue 3D, Où planter ? / Catalogue) : une seule rangée de 52 px sous le titre. */
+  /* Sélecteur de l'écran (Carte / Plantes, Où planter ? / Catalogue) : une seule rangée de 52 px sous le titre. */
   .app.has-phead .modebar,
   .app:has(.main.full) .modebar {
     padding: 6px 22px 6px;
@@ -360,10 +360,6 @@
     display: none;
   }
   .app:has(#map-options) .add-fab {
-    display: none;
-  }
-  /* 3D : « Heure et réglages » ouvert (#g3d-time-panel, seulement dans le DOM tant qu'il est ouvert), le bouton passait dessous (360 px) : même règle que pour les Options. */
-  .app:has(#g3d-time-panel) .add-fab {
     display: none;
   }
   /* Légende seule : elle s'allonge (mention sur les limites du cadastre) ; elle défile au-dessus du bouton « Ajouter une plante ». */

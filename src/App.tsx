@@ -48,15 +48,12 @@ import { useConsents } from './lib/consent'
 import { InviteButton } from './components/InviteButton'
 import { useScanUi } from './features/scan/scanUi'
 import { usePanoUi } from './features/panorama/panoUi'
-import { Garden3DGate } from './features/garden3d/Garden3DGate'
-import { preload3d } from './features/garden3d/preload3d'
 // En dernier : harmonisation Leafora (surcharge les feuilles de style des écrans ci-dessus), puis la navigation du téléphone (chantier D).
 import './styles/leafora.css'
 import './styles/mobile-nav.css'
 import './styles/panorama.css'
 import './styles/facile.css'
 
-const View3D = lazy(() => import('./features/garden3d/View3D'))
 const NeighborsPage = lazy(() => import('./features/neighbors/NeighborsPage').then((m) => ({ default: m.NeighborsPage })))
 const ScanHost = lazy(() => import('./features/scan/ScanHost'))
 const PanoHost = lazy(() => import('./features/panorama/PanoHost'))
@@ -74,7 +71,7 @@ const Loading = ({ label }: { label: string }) => (
 
 /** Écrans qui, sur téléphone, ont l'en-tête minimal (titre en serif et une seule action : le profil, 52 px) à la place de la barre du haut.
  *  Plus de petite phrase ni de « ? » : l'aide est dans la feuille du jardin, les options de la carte et Réglages. */
-/** « Mon jardin » : la visite en photos, à côté de la carte, des plantes et de la 3D (même fonction que le bouton de l'accueil). */
+/** « Mon jardin » : la visite en photos, à côté de la carte et des plantes (même fonction que le bouton de l'accueil). */
 const PHOTOS_EXTRA: SubTabExtra = {
   label: 'Photos',
   name: 'Visiter mon jardin en photos',
@@ -82,7 +79,7 @@ const PHOTOS_EXTRA: SubTabExtra = {
   onClick: () => FEATURES.find((f) => f.id === 'visite-photos')?.run(),
 }
 
-const PHEAD_TABS: Tab[] = ['carte', '3d', 'plantes', 'planter', 'catalogue', 'voisins', 'reglages']
+const PHEAD_TABS: Tab[] = ['carte', 'plantes', 'planter', 'catalogue', 'voisins', 'reglages']
 
 const RAYON_ICON: Record<Rayon, string> = { jardin: 'map', afaire: 'check', planter: 'leaf', voisins: 'users' }
 
@@ -170,9 +167,6 @@ function AppShell() {
     }
     // Une seule fois par chargement : plantCount ne doit pas relancer le choix.
   }, [loaded, gardenId]) // eslint-disable-line react-hooks/exhaustive-deps
-  // Précharge la vue 3D quand le navigateur est inactif, une fois le jardin chargé (jamais si saveData ou 2g/3g).
-  const hasGarden = !!garden
-  useEffect(() => (loaded && hasGarden ? preload3d() : undefined), [loaded, hasGarden])
   // Mémorise les écrans déjà ouverts (alimente la jauge de conseil de l'accueil).
   useEffect(() => {
     if (loaded && gardenId) noteVisit(tab, gardenId)
@@ -231,7 +225,7 @@ function AppShell() {
     )
   }
 
-  const full = tab === 'carte' || tab === '3d'
+  const full = tab === 'carte'
   const rayon = rayonOfTab(tab)
   const tabs = subTabs(rayon)
   const rayons = visibleRayons(neighborsEnabled)
@@ -239,7 +233,6 @@ function AppShell() {
   const phead = PHEAD_TABS.includes(tab)
   const pheadTitle: Record<string, string> = {
     carte: 'Ma carte',
-    '3d': 'Vue 3D',
     plantes: `Mes plantes (${plantCount})`,
     planter: 'Où planter ?',
     catalogue: `Catalogue (${Object.keys(SPECIES_BY_ID).length})`,
@@ -340,15 +333,6 @@ function AppShell() {
             <Suspense fallback={<Loading label="Chargement de la carte…" />}>
               <MapView garden={garden} />
             </Suspense>
-          )}
-          {tab === '3d' && (
-            <ErrorBoundary inline resetKey={tab}>
-              <Garden3DGate>
-                <Suspense fallback={<Loading label="Chargement de la Vue 3D…" />}>
-                  <View3D garden={garden} />
-                </Suspense>
-              </Garden3DGate>
-            </ErrorBoundary>
           )}
           {tab === 'plantes' && <PlantsPage garden={garden} />}
           {tab === 'entretien' && <TasksPage garden={garden} />}

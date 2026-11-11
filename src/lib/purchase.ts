@@ -97,7 +97,7 @@ export function measureAdvice(plant: Plant, now: Date): MeasureAdvice | undefine
   const last = dates.length ? Math.max(...dates) : undefined
   const growing = now.getMonth() >= 3 && now.getMonth() <= 8
   if (last === undefined) {
-    return { due: true, text: 'Mesurez-la maintenant : sa taille sera juste sur la carte et en 3D.' }
+    return { due: true, text: 'Mesurez-la maintenant : sa taille sera juste sur la carte.' }
   }
   const days = Math.floor((now.getTime() - last) / DAY)
   const months = Math.max(1, Math.round(days / 30))

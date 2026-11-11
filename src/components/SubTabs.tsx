@@ -1,7 +1,7 @@
 import { useRef, type KeyboardEvent } from 'react'
 import { SUB_LABEL, setUi, type Tab } from '../lib/ui'
 
-/** Sélecteur segmenté d'un rayon (Carte / Plantes / Vue 3D, Où planter ? / Catalogue) : onglets ARIA, flèches ←/→, un seul dans l'ordre de tabulation. */
+/** Sélecteur segmenté d'un rayon (Carte / Plantes, Où planter ? / Catalogue) : onglets ARIA, flèches ←/→, un seul dans l'ordre de tabulation. */
 /** `extra` : un bouton d'action à la suite des onglets (il ouvre un écran par-dessus, il n'est pas un onglet). */
 export interface SubTabExtra {
   label: string

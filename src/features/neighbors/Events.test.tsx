@@ -150,7 +150,7 @@ describe('registre et accueil', () => {
   const f = FEATURES.find((x) => x.id === 'evenements-voisins')!
   it('la fonction est au registre, avec son repère, sa rubrique et ses mots', () => {
     expect(f).toBeDefined()
-    expect(FEATURES).toHaveLength(86)
+    expect(FEATURES).toHaveLength(81)
     expect(f.cible).toBe('evenements')
     expect(f.rubrique).toBe('voisins')
     expect(f.mot).toBe('Voir les événements près de chez moi')

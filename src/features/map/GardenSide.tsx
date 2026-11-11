@@ -28,7 +28,7 @@ export function useSheetHead(garden: Garden): { title: string; summary: string }
   return { title: garden.name, summary: `${plants.length} plante${plants.length > 1 ? 's' : ''}` }
 }
 
-/** Fiche plante en plein écran (carte, 3D) : fenêtre modale, le reste de la page est inerte. */
+/** Fiche plante en plein écran (carte) : fenêtre modale, le reste de la page est inerte. */
 function FicheOverlay({ label, children }: { label: string; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
   useInertBehind(true)
@@ -40,7 +40,7 @@ function FicheOverlay({ label, children }: { label: string; children: ReactNode 
   )
 }
 
-/** Panneau latéral partagé par la carte et la 3D. */
+/** Panneau latéral de la carte. */
 export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
   const plants = useGardenPlants(garden.id)
   const { selectedPlantId, movingPlantId, placingSpeciesId } = useUi()
@@ -137,12 +137,11 @@ export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
  * Trois gestes : « Ajouter une plante » (2 touchers pour la choisir), toucher la carte (ou viser), « Valider ».
  */
 export function PlacingBanner() {
-  const { tab, placingSpeciesId, placingCustomName, placingSeries, movingPlantId, aim, placingSpot } = useUi()
+  const { placingSpeciesId, placingCustomName, placingSeries, movingPlantId, aim, placingSpot } = useUi()
   const moving = useStore((s) => (movingPlantId ? s.plants.find((p) => p.id === movingPlantId) : undefined))
   const info = usePlacingInfo()
   const reserve = usePlacingReserve()
-  // En Vue 3D, la scène affiche sa propre consigne : une seule bannière.
-  if (tab === '3d' || (!placingSpeciesId && !movingPlantId)) return null
+  if (!placingSpeciesId && !movingPlantId) return null
   const name = movingPlantId
     ? moving
       ? plantName(moving)

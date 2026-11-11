@@ -24,7 +24,7 @@ function setWanting(id: BannerId, on: boolean) {
 
 /**
  * Déclare qu'un bandeau veut s'afficher et dit si c'est son tour.
- * Pendant un placement (carte ou 3D), aucun bandeau : la carte est libre.
+ * Pendant un placement (carte), aucun bandeau : la carte est libre.
  */
 export function useBanner(id: BannerId, wants: boolean): boolean {
   const { placingSpeciesId, movingPlantId } = useUi()

@@ -32,7 +32,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npx vite build
-      # Budget de taille (gzip) : entrée, précache du service worker, chunks three et maplibre. Seuils dans scripts/check-bundle.mjs.
+      # Budget de taille (gzip) : entrée, précache du service worker, chunk maplibre. Seuils dans scripts/check-bundle.mjs.
       - run: npm run check:bundle
 
   e2e:

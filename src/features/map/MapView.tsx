@@ -1154,8 +1154,10 @@ function MapViewInner({ garden }: { garden: Garden }) {
               <button className={'btn small' + (cadastre ? ' on' : '')} aria-pressed={cadastre} onClick={() => setCadastre((c) => !c)}>
                 {cadastre ? '✓ ' : ''}Limites du terrain
               </button>
-              <span className="map-opt-label">Saison du jardin</span>
-              <SeasonPicker value={season} onChange={(c) => setUi({ season: c })} />
+              <div data-feat="saison">
+                <span className="map-opt-label">Saison du jardin</span>
+                <SeasonPicker value={season} onChange={(c) => setUi({ season: c })} />
+              </div>
               <button className={'btn small' + (adult ? ' on' : '')} aria-pressed={adult} onClick={() => setAdult((a) => !a)}>
                 {adult ? '✓ ' : ''}Taille adulte
               </button>

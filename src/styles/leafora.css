@@ -65,7 +65,7 @@
     padding: 16px 22px 28px;
   }
 
-  /* En-tête compact de la carte et de la Vue 3D : même style, 52 px de haut. */
+  /* En-tête compact de la carte : même style, 52 px de haut. */
   .phead-slot:has(.pagehead.compact) {
     padding-top: max(8px, env(safe-area-inset-top));
   }

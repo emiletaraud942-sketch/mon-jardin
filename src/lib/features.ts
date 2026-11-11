@@ -28,7 +28,7 @@ export interface Rubrique {
 export const RUBRIQUES: Rubrique[] = [
   { id: 'jardin', titre: 'Mon jardin', phrase: 'La carte, le placement des plantes, le scanner.' },
   { id: 'plantes', titre: 'Mes plantes', phrase: 'Vos plantes, leurs photos, leur croissance, le catalogue.' },
-  { id: 'promener', titre: 'Regarder mon jardin', phrase: 'La 3D, les saisons, le soleil, les photos du jardin.' },
+  { id: 'promener', titre: 'Regarder mon jardin', phrase: 'Les saisons du jardin et les photos du jardin.' },
   { id: 'afaire', titre: 'À faire et conseils', phrase: 'Les tâches, la météo, quoi semer, où planter.' },
   { id: 'voisins', titre: 'Voisins', phrase: 'L’entraide entre voisins et le partage de l’appli.' },
   { id: 'compte', titre: 'Mon compte et mes données', phrase: 'Texte, sauvegardes, jardins, vie privée.' },
@@ -157,12 +157,7 @@ export const FEATURES: Feature[] = [
   F('filtres-catalogue', 'Filtrer le catalogue', 'plantes', 'Triez par comestible, mellifère, ombre, facile ou ce mois-ci.', ['filtres', 'comestible', 'ombre', 'facile', 'mellifère', 'exposition', 'trier'], 'catalogue-filtres', go('catalogue', { path: ['catalogue-filtres'] })),
 
   // Regarder mon jardin
-  F('vue-3d', 'Voir mon jardin en 3D', 'promener', 'Faites tourner votre jardin, vu de dessus ou en perspective.', ['3d', 'relief', 'tourner', 'perspective', 'maquette'], 'vue-3d', go('3d', { path: ['vue-3d'] })),
-  F('heure-soleil', 'Régler l’heure et le soleil', 'promener', 'Voyez les ombres du jardin à l’heure et au jour de votre choix.', ['heure', 'soleil', 'ombre', 'jour', 'horloge'], 'heure', go('3d', { intent: '3d:heure', path: ['heure'] })),
-  F('saison', 'Voir mon jardin à une autre saison', 'promener', 'Hiver, printemps, été ou automne : feuilles, fleurs et fruits changent.', ['saison', 'hiver', 'printemps', 'été', 'automne', 'feuilles', 'fleurs'], 'saison', go('3d', { intent: '3d:heure', path: ['saison'] })),
-  F('annees', 'Voir mes plantes dans quelques années', 'promener', 'Un curseur fait grandir les plantes jusqu’à 20 ans plus tard.', ['années', 'grandir', 'avenir', 'croissance', 'plus tard'], 'annees', go('3d', { intent: '3d:reglages', path: ['annees'] })),
-  F('qualite-3d', 'Réglages 3D : qualité', 'promener', 'Choisissez « Simple » si la 3D ralentit sur votre téléphone.', ['qualité', 'lent', 'ralentit', 'simple', 'performance', 'réglages 3d'], 'qualite', go('3d', { intent: '3d:reglages', path: ['qualite'] })),
-  F('ensoleillement', 'Voir l’ensoleillement du terrain', 'promener', 'Colore le terrain selon les heures de soleil reçues le jour choisi.', ['ensoleillement', 'soleil', 'ombre', 'lumière', 'heures de soleil'], 'ensoleillement', go('3d', { path: ['ensoleillement'] })),
+  F('saison', 'Voir mon jardin à une autre saison', 'promener', 'Hiver, printemps, été ou automne : feuilles, fleurs et fruits changent.', ['saison', 'hiver', 'printemps', 'été', 'automne', 'feuilles', 'fleurs'], 'saison', go('carte', { intent: 'carte:options', path: ['map-options', 'saison'] })),
   F('photos-jardin', 'Photos du jardin', 'promener', 'Regardez de vraies photos de votre jardin, prises en tournant.', ['photos', 'street view', '360', 'panorama', 'points de vue'], 'pano-home', () => openPanorama('home')),
   F('visite-photos', 'Faire la visite en photos', 'promener', 'Passez d’un point de vue à l’autre : l’appli tourne sur chacun, puis vous emmène au suivant.', ['visite', 'photos', 'points de vue', 'street view', 'parcours', 'tour', 'automatique', 'promenade'], 'pano-visite', () => {
     // Deux points avec photos ou plus : la visite part tout de suite. Sinon, on ouvre la liste et on montre quoi faire.

@@ -5,12 +5,12 @@ import type { SeasonChoice } from '../engine/season'
 import { neighborsEnabled } from './neighbors/enabled'
 import { EMPTY_ONBOARDING, hideRoute, markStep, markWelcomed, parseOnboarding, restartTour, type OnboardingState, type OnboardingStepId } from './onboarding'
 
-// État d'interface partagé entre la carte, la 3D et les panneaux. Seuls le dernier rayon et les repères (GuideState) sont mémorisés.
-export type Tab = 'accueil' | 'carte' | '3d' | 'plantes' | 'entretien' | 'planter' | 'catalogue' | 'reglages' | 'voisins'
+// État d'interface partagé entre la carte et les panneaux. Seuls le dernier rayon et les repères (GuideState) sont mémorisés.
+export type Tab = 'accueil' | 'carte' | 'plantes' | 'entretien' | 'planter' | 'catalogue' | 'reglages' | 'voisins'
 
 /**
  * Les 4 rayons de l'appli (barre du bas). Chacun regroupe des écrans :
- * Mon jardin = carte, plantes, vue 3D ; À faire = entretien, météo, calendrier ; Où planter ? = conseils et catalogue ; Voisins = entraide.
+ * Mon jardin = carte, plantes ; À faire = entretien, météo, calendrier ; Où planter ? = conseils et catalogue ; Voisins = entraide.
  */
 export type Rayon = 'jardin' | 'afaire' | 'planter' | 'voisins'
 export const RAYONS: Rayon[] = ['jardin', 'afaire', 'planter', 'voisins']
@@ -18,7 +18,7 @@ export const RAYON_LABEL: Record<Rayon, string> = { jardin: 'Mon jardin', afaire
 /** Libellé court de la barre du bas sur téléphone, quand le long passerait sur deux lignes. Le titre de la page ne change pas. */
 export const RAYON_SHORT: Partial<Record<Rayon, string>> = { planter: 'Planter' }
 export const RAYON_TABS: Record<Rayon, Tab[]> = {
-  jardin: ['carte', 'plantes', '3d'],
+  jardin: ['carte', 'plantes'],
   afaire: ['entretien'],
   planter: ['planter', 'catalogue'],
   voisins: ['voisins'],
@@ -34,7 +34,7 @@ export const visibleRayons = (neighbors: boolean = neighborsEnabled): Rayon[] =>
 /** Écrans du sélecteur segmenté d'un rayon (vide : pas de sélecteur). */
 export const subTabs = (r: Rayon | undefined): Tab[] => (r === 'jardin' || r === 'planter' ? RAYON_TABS[r] : [])
 /** Libellés du sélecteur segmenté d'un rayon. */
-export const SUB_LABEL: Partial<Record<Tab, string>> = { carte: 'Carte', plantes: 'Plantes', '3d': 'Vue 3D', planter: 'Où planter ?', catalogue: 'Catalogue' }
+export const SUB_LABEL: Partial<Record<Tab, string>> = { carte: 'Carte', plantes: 'Plantes', planter: 'Où planter ?', catalogue: 'Catalogue' }
 /** Ancien mode mémorisé (avant les rayons) -> rayon. */
 export const MODE_TO_RAYON: Record<string, Rayon> = { jardin: 'jardin', entretenir: 'afaire', planifier: 'planter' }
 
@@ -72,15 +72,14 @@ export interface GuideState {
   installHidden: boolean
   /** Date (ms) avant laquelle on ne repropose pas « passer à l'entretien ». */
   nudgeUntil: number
-  /** Ids des jardins dont la vue 3D / l'écran Entretien ont déjà été ouverts. */
-  opened3d: string[]
+  /** Ids des jardins dont l'écran Entretien a déjà été ouvert. */
   openedEntretien: string[]
   /** Ids des jardins où l'utilisateur a dit « Je n'ai pas d'arbre » (la prochaine étape passe à la suivante). */
   noTree?: string[]
   /** Avancement du parcours d'accueil. `undefined` : rien d'enregistré, l'état de départ est déduit des jardins et des plantes. */
   onboarding?: OnboardingState
 }
-const DEFAULT_GUIDE: GuideState = { progressOpen: false, stepsHidden: true, stepsOpen: true, demoHidden: false, installHidden: false, nudgeUntil: 0, opened3d: [], openedEntretien: [] }
+const DEFAULT_GUIDE: GuideState = { progressOpen: false, stepsHidden: true, stepsOpen: true, demoHidden: false, installHidden: false, nudgeUntil: 0, openedEntretien: [] }
 export const NUDGE_SNOOZE_MS = 7 * 86400000
 
 function readGuide(): GuideState {
@@ -95,7 +94,6 @@ function readGuide(): GuideState {
       demoHidden: bool(raw.demoHidden, DEFAULT_GUIDE.demoHidden),
       installHidden: bool(raw.installHidden, DEFAULT_GUIDE.installHidden),
       nudgeUntil: typeof raw.nudgeUntil === 'number' && Number.isFinite(raw.nudgeUntil) ? raw.nudgeUntil : 0,
-      opened3d: ids(raw.opened3d),
       openedEntretien: ids(raw.openedEntretien),
       onboarding: parseOnboarding(raw.onboarding),
       ...(Array.isArray(raw.noTree) ? { noTree: ids(raw.noTree) } : {}),
@@ -145,7 +143,7 @@ interface UiState {
   focusPlantId?: string
   /** Demande l'ouverture du formulaire « Nouveau jardin » dans les Réglages. */
   newGarden?: boolean
-  /** Saison du jardin choisie (carte, 3D, photos du jardin). Absent : aujourd'hui. Pas mémorisée : on repart d'aujourd'hui. */
+  /** Saison du jardin choisie (carte, photos du jardin). Absent : aujourd'hui. Pas mémorisée : on repart d'aujourd'hui. */
   season?: SeasonChoice
 }
 
@@ -155,7 +153,6 @@ export type ParcoursScreen = OnboardingStepId | 'fin' | 'auto'
 export const TAB_LABEL: Record<Tab, string> = {
   accueil: 'Accueil',
   carte: 'Carte',
-  '3d': 'Vue 3D',
   plantes: 'Plantes',
   entretien: 'À faire',
   planter: 'Où planter ?',
@@ -164,12 +161,12 @@ export const TAB_LABEL: Record<Tab, string> = {
   voisins: 'Voisins',
 }
 
-export const TABS: Tab[] = ['accueil', 'carte', '3d', 'plantes', 'entretien', 'planter', 'catalogue', 'reglages', 'voisins']
+export const TABS: Tab[] = ['accueil', 'carte', 'plantes', 'entretien', 'planter', 'catalogue', 'reglages', 'voisins']
 /** L'onglet « Voisins » n'existe que si l'entraide est configurée (variables VITE_NEIGHBORS_*). */
 export const tabAvailable = (t: Tab) => t !== 'voisins' || neighborsEnabled
 /** Alias de hash : le retour d'un lien magique de l'entraide arrive sur `#entraide`. */
-const HASH_ALIAS: Record<string, Tab> = { entraide: 'voisins', jardin: 'carte', afaire: 'entretien', compte: 'reglages' }
-const MAP_TABS: Tab[] = ['carte', '3d']
+const HASH_ALIAS: Record<string, Tab> = { entraide: 'voisins', '3d': 'carte', jardin: 'carte', afaire: 'entretien', compte: 'reglages' }
+const MAP_TABS: Tab[] = ['carte']
 
 /** Hash d'un écran (`#carte`). */
 export const toHash = (tab: Tab) => '#' + tab
@@ -285,7 +282,7 @@ export function setUi(patch: Partial<Omit<UiState, 'guide'>>, opts: { push?: boo
     next.rayon = r
     writePref(RAYON_KEY, r)
   }
-  // Quitter la carte/3D abandonne le placement en cours (sinon il resterait actif, invisible).
+  // Quitter la carte abandonne le placement en cours (sinon il resterait actif, invisible).
   if (patch.tab && patch.tab !== prev.tab && !MAP_TABS.includes(patch.tab) && !patch.placingSpeciesId) next = clearPlacing(next)
   ui = next
   syncHistory(prev, next, !!opts.push)
@@ -389,9 +386,8 @@ export function setGuide(patch: Partial<GuideState>) {
   emit()
 }
 
-/** Note que l'écran visité (3D, Entretien) l'a été pour ce jardin : alimente la jauge et le mode conseillé. */
+/** Note que l'écran visité (Entretien) l'a été pour ce jardin : alimente la jauge et le mode conseillé. */
 export function noteVisit(tab: Tab, gardenId: string) {
-  if (tab === '3d' && !ui.guide.opened3d.includes(gardenId)) setGuide({ opened3d: [...ui.guide.opened3d, gardenId] })
   if (tab === 'entretien' && !ui.guide.openedEntretien.includes(gardenId)) setGuide({ openedEntretien: [...ui.guide.openedEntretien, gardenId] })
 }
 
@@ -432,7 +428,7 @@ export function openSpecies(speciesId: string) {
   setUi({ tab: 'catalogue', speciesId }, { push: ui.tab === 'catalogue' && ui.speciesId !== speciesId })
 }
 
-/** Lance le placement d'une plante : bascule sur la carte si on n'est ni sur la carte ni en 3D. */
+/** Lance le placement d'une plante : bascule sur la carte. */
 export function startPlacing(speciesId: string, extra: { customName?: string; photos?: string[]; series?: boolean } = {}) {
   // Depuis l'étape « Mes plantes » du parcours d'accueil : choisir une façon d'ajouter une plante valide l'étape.
   if (ui.parcours === 'plantes') noteStep('plantes', 'done')
@@ -444,7 +440,7 @@ export function startPlacing(speciesId: string, extra: { customName?: string; ph
     selectedPlantId: undefined,
     movingPlantId: undefined,
     placingSpot: undefined,
-    tab: ui.tab === '3d' ? '3d' : 'carte',
+    tab: 'carte',
     parcours: undefined,
   })
 }

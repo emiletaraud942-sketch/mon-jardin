@@ -26,7 +26,7 @@ export const INITIAL_STEPS: Step[] = [
 export const FAIL_HELP: Record<Step['id'], string> = {
   parcelle: 'Le plan de votre terrain manque. La carte sera cadrée à peu près, sans vérifier les distances avec les voisins.',
   batiments: 'Les maisons voisines manquent. L’ombre qu’elles font ne sera pas calculée.',
-  relief: 'La pente du terrain manque. Le terrain sera plat en Vue 3D.',
+  relief: 'La pente du terrain manque. Le terrain sera considéré comme plat.',
   climat: 'Le gel et la pluie de votre région manquent. Le calendrier suivra les dates de toute la France.',
 }
 
@@ -45,7 +45,7 @@ export const SCENE_HALF_SIZE = 40
 const LIDAR_WAIT_MS = 8000
 
 /**
- * Bâtiments sans hauteur dans la BD TOPO : hauteur mesurée au MNH LiDAR si disponible (cache IndexedDB commun avec l'écran 3D),
+ * Bâtiments sans hauteur dans la BD TOPO : hauteur mesurée au MNH LiDAR si disponible (cache IndexedDB commun avec Réglages),
  * sinon 6 m. Silencieux : aucun message, aucune requête si le réglage « arbres des environs » est coupé.
  */
 async function measureUnknownHeights<B extends { id: string; ring: { x: number; y: number }[]; heightM: number }>(buildings: B[], unknownIds: ReadonlySet<string>, center: LonLat): Promise<B[]> {

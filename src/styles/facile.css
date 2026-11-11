@@ -357,12 +357,10 @@
   outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
-.app[data-tab='carte'] .lost-fab,
-.app[data-tab='3d'] .lost-fab {
+.app[data-tab='carte'] .lost-fab {
   bottom: calc(var(--nav-h) + 186px + env(safe-area-inset-bottom)); /* au-dessus de « Ajouter une plante », même en texte très grand */
 }
-.app[data-tab='carte'] .add-fab,
-.app[data-tab='3d'] .add-fab {
+.app[data-tab='carte'] .add-fab {
   left: auto;
   right: 12px;
   transform: none;
@@ -375,8 +373,7 @@
   /* Ordinateur : la pastille se pose dans le bas de la barre latérale (réservée par le padding de `.sidenav`), jamais sur le contenu :
      à droite elle recouvrait « Plus tard », « Fait », une case de Réglages ou le bas du panneau de la carte. */
   .lost-fab,
-  .app[data-tab='carte'] .lost-fab,
-  .app[data-tab='3d'] .lost-fab {
+.app[data-tab='carte'] .lost-fab {
     left: 12px;
     right: auto;
     bottom: 12px;
@@ -386,8 +383,7 @@
   .sidenav {
     padding-bottom: calc(var(--tap) + 28px);
   }
-  .app[data-tab='carte'] .add-fab,
-  .app[data-tab='3d'] .add-fab {
+  .app[data-tab='carte'] .add-fab {
     left: 50%;
     right: auto;
     transform: translateX(-50%);
@@ -458,53 +454,6 @@ dialog.modal.full .modal-head .modal-home {
   margin-left: 0;
 }
 
-/* ----- 3D : un mot à côté de chaque icône ----- */
-.g3d-root .g3d-bar {
-  flex-wrap: wrap;
-  justify-content: stretch;
-}
-.g3d-root .g3d-bar .g3d-seg {
-  flex: 1 1 100%;
-}
-.g3d-root .g3d-bar .g3d-btn--label {
-  flex: 1 1 0;
-  justify-content: center;
-}
-.g3d-root .g3d-hourrow .g3d-btn--label {
-  flex: none;
-  box-shadow: none;
-}
-.g3d-minibtn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-.g3d-minibtn-word {
-  padding: 2px 8px;
-  border-radius: var(--radius-chip);
-  background: var(--surface);
-  color: var(--text);
-  font-size: 0.8125rem;
-  font-weight: var(--fw-strong);
-  line-height: 1.2;
-}
-.g3d-padbtn.g3d-turn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-}
-.g3d-turn-word {
-  font-size: 0.75rem;
-  line-height: 1;
-}
-.g3d-tools .g3d-home {
-  min-width: 118px;
-  justify-content: flex-start;
-}
-
 /* Champ de recherche : l'anneau de focus entoure toute la pilule. */
 .tf-search:focus-within {
   outline: 3px solid var(--focus);
@@ -530,44 +479,6 @@ dialog.modal.full .modal-head .modal-home {
 }
 .map-aid .map-aid-row > .btn.small[data-feat='aides-toggle'] {
   flex: 1 1 100%;
-}
-
-/* 3D (téléphone seulement) : la barre du bas passe sur deux rangées (les mots sont écrits) ; « Ajouter une plante » et « Je suis perdu » montent d'autant.
-   Hors de ce bloc, la règle écrasait celle de l'ordinateur et la pastille flottait au milieu du panneau de droite. */
-@media (max-width: 760px) {
-  .app[data-tab='3d'] .add-fab {
-    bottom: 218px;
-  }
-  .app[data-tab='3d'] .lost-fab {
-    bottom: calc(var(--nav-h) + 296px + env(safe-area-inset-bottom));
-  }
-}
-
-/* 3D : curseurs avec « − » et « + » (le doigt n'a pas à glisser). */
-.g3d-stepper {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.g3d-stepper input[type='range'] {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-.g3d-step {
-  flex: none;
-  min-width: 44px;
-  min-height: 44px;
-  font-size: 1.25rem;
-  line-height: 1;
-}
-.g3d-root .g3d-hourrow {
-  flex-wrap: wrap;
-}
-.g3d-root .g3d-hourrow .g3d-hourfield {
-  flex: 1 1 100%;
-}
-.g3d-hourfield .g3d-field-label {
-  min-width: 0;
 }
 
 /* ---------- Lot F2 : accueil à gros boutons, mode guidé, visite, grandes touches ---------- */
@@ -1119,11 +1030,4 @@ html[data-big-taps] .addr-map-btn {
   .map-chips:empty {
     display: none;
   }
-}
-
-/* Grandes touches : les curseurs de la 3D (heure, jour, réglages) font 56 px de haut comme le reste. */
-html[data-big-taps] .g3d-hourfield input[type='range'],
-html[data-big-taps] .g3d-field input[type='range'],
-html[data-big-taps] .g3d-stepper input[type='range'] {
-  height: 56px;
 }

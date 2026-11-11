@@ -1,6 +1,6 @@
 // Budget de taille du bundle : à lancer après `npm run build`. Sort en erreur (code 1) si un seuil est dépassé.
 // Tailles en gzip (ce que le réseau transfère), 1 Ko = 1 000 octets. Sans dépendance.
-// Mesures du 9 nov. 2026 : entrée ≈ 228 Ko, précache ≈ 1,04 Mo, three ≈ 248 Ko, maplibre ≈ 295 Ko ; seuils ≈ 10 % au-dessus.
+// Mesures du 9 nov. 2026 : entrée ≈ 228 Ko, précache ≈ 1,04 Mo, three ≈ 248 Ko (chunk supprimé le 11 nov. avec la vue 3D), maplibre ≈ 295 Ko ; seuils ≈ 10 % au-dessus.
 // Pour relever un seuil : le faire ici, en connaissance de cause, avec la raison dans le message du commit.
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
@@ -11,7 +11,6 @@ const DIST = process.env.DIST_DIR || join(dirname(fileURLToPath(import.meta.url)
 const LIMITS = {
   entree: 250_000,
   precache: 1_200_000,
-  three: 270_000,
   maplibre: 330_000,
 }
 
@@ -28,9 +27,7 @@ const assets = readdirSync(join(DIST, 'assets')).map((f) => `assets/${f}`)
 
 const entry = entryChunkFromHtml(readFileSync(join(DIST, 'index.html'), 'utf8'))
 if (!entry) fail('chunk d\'entrée introuvable dans dist/index.html.')
-const three = findChunk(assets, 'three')
 const maplibre = findChunk(assets, 'maplibre')
-if (!three) fail('chunk « three » introuvable dans dist/assets.')
 if (!maplibre) fail('chunk « maplibre » introuvable dans dist/assets.')
 
 const urls = precacheUrls(readFileSync(join(DIST, 'sw.js'), 'utf8'))
@@ -42,7 +39,6 @@ const precache = urls.reduce((sum, u) => sum + size(u), 0)
 const rows = [
   { label: `Chunk d'entrée (${entry})`, bytes: size(entry), limit: LIMITS.entree },
   { label: `Précache du service worker (${urls.length} fichiers)`, bytes: precache, limit: LIMITS.precache },
-  { label: `Chunk three (${three})`, bytes: size(three), limit: LIMITS.three },
   { label: `Chunk maplibre (${maplibre})`, bytes: size(maplibre), limit: LIMITS.maplibre },
 ]
 

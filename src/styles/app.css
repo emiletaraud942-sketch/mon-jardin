@@ -1349,10 +1349,6 @@ label.field > span {
     border-left: 0;
     border-top: var(--border-w) solid var(--border);
   }
-  /* Vue 3D : ses commandes (heure, saisons, réglages) ont besoin de hauteur ; le panneau se réduit à un résumé qui défile. */
-  .app[data-tab='3d'] .sidepanel {
-    max-height: 28%;
-  }
   /* Pendant un placement, la carte prend toute la hauteur (le panneau ne sert pas). */
   .app.is-placing .sidepanel {
     display: none;
@@ -2692,10 +2688,6 @@ details > summary {
   }
   .placing-banner .placing-text {
     font-size: 1rem;
-  }
-  /* Commandes de la 3D : elles restent au-dessus de la feuille réduite. */
-  .workspace .g3d-overlay {
-    padding-bottom: 102px;
   }
   .workspace .maplibregl-ctrl-bottom-right,
   .workspace .maplibregl-ctrl-bottom-left {
@@ -4332,7 +4324,7 @@ dialog.modal.full .modal-body {
   gap: 16px;
   min-height: calc(100dvh - 366px); /* sous le premier écran : champs, photos, actions */
 }
-/* Fiche ouverte depuis la carte ou la Vue 3D : plein écran au-dessus de tout, comme depuis la liste (téléphone). */
+/* Fiche ouverte depuis la carte : plein écran au-dessus de tout, comme depuis la liste (téléphone). */
 .fiche-overlay {
   position: fixed;
   inset: 0;
@@ -4734,7 +4726,7 @@ dialog.modal.full .modal-body {
   }
 }
 
-/* Saison du jardin : mêmes boutons sur la carte, la 3D et les photos du jardin. */
+/* Saison du jardin : mêmes boutons sur la carte et les photos du jardin. */
 .season-picker {
   display: flex;
   flex-wrap: wrap;
@@ -4756,7 +4748,7 @@ dialog.modal.full .modal-body {
   max-width: min(92vw, 30rem);
 }
 
-/* Ordinateur (≥ 761 px) : les sous-onglets (Carte / Plantes / Vue 3D, Où planter ? / Catalogue) sont dans la colonne du contenu,
+/* Ordinateur (≥ 761 px) : les sous-onglets (Carte / Plantes, Où planter ? / Catalogue) sont dans la colonne du contenu,
    plus au-dessus de la barre latérale, qui monte jusque sous l'en-tête. */
 @media (min-width: 761px) {
   .app > .modebar {

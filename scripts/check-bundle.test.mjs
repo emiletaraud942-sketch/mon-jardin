@@ -21,7 +21,7 @@ describe('mesure du bundle', () => {
     expect(precacheUrls('rien')).toEqual([])
   })
 
-  it('distingue three et maplibre de leurs voisins', () => {
+  it('distingue maplibre de ses voisins', () => {
     const files = ['assets/maplibre-gl-worker-Dro7.js', 'assets/maplibre--S9o.js', 'assets/three-Dv6_.js', 'assets/View3D-CB.js']
     expect(findChunk(files, 'three')).toBe('assets/three-Dv6_.js')
     expect(findChunk(files, 'maplibre')).toBe('assets/maplibre--S9o.js')

@@ -56,6 +56,8 @@ Registre : 87 fonctions.
 
 **Décision du propriétaire (11 nov.) : la Promenade 3D est jugée décevante, puis RETIRÉE le même jour sur sa demande (« enlève la promenade »)** : pas de relief, peu de détails, plantes peu réussies, aucune impression de se balader. Le code, ses tests, son CSS et ses fonctions du registre sont supprimés ; l'accueil propose « Visiter mon jardin en photos ». Elle sera **refaite de zéro plus tard**, avec une représentation 3D reprise à la base. Détail : `CLAUDE.md`, « Promenade 3D RETIRÉE ».
 
+**Vue 3D retirée (11 nov., demande du propriétaire)** : après la promenade, toute la vue 3D (rendu jugé de trop mauvaise qualité) a été supprimée, avec les paquets three. La carte reste, « Mon jardin » = Carte, Plantes, Photos. Détail et liste de ce qui disparaît : `CLAUDE.md`, « Vue 3D RETIRÉE ». **La carte sera revue ensuite** (demande du propriétaire).
+
 ## 6. Ce que seul le propriétaire peut faire
 **Supabase : un seul projet.** `permajardin` (réf `ebgrxcyvdayvrjruefem`) porte la synchro ET l'entraide : migrations v1 à v9 posées le 7 nov. (empreintes comparées à la base de test), `NEIGHBORS_SUPABASE_URL` et `NEIGHBORS_SUPABASE_PUBLISHABLE` (Vercel, Production) pointent vers lui. Ne pas créer de second projet, ne pas supprimer ces variables, ne jamais ajouter `neighbors_private` aux schémas exposés. Deux sessions séparées : un code pour la synchro, un autre pour l'entraide. Détail et preuves : `docs/ENTRAIDE.md`, « Même projet Supabase que la synchro ».
 

@@ -48,15 +48,13 @@ function ocrAssets(): Plugin {
 }
 
 // Découpage des bundles : chaque grosse bibliothèque a son chunk, au hash stable.
-// Un changement de code applicatif ne force donc pas à retélécharger React, MapLibre ou Three.
-// L'ordre compte : '@react-three' et 'three-stdlib' doivent être testés avant 'react'.
+// Un changement de code applicatif ne force donc pas à retélécharger React ou MapLibre.
 function manualChunks(id: string): string | undefined {
   // L'utilitaire de préchargement des imports dynamiques doit vivre dans un chunk toujours chargé.
-  // Sans cette ligne, Rollup le range dans le premier chunk manuel qui l'utilise (ex. `three`) :
-  // le point d'entrée dépendrait alors du chunk 3D et le chargerait au démarrage.
+  // Sans cette ligne, Rollup le range dans le premier chunk manuel qui l'utilise (ex. `maplibre`) :
+  // le point d'entrée dépendrait alors de ce chunk et le chargerait au démarrage.
   if (id.includes('vite/preload-helper')) return 'react'
   if (!id.includes('node_modules')) return undefined
-  if (/node_modules\/(three|three-stdlib|@react-three)\//.test(id)) return 'three'
   if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'react'
   if (id.includes('node_modules/maplibre-gl/')) return 'maplibre'
   if (id.includes('node_modules/@supabase/')) return 'supabase'
@@ -64,8 +62,8 @@ function manualChunks(id: string): string | undefined {
 }
 
 // Budget de taille par chunk (ko non compressés, base 1000 comme Vite). Un dépassement s'affiche en avertissement de build.
-// Mesures du 8 nov. 2026 : three 925, maplibre 1 078, index 763 ; marge d'environ 3 à 8 %. Les autres chunks : 900 ko au plus.
-const CHUNK_BUDGET_KB: Record<string, number> = { three: 950, maplibre: 1100 }
+// Mesures du 8 nov. 2026 : maplibre 1 078, index 763 ; marge d'environ 3 à 8 %. Les autres chunks : 900 ko au plus.
+const CHUNK_BUDGET_KB: Record<string, number> = { maplibre: 1100 }
 const DEFAULT_CHUNK_BUDGET_KB = 900
 function chunkBudgets(): Plugin {
   return {
@@ -116,7 +114,7 @@ export default defineConfig({
         id: '/',
         name: 'PermaJardin',
         short_name: 'PermaJardin',
-        description: 'Cartographier son jardin en 3D, choisir quoi planter où et savoir quand entretenir.',
+        description: 'Cartographier son jardin, choisir quoi planter où et savoir quand entretenir.',
         lang: 'fr',
         dir: 'ltr',
         theme_color: '#ffffff',
@@ -140,14 +138,12 @@ export default defineConfig({
         skipWaiting: false,
         clientsClaim: false,
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
-        // Le chunk 3D (≈ 925 ko bruts, ≈ 248 ko en gzip, mesuré au build du 8 nov. 2026 ; écran secondaire) n'est pas préchargé à l'installation :
-        // il est mis en cache à la première ouverture de la 3D (voir runtimeCaching ci-dessous).
         // MapLibre reste dans le précache : la carte est l'écran d'accueil et doit s'ouvrir hors ligne
         // dès la première installation (son nom ne change qu'avec la bibliothèque, il n'est donc
         // retéléchargé qu'à une mise à jour de MapLibre).
         // Polices autohébergées (DM Serif Display + DM Sans, 2 fichiers woff2 latin, ~60 ko) : précachées pour que le texte s'affiche pareil hors ligne.
         globPatterns: ['**/*.{js,css,html,woff2}'],
-        globIgnores: ['assets/three-*.js', 'push-sw.js', 'ocr/**'],
+        globIgnores: ['push-sw.js', 'ocr/**'],
         // Alertes de nouveaux messages : deux gestionnaires (push, notificationclick) dans public/push-sw.js, chargés par le
         // service worker généré. Le mode « prompt » et le précache ne changent pas. Le navigateur compare aussi ce fichier
         // quand il cherche une nouvelle version. Il n'est pas précaché : il est gardé avec le service worker lui-même.
@@ -162,10 +158,10 @@ export default defineConfig({
   build: {
     rollupOptions: { output: { manualChunks } },
     // Tailles mesurées au build du 8 nov. 2026 (ko non compressés, comme les affiche Vite) :
-    // three 925 (≈ 248 en gzip, chargé à la demande par l'écran 3D), maplibre 1 078 (≈ 295 en gzip, précaché : la carte doit s'ouvrir
+    // maplibre 1 078 (≈ 295 en gzip, précaché : la carte doit s'ouvrir
     // hors ligne ; bibliothèque tierce, indivisible), tout le reste sous 765.
     // L'avertissement de Vite n'a qu'une seule limite pour tous les chunks : on la place juste au-dessus du plus gros (maplibre) pour ne plus
-    // avoir de bruit permanent, et `chunkBudgets` (plus haut) garde un budget par chunk pour que three, maplibre ou le code applicatif
+    // avoir de bruit permanent, et `chunkBudgets` (plus haut) garde un budget par chunk pour que maplibre ou le code applicatif
     // ne grossissent pas sans qu'on le voie.
     chunkSizeWarningLimit: 1100,
   },

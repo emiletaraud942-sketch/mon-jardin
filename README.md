@@ -1,11 +1,11 @@
 # PermaJardin
 
-Votre jardin en 3D à partir de la photo aérienne et du cadastre de l'IGN, avec l'ombre réelle du soleil, vos plantes à leur place exacte, et la liste de ce qu'il faut faire cette semaine.
+Votre jardin à partir de la photo aérienne et du cadastre de l'IGN, vos plantes à leur place exacte, et la liste de ce qu'il faut faire cette semaine.
 
 ## Ce que fait l'appli
 - **Accueil** : de gros boutons étiquetés de mots (ajouter une plante, voir mon jardin, visiter mon jardin en photos, ce qu'il y a à faire…), un mode guidé en quelques questions, et « Je suis perdu » toujours à portée. **« Tout ce que je peux faire »** liste chaque fonction avec une recherche et montre où elle se trouve.
 - **Carte** : photo aérienne IGN, cadastre, parcelle et bâtiments voisins ; placement des plantes par glisser-déposer (≈ 20 cm de précision) ; envergure actuelle ou adulte.
-- **3D** : relief RGE ALTI, orthophoto au sol, bâtiments extrudés (BD TOPO), arbres qui grandissent (« dans N ans »), ombres réelles selon la date et l'heure, carte d'ensoleillement.
+- **Visite en photos** : prenez vos points de vue en photos, puis laissez l'appli passer de l'un à l'autre ; légendes des plantes, saisons. (La vue 3D a été retirée le 11 nov. 2026.)
 - **Plantes** : inventaire avec photos, état, notes ; identification par photo (Pl@ntNet).
 - **Entretien** : tâches de la semaine (taille, désherbage, arrosage, protection gel, récolte…) calculées à partir de 173 fiches espèces et de la météo (gel, pluie, bilan hydrique) ; calendrier de l'année ; rappel quotidien (notification locale, voir « Limites »).
 - **Planter** : score « quelle plante pour cet endroit » (ensoleillement simulé, pente, sol, bons et mauvais voisins, distance légale art. 671 du Code civil) ; que semer ce mois-ci selon les gelées locales.
@@ -30,7 +30,7 @@ La table unique des variables lues par le code (nom, où la saisir, public ou se
 ## Limites à connaître
 - **Données locales** : vos jardins sont stockés dans le navigateur de l'appareil (IndexedDB). Sans synchronisation, effacer les données du site les supprime : exportez régulièrement depuis Réglages.
 - **Rappels** : une **notification locale, au plus une fois par jour, à l'ouverture de l'appli**, s'il y a des tâches prioritaires ; elle ne vient d'aucun serveur. Seule exception, facultative : si la fonction d'entraide entre voisins est configurée et que vous activez les alertes (Entraide > Profil > Mes notifications), le service d'alertes de votre navigateur peut afficher une alerte neutre « Vous avez un nouveau message » même appli fermée (`public/push-sw.js` ; aucun texte ni pseudo ne transite). Sur iPhone, les notifications exigent l'appli installée sur l'écran d'accueil (iOS 16.4 minimum).
-- **Hors ligne** : l'appli s'ouvre sans réseau, mais l'IGN et la météo ont besoin de connexion ; seules les tuiles déjà vues et la dernière orthophoto 3D sont gardées en cache. Le service worker ne met jamais la météo en cache.
+- **Hors ligne** : l'appli s'ouvre sans réseau, mais l'IGN et la météo ont besoin de connexion ; seules les tuiles déjà vues et la dernière orthophoto sont gardées en cache. Le service worker ne met jamais la météo en cache.
 - **Identification par photo** : 500 identifications par jour pour toute l'appli (quota Pl@ntNet gratuit partagé), et une limite par visiteur.
 - **Open-Meteo** : service gratuit pour un usage **non commercial** uniquement ; l'usage commercial de l'appli demanderait une clé payante ou une autre source météo.
 - **Précision** : le placement vise ≈ 20 cm ; la parcelle cadastrale, le relief et les bâtiments sont ceux de l'IGN et peuvent être décalés ou datés.

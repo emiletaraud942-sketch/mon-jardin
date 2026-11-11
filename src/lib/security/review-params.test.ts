@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { reviewToolsEnabled } from '../debugFlag'
 
 const root = join(__dirname, '..', '..', '..')
-const FILES = ['src/features/garden3d/debug.ts', 'src/features/map/photoZoom.ts', 'src/features/map/MapView.tsx', 'src/lib/debugFlag.ts']
+const FILES = ['src/features/map/photoZoom.ts', 'src/features/map/MapView.tsx', 'src/lib/debugFlag.ts']
 
 describe('aucun réglage de revue lu dans l’adresse', () => {
   for (const f of FILES) {

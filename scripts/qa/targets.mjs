@@ -115,7 +115,6 @@ for (const size of [{ w: 360, h: 740 }, { w: 390, h: 844 }]) {
           localStorage.setItem('permajardin:state:v1:miroir', seedText)
           localStorage.setItem('permajardin:consent', JSON.stringify({}))
           localStorage.setItem('pj.tourSeen', '1')
-          sessionStorage.setItem('pj.force3d', '1')
           if (big) localStorage.setItem('pj.bigTaps', '1')
         }
       } catch {}

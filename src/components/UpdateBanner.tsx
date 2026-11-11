@@ -35,7 +35,7 @@ export function UpdateBanner() {
   const timer = useRef<ReturnType<typeof setInterval>>()
   const lastCheck = useRef(Date.now())
   const [snoozed, setSnoozed] = useState(false)
-  // Un écran lourd (la 3D) dont le fichier a changé depuis le déploiement ne se charge plus : on propose de recharger.
+  // Un écran lourd (la carte) dont le fichier a changé depuis le déploiement ne se charge plus : on propose de recharger.
   const [staleChunk, setStaleChunk] = useState(false)
 
   async function check() {

@@ -2,7 +2,7 @@ import type { Plant, Species } from '../types'
 import { plantStateAt, type PlantState } from './growth'
 
 // Saison du jardin : voir son jardin fleuri et feuillu même en hiver. Pur, testé dans season.test.ts.
-// Un seul choix (Aujourd'hui, Hiver, Printemps, Été, Automne) sert à la 3D, à la carte et aux photos du jardin.
+// Un seul choix (Aujourd'hui, Hiver, Printemps, Été, Automne) sert à la carte et aux photos du jardin.
 
 export type SeasonChoice = 'aujourdhui' | 'hiver' | 'printemps' | 'ete' | 'automne'
 

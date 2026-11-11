@@ -243,7 +243,7 @@ describe('historique', () => {
 
   it('les écrans portent les noms du lexique', async () => {
     const { ui } = await load('#carte')
-    expect(ui.TAB_LABEL['3d']).toBe('Vue 3D')
+    expect(ui.TAB_LABEL.carte).toBe('Carte')
     expect(ui.TAB_LABEL.planter).toBe('Où planter ?')
     expect(ui.TAB_LABEL.voisins).toBe('Voisins')
   })
@@ -252,7 +252,7 @@ describe('historique', () => {
 describe('rayons', () => {
   it('chaque rayon regroupe ses écrans ; accueil et compte n’en font partie d’aucun', async () => {
     const { ui } = await load()
-    expect(ui.RAYON_TABS.jardin).toEqual(['carte', 'plantes', '3d'])
+    expect(ui.RAYON_TABS.jardin).toEqual(['carte', 'plantes'])
     expect(ui.RAYON_TABS.afaire).toEqual(['entretien'])
     expect(ui.RAYON_TABS.planter).toEqual(['planter', 'catalogue'])
     expect(ui.RAYON_TABS.voisins).toEqual(['voisins'])
@@ -277,9 +277,9 @@ describe('rayons', () => {
     expect(ui.rayonOfTab(ui.getUi().tab)).toBeUndefined() // aucun rayon actif : seul « Accueil » l'est
   })
 
-  it('sélecteur segmenté : Carte / Plantes / Vue 3D et Où planter ? / Catalogue seulement', async () => {
+  it('sélecteur segmenté : Carte / Plantes et Où planter ? / Catalogue seulement', async () => {
     const { ui } = await load()
-    expect(ui.subTabs('jardin')).toEqual(['carte', 'plantes', '3d'])
+    expect(ui.subTabs('jardin')).toEqual(['carte', 'plantes'])
     expect(ui.subTabs('planter')).toEqual(['planter', 'catalogue'])
     expect(ui.subTabs('afaire')).toEqual([])
     expect(ui.subTabs(undefined)).toEqual([])
@@ -363,9 +363,10 @@ describe('rayons', () => {
 
   it('les anciens liens restent valides (#carte, #plantes, #entretien, #reglages…) et ont des alias', async () => {
     const { ui } = await load()
-    for (const t of ['carte', '3d', 'plantes', 'entretien', 'planter', 'catalogue', 'reglages', 'accueil'] as const) {
+    for (const t of ['carte', 'plantes', 'entretien', 'planter', 'catalogue', 'reglages', 'accueil'] as const) {
       expect(ui.fromHash(ui.toHash(t))).toBe(t)
     }
+    expect(ui.fromHash('#3d')).toBe('carte') // l'ancienne Vue 3D n'existe plus : le lien mène à la carte
     expect(ui.fromHash('#jardin')).toBe('carte')
     expect(ui.fromHash('#afaire')).toBe('entretien')
     expect(ui.fromHash('#compte')).toBe('reglages')
@@ -421,17 +422,15 @@ describe('parcours d’accueil (état d’interface)', () => {
 })
 
 describe('repères mémorisés (guide)', () => {
-  it('noteVisit retient la 3D et Entretien par jardin, sans doublon', async () => {
+  it('noteVisit retient Entretien par jardin, sans doublon', async () => {
     const storage = memoryStorage()
     const { ui } = await load('', storage)
-    ui.noteVisit('3d', 'g1')
-    ui.noteVisit('3d', 'g1')
+    ui.noteVisit('entretien', 'g1')
     ui.noteVisit('entretien', 'g1')
     ui.noteVisit('carte', 'g1')
-    expect(ui.getUi().guide.opened3d).toEqual(['g1'])
     expect(ui.getUi().guide.openedEntretien).toEqual(['g1'])
     const again = await load('', storage)
-    expect(again.ui.getUi().guide.opened3d).toEqual(['g1'])
+    expect(again.ui.getUi().guide.openedEntretien).toEqual(['g1'])
   })
 
   it('« Plus tard » repousse la proposition de 7 jours', async () => {

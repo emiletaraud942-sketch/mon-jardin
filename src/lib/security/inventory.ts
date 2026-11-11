@@ -25,7 +25,7 @@ export const DATA_INVENTORY: readonly DataItem[] = [
     donnee: 'Jardins : nom, adresse, position du centre, contour de parcelle, bâtiments, relief, plantes (position au mètre près, notes, informations d’achat facultatives : forme, hauteur, lieu et prix ; date et note facultative liées à chaque photo, dans le journal de la plante), tâches faites',
     stockage: 'IndexedDB du navigateur (clé permajardin:state:v1) ; copies de sécurité (« avant migration », « précédente », « illisible ») : l’état d’avant une correction au chargement, un remplacement par la synchro ou l’import, ou des données illisibles ; copie de secours dans le localStorage (clé permajardin:state:v1:miroir) qui évite de perdre la dernière modification si le navigateur se ferme trop vite',
     destinataires: [],
-    finalite: 'Fournir le service : carte, 3D, calendrier d’entretien',
+    finalite: 'Fournir le service : carte, calendrier d’entretien',
     base: 'execution',
     duree: 'Jusqu’à effacement par l’utilisateur (ou par le navigateur si le stockage n’est pas persistant)',
     effacement: 'Réglages > Effacer toutes mes données (eraseAllData), ou supprimer un jardin',
@@ -67,7 +67,7 @@ export const DATA_INVENTORY: readonly DataItem[] = [
     destinataires: ['Vercel (proxys /ext/geopf, /ext/apicarto)', 'IGN Géoplateforme et API Carto'],
     finalite: 'Afficher la carte, la parcelle, le relief et le bâti',
     base: 'execution',
-    duree: 'Tuiles : 60 jours au plus dans le cache ; orthophoto 3D : 14 jours ; relevé LiDAR : 90 jours',
+    duree: 'Tuiles : 60 jours au plus dans le cache ; relevé LiDAR : 90 jours',
     effacement: 'Effacer toutes mes données (vide aussi les caches de tuiles)',
   },
   {
@@ -292,12 +292,11 @@ export const LOCAL_STORAGE_KEYS: readonly StorageKeyInfo[] = [
   { cle: 'pj.rayon', contenu: 'Dernière rubrique ouverte (rayon de l’interface)' },
   { cle: 'pj.reopen', contenu: 'Réglage « Rouvrir l’appli où j’étais » (désactivé par défaut : l’appli rouvre sur l’accueil)' },
   { cle: 'pj.mode', contenu: 'Ancien mode d’affichage (lu une fois pour retrouver le rayon)' },
-  { cle: 'pj.guide', contenu: 'Aides et repères mémorisés : étapes d’accueil, cartes repliées, identifiants des jardins dont la 3D et l’Entretien ont été ouverts' },
+  { cle: 'pj.guide', contenu: 'Aides et repères mémorisés : étapes d’accueil, cartes repliées, identifiants des jardins dont l’Entretien a été ouvert' },
   { cle: 'pj.bigTaps', contenu: 'Réglage « Grandes touches » : boutons de 56 px de haut' },
   { cle: 'pj.lessons', contenu: 'Leçons « Apprendre à jardiner » terminées (liste d’identifiants de leçons, rien d’autre ; jamais envoyée ni synchronisée)' },
   { cle: 'pj.tourSeen', contenu: 'Visite des fonctions déjà montrée au premier lancement (elle se rejoue depuis l’aide)' },
   { cle: 'pj.lidar', contenu: 'Réglage du relevé LiDAR HD' },
-  { cle: 'pj.quality3d', contenu: 'Qualité de la vue 3D' },
   { cle: 'pj.mapNames', contenu: 'Noms des plantes sur la carte affichés ou non' },
   { cle: 'pj.snap', contenu: 'Aimantation de la carte activée ou non' },
   { cle: 'pj.grid', contenu: 'Grille de la carte affichée ou non' },
@@ -311,8 +310,7 @@ export const LOCAL_STORAGE_KEYS: readonly StorageKeyInfo[] = [
 
 /** Clés sessionStorage (effacées à la fermeture de l'onglet ; « Effacer toutes mes données » les retire aussi). */
 export const SESSION_STORAGE_KEYS: readonly StorageKeyInfo[] = [
-  { cle: 'pj.force3d', contenu: '« Essayer quand même » choisi pour la 3D (session seulement)' },
-  { cle: 'pj.debug', contenu: 'Outils de mesure des recettes (mesures 3D, accès à la carte) : posée à la main par un script de test, jamais par l’appli' },
+  { cle: 'pj.debug', contenu: 'Outils de mesure des recettes (accès à la carte) : posée à la main par un script de test, jamais par l’appli' },
   { cle: 'pj.errors', contenu: 'Les 20 dernières erreurs de l’appli (texte nettoyé), pour le diagnostic ; jamais envoyées' },
 ]
 

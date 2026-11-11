@@ -99,10 +99,10 @@ Remplacez `<domaine>` par votre adresse.
    Attendu : **503** tant que `PLANTNET_API_KEY` est absente (ordre des contrôles : méthode, origine, limite de débit, type de contenu, clé), **400** si la clé est présente mais qu'aucune photo valide n'est envoyée, **200** avec une vraie photo (testez depuis l'appli : *Plantes > Identifier*).
 4. **En-têtes de sécurité** : `curl -I https://<domaine>/` montre `Content-Security-Policy`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options`. `curl -I https://<domaine>/sw.js` montre `Cache-Control: no-cache`.
 5. **PWA** : DevTools > Application > *Manifest* (4 icônes, aucune erreur) et *Service Workers* (activé).
-6. Créez un jardin de démonstration : la carte, la 3D et les tâches s'affichent.
+6. Créez un jardin de démonstration : la carte et les tâches s'affichent.
 
 ### Contrôles de la CI avant déploiement
-- `check:bundle` échoue si le bundle grossit trop (gzip : entrée 250 Ko, précache 1,2 Mo, three 270 Ko, maplibre 330 Ko) : voir `scripts/check-bundle.mjs`.
+- `check:bundle` échoue si le bundle grossit trop (gzip : entrée 250 Ko, précache 1,2 Mo, maplibre 330 Ko) : voir `scripts/check-bundle.mjs`.
 - Le job `e2e` rejoue le parcours de base sur le site construit (réseau simulé, aucun accès à Internet). En cas d'échec, le rapport est dans les artefacts du run.
 - Ces contrôles ne remplacent pas la vérification après déploiement ci-dessus : ils ne testent ni l'IGN réel, ni Supabase, ni un téléphone.
 
@@ -117,7 +117,7 @@ Les « rappels » sont une notification **locale**, au plus une fois par jour, a
 - Chaque déploiement produit de nouveaux fichiers ; le service worker les télécharge en arrière-plan.
 - Le service worker est en mode « prompt » : la nouvelle version **attend**. L'appli affiche « Mise à jour disponible » avec « Mettre à jour » et « Plus tard » (le bandeau revient après 6 h) ; elle ne recharge jamais la page sans prévenir (vous ne perdez pas de saisie). En cliquant sur « Mettre à jour », la nouvelle version prend la main et la page se recharge.
 - Si le bandeau n'apparaît pas : fermez complètement l'appli (et les autres onglets du site) puis rouvrez-la ; ou DevTools > Application > Service Workers > *Update* / *skipWaiting*.
-- Le gros fichier de la 3D (~230 ko compressés) n'est pas préchargé à l'installation : il est gardé en cache à la première ouverture de l'onglet 3D. Ouvrez la 3D une fois en ligne avant d'aller au jardin sans réseau. La carte, elle, est préchargée. Les tuiles IGN déjà vues restent disponibles hors ligne.
+- La carte est préchargée à l'installation. Les tuiles IGN déjà vues restent disponibles hors ligne.
 
 ## 8. Quotas et licences
 - **Pl@ntNet** : 500 identifications par jour pour **toute** l'appli (clé gratuite partagée). L'appli limite aussi chaque visiteur (20 demandes / 10 min par instance). Au-delà : erreur 429, retour le lendemain.
@@ -129,7 +129,6 @@ Les « rappels » sont une notification **locale**, au plus une fois par jour, a
 | Symptôme | Cause probable | Que faire |
 | --- | --- | --- |
 | **Écran blanc** au lancement | Ancien service worker qui sert des fichiers supprimés, ou fichier JS non chargé | Recharger ; sinon DevTools > Application > *Clear site data* (les jardins sont dans IndexedDB : exportez d'abord depuis Réglages si possible). Console F12 pour l'erreur exacte. |
-| Écran blanc **uniquement en 3D** | Chunk 3D introuvable hors ligne / WebGL indisponible | Ouvrir l'onglet 3D une fois en ligne ; essayer un autre navigateur ; activer l'accélération matérielle. |
 | **Tuiles grises** sur la carte | Proxy `/ext/geopf` non appliqué, IGN indisponible ou hors ligne | Tester l'URL de l'étape 5.2 ; vérifier que `vercel.json` est à la racine et que les rewrites sont dans le déploiement (Deployment > *Source* / *Functions*). |
 | **403** sur `/ext/...` ou `/api/identify` | *Deployment Protection* de Vercel active (prévisualisations), ou appel d'un autre site refusé par `api/identify` | Settings > Deployment Protection : désactiver pour la production ; appeler l'API depuis l'appli et non depuis un autre domaine. |
 | 404 en rechargeant `/quelquechose` | Rewrite SPA absent | Contrôler la dernière règle de `vercel.json` ; Output Directory = `dist`. |

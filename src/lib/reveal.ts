@@ -1,5 +1,5 @@
 // Amène l'écran à une fonction : ouvre les panneaux repliés, fait défiler jusqu'à l'élément `data-feat="…"` et le met en évidence.
-// Les écrans qui se chargent à la demande (carte, 3D) peuvent mettre un instant à apparaître : on attend jusqu'à 4 secondes.
+// Les écrans qui se chargent à la demande (la carte) peuvent mettre un instant à apparaître : on attend jusqu'à 4 secondes.
 
 const WAIT_MS = 4000
 let seq = 0

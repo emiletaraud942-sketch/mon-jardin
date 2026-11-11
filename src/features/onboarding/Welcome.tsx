@@ -11,7 +11,7 @@ const syncConfigured = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.
 
 const SLIDES = [
   { title: 'PermaJardin', kicker: 'Votre jardin, pas à pas', text: 'Voyez votre jardin, placez vos plantes et sachez quoi faire chaque semaine.' },
-  { title: 'Vos plantes, au mètre près', kicker: 'Une carte à vous', text: 'Touchez la carte ou scannez le jardin. Voyez aussi l’ombre en 3D.' },
+  { title: 'Vos plantes, au mètre près', kicker: 'Une carte à vous', text: 'Touchez la carte ou scannez le jardin. Voyez aussi l’ombre dans « Où planter ? ».' },
   { title: 'Un rappel chaque semaine', kicker: 'Tailler, arroser, récolter', text: 'L’appli suit la météo et la saison. Elle vous dit quoi faire.' },
 ]
 

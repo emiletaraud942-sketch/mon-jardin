@@ -1,4 +1,4 @@
-// Branchement du LiDAR HD (IGN) : un seul chargement par jardin, partagé entre Réglages, Où planter ? et la 3D.
+// Branchement du LiDAR HD (IGN) : un seul chargement par jardin, partagé entre Réglages et Où planter ?.
 // Local-first : le cache IndexedDB (90 jours) de fetchLidar évite tout nouvel appel réseau ; la case des Réglages
 // désactive tout (aucune requête). Si le service est indisponible, l'état passe à « unavailable » sans bruit :
 // les écrans gardent le relief RGE ALTI et les seules ombres des bâtiments et des plantes.
@@ -165,7 +165,7 @@ export interface LidarScene {
   gardenView: Garden
 }
 
-/** Arbres filtrés + relief choisi, prêts pour les ombres (Où planter ?, 3D) et l'affichage. */
+/** Arbres filtrés + relief choisi, prêts pour les ombres (Où planter ?) et l'affichage. */
 export function useLidarScene(garden: Garden, plants: Plant[]): LidarScene {
   const l = useLidar(garden)
   const plantPositions = useMemo(() => plants.map((p) => p.position), [plants])

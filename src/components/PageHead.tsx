@@ -7,7 +7,7 @@ import { setUi } from '../lib/ui'
  * En-tête de page de la maquette Leafora : petite phrase grise, titre en serif, et à droite une pastille ronde.
  * Sur téléphone, il remplace la barre du haut (classe `.app.pagehead`). Par défaut la pastille ouvre « Mon compte et réglages ».
  * Sur grand écran la barre du haut reste : la pastille par défaut est masquée (`.pagehead-user`).
- * `compact` : même style, sur 52 px de haut (carte et Vue 3D, qui gardent leur espace). `onHelp` ajoute la pastille « ? » (aide de l'écran).
+ * `compact` : même style, sur 52 px de haut (carte, qui garde son espace). `onHelp` ajoute la pastille « ? » (aide de l'écran).
  * `current` : l'écran affiché est celui de la pastille (Réglages) : elle est pleine et ne fait rien de plus.
  * `home` : le logo de l'appli, à gauche du titre, ramène à l'accueil (comme le logo de la barre du haut sur ordinateur).
  * Chaque bouton rond porte un mot sous son icône (« Tout », « Aide », « Compte ») : on n'a pas à deviner à quoi il sert.
