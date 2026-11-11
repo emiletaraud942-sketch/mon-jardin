@@ -18,6 +18,8 @@ export interface PanoUi {
   yaw?: number
   /** D'où on vient : « home » ramène à la liste des points, sinon la visionneuse se ferme sur la carte. */
   back?: 'home'
+  /** Lancer la visite en photos dès l'ouverture de la visionneuse. */
+  tour?: boolean
 }
 
 let ui: PanoUi = {}

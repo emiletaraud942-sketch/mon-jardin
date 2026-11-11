@@ -9,13 +9,14 @@ import { SPECIES_BY_ID } from '../../data/species'
 import { frMeters } from '../../lib/format'
 import { useGardenPlants } from '../../lib/store'
 import { showToast } from '../../lib/toast'
-import type { Garden } from '../../types'
+import type { Garden, Panorama } from '../../types'
 import { plantName } from '../plants/PlantPanel'
 import { angleDelta, clamp, inView, layoutRows, maxPitch, neighborsOf, normDeg, photoDateLabel, plantsSeenFrom, pointName, screenX, screenY, smoothAngle, viewFov, type PlantInput } from './geometry'
 import { openPanorama, closePanorama, usePanoUi } from './panoUi'
 import { removePoint, panoramasOf } from './panoData'
 import { createSensor, type Sensor, type SensorStatus } from './sensors'
 import { buildStrip, PPD, type Strip } from './strip'
+import { arrivalYaw, jumpTo, startTour, stepLabel, sweepDeg, tickTour, tourOrder, type TourState } from './tour'
 
 const ZOOM_MAX = 2.5
 const LABEL_ROW_PX = 28
@@ -57,6 +58,19 @@ export function Viewer({ garden, pointId }: { garden: Garden; pointId: string })
   namesRef.current = names
   const [confirmDelete, setConfirmDelete] = useState(false)
 
+  // ----- Visite en photos : l'état vit dans des références (la boucle d'affichage les lit sans repeindre React) -----
+  const order = useMemo(() => tourOrder(points), [points])
+  const [tourUi, setTourUi] = useState<{ active: boolean; paused: boolean; i: number }>({ active: false, paused: false, i: 0 })
+  const tourRef = useRef<TourState>()
+  const tourPaused = useRef(false)
+  const tourStill = useRef(false)
+  const tourClock = useRef(0)
+  const awaitingLoad = useRef(false)
+  const pendingYaw = useRef<number>()
+  const loadingRef = useRef(true)
+  loadingRef.current = loading
+  const tourApi = useRef<{ nextSweep: (i: number) => number; arrive: (i: number) => void; finish: () => void }>({ nextSweep: () => 360, arrive: () => undefined, finish: () => undefined })
+
   const northOk = !!point && point.northOk !== false
   const seen = useMemo(() => {
     if (!point || !northOk) return []
@@ -90,16 +104,34 @@ export function Viewer({ garden, pointId }: { garden: Garden; pointId: string })
   const neighborsRef = useRef(neighbors)
   neighborsRef.current = neighbors
 
+  /** Pendant la visite, un point dont les photos manquent est sauté. */
+  function skipBroken() {
+    awaitingLoad.current = false
+    pendingYaw.current = undefined
+    const t = tourRef.current
+    if (t) tourRef.current = { ...t, phase: 'leave', waited: 1e9 }
+  }
+
   // ----- Chargement des photos et construction de la bande (une par point, gardée en mémoire) -----
   useEffect(() => {
     if (!point) return
     let cancelled = false
     const hit = cache.current.get(point.id)
+    // Visite : le point est prêt, on pose le cap d'arrivée et le temps recommence à compter.
+    const ready = () => {
+      if (pendingYaw.current !== undefined) {
+        view.current.yaw = pendingYaw.current
+        view.current.pitch = 0
+        pendingYaw.current = undefined
+      }
+      awaitingLoad.current = false
+    }
     if (hit) {
       stripRef.current = hit.strip
       setMissing(hit.missing)
       setFailed(false)
       setLoading(false)
+      ready()
       dirty.current = true
       return
     }
@@ -116,6 +148,7 @@ export function Viewer({ garden, pointId }: { garden: Garden; pointId: string })
           setMissing(point.shots.length)
           setFailed(true)
           setLoading(false)
+          skipBroken()
           return
         }
         cache.current.set(point.id, built)
@@ -123,12 +156,14 @@ export function Viewer({ garden, pointId }: { garden: Garden; pointId: string })
         stripRef.current = built.strip
         setMissing(built.missing)
         setLoading(false)
+        ready()
         dirty.current = true
       } catch {
         if (cancelled) return
         stripRef.current = undefined
         setFailed(true)
         setLoading(false)
+        skipBroken()
       }
     })()
     return () => {
@@ -252,6 +287,20 @@ export function Viewer({ garden, pointId }: { garden: Garden; pointId: string })
     let raf = 0
     const tick = () => {
       raf = requestAnimationFrame(tick)
+      const tour = tourRef.current
+      if (tour && !tourPaused.current && !awaitingLoad.current && !loadingRef.current) {
+        const now = performance.now()
+        const dt = tourClock.current ? now - tourClock.current : 16
+        tourClock.current = now
+        const step = tickTour(tour, dt, tourStill.current, (i) => tourApi.current.nextSweep(i))
+        tourRef.current = step.state
+        if (step.yawDelta) {
+          view.current.yaw = normDeg(view.current.yaw + step.yawDelta)
+          dirty.current = true
+        }
+        if (step.moved) tourApi.current.arrive(step.state.i)
+        if (step.finished) tourApi.current.finish()
+      } else tourClock.current = 0
       const s = sensor.current
       if (gyro.current && s && s.latest.heading !== undefined) {
         const v = view.current
@@ -288,6 +337,7 @@ export function Viewer({ garden, pointId }: { garden: Garden; pointId: string })
   const pointers = useRef(new Map<number, { x: number; y: number }>())
   const pinch = useRef(0)
   const onDown = (e: React.PointerEvent) => {
+    if (tourRef.current && !tourPaused.current) pauseTour() // on prend la main : la visite attend
     wrap.current?.setPointerCapture?.(e.pointerId)
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     if (pointers.current.size === 2) {
@@ -376,8 +426,90 @@ export function Viewer({ garden, pointId }: { garden: Garden; pointId: string })
 
   const go = (id: string) => {
     if (id === currentId) return
+    stopTour() // choisir soi-même un point : la visite s'arrête
     setCurrentId(id)
   }
+
+  // ----- Visite en photos : commandes -----
+  const byId = (id: string | undefined) => points.find((p) => p.id === id)
+  const sweepAt = (i: number) => {
+    const cur = byId(order[i])
+    return cur ? sweepDeg(arrivalYaw(byId(order[i - 1]), cur), cur, byId(order[i + 1])) : 360
+  }
+  tourApi.current = {
+    nextSweep: sweepAt,
+    arrive: (i: number) => {
+      const cur = byId(order[i])
+      if (!cur) return
+      pendingYaw.current = arrivalYaw(byId(order[i - 1]), cur)
+      awaitingLoad.current = true
+      setCurrentId(cur.id)
+      setTourUi((u) => ({ ...u, i }))
+    },
+    finish: () => {
+      stopTour()
+      showToast({ message: 'Visite terminée. Vous pouvez la relancer quand vous voulez.' })
+    },
+  }
+  function stopTour() {
+    tourRef.current = undefined
+    tourPaused.current = false
+    awaitingLoad.current = false
+    pendingYaw.current = undefined
+    setTourUi({ active: false, paused: false, i: 0 })
+  }
+  function pauseTour() {
+    tourPaused.current = true
+    setTourUi((u) => ({ ...u, paused: true }))
+  }
+  function toggleTourPause() {
+    tourPaused.current = !tourPaused.current
+    setTourUi((u) => ({ ...u, paused: tourPaused.current }))
+  }
+  function startTourNow() {
+    if (order.length < 2) {
+      showToast({ message: 'Il faut au moins deux points avec des photos pour faire une visite.' })
+      return
+    }
+    if (gyro.current) {
+      gyro.current = false
+      setGyroOn(false)
+      sensor.current?.stop()
+    }
+    tourStill.current = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const first = byId(order[0]) as Panorama
+    const yaw0 = arrivalYaw(undefined, first)
+    tourRef.current = startTour(order, sweepDeg(yaw0, first, byId(order[1])))
+    tourPaused.current = false
+    if (currentId === first.id) {
+      view.current.yaw = yaw0
+      view.current.pitch = 0
+      awaitingLoad.current = false
+      dirty.current = true
+    } else {
+      pendingYaw.current = yaw0
+      awaitingLoad.current = true
+      setCurrentId(first.id)
+    }
+    setTourUi({ active: true, paused: false, i: 0 })
+  }
+  function jumpTour(delta: number) {
+    const t = tourRef.current
+    if (!t) return
+    const ni = Math.max(0, Math.min(order.length - 1, t.i + delta))
+    if (ni === t.i) return
+    tourRef.current = jumpTo(t, ni, sweepAt(ni))
+    tourPaused.current = false
+    tourApi.current.arrive(ni)
+    setTourUi({ active: true, paused: false, i: ni })
+  }
+  // Ouverte par « Lancer la visite » (liste des points) : elle démarre toute seule.
+  const autoStart = useRef(ui.tour === true)
+  useEffect(() => {
+    if (!autoStart.current) return
+    autoStart.current = false
+    startTourNow()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!point) {
     return (
@@ -427,6 +559,7 @@ export function Viewer({ garden, pointId }: { garden: Garden; pointId: string })
       <div
         ref={wrap}
         className="pano-stage"
+        data-loading={loading || undefined}
         tabIndex={0}
         role="img"
         aria-label={`Vue panoramique, ${pointName(index)}. Glissez le doigt pour tourner, pincez pour zoomer. Les flèches du clavier tournent la vue.`}
@@ -441,7 +574,7 @@ export function Viewer({ garden, pointId }: { garden: Garden; pointId: string })
         <div className="pano-overlay-items" aria-hidden={false}>
           {seen.map((it) => (
             <span key={it.id} className="pano-label" ref={(el) => (el ? labelEls.current.set(it.id, el) : labelEls.current.delete(it.id))} style={{ display: 'none' }}>
-              {it.name}
+              {it.name} · {frMeters(it.distM)}
               {seasonText.get(it.id) ? ` · ${seasonText.get(it.id)}` : ''}
             </span>
           ))}
@@ -491,7 +624,7 @@ export function Viewer({ garden, pointId }: { garden: Garden; pointId: string })
       </div>
 
       <div className="pano-bottom">
-        {neighbors.length > 0 && (
+        {neighbors.length > 0 && !tourUi.active && (
           <div className="pano-chips" role="group" aria-label="Aller à un autre point">
             {points.map((p, i) => (
               <button key={p.id} className={'btn small pano-chip' + (p.id === point.id ? ' primary' : '')} aria-current={p.id === point.id ? 'true' : undefined} onClick={() => go(p.id)}>
@@ -502,18 +635,49 @@ export function Viewer({ garden, pointId }: { garden: Garden; pointId: string })
         )}
         {(!northOk || missing > 0 || sensorNote) && (
           <p className="pano-note small" role="status">
-            {!northOk && 'Le nord n’est pas connu pour ce point : les noms des plantes sont masqués. '}
+            {!northOk && 'Le nord n’est pas connu pour ce point : les légendes des plantes sont masquées. '}
             {missing > 0 && `${missing} photo${missing > 1 ? 's' : ''} manque${missing > 1 ? 'nt' : ''} sur ce téléphone. `}
             {sensorNote}
           </p>
+        )}
+        {tourUi.active && (
+          <div className="pano-tour" role="group" aria-label="Visite en photos" data-feat="pano-visite-bar">
+            <p className="pano-tour-label" role="status" aria-live="polite">
+              <strong>{stepLabel(tourUi.i, order.length)}</strong>
+              <span> · {pointName(index)}{tourUi.paused ? ' · en pause' : ''}</span>
+            </p>
+            <div className="pano-tour-buttons">
+              <button className="btn" onClick={() => jumpTour(-1)} disabled={tourUi.i === 0}>
+                <Icon name="back" size={18} /> Précédent
+              </button>
+              <button className="btn primary" onClick={toggleTourPause}>
+                {tourUi.paused ? 'Reprendre' : 'Pause'}
+              </button>
+              <button className="btn" onClick={() => jumpTour(1)} disabled={tourUi.i >= order.length - 1}>
+                Suivant <Icon name="forward" size={18} />
+              </button>
+              <button className="btn" onClick={stopTour}>
+                Arrêter
+              </button>
+            </div>
+          </div>
         )}
         <div className="pano-actions">
           <button className={'btn' + (gyroOn ? ' primary' : '')} aria-pressed={gyroOn} title="Tourner la vue en bougeant le téléphone" onClick={() => void toggleGyro()}>
             <Icon name="move" size={18} /> Boussole
           </button>
-          {northOk && (
-            <button className={'btn' + (names ? ' primary' : '')} aria-pressed={names} onClick={() => setNames((n) => !n)}>
-              <Icon name="leaf" size={18} /> Noms
+          <button
+            className={'btn' + (names && northOk ? ' primary' : '')}
+            aria-pressed={names && northOk}
+            disabled={!northOk}
+            title={northOk ? 'Écrire sur la photo le nom et la distance des plantes que vous avez plantées' : 'Le nord n’est pas connu pour ce point : on ne sait pas dans quelle direction sont vos plantes'}
+            onClick={() => setNames((n) => !n)}
+          >
+            <Icon name="leaf" size={18} /> Légendes
+          </button>
+          {order.length >= 2 && !tourUi.active && (
+            <button className="btn" data-feat="pano-visite" onClick={startTourNow}>
+              <Icon name="forward" size={18} /> Visite
             </button>
           )}
           <button className="btn" onClick={redo}>

@@ -166,6 +166,10 @@ export const FEATURES: Feature[] = [
   F('qualite-3d', 'Réglages 3D : qualité', 'promener', 'Choisissez « Simple » si la 3D ralentit sur votre téléphone.', ['qualité', 'lent', 'ralentit', 'simple', 'performance', 'réglages 3d'], 'qualite', go('3d', { intent: '3d:reglages', path: ['qualite'] })),
   F('ensoleillement', 'Voir l’ensoleillement du terrain', 'promener', 'Colore le terrain selon les heures de soleil reçues le jour choisi.', ['ensoleillement', 'soleil', 'ombre', 'lumière', 'heures de soleil'], 'ensoleillement', go('3d', { path: ['ensoleillement'] })),
   F('photos-jardin', 'Photos du jardin', 'promener', 'Promenez-vous dans de vraies photos de votre jardin, prises en tournant.', ['photos', 'street view', '360', 'panorama', 'points de vue'], 'pano-home', () => openPanorama('home')),
+  F('visite-photos', 'Faire la visite en photos', 'promener', 'Passez d’un point de vue à l’autre : l’appli tourne sur chacun, puis vous emmène au suivant.', ['visite', 'photos', 'points de vue', 'street view', 'parcours', 'tour', 'automatique', 'promenade'], 'pano-visite', () => {
+    openPanorama('home')
+    void reveal(['pano-visite'])
+  }),
   F('prendre-photos', 'Prendre un point de vue en photos', 'promener', 'Tournez sur vous-même : l’appli prend 8 à 12 photos.', ['prendre', 'photos', 'tourner', '360', 'point de vue'], 'pano-place', () => openPanorama('place', { mode: 'guide' })),
   F('importer-pano', 'Importer un panorama', 'promener', 'Ajoutez une grande photo prise avec le mode panorama du téléphone.', ['importer', 'panorama', 'photo large'], 'pano-place', () => openPanorama('place', { mode: 'import' })),
 

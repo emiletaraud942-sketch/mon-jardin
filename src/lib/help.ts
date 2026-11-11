@@ -127,7 +127,8 @@ export const HELP_EXTRA: Record<HelpExtra, HelpContent> = {
     steps: [
       '« Prendre un point de vue » : choisissez un endroit, puis tournez sur vous-même. L’appli prend 8 à 12 photos.',
       'Touchez un point de la liste pour vous y promener. Glissez le doigt pour tourner la vue.',
-      'Les flèches mènent à un autre point. « Afficher les noms » montre vos plantes sur la photo.',
+      'Les flèches mènent à un autre point. « Légendes » écrit sur la photo le nom et la distance de vos plantes.',
+      'Avec deux points ou plus, « Lancer la visite » passe d’un point à l’autre toute seule. Touchez la vue pour mettre en pause.',
       'Ces photos restent sur ce téléphone. Elles ne reconnaissent pas les plantes toutes seules.',
       'Touchez « Accueil » pour revenir au début, ou « Fermer » pour revenir à la carte.',
     ],

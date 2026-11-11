@@ -6,6 +6,7 @@ import type { Garden } from '../../types'
 import { canAddPoint, MAX_BYTES, MAX_POINTS, photoDateLabel, pointName, refusalMessage, sizeLabel } from './geometry'
 import { metaBytes, noteBytes, panoramasOf, pointBytes } from './panoData'
 import { closePanorama, openPanorama } from './panoUi'
+import { tourOrder } from './tour'
 
 interface Info {
   url?: string
@@ -110,7 +111,12 @@ export function Home({ garden }: { garden: Garden }) {
             {refusal}
           </p>
         )}
-        <button className="btn primary big" onClick={() => start('guide')}>
+        {tourOrder(points).length >= 2 && (
+          <button className="btn primary big" data-feat="pano-visite" onClick={() => openPanorama('view', { pointId: tourOrder(points)[0], back: 'home', tour: true })}>
+            <Icon name="forward" /> Lancer la visite
+          </button>
+        )}
+        <button className={'btn big' + (tourOrder(points).length >= 2 ? '' : ' primary')} onClick={() => start('guide')}>
           <Icon name="camera" /> Prendre un point de vue
         </button>
         <button className="btn" onClick={() => start('import')}>
