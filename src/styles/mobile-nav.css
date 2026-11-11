@@ -552,3 +552,100 @@ html[data-offline] .page {
     max-width: calc(100% - 60px);
   }
 }
+
+/* ----- Plante choisie sur la carte (téléphone) : petite carte d'infos, la carte reste visible ----- */
+@media (max-width: 760px) {
+  .plant-peek {
+    left: 10px;
+    right: 10px;
+    bottom: 10px; /* prend la place de la feuille du bas, qui ne dit rien de plus tant qu'une plante est choisie */
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 12px 10px;
+    border: 1.5px solid var(--accent-2);
+    border-radius: 22px;
+  }
+  .plant-peek-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+  }
+  .plant-peek-head .dot {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+  }
+  .plant-peek-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: calc(17 * var(--px));
+    font-weight: var(--fw-strong);
+  }
+  .plant-peek-close {
+    flex: none;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0;
+    justify-content: center;
+  }
+  .plant-peek-dist {
+    font-weight: var(--fw-strong);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .plant-peek-warn {
+    color: var(--danger-text, var(--danger, #8a2b1f));
+    font-weight: var(--fw-strong);
+  }
+  .plant-peek .site-note {
+    font-size: calc(13 * var(--px));
+  }
+  .plant-peek .site-note summary {
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+  }
+  .plant-peek .site-note .site-note-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .plant-peek .site-note[open] .site-note-text {
+    white-space: normal;
+  }
+  .plant-peek .site-note ul {
+    margin: 0 0 4px;
+    padding: 0;
+    list-style: none;
+  }
+  .plant-peek-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .plant-peek-actions .btn {
+    flex: 1 1 0;
+    min-height: var(--btn-h);
+    justify-content: center;
+  }
+  /* « Ajouter une plante » se cache le temps qu'une plante est choisie ; l'échelle et l'attribution passent au-dessus de la carte d'infos. */
+  .app:has(.plant-peek) .add-fab {
+    display: none;
+  }
+  .app:has(.plant-peek) .bsheet {
+    visibility: hidden;
+  }
+  .app:has(.plant-peek) .workspace .maplibregl-ctrl-bottom-right,
+  .app:has(.plant-peek) .workspace .maplibregl-ctrl-bottom-left {
+    margin-bottom: calc(16px + var(--peek-h, 150px));
+  }
+}

@@ -8,7 +8,7 @@ import { UNKNOWN_SPECIES_ID, yourPlant } from '../../lib/customName'
 import { useInertBehind } from '../../lib/inert'
 import { useGardenPlants, useStore } from '../../lib/store'
 import { identifyOpen } from '../../lib/overlays'
-import { closePlantSheet, openHelp, setUi, startPlacing, stopPlacing, useUi } from '../../lib/ui'
+import { closeFiche, closePlantSheet, openHelp, setUi, startPlacing, stopPlacing, useUi } from '../../lib/ui'
 import type { Garden } from '../../types'
 import { PlantPanel, plantName } from '../plants/PlantPanel'
 import { openScan } from '../scan/scanUi'
@@ -45,17 +45,18 @@ function FicheOverlay({ label, children }: { label: string; children: ReactNode 
 /** Panneau latéral de la carte. */
 export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
   const plants = useGardenPlants(garden.id)
-  const { selectedPlantId, movingPlantId, placingSpeciesId } = useUi()
+  const { selectedPlantId, movingPlantId, placingSpeciesId, ficheOpenId } = useUi()
   const [picking, setPicking] = useState(false)
   const mobile = useIsMobile()
   const selected = plants.find((p) => p.id === selectedPlantId)
 
-  // Téléphone : la fiche prend tout l'écran, comme depuis la liste des plantes (maquette). Pendant un déplacement ou un placement, la carte reste visible.
+  // Téléphone : toucher une plante la CHOISIT seulement (petite carte d'infos sur la carte : `PlantPeek`). La fiche plein écran ne s'ouvre que
+  // sur « Fiche » : avant, elle recouvrait la carte à chaque toucher et après chaque déplacement.
   if (selected && mobile) {
-    if (movingPlantId || placingSpeciesId) return null
+    if (movingPlantId || placingSpeciesId || ficheOpenId !== selected.id) return null
     return createPortal(
       <FicheOverlay label={plantName(selected)}>
-        <PlantPanel garden={garden} plant={selected} onClose={closePlantSheet} fiche onShowOnMap={() => setUi({ tab: 'carte', focusPlantId: selected.id, selectedPlantId: undefined })} />
+        <PlantPanel garden={garden} plant={selected} onClose={closeFiche} fiche onShowOnMap={() => setUi({ tab: 'carte', focusPlantId: selected.id, selectedPlantId: undefined })} />
       </FicheOverlay>,
       document.body,
     )

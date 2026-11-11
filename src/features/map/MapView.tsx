@@ -33,6 +33,7 @@ import { plantName } from '../plants/PlantPanel'
 import { reviewToolsEnabled } from '../../lib/debugFlag'
 import { cssVar } from './colors'
 import { GardenSide, PlacingBanner, useSheetHead } from './GardenSide'
+import { PlantPeek } from './PlantPeek'
 import { SidePanel } from './SidePanel'
 import { movePlant, moveWithUndo, placePlant } from './placing'
 import { confirmBeforePlacing, registerAim, registerNudge, setPlacingInfo, setPlacingPoint, usePlacingInfo } from './aimBridge'
@@ -520,7 +521,11 @@ function MapViewInner({ garden }: { garden: Garden }) {
       if (aimNow()) return // en mode Viser, on déplace la carte : le bouton « Placer ici » pose la plante
       const mv = movingRef.current
       const sp = placingRef.current
-      if (!mv && !sp) return
+      if (!mv && !sp) {
+        // Toucher la carte à vide : on ne choisit plus aucune plante.
+        if (getUi().selectedPlantId) setUi({ selectedPlantId: undefined })
+        return
+      }
       const local = toLocal(gardenRef.current.center, { lon: e.lngLat.lng, lat: e.lngLat.lat })
       const a = aidRef.current!
       const r = a.snapAt(local, mv)
@@ -774,6 +779,8 @@ function MapViewInner({ garden }: { garden: Garden }) {
         markers.current.set(p.id, mk)
       } else mk.setLngLat([ll.lon, ll.lat])
       const hit = mk.getElement()
+      // Seule la plante CHOISIE se déplace au doigt : sinon un doigt qui fait glisser la carte depuis une plante la déplaçait sans le vouloir.
+      mk.setDraggable(p.id === selectedPlantId)
       const dot = hit.firstElementChild as HTMLElement
       const tag = hit.lastElementChild as HTMLElement
       const sel = p.id === selectedPlantId
@@ -900,6 +907,30 @@ function MapViewInner({ garden }: { garden: Garden }) {
   // Viseur : la croix est au milieu de la zone VISIBLE (entre les outils du haut et la consigne du bas), pas au milieu de la carte entière,
   // sinon elle passait derrière la consigne sur un petit écran ou en texte agrandi. MapLibre décale son centre avec `padding` :
   // `getCenter()` renvoie alors l'endroit sous la croix, et le point visé reste le même quand on active ou coupe « Viser ».
+  // Plante choisie (téléphone) : la petite carte d'infos occupe le bas de la carte. Si la plante est dessous (ou sous les outils du haut), la carte
+  // glisse juste ce qu'il faut pour la ramener dans l'espace libre, sinon on ne pourrait ni la voir ni la faire glisser.
+  useEffect(() => {
+    const m = map.current
+    const host = el.current
+    const wrap = host?.closest<HTMLElement>('.canvas-wrap')
+    if (!m || !ready || !host || !wrap || !selectedPlantId || !mobileMap || placingNow) return
+    const t = window.setTimeout(() => {
+      const plant = plantsRef.current.find((x) => x.id === selectedPlantId)
+      const peek = wrap.querySelector('.plant-peek')?.getBoundingClientRect()
+      if (!plant || !peek) return
+      const mb = host.getBoundingClientRect()
+      const ll = toLonLat(gardenRef.current.center, plant.position)
+      const p = m.project([ll.lon, ll.lat])
+      const toolbar = wrap.querySelector('.map-toolbar')?.getBoundingClientRect()
+      const freeTop = Math.max(0, (toolbar ? toolbar.bottom - mb.top : 0) + 24)
+      const freeBottom = peek.top - mb.top - 34
+      if (freeBottom - freeTop < 40) return
+      if (p.y >= freeTop && p.y <= freeBottom) return
+      const targetY = freeTop + (freeBottom - freeTop) / 2
+      m.panBy([0, p.y - targetY], { duration: 250 })
+    }, 90)
+    return () => window.clearTimeout(t)
+  }, [selectedPlantId, mobileMap, placingNow, ready])
   const aimPad = useRef({ top: 0, bottom: 0 })
   useEffect(() => {
     const m = map.current
@@ -1345,9 +1376,10 @@ function MapViewInner({ garden }: { garden: Garden }) {
           </div>
         )}
         <PlacingBanner />
+        <PlantPeek garden={garden} />
       </div>
-      <SidePanel {...head} tall={!!selectedPlantId} collapse={!!(placingSpeciesId || movingPlantId)}>
-        <GardenSide garden={garden} hint="Touchez une plante pour ouvrir sa fiche." />
+      <SidePanel {...head} tall={!!selectedPlantId && !mobileMap} collapse={!!(placingSpeciesId || movingPlantId)}>
+        <GardenSide garden={garden} hint="Touchez une plante pour la choisir, puis glissez-la pour la déplacer." />
       </SidePanel>
     </div>
   )

@@ -11,7 +11,8 @@ const ICON: Record<SiteLine['kind'], string> = { soleil: '☀', pente: '⛰', ea
 /** Attente après le dernier mouvement du viseur avant de calculer le soleil (lancer de rayons : pas à chaque image). */
 const DEBOUNCE_MS = 350
 
-function SiteNoteInner({ garden, point }: { garden: Garden; point: XY }) {
+/** Fiche « Ici » pour un point donné (la plante choisie, ou l'endroit visé). */
+export function SiteNoteAt({ garden, point }: { garden: Garden; point: XY }) {
   const plants = useGardenPlants(garden.id)
   const lidar = useLidarScene(garden, plants)
   const obstacles = useMemo(() => obstaclesFor(garden, plants, SPECIES_BY_ID, new Date(), lidar.trees), [garden, plants, lidar.trees])
@@ -54,5 +55,5 @@ export function SiteNote() {
   const point = usePlacingPoint()
   const garden = useActiveGarden()
   if (!point || !garden) return null
-  return <SiteNoteInner garden={garden} point={point} />
+  return <SiteNoteAt garden={garden} point={point} />
 }

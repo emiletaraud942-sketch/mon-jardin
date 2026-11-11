@@ -118,6 +118,8 @@ interface UiState {
   parcours?: ParcoursScreen
   guide: GuideState
   selectedPlantId?: string
+  /** Plante dont la fiche complète est ouverte (téléphone, depuis la carte). Toucher une plante la choisit seulement : la fiche s'ouvre sur « Fiche ». */
+  ficheOpenId?: string
   placingSpeciesId?: string
   /** Pour une plante hors base (identifiée par photo) : nom affiché. */
   placingCustomName?: string
@@ -276,6 +278,8 @@ export function setUi(patch: Partial<Omit<UiState, 'guide'>>, opts: { push?: boo
   let next: UiState = { ...ui, ...patch }
   // Changer d'écran ferme le parcours d'accueil (sauf s'il est demandé en même temps).
   if (patch.tab && !('parcours' in patch)) next.parcours = undefined
+  // Choisir une autre plante (ou n'en choisir aucune) referme la fiche : elle ne se rouvre jamais toute seule.
+  if ('selectedPlantId' in patch && patch.selectedPlantId !== prev.selectedPlantId && !('ficheOpenId' in patch)) next.ficheOpenId = undefined
   // Le rayon de l'écran devient le dernier rayon visité (mémorisé pour la prochaine ouverture).
   const r = patch.tab ? rayonOfTab(patch.tab) : undefined
   if (r && r !== prev.rayon) {
@@ -453,6 +457,15 @@ export function stopPlacing() {
 /** « Déplacer cette plante » : un appui sur la carte donne le nouvel emplacement (sans glisser). Toujours sur la carte 2D. */
 export function startMoving(plantId: string) {
   setUi({ movingPlantId: plantId, placingSpeciesId: undefined, placingCustomName: undefined, pendingPhotos: undefined, placingSeries: undefined, placingSpot: undefined, tab: 'carte' })
+}
+
+/** Ouvre la fiche complète de la plante choisie (bouton « Fiche »). */
+export function openFiche(plantId: string) {
+  setUi({ selectedPlantId: plantId, ficheOpenId: plantId })
+}
+/** Referme la fiche complète : la plante reste choisie, la carte redevient visible. */
+export function closeFiche() {
+  setUi({ ficheOpenId: undefined })
 }
 
 /** Ferme la fiche plante ; si elle a été ouverte par une entrée d'historique propre, revient en arrière (Retour ne la rouvre pas). */
