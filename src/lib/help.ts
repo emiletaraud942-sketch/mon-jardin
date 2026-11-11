@@ -24,7 +24,7 @@ export const HELP: Record<Tab, HelpContent> = {
     title: 'La carte',
     steps: [
       'Touchez « Ajouter une plante », puis choisissez la plante.',
-      'Touchez la carte à l’endroit où elle pousse (ou « Viser »), puis « Valider ». « Annuler » arrête.',
+      'Touchez la carte à l’endroit où elle pousse (ou « Viser »), puis « Valider ». « Annuler » arrête. « Ici » dit le soleil, la pente et l’humidité estimée. Les flèches ajustent de 10 cm.',
       '« Aides au placement » ouvre « Placer au mètre », « Je suis ici », « Coller aux bords », « Grille » et « Fond simple ».',
       'Touchez une plante pour ouvrir sa fiche : état, photos, soins. Un message permet de défaire après coup.',
       'Pour la déplacer, touchez « Déplacer cette plante », le nouvel endroit, puis « Valider ».',

@@ -473,3 +473,82 @@
 html[data-offline] .page {
   padding-bottom: calc(64px + env(safe-area-inset-bottom));
 }
+
+/* ----- Placement sur téléphone : la carte doit rester visible ----- */
+/* Avant : à 360×740, les outils (150 px) et la consigne (250 px) ne laissaient que 140 px de carte. Maintenant : une rangée d'outils
+   (Viser, Loupe, Aides ; Annuler et Rétablir sont dans « Aides ») et une consigne courte. */
+.map-aid .lbl-short {
+  display: none;
+}
+@media (max-width: 760px) {
+  .map-aid .lbl-long {
+    display: none;
+  }
+  .map-aid .lbl-short {
+    display: inline;
+  }
+  .map-aid > .map-aid-row:first-child {
+    flex-wrap: nowrap;
+  }
+  .map-aid > .map-aid-row:first-child > .btn.small {
+    flex: 1 1 auto;
+    padding-inline: 10px;
+  }
+  /* Les noms des plantes se mêlaient aux distances autour de la croix : on les masque le temps du placement. */
+  .app.is-placing .marker-label {
+    display: none;
+  }
+  .map-aid:not(:has(#map-aids)) > .map-aid-row:has(.history-btns) {
+    display: none;
+  }
+  .app.is-placing .placing-banner {
+    padding: 10px 12px;
+    gap: 4px 10px;
+  }
+  .app.is-placing .placing-banner > svg {
+    width: 22px;
+    height: 22px;
+  }
+  .placing-banner .placing-text {
+    font-size: calc(16 * var(--px));
+    line-height: 1.25;
+  }
+  .placing-banner .placing-hint {
+    display: none;
+  }
+}
+.placing-banner .placing-nudge {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.placing-banner .placing-nudge-word {
+  flex: 1 1 auto;
+  font-size: calc(14 * var(--px));
+  font-weight: var(--fw-strong);
+}
+.placing-banner .placing-nudge .btn.small {
+  flex: none;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  padding: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+  justify-content: center;
+}
+@media (max-width: 760px) {
+  .map-aid > .map-aid-row:first-child > .btn.small {
+    min-width: max-content;
+  }
+  /* Rien à annuler ni à rétablir : la rangée grisée ne sert qu'à prendre de la place sur la carte (elle revient dès qu'il y a un geste à défaire). */
+  .map-toolbar .history-btns:not(:has(button:enabled)) {
+    display: none;
+  }
+}
+@media (max-width: 760px) {
+  /* Les avis de la carte laissent la place des boutons + et − (la mention de la photo passait dessus). */
+  .map-chips > * {
+    max-width: calc(100% - 60px);
+  }
+}

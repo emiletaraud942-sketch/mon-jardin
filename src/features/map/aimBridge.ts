@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import type { XY } from '../../types'
 // Pont entre la bannière de placement (bouton « Valider ») et la carte (viseur au centre, endroit touché).
 let handler: (() => void) | undefined
 
@@ -41,6 +42,37 @@ export function setPlacingInfo(p: Partial<PlacingInfo>) {
   if (next.summary === info.summary && next.note === info.note) return
   info = next
   listeners.forEach((l) => l())
+}
+
+// ---------- Ajuster l'endroit visé de quelques centimètres (flèches de la consigne) ----------
+let nudgeHandler: ((dx: number, dy: number) => void) | undefined
+export function registerNudge(h: (dx: number, dy: number) => void): () => void {
+  nudgeHandler = h
+  return () => {
+    if (nudgeHandler === h) nudgeHandler = undefined
+  }
+}
+/** Déplace l'endroit visé (x = est, y = nord, en mètres). Sans carte ouverte : rien. */
+export function nudgeAim(dx: number, dy: number) {
+  nudgeHandler?.(dx, dy)
+}
+
+// ---------- Endroit visé (pour la fiche « Ici ») ----------
+let point: XY | undefined
+const pointListeners = new Set<() => void>()
+export function setPlacingPoint(p: XY | undefined) {
+  if (p === point || (p && point && p.x === point.x && p.y === point.y)) return
+  point = p
+  pointListeners.forEach((l) => l())
+}
+export function usePlacingPoint(): XY | undefined {
+  return useSyncExternalStore(
+    (l) => {
+      pointListeners.add(l)
+      return () => pointListeners.delete(l)
+    },
+    () => point,
+  )
 }
 
 export function usePlacingInfo(): PlacingInfo {

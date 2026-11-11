@@ -3182,7 +3182,7 @@ dialog.modal.full .modal-body {
 .aim-cross {
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: var(--aim-y, 50%); /* au milieu de la zone visible (MapView : padding de la carte) */
   width: 56px;
   height: 56px;
   transform: translate(-50%, -50%);
@@ -4450,6 +4450,38 @@ dialog.modal.full .modal-body {
 }
 .placing-banner .placing-note {
   color: var(--cta);
+}
+.placing-banner .site-note {
+  margin-top: 4px;
+  font-size: calc(13 * var(--px));
+  color: var(--text);
+}
+.placing-banner .site-note summary {
+  cursor: pointer;
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  line-height: 1.25;
+}
+.placing-banner .site-note .site-note-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.placing-banner .site-note[open] .site-note-text {
+  white-space: normal;
+}
+.placing-banner .site-note .site-note-title {
+  font-weight: var(--fw-key);
+}
+.placing-banner .site-note ul {
+  margin: 2px 0 6px;
+  padding-left: 0;
+  list-style: none;
+}
+.placing-banner .site-note li {
+  padding: 2px 0;
 }
 /* Loupe : zone agrandie au-dessus du doigt, avec un réticule. Elle ne reçoit aucun toucher. */
 .loupe {

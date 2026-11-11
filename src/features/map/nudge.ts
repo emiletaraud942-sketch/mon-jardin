@@ -1,5 +1,8 @@
 import type { XY } from '../../types'
 
+/** Pas d'un bouton « Ajuster » pendant le placement : 10 cm. */
+export const AIM_NUDGE_M = 0.1
+
 /** Pas d'une flèche du clavier sur une plante : 0,5 m ; avec Maj, 2 m. */
 export const NUDGE_M = 0.5
 export const NUDGE_BIG_M = 2

@@ -35,7 +35,7 @@ import { cssVar } from './colors'
 import { GardenSide, PlacingBanner, useSheetHead } from './GardenSide'
 import { SidePanel } from './SidePanel'
 import { movePlant, moveWithUndo, placePlant } from './placing'
-import { confirmBeforePlacing, registerAim, setPlacingInfo, usePlacingInfo } from './aimBridge'
+import { confirmBeforePlacing, registerAim, registerNudge, setPlacingInfo, setPlacingPoint, usePlacingInfo } from './aimBridge'
 import { PHOTO_MAP_MAXZOOM, PHOTO_NOTE_ZOOM, cadastreOpacityExpression, gridStepM, mapMaxZoomFor } from './photoZoom'
 import { LOUPE_HOLD_MS, LOUPE_SIZE, LOUPE_SLOP_PX, LOUPE_ZOOM, gpsCircleRadiusM, loupeCenter, loupeSource, rulerSummary } from './placeAids'
 import { useGps } from '../scan/useGps'
@@ -239,6 +239,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
         ghost.setData({ type: 'FeatureCollection', features: feats })
       }
       setPlacingInfo({ summary: rulerSummary(ruler) })
+      setPlacingPoint(r.point)
       const items = ruler.map((q) => {
         const mid = { x: (q.from.x + q.to.x) / 2, y: (q.from.y + q.to.y) / 2 }
         const word = q.kind === 'limite' ? 'Limite ' : q.kind === 'batiment' ? 'Maison ' : ''
@@ -275,6 +276,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
         ;(m.getSource('ghost') as GeoJSONSource).setData(emptyFc())
       }
       setPlacingInfo({ summary: '' })
+      setPlacingPoint(undefined)
       labelMarkers.current.forEach((mk) => (mk.getElement().style.display = 'none'))
     },
     finish(pos) {
@@ -895,6 +897,78 @@ function MapViewInner({ garden }: { garden: Garden }) {
 
   // Début de placement : zoom assez fort pour viser au mètre ; la grille et le viseur suivent.
   const placingNow = !!(placingSpeciesId || movingPlantId)
+  // Viseur : la croix est au milieu de la zone VISIBLE (entre les outils du haut et la consigne du bas), pas au milieu de la carte entière,
+  // sinon elle passait derrière la consigne sur un petit écran ou en texte agrandi. MapLibre décale son centre avec `padding` :
+  // `getCenter()` renvoie alors l'endroit sous la croix, et le point visé reste le même quand on active ou coupe « Viser ».
+  const aimPad = useRef({ top: 0, bottom: 0 })
+  useEffect(() => {
+    const m = map.current
+    const host = el.current
+    const wrap = host?.closest<HTMLElement>('.canvas-wrap')
+    if (!m || !ready || !host || !wrap) return
+    const setPad = (t: number, b: number, crossY: number | undefined) => {
+      try {
+        const keep = m.unproject([host.clientWidth / 2, crossY ?? host.clientHeight / 2])
+        m.jumpTo({ center: keep, padding: { top: t, bottom: b, left: 0, right: 0 } })
+      } catch {
+        /* carte déjà détruite */
+      }
+      aimPad.current = { top: t, bottom: b }
+      if (crossY === undefined) wrap.style.removeProperty('--aim-y')
+      else wrap.style.setProperty('--aim-y', `${crossY}px`)
+    }
+    if (!(placingNow && aim)) {
+      if (aimPad.current.top || aimPad.current.bottom) setPad(0, 0, undefined)
+      return
+    }
+    const apply = () => {
+      const mb = host.getBoundingClientRect()
+      if (!mb.height) return
+      const aid = wrap.querySelector('.map-aid')?.getBoundingClientRect()
+      const ban = wrap.querySelector('.placing-banner')?.getBoundingClientRect()
+      // Les outils ne comptent que s'ils barrent la carte (téléphone) ; sur ordinateur ils sont dans un coin.
+      const t = aid && aid.width > mb.width * 0.6 ? Math.max(0, Math.round(aid.bottom - mb.top + 6)) : 0
+      const b = ban ? Math.max(0, Math.round(mb.bottom - ban.top + 6)) : 0
+      if (Math.abs(t - aimPad.current.top) < 2 && Math.abs(b - aimPad.current.bottom) < 2 && wrap.style.getPropertyValue('--aim-y')) return
+      setPad(t, b, t + (mb.height - t - b) / 2)
+      aidRef.current?.refreshAim()
+    }
+    apply()
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(apply)
+    ro?.observe(host)
+    for (const sel of ['.map-aid', '.placing-banner']) {
+      const n = wrap.querySelector(sel)
+      if (n) ro?.observe(n)
+    }
+    const late = window.setTimeout(apply, 250) // la consigne et les outils se dessinent un instant après le début du placement
+    return () => {
+      ro?.disconnect()
+      window.clearTimeout(late)
+    }
+  }, [placingNow, aim, ready, aidsOpen, placingSpot])
+
+  /** « Ajuster » : déplace l'endroit visé de 10 cm (viseur : la carte bouge sous la croix ; endroit touché : l'épingle bouge). x = est, y = nord. */
+  const nudgeSpot = (dx: number, dy: number) => {
+    const m = map.current
+    if (!m) return
+    const g = gardenRef.current
+    if (aimRef.current) {
+      const c = m.getCenter()
+      const p = toLocal(g.center, { lon: c.lng, lat: c.lat })
+      const ll = toLonLat(g.center, { x: p.x + dx, y: p.y + dy })
+      m.jumpTo({ center: [ll.lon, ll.lat] })
+      aidRef.current?.refreshAim()
+      return
+    }
+    const spot = getUi().placingSpot
+    if (!spot) return
+    const next = { x: spot.x + dx, y: spot.y + dy }
+    setUi({ placingSpot: next })
+    aidRef.current?.draw({ point: next, guides: [] }, movingRef.current)
+  }
+  // La consigne du bas (GardenSide) pilote ces flèches : elles doivent rester visibles pendant qu'on regarde la croix.
+  // nudgeSpot n'utilise que des refs : une seule inscription suffit.
+  useEffect(() => registerNudge(nudgeSpot), []) // eslint-disable-line react-hooks/exhaustive-deps
   // Pastilles « photo » des points de vue (masquées pendant un placement : elles gêneraient le toucher).
   usePanoramaMarkers(map, ready, garden, placingNow)
   useEffect(() => {
@@ -1037,8 +1111,16 @@ function MapViewInner({ garden }: { garden: Garden }) {
   const noteInColumn = mobileMap || plants.length === 0 || optionsOpen || legendOpen
   // Mention sur la photo et invite du jardin vide : en bas de la carte sur ordinateur (`map-foot`), dans la colonne du haut sur téléphone
   // (la feuille du bas et « Ajouter une plante » les recouvraient ; dans la colonne, rien ne peut se superposer).
+  // La mention disparaît seule après quelques secondes (elle restait collée sur la carte et recouvrait les boutons + et −).
+  const [photoNoteGone, setPhotoNoteGone] = useState(false)
+  const photoNoteWanted = beyondPhoto && base === 'ortho' && !schema && !placingNow
+  useEffect(() => {
+    if (!photoNoteWanted || photoNoteGone) return
+    const t = window.setTimeout(() => setPhotoNoteGone(true), 7000)
+    return () => window.clearTimeout(t)
+  }, [photoNoteWanted, photoNoteGone])
   const photoNote =
-    beyondPhoto && base === 'ortho' && !schema ? (
+    photoNoteWanted && !photoNoteGone ? (
       <p className="map-photo-note small" role="note">
         La photo n’est pas plus précise de plus près.
       </p>
@@ -1098,8 +1180,12 @@ function MapViewInner({ garden }: { garden: Garden }) {
                   <Icon name={loupeOn ? 'check' : 'loupe'} size={16} />
                   Loupe
                 </button>
-                <button className={'btn small' + (aidsOpen ? ' on' : '')} data-feat="aides-toggle" aria-expanded={aidsOpen} aria-controls="map-aids" onClick={() => setAidsOpen((o) => !o)}>
-                  Aides au placement <span aria-hidden>{aidsOpen ? '▴' : '▾'}</span>
+                <button className={'btn small' + (aidsOpen ? ' on' : '')} data-feat="aides-toggle" aria-label="Aides au placement" aria-expanded={aidsOpen} aria-controls="map-aids" onClick={() => setAidsOpen((o) => !o)}>
+                  <span className="lbl-long">Aides au placement</span>
+                  <span className="lbl-short" aria-hidden>
+                    Aides
+                  </span>{' '}
+                  <span aria-hidden>{aidsOpen ? '▴' : '▾'}</span>
                 </button>
               </div>
               <div className="map-aid-row">

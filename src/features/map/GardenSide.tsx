@@ -14,8 +14,10 @@ import { PlantPanel, plantName } from '../plants/PlantPanel'
 import { openScan } from '../scan/scanUi'
 import { openPanorama } from '../panorama/panoUi'
 import { useIsMobile } from '../../components/useMedia'
-import { confirmBeforePlacing, placeAtAim, usePlacingInfo } from './aimBridge'
+import { confirmBeforePlacing, nudgeAim, placeAtAim, usePlacingInfo } from './aimBridge'
+import { AIM_NUDGE_M } from './nudge'
 import { usePlacingReserve } from './placingReserve'
+import { SiteNote } from './SiteNote'
 
 const MAX_LISTED = 60
 
@@ -150,12 +152,12 @@ export function PlacingBanner() {
   const confirm = aim || confirmBeforePlacing()
   const ready = aim || !!placingSpot
   const text = aim
-    ? `Déplacez la carte : la croix doit être sur l’endroit de ${yourPlant(name)}.`
+    ? `Mettez la croix sur ${yourPlant(name)}.`
     : ready
-      ? 'C’est bien là ? Touchez Valider. Pour corriger, touchez un autre endroit.'
+      ? 'C’est bien là ? Touchez Valider, ou un autre endroit.'
       : movingPlantId
-        ? `Touchez sur la carte le nouvel endroit de ${yourPlant(name)}.`
-        : `Touchez sur la carte l’endroit où se trouve ${yourPlant(name)}.`
+        ? `Touchez le nouvel endroit de ${yourPlant(name)}.`
+        : `Touchez l’endroit de ${yourPlant(name)}.`
   return (
     <div className="floating placing-banner" role="status" ref={reserve}>
       <Icon name={movingPlantId ? 'move' : 'pin'} size={28} />
@@ -167,9 +169,27 @@ export function PlacingBanner() {
           </span>
         )}
         {info.summary && <span className="small placing-dist">{info.summary}</span>}
+        <SiteNote />
         {info.note && <span className="small placing-note">{info.note}</span>}
         {confirm && !aim && !ready && !info.note && <span className="small muted placing-hint">Pour viser avec précision : touchez « Loupe » ou « Viser ».</span>}
       </span>
+      {ready && confirm && (
+        <span className="placing-nudge" role="group" aria-label="Ajuster l’endroit de 10 centimètres" data-feat="ajuster-placement">
+          <span className="placing-nudge-word">Ajuster 10 cm</span>
+          <button className="btn small" aria-label="Un peu à gauche" onClick={() => nudgeAim(-AIM_NUDGE_M, 0)}>
+            ←
+          </button>
+          <button className="btn small" aria-label="Un peu vers le haut" onClick={() => nudgeAim(0, AIM_NUDGE_M)}>
+            ↑
+          </button>
+          <button className="btn small" aria-label="Un peu vers le bas" onClick={() => nudgeAim(0, -AIM_NUDGE_M)}>
+            ↓
+          </button>
+          <button className="btn small" aria-label="Un peu à droite" onClick={() => nudgeAim(AIM_NUDGE_M, 0)}>
+            →
+          </button>
+        </span>
+      )}
       <span className="placing-actions">
         {confirm && (
           <button className="btn primary placing-ok" disabled={!ready} onClick={placeAtAim}>
