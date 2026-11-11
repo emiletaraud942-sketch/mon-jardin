@@ -131,6 +131,8 @@ Fonction facultative. Sans la clé `NEIGHBORS_VAPID_PUBLIC`, l'écran « Mes not
 
 ### Étapes pour le propriétaire (dans cet ordre)
 
+**État au 11 nov. 2026 (alertes de messages)** : la base a la v5 (tables `push_subscriptions`, `notification_prefs`, `neighbors_push_facts`) ; la fonction `notify-message` est **déployée** sur `permajardin` (version 1, vérification de jeton coupée, identique au fichier du dépôt) mais **inactive** : les 4 secrets (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `NOTIFY_WEBHOOK_SECRET`) ne sont pas saisis (sans `NOTIFY_WEBHOOK_SECRET` elle répond 401 à tout appel), le webhook sur `messages` n'existe pas et `NEIGHBORS_VAPID_PUBLIC` n'est pas posée dans Vercel (l'écran « Mes notifications » dit donc que les alertes ne sont pas encore ouvertes). Les clés générées ce jour-là n'ont pas été gardées : refaire l'étape 2 (nouvelles clés) puis 3, 5 et 6 ci-dessous. L'outil de saisie des secrets de la session a été refusé par son contrôle de sécurité : saisie à la main dans le tableau de bord. Les alertes « événement » et « nouveautés » ne sont pas commencées (elles dépendent de celles-ci).
+
 À faire sur le projet Supabase **de l'entraide** (jamais celui de la synchro). Remplacez `<REF>` par la référence du projet (Project Settings > General).
 
 1. **Base** : SQL Editor, coller `supabase/neighbors/migrations/20261025030000_neighbors_v5_push.sql`, exécuter. Rejouable, ne supprime aucune donnée.
