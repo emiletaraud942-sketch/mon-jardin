@@ -2,7 +2,15 @@ import { useRef, type KeyboardEvent } from 'react'
 import { SUB_LABEL, setUi, type Tab } from '../lib/ui'
 
 /** Sélecteur segmenté d'un rayon (Carte / Plantes / Vue 3D, Où planter ? / Catalogue) : onglets ARIA, flèches ←/→, un seul dans l'ordre de tabulation. */
-export function SubTabs({ tabs, current, label }: { tabs: Tab[]; current: Tab; label: string }) {
+/** `extra` : un bouton d'action à la suite des onglets (il ouvre un écran par-dessus, il n'est pas un onglet). */
+export interface SubTabExtra {
+  label: string
+  name: string
+  feat?: string
+  onClick: () => void
+}
+
+export function SubTabs({ tabs, current, label, extra }: { tabs: Tab[]; current: Tab; label: string; extra?: SubTabExtra }) {
   const refs = useRef<(HTMLButtonElement | null)[]>([])
   function onKey(e: KeyboardEvent, i: number) {
     let j = i
@@ -32,6 +40,11 @@ export function SubTabs({ tabs, current, label }: { tabs: Tab[]; current: Tab; l
           {SUB_LABEL[t] ?? t}
         </button>
       ))}
+      {extra && (
+        <button type="button" className="subtab-extra" data-feat={extra.feat} aria-label={extra.name} title={extra.name} onClick={extra.onClick}>
+          {extra.label}
+        </button>
+      )}
     </div>
   )
 }

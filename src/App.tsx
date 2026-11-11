@@ -12,7 +12,8 @@ import { Guide } from './features/aide/Guide'
 import { Visite } from './features/aide/Visite'
 import { tourSeen } from './lib/featureTour'
 import { conseilsOpen, ennuisOpen, guideOpen, leconsOpen, lostSheet, rotationOpen, toutFaire, tourOpen } from './lib/overlays'
-import { SubTabs } from './components/SubTabs'
+import { SubTabs, type SubTabExtra } from './components/SubTabs'
+import { FEATURES } from './lib/features'
 import { StorageBanner } from './components/StorageBanner'
 import { ToastHost } from './components/Toast'
 import { UpdateBanner } from './components/UpdateBanner'
@@ -73,6 +74,14 @@ const Loading = ({ label }: { label: string }) => (
 
 /** Écrans qui, sur téléphone, ont l'en-tête minimal (titre en serif et une seule action : le profil, 52 px) à la place de la barre du haut.
  *  Plus de petite phrase ni de « ? » : l'aide est dans la feuille du jardin, les options de la carte et Réglages. */
+/** « Mon jardin » : la visite en photos, à côté de la carte, des plantes et de la 3D (même fonction que le bouton de l'accueil). */
+const PHOTOS_EXTRA: SubTabExtra = {
+  label: 'Photos',
+  name: 'Visiter mon jardin en photos',
+  feat: 'sous-onglet-photos',
+  onClick: () => FEATURES.find((f) => f.id === 'visite-photos')?.run(),
+}
+
 const PHEAD_TABS: Tab[] = ['carte', '3d', 'plantes', 'planter', 'catalogue', 'voisins', 'reglages']
 
 const RAYON_ICON: Record<Rayon, string> = { jardin: 'map', afaire: 'check', planter: 'leaf', voisins: 'users' }
@@ -283,7 +292,7 @@ function AppShell() {
         </div>
       )}
       <div className="modebar">
-        {tabs.length > 0 && <SubTabs tabs={tabs} current={tab} label={rayon === 'jardin' ? 'Écrans de Mon jardin' : 'Écrans de Planter'} />}
+        {tabs.length > 0 && <SubTabs tabs={tabs} current={tab} label={rayon === 'jardin' ? 'Écrans de Mon jardin' : 'Écrans de Planter'} extra={rayon === 'jardin' ? PHOTOS_EXTRA : undefined} />}
         {demoWants && demoTurn && (
           <div className="alert info demo-banner" role="status">
             <span>
