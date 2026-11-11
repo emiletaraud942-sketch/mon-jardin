@@ -29,7 +29,7 @@ export const GUIDE_TREE: GuideBranch[] = [
     question: 'Comment voulez-vous le voir ?',
     answers: [
       { mot: 'Le voir du ciel', phrase: 'La carte de votre terrain, avec vos plantes.', feature: 'carte' },
-      { mot: 'Me promener dedans', phrase: 'En 3D, à hauteur d’yeux, avec le doigt.', feature: 'promenade' },
+      { mot: 'Faire la visite en photos', phrase: 'L’appli passe d’un point de vue à l’autre.', feature: 'visite-photos' },
       { mot: 'Voir des photos', phrase: 'De vraies photos de votre jardin, prises en tournant.', feature: 'photos-jardin' },
     ],
   },

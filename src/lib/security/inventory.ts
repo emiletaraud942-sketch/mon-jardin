@@ -298,8 +298,6 @@ export const LOCAL_STORAGE_KEYS: readonly StorageKeyInfo[] = [
   { cle: 'pj.tourSeen', contenu: 'Visite des fonctions déjà montrée au premier lancement (elle se rejoue depuis l’aide)' },
   { cle: 'pj.lidar', contenu: 'Réglage du relevé LiDAR HD' },
   { cle: 'pj.quality3d', contenu: 'Qualité de la vue 3D' },
-  { cle: 'pj.walkHop', contenu: 'Promenade 3D : « Mouvement réduit » (bonds) activé ou non' },
-  { cle: 'pj.walkHelpSeen', contenu: 'Promenade 3D : aide de la première visite déjà lue' },
   { cle: 'pj.mapNames', contenu: 'Noms des plantes sur la carte affichés ou non' },
   { cle: 'pj.snap', contenu: 'Aimantation de la carte activée ou non' },
   { cle: 'pj.grid', contenu: 'Grille de la carte affichée ou non' },

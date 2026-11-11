@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import * as THREE from 'three'
-import { fitOrtho, fitPerspective, gardenFrame, orthoPixels, ringBounds, sceneHalfSizeFor, viewResetToken, walkResetToken } from './framing'
+import { fitOrtho, fitPerspective, gardenFrame, orthoPixels, ringBounds, sceneHalfSizeFor, viewResetToken } from './framing'
 
 const square = (h: number, cx = 0, cy = 0) => [
   { x: cx - h, y: cy - h },
@@ -128,18 +128,14 @@ describe('jetons de recadrage (pas de téléportation)', () => {
     const before = gardenFrame(undefined, [plant(0, 0), plant(3, 3)])
     const after = gardenFrame(undefined, [plant(0, 0), plant(3, 3), plant(40, 3)])
     expect(after.key).not.toBe(before.key)
-    for (const mode of ['dessus', 'perspective', 'promenade'] as const) {
+    for (const mode of ['dessus', 'perspective'] as const) {
       expect(viewResetToken({ mode, gardenId: 'g1', nonce: 0 })).toBe(viewResetToken({ mode, gardenId: 'g1', nonce: 0 }))
     }
-    // les jetons ne dépendent d'aucune donnée d'emprise
-    expect(walkResetToken({ gardenId: 'g1', nonce: 2 })).toBe('g1|2')
   })
   it('« Recentrer », autre jardin, autre mode : le jeton change', () => {
     const base = viewResetToken({ mode: 'perspective', gardenId: 'g1', nonce: 0 })
     expect(viewResetToken({ mode: 'perspective', gardenId: 'g1', nonce: 1 })).not.toBe(base)
     expect(viewResetToken({ mode: 'perspective', gardenId: 'g2', nonce: 0 })).not.toBe(base)
     expect(viewResetToken({ mode: 'dessus', gardenId: 'g1', nonce: 0 })).not.toBe(base)
-    expect(walkResetToken({ gardenId: 'g1', nonce: 1 })).not.toBe(walkResetToken({ gardenId: 'g1', nonce: 0 }))
-    expect(walkResetToken({ gardenId: 'g2', nonce: 0 })).not.toBe(walkResetToken({ gardenId: 'g1', nonce: 0 }))
   })
 })

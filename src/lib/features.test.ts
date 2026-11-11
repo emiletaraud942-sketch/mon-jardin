@@ -91,7 +91,7 @@ describe('recherche de fonctions', () => {
     expect(ids('sauvegarde')).toEqual(expect.arrayContaining(['sauvegarde', 'sauvegarde-photos', 'reprise']))
     expect(ids('loupe')[0]).toBe('loupe')
     expect(ids('LOUPES')).toContain('loupe')
-    expect(ids('mouvement reduit')[0]).toBe('mouvement-reduit')
+    expect(ids('visite photos')[0]).toBe('visite-photos')
     expect(ids('œil')).toEqual([])
   })
   it('requête vide : tout ; mot inconnu : rien', () => {

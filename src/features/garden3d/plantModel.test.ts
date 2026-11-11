@@ -5,7 +5,6 @@ import { buildPlantScene, disposePartGeometries, estimateTriangles, lookOf, plan
 import { archetypeOf, generatePlant, type GenTier, type PlantLook } from './plantGen'
 import { TRIANGLE_CAP } from './quality'
 import { flatSampler } from './terrain'
-import type { DetailLevel } from './walk'
 import * as THREE from 'three'
 
 const ids = ['pommier', 'cerisier', 'noisetier', 'chene', 'framboisier', 'tomate', 'lavande', 'vigne', 'fraisier', 'courgette', 'basilic', 'consoude']
@@ -52,14 +51,6 @@ describe('modèle des plantes', () => {
     expect(tight.triangles).toBeLessThan(rich.triangles)
     for (const p of mk(60)) expect(tight.parts.some((x) => x.owner === p.id)).toBe(true)
     expect(rich.tiers[2]).toBe(60)
-  })
-
-  it('Promenade : les plantes proches montent de niveau malgré le plafond', () => {
-    const lod: Record<string, DetailLevel> = { p0: 2, p5: 2, p7: 1 }
-    const base = build({ plants: mk(60), tier: 0 })
-    const near = build({ plants: mk(60), tier: 0, lod })
-    expect(near.triangles).toBeGreaterThan(base.triangles)
-    expect(near.parts.length).toBeGreaterThan(base.parts.length)
   })
 
   it('déterministe : mêmes pièces d’un appel à l’autre', () => {

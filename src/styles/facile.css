@@ -368,8 +368,7 @@
   transform: none;
 }
 .app.is-placing .lost-fab,
-.app.route-open .lost-fab,
-html[data-immersive] .lost-fab {
+.app.route-open .lost-fab {
   display: none;
 }
 @media (min-width: 761px) {

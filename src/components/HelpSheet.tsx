@@ -8,8 +8,8 @@ import { Modal } from './Modal'
 import { ReadScreenButton } from './ReadScreenButton'
 
 /**
- * Feuille d'aide du bouton « Aide » : « Tout ce que je peux faire », étapes de l'écran courant (ou du scanner, des photos du jardin,
- * de la promenade), explication des 4 parties de l’appli, retour à la visite.
+ * Feuille d'aide du bouton « Aide » : « Tout ce que je peux faire », étapes de l'écran courant (ou du scanner, des photos du jardin),
+ * explication des 4 parties de l’appli, retour à la visite.
  */
 export function HelpSheet({ tab, onClose }: { tab: Tab; onClose: () => void }) {
   const [view, setView] = useState<'ecran' | 'rayons'>('ecran')

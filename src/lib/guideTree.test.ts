@@ -21,7 +21,7 @@ describe('mode guidé « Que voulez-vous faire ? »', () => {
 
   it('les réponses demandées par le propriétaire y sont', () => {
     const ids = guideLeaves().map((l) => l.feature)
-    for (const id of ['carte', 'promenade', 'photos-jardin', 'ajouter-plante', 'photo-plante', 'a-faire', 'ou-planter', 'sauvegarde', 'taille-texte', 'compte']) expect(ids, id).toContain(id)
+    for (const id of ['carte', 'visite-photos', 'photos-jardin', 'ajouter-plante', 'photo-plante', 'a-faire', 'ou-planter', 'sauvegarde', 'taille-texte', 'compte']) expect(ids, id).toContain(id)
     expect(GUIDE_TREE.map((b) => b.mot)).toEqual(['Je veux voir mon jardin', 'Je veux ajouter quelque chose', 'Je veux savoir quoi faire', 'Je veux sauvegarder ou changer un réglage'])
   })
 

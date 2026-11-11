@@ -5,7 +5,6 @@ import type { Plant, Species, XY } from '../../types'
 import type { PlantState } from '../../engine/growth'
 import { stateAtSeason } from '../../engine/season'
 import type { HeightSampler } from './terrain'
-import type { DetailLevel } from './walk'
 import { archetypeOf, generatePlant, type Archetype, type GenTier, type PlantLook } from './plantGen'
 import { disposePartGeometries as disposeGeometries, estimateTriangles, type PlantPart } from './plantParts'
 
@@ -21,7 +20,7 @@ export interface PlantVisual {
   spreadM: number
   base: [number, number, number]
   label: string
-  /** Gabarit du modèle (haie taillée, conifère…) : sert aux obstacles de la Promenade. */
+  /** Gabarit du modèle (haie taillée, conifère…). */
   archetype: Archetype
   /** Plante en projet : pas encore plantée, on peut la traverser. */
   ghost: boolean
@@ -81,7 +80,7 @@ export function lookOf(plant: Plant, sp: Species | undefined, st: PlantState): P
 }
 
 // Les pièces d'une plante ne dépendent que de son aspect et du niveau : on les garde d'une reconstruction à l'autre
-// (curseur de date, niveaux de détail de la Promenade). Aucune ressource GPU ici : simple mémoire.
+// (curseur de date). Aucune ressource GPU ici : simple mémoire.
 const CACHE_MAX = 1500
 const cache = new Map<string, PlantPart[]>()
 const f3 = (n: number) => n.toFixed(3)
@@ -113,8 +112,6 @@ export interface BuildArgs {
   month?: number
   sample: HeightSampler
   override?: { id: string; position: XY }
-  /** Niveau de détail par plante (Promenade) ; absent = niveau de qualité. */
-  lod?: Record<string, DetailLevel>
   /** Niveau de détail maximal (qualité 3D) : 0 simple, 1 moyen, 2 détaillé. */
   tier?: GenTier
   /** Plafond de triangles pour l'ensemble des plantes. */
@@ -130,7 +127,7 @@ export interface PlantScene {
   tiers: [number, number, number]
 }
 
-export function buildPlantScene({ plants, speciesById, at, seasonAt, sample, override, lod, tier = 1, triangleCap = 150000 }: BuildArgs): PlantScene {
+export function buildPlantScene({ plants, speciesById, at, seasonAt, sample, override, tier = 1, triangleCap = 150000 }: BuildArgs): PlantScene {
   const visuals: Record<string, PlantVisual> = {}
   const looks: { look: PlantLook; origin: [number, number, number]; weight: number }[] = []
   for (const plant of plants) {
@@ -142,7 +139,7 @@ export function buildPlantScene({ plants, speciesById, at, seasonAt, sample, ove
     visuals[plant.id] = { id: plant.id, shape: shapeOf(sp), heightM: look.H, spreadM: look.S, base: origin, label: plantLabel(plant, sp), archetype: look.archetype, ghost: look.ghost }
     looks.push({ look, origin, weight: look.H * look.S })
   }
-  // 1) tout au niveau simple ; 2) la Promenade monte les plantes proches ; 3) on monte les plus visibles tant que le plafond tient.
+  // 1) tout au niveau simple ; 2) on monte les plus visibles tant que le plafond tient.
   const cur: GenTier[] = looks.map(() => 0)
   const parts: PlantPart[][] = looks.map((l) => generateCached(l.look, 0, l.origin))
   const tris = parts.map((p) => estimateTriangles(p))
@@ -156,12 +153,6 @@ export function buildPlantScene({ plants, speciesById, at, seasonAt, sample, ove
     tris[i] = t
     cur[i] = to
     return true
-  }
-  if (lod) {
-    for (let i = 0; i < looks.length; i++) {
-      const l = lod[looks[i].look.id] ?? 0
-      if (l > 0) upgrade(i, l as GenTier, true)
-    }
   }
   if (tier > 0) {
     const order = looks.map((_, i) => i).sort((a, b) => looks[b].weight - looks[a].weight || (looks[a].look.id < looks[b].look.id ? -1 : 1))

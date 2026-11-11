@@ -3,7 +3,7 @@
 Votre jardin en 3D à partir de la photo aérienne et du cadastre de l'IGN, avec l'ombre réelle du soleil, vos plantes à leur place exacte, et la liste de ce qu'il faut faire cette semaine.
 
 ## Ce que fait l'appli
-- **Accueil** : de gros boutons étiquetés de mots (ajouter une plante, voir mon jardin, me promener en 3D, ce qu'il y a à faire…), un mode guidé en quelques questions, et « Je suis perdu » toujours à portée. **« Tout ce que je peux faire »** liste chaque fonction avec une recherche et montre où elle se trouve.
+- **Accueil** : de gros boutons étiquetés de mots (ajouter une plante, voir mon jardin, visiter mon jardin en photos, ce qu'il y a à faire…), un mode guidé en quelques questions, et « Je suis perdu » toujours à portée. **« Tout ce que je peux faire »** liste chaque fonction avec une recherche et montre où elle se trouve.
 - **Carte** : photo aérienne IGN, cadastre, parcelle et bâtiments voisins ; placement des plantes par glisser-déposer (≈ 20 cm de précision) ; envergure actuelle ou adulte.
 - **3D** : relief RGE ALTI, orthophoto au sol, bâtiments extrudés (BD TOPO), arbres qui grandissent (« dans N ans »), ombres réelles selon la date et l'heure, carte d'ensoleillement.
 - **Plantes** : inventaire avec photos, état, notes ; identification par photo (Pl@ntNet).

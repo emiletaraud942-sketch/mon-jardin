@@ -85,7 +85,6 @@
 .g3d-panel,
 .g3d-btn,
 .g3d-seg,
-.g3d-joy,
 .g3d-compass {
   pointer-events: auto;
 }
@@ -152,16 +151,6 @@
   gap: 8px;
   font-size: 0.875rem;
   max-width: 94%;
-}
-
-.g3d-hint--walk {
-  max-width: 88%;
-  font-size: 0.8125rem;
-  font-weight: var(--fw-strong);
-  line-height: 1.35;
-  text-align: center;
-  color: var(--g3d-text);
-  padding: 5px 12px;
 }
 
 .g3d-tools {
@@ -244,9 +233,8 @@
   line-height: 1.2;
 }
 
-/* ----- Colonne de gauche : infos + mini-carte ----- */
+/* ----- Colonne de gauche : infos et ensoleillement ----- */
 .g3d-left {
-  position: relative; /* « Aller à » s'y accroche */
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
@@ -299,140 +287,6 @@
 }
 .g3d-seg-btn[aria-pressed='true']:focus-visible {
   outline-color: var(--g3d-surface);
-}
-
-/* ----- Promenade : joystick, boutons Tourner / Courir, mini-carte ----- */
-.g3d-walkbar {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 0 4px 6px;
-  pointer-events: none;
-}
-.g3d-joy {
-  position: relative;
-  flex: none;
-  /* Grand : le pouce ne doit jamais sortir du cercle. 44 % de la largeur de l'écran, entre 140 et 200 px. */
-  width: clamp(140px, 44vw, 200px);
-  height: clamp(140px, 44vw, 200px);
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  /* Blanc translucide dans les deux thèmes : lisible sur l'herbe sombre comme sur le ciel clair. */
-  background: rgb(255 255 255 / 24%);
-  border: 2px solid rgb(255 255 255 / 75%);
-  box-shadow: 0 0 0 1px rgb(0 0 0 / 18%), 0 2px 12px rgb(0 0 0 / 22%);
-  touch-action: none;
-  -webkit-touch-callout: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
-.g3d-joy-knob {
-  width: 76px;
-  height: 76px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--g3d-accent) 88%, transparent);
-  border: 2px solid rgb(255 255 255 / 90%);
-  box-shadow: 0 2px 8px rgb(0 0 0 / 25%);
-  pointer-events: none;
-}
-.g3d-pad {
-  /* Deux boutons de rotation en haut, « Courir » large en dessous : tout reste à portée du pouce droit. */
-  display: grid;
-  grid-template-columns: 64px 64px;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  pointer-events: none;
-}
-.g3d-pad > :nth-child(1) {
-  grid-area: 1 / 1;
-}
-.g3d-pad > :nth-child(3) {
-  grid-area: 1 / 2;
-}
-.g3d-pad > .g3d-pad-run {
-  grid-area: 2 / 1 / 3 / 3;
-}
-.g3d-padbtn {
-  min-width: 64px;
-  min-height: 64px;
-  padding: 0;
-  font-size: 1.5rem;
-  line-height: 1;
-  touch-action: none;
-  pointer-events: auto;
-  -webkit-touch-callout: none;
-  user-select: none;
-  -webkit-user-select: none;
-  background: color-mix(in srgb, var(--g3d-surface) 70%, transparent);
-}
-.g3d-padbtn:active {
-  background: var(--g3d-accent);
-  color: var(--g3d-surface);
-}
-.g3d-pad-run {
-  min-width: 136px;
-  min-height: 56px;
-  border-radius: 28px;
-  font-size: 1rem;
-}
-.g3d-minimap {
-  border-radius: 50%;
-  box-shadow: 0 2px 8px rgb(0 0 0 / 18%);
-  pointer-events: none;
-  opacity: 0.92;
-}
-.g3d-joy:focus-visible,
-.g3d-padbtn:focus-visible {
-  outline: 2px solid var(--g3d-accent);
-  outline-offset: 2px;
-}
-.g3d-top--walk .g3d-left {
-  gap: 6px;
-}
-.g3d-walkrow {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-.g3d-quit,
-.g3d-datepill {
-  min-height: 44px;
-  padding: 0 12px;
-  font-size: 0.875rem;
-  background: color-mix(in srgb, var(--g3d-surface) 82%, transparent);
-}
-.g3d-datepill svg {
-  flex: none;
-}
-.g3d-sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-}
-.g3d-panel--walk {
-  max-width: min(340px, calc(100vw - 80px));
-  margin: 0;
-}
-.g3d-selchip {
-  align-self: center;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 100%;
-  padding: 4px 6px 4px 12px;
-}
-.g3d-selname {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 0.9375rem;
 }
 .g3d-empty {
   font-size: 0.8125rem;
@@ -678,7 +532,7 @@
   flex: 1 1 auto;
 }
 
-/* ----- Promenade : boutons à libellé, aide persistante, « Aller à » ----- */
+/* ----- Boutons à libellé ----- */
 .g3d-btn--label {
   padding: 0 12px;
   font-size: 0.875rem;
@@ -687,126 +541,13 @@
 .g3d-btn--label svg {
   flex: none;
 }
-.g3d-helpchip {
-  pointer-events: auto;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  text-align: left;
-}
-.g3d-helpchip .g3d-btn--small {
-  flex: none;
-  min-height: 44px;
-  background: var(--g3d-accent);
-  border-color: var(--g3d-accent);
-  color: var(--g3d-surface);
-}
-/* La petite mini-carte est un bouton (elle ouvre « Aller à ») : la zone cliquable fait toute sa taille, 76 px. */
-.g3d-minibtn {
-  flex: none;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  cursor: pointer;
-  pointer-events: auto;
-  line-height: 0;
-}
-.g3d-minibtn:focus-visible {
-  outline: 2px solid var(--g3d-accent);
-  outline-offset: 2px;
-}
-.g3d-minimap--pick {
-  pointer-events: auto;
-  cursor: crosshair;
-  opacity: 1;
-  touch-action: manipulation;
-}
-.g3d-goto {
-  /* Dans la colonne de gauche de la promenade : sa largeur est celle de la place laissée par les boutons de droite (Recentrer, Aller à…),
-     elle ne les recouvre donc jamais. */
-  position: absolute;
-  top: calc(var(--tap, 44px) + 6px); /* sous la rangée Quitter / Heure */
-  left: 0;
-  z-index: 13;
-  width: min(360px, 100%);
-  max-height: 60vh;
-  max-height: calc(100cqh - var(--tap, 44px) - 24px);
-  margin: 0;
-  gap: 8px;
-  padding: 8px 10px;
-}
-.g3d-goto-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  /* « Fermer » reste visible quand le panneau défile. */
-  position: sticky;
-  top: -8px;
-  z-index: 1;
-  margin: -8px -10px 0;
-  padding: 8px 10px 4px;
-  background: var(--g3d-surface);
-  border-radius: var(--g3d-radius) var(--g3d-radius) 0 0;
-}
-.g3d-goto-map {
-  display: grid;
-  justify-items: center;
-  gap: 4px;
-}
-.g3d-goto-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 6px;
-}
-.g3d-goto-item {
-  width: 100%;
-  min-height: 44px;
-  justify-content: flex-start;
-  text-align: left;
-  box-shadow: none;
-  border-radius: 14px;
-}
-.g3d-goto-kind {
-  flex: none;
-  min-width: 3.4em;
-  font-size: max(12px, 0.75rem);
-  color: var(--g3d-muted);
-  font-weight: var(--fw-text);
-}
-.g3d-goto-name {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.g3d-goto-dist {
-  flex: none;
-  color: var(--g3d-muted);
-  font-weight: var(--fw-text);
-}
-.g3d-goto-hop {
-  width: 100%;
-  border-radius: 14px;
-}
 .g3d-tools .g3d-btn--label {
   min-width: 118px;
   justify-content: flex-start;
 }
 
-/* Promenade immersive : le gros bouton « Ajouter une plante » de la feuille du jardin (.add-fab) passerait derrière le joystick et l'aide. */
-@media (max-width: 760px), (pointer: coarse) {
-  html[data-immersive] .add-fab {
-    display: none;
-  }
-}
-
 /* ----- Scène basse ou étroite (mesurée sur la scène, pas sur la fenêtre) -----
-   Les commandes ne dépassent jamais la scène : le panneau « Heure et réglages » cède de la place et défile en interne, la barre Dessus / Perspective /
-   Se promener reste entière, et les panneaux de la promenade se posent à côté des boutons, jamais dessus. */
+   Les commandes ne dépassent jamais la scène : le panneau « Heure et réglages » cède de la place et défile en interne, la barre Dessus / Perspective reste entière. */
 .g3d-top {
   flex: none;
 }
@@ -821,77 +562,9 @@
   flex: 0 1 auto;
   min-height: 4.5rem; /* au plus bas, la rangée de l'heure reste visible ; le reste (saisons, réglages) défile */
 }
-/* « Aller à » est un panneau : pendant qu'il est ouvert, ni la mini-carte (il la remplace) ni le bas (joystick, aide) ne sont à toucher. */
-.g3d-overlay[data-goto] .g3d-bottom {
-  visibility: hidden;
-}
-.g3d-top--walk[data-goto] .g3d-minibtn {
-  display: none;
-}
-/* Scène étroite (téléphone) : le panneau prend toute la largeur et les boutons de droite s'effacent derrière lui. */
-@container (max-width: 479px) {
-  .g3d-top--walk[data-goto] .g3d-tools {
-    display: none;
-  }
-}
-/* Scène basse (≈ 290 px à 853×533) : les boutons de la promenade se rangent sur deux colonnes (152 px au lieu de 252). */
-@container (max-height: 480px) {
-  /* Le panneau de l'heure et la mini-carte ne tiennent pas l'un sous l'autre : « Aller à » reste dans les boutons de droite. */
-  .g3d-top--walk[data-hour] .g3d-minibtn {
-    display: none;
-  }
-  /* Panneau de l'heure ouvert : l'aide « Flèches ou ZQSD… » repasse après sa fermeture plutôt que de déborder de la scène. */
-  .g3d-top--walk[data-hour] ~ .g3d-bottom .g3d-helpchip {
-    visibility: hidden;
-  }
-  .g3d-top--walk .g3d-tools {
-    display: grid;
-    grid-template-columns: auto auto;
-    justify-items: stretch;
-    align-items: start;
-    justify-content: end;
-  }
-  .g3d-top--walk .g3d-tools > .g3d-compass {
-    grid-area: 1 / 2;
-    justify-self: end;
-  }
-  .g3d-top--walk .g3d-tools > :nth-child(2) {
-    grid-area: 2 / 1;
-  }
-  .g3d-top--walk .g3d-tools > :nth-child(3) {
-    grid-area: 2 / 2;
-  }
-  .g3d-top--walk .g3d-tools > :nth-child(4) {
-    grid-area: 3 / 1;
-  }
-  .g3d-top--walk .g3d-tools > :nth-child(5) {
-    grid-area: 3 / 2;
-  }
-}
-/* Scène basse et tactile (téléphone en paysage, tablette posée) : le joystick rétrécit avec la scène (112 px au moins, 200 au plus) et « Tourner » / « Courir » se rangent
-   sur une seule rangée de 64 px : sinon « Courir » tombait sous la scène. En portrait (scène haute), rien ne change. */
-@container (max-height: 480px) {
-  .g3d-joy {
-    width: clamp(112px, 34cqh, 200px);
-    height: clamp(112px, 34cqh, 200px);
-  }
-  .g3d-pad {
-    grid-template-columns: 64px auto 64px;
-    margin-bottom: 0;
-  }
-  .g3d-pad > :nth-child(1) {
-    grid-area: 1 / 1;
-  }
-  .g3d-pad > .g3d-pad-run {
-    grid-area: 1 / 2;
-  }
-  .g3d-pad > :nth-child(3) {
-    grid-area: 1 / 3;
-  }
-}
 /* Scène basse mais assez large (ordinateur à 150 %, téléphone en paysage) : une seule rangée pour l'heure, les saisons et la barre de vue. */
 @container (min-width: 561px) and (max-height: 480px) {
-  .g3d-root:not([data-mode='promenade']) .g3d-left {
+  .g3d-root .g3d-left {
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
@@ -913,36 +586,11 @@
     flex: 1 1 15rem;
   }
 }
-/* Scène étroite (téléphone) : le panneau de l'heure de la promenade tient dans la colonne de gauche, à côté des boutons de droite. Sa rangée « Heure − curseur + »
-   se coupe en rangées entières (heure, curseur, − et +, Animer) au lieu de déborder de 30 px sous « Recentrer ». */
-@container (max-width: 479px) {
-  .g3d-panel--walk .g3d-hourrow {
-    flex-wrap: wrap;
-  }
-  .g3d-panel--walk .g3d-hourfield {
-    display: contents;
-  }
-  .g3d-panel--walk .g3d-hourfield .g3d-field-label {
-    flex: 1 0 100%;
-  }
-  /* Ordre : heure, curseur seul sur sa rangée, puis − et + (côte à côte) et « Animer » qui prend le reste. */
-  .g3d-panel--walk .g3d-hourfield input[type='range'] {
-    flex: 1 0 100%;
-    order: 1;
-  }
-  .g3d-panel--walk .g3d-hourfield .g3d-btn--icon {
-    order: 2;
-  }
-  .g3d-panel--walk .g3d-hourrow > .g3d-btn--label {
-    flex: 1 1 auto;
-    order: 3;
-  }
-}
 
 /* Scène étroite et en portrait (téléphone ; la scène fait 446 px de haut à 360×740, donc pas de seuil en hauteur) : le panneau « Heure et réglages » doit montrer l'heure ET les saisons sans défiler.
    Le composant pose `data-tight` quand elles seraient sous la ligne de défilement (mesure faite sur la mise en page « au naturel », voir `tightPanel.ts`) :
    - la date, « Voir l'ensoleillement » et la boussole s'effacent tant que le panneau est ouvert (la mention des arbres IGN reste) ;
-   - le panneau prend la place libérée (il se plafonne tout seul à l'espace entre le haut et la barre Dessus / Perspective / Se promener) ;
+   - le panneau prend la place libérée (il se plafonne tout seul à l'espace entre le haut et la barre Dessus / Perspective) ;
    - les saisons passent juste sous l'heure ; « Animer » et « Réglages 3D » suivent sur une rangée, puis le reste défile en interne. */
 /* Scène très basse (`data-squeezed`, voir Garden3D.tsx) : la carte de la date s'efface (niveau 1) puis « Voir l'ensoleillement » (niveau 2, panneau de l'heure ouvert) pour que la barre de vues et « Heure » restent au-dessus de la feuille du bas.
    Pas de condition d'orientation : une scène de 360×321 px est plus large que haute (« paysage ») bien que l'écran soit en portrait. */
@@ -955,7 +603,7 @@
 @container (max-width: 479px) and (orientation: portrait) {
   .g3d-root[data-tight] .g3d-info,
   .g3d-root[data-tight] .g3d-sunbtn,
-  .g3d-root[data-tight] .g3d-top:not(.g3d-top--walk) .g3d-tools {
+  .g3d-root[data-tight] .g3d-top .g3d-tools {
     display: none;
   }
   .g3d-root[data-tight] #g3d-time-panel {

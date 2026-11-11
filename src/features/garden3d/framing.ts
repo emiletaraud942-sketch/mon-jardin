@@ -3,7 +3,7 @@
 import * as THREE from 'three'
 import type { XY } from '../../types'
 
-export type ViewMode = 'dessus' | 'perspective' | 'promenade'
+export type ViewMode = 'dessus' | 'perspective'
 
 export interface Bounds {
   minX: number
@@ -264,14 +264,8 @@ export function fitPerspective(
 /**
  * Jeton de recadrage de la caméra. La caméra ne se recadre que si ce jeton change :
  * « Recentrer » (nonce), autre jardin, autre mode de vue. L'emprise (`frame.key`) n'en fait PAS partie :
- * sans parcelle elle bouge quand une plante sort des bornes, et cela ne doit ni téléporter le promeneur
- * ni faire perdre son zoom à l'utilisateur.
+ * sans parcelle elle bouge quand une plante sort des bornes, et cela ne doit pas faire perdre son zoom à l'utilisateur.
  */
 export function viewResetToken(args: { mode: ViewMode; gardenId: string; nonce: number }): string {
   return `${args.mode}|${args.gardenId}|${args.nonce}`
-}
-
-/** Jeton de retour à l'entrée en Promenade : « Recentrer » ou autre jardin (jamais l'emprise). */
-export function walkResetToken(args: { gardenId: string; nonce: number }): string {
-  return `${args.gardenId}|${args.nonce}`
 }

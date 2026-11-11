@@ -150,7 +150,7 @@ describe('registre et accueil', () => {
   const f = FEATURES.find((x) => x.id === 'evenements-voisins')!
   it('la fonction est au registre, avec son repère, sa rubrique et ses mots', () => {
     expect(f).toBeDefined()
-    expect(FEATURES).toHaveLength(89)
+    expect(FEATURES).toHaveLength(86)
     expect(f.cible).toBe('evenements')
     expect(f.rubrique).toBe('voisins')
     expect(f.mot).toBe('Voir les événements près de chez moi')
@@ -170,7 +170,7 @@ describe('registre et accueil', () => {
   it('accueil : la phrase de « Voisins » cite les rendez-vous, l’ordre ne change pas', () => {
     const ids = HOME_ACTIONS.map((a) => a.id)
     // « apprendre » et « conseils » : mis à l'honneur à la demande du propriétaire (11 nov.) ; le reste garde son ordre.
-    expect(ids).toEqual(['ajouter', 'apprendre', 'conseils', 'carte', 'promenade', 'photos', 'scanner', 'afaire', 'planter', 'voisins', 'tout', 'aide'])
+    expect(ids).toEqual(['ajouter', 'apprendre', 'conseils', 'carte', 'visite', 'photos', 'scanner', 'afaire', 'planter', 'voisins', 'tout', 'aide'])
     const v = HOME_ACTIONS.find((a) => a.id === 'voisins')!
     expect(v.phrase).toBe('Dons, échanges, rendez-vous.')
     expect(v.phrase.length).toBeLessThanOrEqual(36)

@@ -1,14 +1,12 @@
-// Détection WebGL, tactile, préchargement, obstacles des plantes, arbres des environs, ombres de contact.
+// Détection WebGL, tactile, préchargement, arbres des environs, ombres de contact.
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Building } from '../../types'
 import { classifyWebGL, isSoftwareRenderer, probeWebGL, resetWebGLCache, resetWebgl2Cache, webgl2Supported, detectWebGL, webglExplanation, NO_3D_TITLE, force3dRequested, requestForce3d, clearForce3d } from '../../lib/webgl'
 import { isTouchPrimary } from './touch'
 import { shouldPreload3d } from './preload3d'
-import { plantColliders, treeColliders } from './obstacles'
-import { BARE_LEAF, MAX_NEIGHBOR_TREES, deciduousSeason, foliageColor, layoutNeighborTrees, treeShape, treeTrunkRadius } from './neighborLayout'
+import { BARE_LEAF, MAX_NEIGHBOR_TREES, deciduousSeason, foliageColor, layoutNeighborTrees, treeShape } from './neighborLayout'
 import { MAX_CONTACT_SHADOWS, SHADOW_LIFT_M, contactShadowInstances, plantShadowDiameter } from './contactShadows'
 import type { PlantVisual } from './plantModel'
-import { stepWalker } from './walk'
 import { plantStateAt } from '../../engine/growth'
 import { SPECIES_BY_ID } from '../../data/species'
 import type { Plant } from '../../types'
@@ -120,53 +118,6 @@ describe('préchargement du chunk 3D', () => {
 })
 
 const visual = (id: string, over: Partial<PlantVisual>): PlantVisual => ({ id, shape: 'tree', heightM: 4, spreadM: 3, base: [2, 0, -3], label: id, archetype: 'tree', ghost: false, ...over })
-
-describe('obstacles tirés des plantes', () => {
-  it('arbres : tronc rond de 0,15 à 0,5 m selon la taille ; plantes en projet traversables', () => {
-    const cols = plantColliders({
-      jeune: visual('jeune', { heightM: 0.9 }),
-      grand: visual('grand', { heightM: 20, base: [5, 0, -5] }),
-      projet: visual('projet', { ghost: true }),
-      semis: visual('semis', { heightM: 0.3 }),
-    })
-    expect(cols).toHaveLength(2)
-    const r = cols.map((c) => c.circle!.r).sort((a, b) => a - b)
-    expect(r[0]).toBeGreaterThanOrEqual(0.15)
-    expect(r[1]).toBe(0.5)
-    expect(cols.find((c) => c.circle!.r === 0.5)!.circle).toMatchObject({ x: 5, y: 5 }) // y = -z
-  })
-  it('haie : une boîte ; herbacées, couvre-sols et grimpantes : rien', () => {
-    const cols = plantColliders({
-      haie: visual('haie', { shape: 'shrub', archetype: 'hedge', heightM: 1.8, spreadM: 2 }),
-      herbe: visual('herbe', { shape: 'herb', archetype: 'perennial', heightM: 1.2 }),
-      sol: visual('sol', { shape: 'ground', archetype: 'ground', heightM: 0.2 }),
-      grimpante: visual('grimpante', { shape: 'climber', archetype: 'climber', heightM: 3 }),
-    })
-    expect(cols).toHaveLength(1)
-    expect(cols[0].circle).toBeUndefined()
-    expect(cols[0].ring).toHaveLength(4)
-  })
-  it('arbuste : cercle borné ; un petit arbuste se traverse', () => {
-    const cols = plantColliders({ gros: visual('gros', { shape: 'shrub', archetype: 'shrub', heightM: 2, spreadM: 4 }), petit: visual('petit', { shape: 'shrub', archetype: 'shrub', heightM: 0.5, spreadM: 0.6 }) })
-    expect(cols).toHaveLength(1)
-    expect(cols[0].circle!.r).toBeLessThanOrEqual(0.5)
-  })
-  it('un promeneur est arrêté par ces troncs', () => {
-    const colliders = plantColliders({ a: visual('a', { heightM: 8, base: [0, 0, -4] }) })
-    let w = { x: 0.2, y: 0, yaw: 0 }
-    for (let i = 0; i < 200; i++) w = stepWalker(w, { forward: 1, strafe: 0, turn: 0, run: false }, 1 / 30, { colliders, bounds: { minX: -20, maxX: 20, minY: -20, maxY: 20 } })
-    expect(Math.hypot(w.x, w.y - 4)).toBeGreaterThanOrEqual(0.3 + 0.35 - 1e-6)
-  })
-  it('arbres des environs : un cercle par arbre, 80 au plus, valeurs invalides ignorées', () => {
-    const many = Array.from({ length: 120 }, (_, i) => ({ x: i, y: 0, heightM: 10, radiusM: 3 }))
-    expect(treeColliders(many)).toHaveLength(MAX_NEIGHBOR_TREES)
-    expect(treeColliders([{ x: NaN, y: 0, heightM: 10, radiusM: 3 }, { x: 1, y: 1, heightM: 10, radiusM: 3 }])).toHaveLength(1)
-    expect(treeColliders(undefined)).toEqual([])
-    const t = { x: 0, y: 0, heightM: 18, radiusM: 6 }
-    expect(treeColliders([t])[0].circle!.r).toBe(treeTrunkRadius(t))
-    expect(treeTrunkRadius(t)).toBeGreaterThanOrEqual(0.2)
-  })
-})
 
 describe('arbres des environs : variété et saison', () => {
   const trees = Array.from({ length: 60 }, (_, i) => ({ x: Math.cos(i) * 30, y: Math.sin(i) * 30, heightM: 6 + (i % 9), radiusM: 2 + (i % 4) }))

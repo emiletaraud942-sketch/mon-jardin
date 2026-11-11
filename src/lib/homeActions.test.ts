@@ -14,7 +14,7 @@ describe('gros boutons de l’accueil', () => {
       'Apprendre à jardiner',
       'Compost et économie d’eau',
       'Voir mon jardin',
-      'Me promener dans mon jardin en 3D',
+      'Visiter mon jardin en photos',
       'Photos du jardin',
       'Scanner mon jardin',
       'Ce qu’il y a à faire',

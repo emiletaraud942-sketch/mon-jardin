@@ -48,18 +48,6 @@ export function gardenSummary(name: string | undefined, plantCount: number, buil
   return `Vue 3D du jardin${name ? ` « ${name} »` : ''} : ${plants}, ${houses}. Utilisez la carte pour une description précise.`
 }
 
-/** Aide de la Promenade, selon l'appareil. */
-export function walkHelp(touch: boolean): string {
-  return touch
-    ? 'Poussez le rond ou touchez les flèches pour avancer. Touchez « Tourner » pour pivoter. Glissez le doigt sur le jardin pour regarder autour. Touchez une plante pour la choisir.'
-    : 'Touches fléchées pour avancer (↑ ↓) et tourner (← →). Glissez la souris pour regarder autour. Maj pour courir. Cliquez une plante pour la choisir.'
-}
-
-/** Bulle d'aide de la Promenade : deux lignes, disparaît seule. */
-export function walkHelpShort(touch: boolean): string {
-  return touch ? 'Poussez le rond pour marcher. Glissez sur la scène pour regarder autour.' : 'Flèches ou ZQSD pour marcher, glissez pour regarder. Maj pour courir.'
-}
-
 /** Jardin sans plante : message discret, la scène reste visible. */
 export const EMPTY_GARDEN_TEXT = 'Aucune plante pour l’instant — ajoutez-en depuis la carte'
 

@@ -2,7 +2,6 @@
 import type { DetectedTree } from '../../lib/lidar'
 import { NeighborTrees } from './NeighborTrees'
 import { ContactShadows } from './ContactShadows'
-import { plantColliders, treeColliders } from './obstacles'
 import { isTouchDevice } from './touch'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentRef, type RefObject } from 'react'
 import * as THREE from 'three'
@@ -18,11 +17,9 @@ import { TRIANGLE_CAP, reportFrameInterval, type QualityTier } from './quality'
 import type { TerrainGrid } from '../../types'
 import { makeHeightSampler } from './terrain'
 import type { SunState } from './sun'
-import { fitOrtho, fitPerspective, orthoPixels, viewResetToken, walkResetToken, type Frame, type Insets, type ViewMode } from './framing'
+import { fitOrtho, fitPerspective, orthoPixels, viewResetToken, type Frame, type Insets, type ViewMode } from './framing'
 import { dragThresholdPx, groundPointOnRay } from './drag'
 import { DEBUG_3D } from './debug'
-import { makeColliders, type DetailLevel, type WalkShared } from './walk'
-import { WalkRig } from './Walk'
 
 export interface SceneProps {
   garden: Garden
@@ -36,19 +33,14 @@ export interface SceneProps {
   sunHeatmap?: SunHeatmap
   showHeatmap: boolean
   halfSizeM: number
-  /** Mode de vue : dessus (orthographique), perspective ou promenade (à hauteur d'yeux). */
+  /** Mode de vue : dessus (orthographique) ou perspective. */
   mode: ViewMode
   /** Emprise de la parcelle (cadrage) et clé de recadrage automatique. */
   frame: Frame
-  /** Incrémenté par « Recentrer » (cadrage, ou retour à l'entrée en Promenade). */
+  /** Incrémenté par « Recentrer » (cadrage). */
   fitNonce: number
-  /** Incrémenté par « Aller à cette plante » (Promenade). */
-  gotoNonce: number
-  /** Vrai tant que la limite du jardin retient le promeneur. */
-  onWalkLimit?: (limited: boolean) => void
   /** Mesure les bandeaux de l'interface (px) pour cadrer dans la zone réellement visible. */
   getInsets: () => Insets
-  walkShared: WalkShared
   reducedMotion: boolean
   sun: SunState
   /** Date (ms) utilisée pour la croissance des plantes (âge). */
@@ -64,10 +56,6 @@ export interface SceneProps {
   compassRef: RefObject<HTMLDivElement>
   /** Arbres des environs (LiDAR HD) à dessiner ; absent ou vide = rien. */
   neighborTrees?: DetectedTree[]
-  /** Promenade : mouvement réduit (bonds). */
-  hop?: boolean
-  /** Promenade : phrase à lire (région vocale). */
-  onAnnounce?: (text: string) => void
 }
 
 type OrbitControlsImpl = ComponentRef<typeof OrbitControls>
@@ -81,7 +69,7 @@ const COARSE_POINTER = isTouchDevice()
 /** Seuil de glisser d'une plante : 12 px en tactile, 6 px à la souris. */
 const DRAG_THRESHOLD_PX = dragThresholdPx(COARSE_POINTER)
 
-function SunAndSky({ sun, halfSizeM, walking, tier }: { sun: SunState; halfSizeM: number; walking: boolean; tier: QualityTier }) {
+function SunAndSky({ sun, halfSizeM, tier }: { sun: SunState; halfSizeM: number; tier: QualityTier }) {
   const scene = useThree((s) => s.scene)
   const gl = useThree((s) => s.gl)
   const invalidate = useThree((s) => s.invalidate)
@@ -117,16 +105,16 @@ function SunAndSky({ sun, halfSizeM, walking, tier }: { sun: SunState; halfSizeM
     const c = new THREE.Color(sun.horizon)
     if (scene.background instanceof THREE.Color) scene.background.copy(c)
     else scene.background = c
-    // Brume légère en vue d'ensemble ; à hauteur d'yeux, elle fond le sol dans le ciel (pas de ligne d'horizon abrupte).
-    const near = walking ? 45 : halfSizeM * 3.5
-    const far = walking ? Math.min(halfSizeM * 6, 260) : halfSizeM * 11
+    // Brume légère en vue d'ensemble.
+    const near = halfSizeM * 3.5
+    const far = halfSizeM * 11
     if (scene.fog instanceof THREE.Fog) {
       scene.fog.color.copy(c)
       scene.fog.near = near
       scene.fog.far = far
     } else scene.fog = new THREE.Fog(c, near, far)
     invalidate()
-  }, [scene, sun.horizon, halfSizeM, walking, invalidate])
+  }, [scene, sun.horizon, halfSizeM, invalidate])
   useEffect(
     () => () => {
       scene.fog = null
@@ -330,10 +318,7 @@ export function Scene(props: SceneProps) {
     mode,
     frame,
     fitNonce,
-    gotoNonce,
-    onWalkLimit,
     getInsets,
-    walkShared,
     reducedMotion,
     sun,
     growthTime,
@@ -342,10 +327,7 @@ export function Scene(props: SceneProps) {
     canopy,
     compassRef,
     neighborTrees,
-    hop,
-    onAnnounce,
   } = props
-  const walking = mode === 'promenade'
   const get = useThree((s) => s.get)
   const invalidate = useThree((s) => s.invalidate)
   const gl = useThree((s) => s.gl)
@@ -362,12 +344,6 @@ export function Scene(props: SceneProps) {
   const [hoverId, setHoverId] = useState<string | undefined>()
   // Incrémenté après un glisser validé : reconstruit les instances depuis les données (remet tout en cohérence).
   const [rebuild, setRebuild] = useState(0)
-  // Niveaux de détail des plantes proches du promeneur (calculés par WalkRig).
-  const [lod, setLod] = useState<Record<string, DetailLevel>>({})
-  useEffect(() => {
-    if (!walking) setLod({})
-  }, [walking])
-  const buildingColliders = useMemo(() => makeColliders(garden.buildings), [garden.buildings])
 
   const builds = useRef(0)
   const { parts, visuals, triangles, tiers } = useMemo(
@@ -379,18 +355,12 @@ export function Scene(props: SceneProps) {
         at: new Date(growthTime),
         seasonAt: new Date(seasonTime),
         sample,
-        lod: walking ? lod : undefined,
         tier,
         triangleCap: TRIANGLE_CAP[tier],
       })
     },
     // `rebuild` n'est pas lu : il force un nouveau calcul après un glisser (voir plus haut).
-    [plants, speciesById, growthTime, seasonTime, sample, lod, walking, tier, rebuild],
-  )
-  // Obstacles de la Promenade : bâtiments, troncs et haies des plantes, troncs des arbres des environs.
-  const colliders = useMemo(
-    () => (walking ? [...buildingColliders, ...plantColliders(visuals), ...treeColliders(neighborTrees)] : buildingColliders),
-    [walking, buildingColliders, visuals, neighborTrees],
+    [plants, speciesById, growthTime, seasonTime, sample, tier, rebuild],
   )
   const planStats = useRef({ triangles, tiers })
   planStats.current = { triangles, tiers }
@@ -544,26 +514,21 @@ export function Scene(props: SceneProps) {
     () => ({
       onDown: (id, e) => {
         if (cb.current.placingSpeciesId) return // en mode plantation, le clic va au sol
-        if (cb.current.mode === 'promenade') return // promenade : pas de glisser-déposer, le glisser sert à regarder
         if (e.nativeEvent.isPrimary === false) return
         e.stopPropagation()
         cb.current.onSelectPlant(id)
         startDrag(id, e.nativeEvent)
       },
-      onClick: (id, e) => {
+      onClick: (_id, e) => {
         if (cb.current.placingSpeciesId) return
         e.stopPropagation() // n'atteint pas le sol (désélection)
-        // Promenade : un toucher / clic (sans glisser) sélectionne la plante.
-        if (cb.current.mode === 'promenade' && e.delta <= DRAG_THRESHOLD_PX) cb.current.onSelectPlant(id)
       },
       onOver: (id, e) => {
-        if (cb.current.mode === 'promenade') return
         e.stopPropagation()
         setHoverId(id)
         if (!cb.current.placingSpeciesId && !dragCleanup.current) gl.domElement.style.cursor = 'grab'
       },
       onOut: (id) => {
-        if (cb.current.mode === 'promenade') return
         setHoverId((h) => (h === id ? undefined : h))
         if (!dragCleanup.current) gl.domElement.style.cursor = cb.current.placingSpeciesId ? 'crosshair' : ''
       },
@@ -607,45 +572,24 @@ export function Scene(props: SceneProps) {
 
   return (
     <>
-      <SunAndSky sun={sun} halfSizeM={halfSizeM} walking={walking} tier={tier} />
-      {walking ? (
-        <WalkRig
-          shared={walkShared}
-          parcel={garden.parcel}
-          bounds={frame.bounds}
-          colliders={colliders}
-          sample={sample}
-          visuals={visuals}
-          selectedPlantId={selectedPlantId}
-          resetToken={walkResetToken({ gardenId: garden.id, nonce: fitNonce })}
-          gotoToken={gotoNonce}
-          halfSizeM={halfSizeM}
-          compassRef={compassRef}
-          onLod={setLod}
-          onLimit={onWalkLimit}
-          hop={hop}
-          onAnnounce={onAnnounce}
-        />
-      ) : (
-        <CameraRig
-          mode={mode as 'dessus' | 'perspective'}
-          gardenId={garden.id}
-          frame={frame}
-          nonce={fitNonce}
-          halfSizeM={halfSizeM}
-          getInsets={getInsets}
-          centerY={centerY}
-          reducedMotion={reducedMotion}
-          compassRef={compassRef}
-        />
-      )}
+      <SunAndSky sun={sun} halfSizeM={halfSizeM} tier={tier} />
+      <CameraRig
+        mode={mode}
+        gardenId={garden.id}
+        frame={frame}
+        nonce={fitNonce}
+        halfSizeM={halfSizeM}
+        getInsets={getInsets}
+        centerY={centerY}
+        reducedMotion={reducedMotion}
+        compassRef={compassRef}
+      />
 
       <Ground
         center={garden.center}
         terrain={garden.terrain}
         halfSizeM={halfSizeM}
         px={orthoPixels(halfSizeM)}
-        walking={walking}
         sample={sample}
         onPointerMove={placingSpeciesId ? moveGhost : undefined}
         onClick={onGroundClick}
@@ -667,7 +611,7 @@ export function Scene(props: SceneProps) {
             <ringGeometry args={[0.86, 1, 48]} />
             <meshBasicMaterial color="#ffd84d" transparent opacity={0.95} depthTest={false} toneMapped={false} />
           </mesh>
-          <Html position={[0, walking ? Math.min(selected.heightM + 0.35, 2.5) : selected.heightM + 0.35, 0]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
+          <Html position={[0, selected.heightM + 0.35, 0]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
             <div className="g3d-label g3d-label--selected">{selected.label}</div>
           </Html>
         </group>
@@ -675,7 +619,7 @@ export function Scene(props: SceneProps) {
       {hovered && (
         <Html
           key={hovered.id}
-          position={[hovered.base[0], hovered.base[1] + (walking ? Math.min(hovered.heightM + 0.35, 2.5) : hovered.heightM + 0.35), hovered.base[2]]}
+          position={[hovered.base[0], hovered.base[1] + hovered.heightM + 0.35, hovered.base[2]]}
           center
           zIndexRange={[5, 0]}
           style={{ pointerEvents: 'none' }}

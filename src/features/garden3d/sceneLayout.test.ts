@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { gotoMapSize } from './WalkUI'
 import { barOverflows, essentialsClipped } from './tightPanel'
 
-// Lot 5A : à 853×533 (ordinateur à 150 %) la scène ne fait que ≈ 290 px ; ses commandes ne doivent ni déborder ni se recouvrir,
-// et le panneau « Aller à » de la promenade ne doit jamais se poser sur « Recentrer ».
+// Lot 5A : à 853×533 (ordinateur à 150 %) la scène ne fait que ≈ 290 px ; ses commandes ne doivent ni déborder ni se recouvrir.
 const read = (f: string) => readFileSync(join(__dirname, f), 'utf8')
 const css = read('garden3d.css').replace(/\/\*[\s\S]*?\*\//g, '')
 
@@ -37,7 +35,7 @@ describe('scène : les commandes se mesurent sur la scène, pas sur la fenêtre'
   it('la scène est un conteneur de taille (requêtes @container en hauteur et en largeur)', () => {
     expect(rule(css, '.g3d-root')).toMatch(/container-type:\s*size/)
   })
-  it('le bas (panneau + barre) peut rétrécir : le panneau défile en interne, la barre Dessus / Perspective / Se promener reste entière', () => {
+  it('le bas (panneau + barre) peut rétrécir : le panneau défile en interne, la barre Dessus / Perspective reste entière', () => {
     expect(rule(css, '.g3d-top')).toMatch(/flex:\s*none/)
     expect(rule(css, '.g3d-bottom')).toMatch(/flex:\s*0 1 auto/)
     expect(rule(css, '.g3d-bottom')).toMatch(/min-height:\s*0/)
@@ -47,12 +45,6 @@ describe('scène : les commandes se mesurent sur la scène, pas sur la fenêtre'
     expect(panel).toMatch(/min-height:\s*4\.5rem/)
     expect(rule(css, '.g3d-panel')).toMatch(/overflow-y:\s*auto/)
   })
-  it('scène basse (≤ 480 px) : les boutons de la promenade passent sur deux colonnes, le joystick rétrécit, « Tourner » et « Courir » tiennent sur une rangée', () => {
-    const low = containerBlock(css, '(max-height: 480px)')
-    expect(low).toMatch(/\.g3d-top--walk \.g3d-tools\s*\{[^}]*display:\s*grid[^}]*grid-template-columns:\s*auto auto/)
-    expect(low).toMatch(/\.g3d-joy\s*\{[^}]*width:\s*clamp\(112px,\s*34cqh,\s*200px\)/)
-    expect(low).toMatch(/\.g3d-pad\s*\{[^}]*grid-template-columns:\s*64px auto 64px/)
-  })
   it('scène basse et large : l’heure, les saisons et la barre de vue tiennent en peu de rangées (les boutons de la barre gardent une base « auto »)', () => {
     const wide = containerBlock(css, '(min-width: 561px) and (max-height: 480px)')
     expect(wide).toMatch(/\.g3d-bar \.g3d-seg\s*\{[^}]*flex:\s*1 1 auto/)
@@ -60,12 +52,6 @@ describe('scène : les commandes se mesurent sur la scène, pas sur la fenêtre'
     // Lot 6B : base de 15 rem (22 rem renvoyait « Animer » et « Réglages 3D » sur une 2e rangée : les saisons passaient sous la ligne de défilement du panneau)
     expect(wide).toMatch(/\.g3d-hourfield\s*\{[^}]*flex:\s*1 1 15rem/)
     expect(wide).not.toMatch(/22rem/)
-  })
-  it('sur téléphone en portrait rien ne change : joystick 44vw entre 140 et 200 px, boutons Tourner de 64 px, Courir large', () => {
-    expect(rule(css, '.g3d-joy')).toMatch(/width:\s*clamp\(140px,\s*44vw,\s*200px\)/)
-    expect(rule(css, '.g3d-pad')).toMatch(/grid-template-columns:\s*64px 64px/)
-    expect(rule(css, '.g3d-padbtn')).toMatch(/min-width:\s*64px/)
-    expect(rule(css, '.g3d-pad-run')).toMatch(/min-height:\s*56px/)
   })
 })
 
@@ -76,71 +62,12 @@ describe('lot 6B : saisons visibles et panneau de l’heure qui tient dans sa co
     // les saisons ne sont jamais réduites sous une cible tactile : aucune hauteur fixe plus petite que --tap sur leurs boutons
     expect(wide).not.toMatch(/season-picker[^{]*\{[^}]*(?<![-\w])(?:min-)?height:\s*(?:[0-3]\d|40)px/)
   })
-  it('scène étroite (< 480 px) : le panneau de l’heure de la promenade se coupe en rangées entières (heure, curseur, − et +, Animer) au lieu de déborder sous « Recentrer »', () => {
-    const narrow = containerBlock(css, '(max-width: 479px)')
-    expect(narrow).toMatch(/\.g3d-panel--walk \.g3d-hourrow\s*\{[^}]*flex-wrap:\s*wrap/)
-    expect(narrow).toMatch(/\.g3d-panel--walk \.g3d-hourfield\s*\{[^}]*display:\s*contents/)
-    expect(narrow).toMatch(/\.g3d-panel--walk \.g3d-hourfield input\[type='range'\]\s*\{[^}]*flex:\s*1 0 100%[^}]*order:\s*1/)
-    expect(narrow).toMatch(/\.g3d-panel--walk \.g3d-hourfield \.g3d-field-label\s*\{[^}]*flex:\s*1 0 100%/)
-    expect(narrow).toMatch(/\.g3d-panel--walk \.g3d-hourrow > \.g3d-btn--label\s*\{[^}]*order:\s*3/)
-  })
   it('− et + du curseur sont aussi larges que hauts en « Grandes touches » (--tap)', () => {
     expect(rule(css, '.g3d-btn--icon.g3d-step')).toMatch(/width:\s*var\(--tap,\s*44px\)/)
   })
 })
 
-describe('promenade : « Aller à » ne recouvre jamais « Recentrer » ni les autres boutons', () => {
-  const goto = rule(css, '.g3d-goto')
-  it('le panneau est accroché à la colonne de gauche : sa largeur est la place laissée par les boutons de droite', () => {
-    expect(rule(css, '.g3d-left')).toMatch(/position:\s*relative/)
-    expect(goto).toMatch(/position:\s*absolute/)
-    expect(goto).toMatch(/left:\s*0/)
-    expect(goto).toMatch(/width:\s*min\(360px,\s*100%\)/)
-    // plus de centrage sur la scène entière (il passait sous la colonne des boutons à ≤ 1024 px)
-    expect(goto).not.toMatch(/left:\s*50%/)
-    expect(goto).not.toMatch(/translateX/)
-  })
-  it('sa hauteur suit la scène (jamais « 100 % − 200 px », qui laissait 89 px à 853×533) et il défile en interne', () => {
-    expect(goto).toMatch(/max-height:\s*calc\(100cqh - var\(--tap,\s*44px\) - 24px\)/)
-    expect(goto).not.toMatch(/100% - 200px/)
-    expect(css).toMatch(/\.g3d-panel\s*\{[^}]*overflow-y:\s*auto/)
-    expect(rule(css, '.g3d-goto-head')).toMatch(/position:\s*sticky/) // « Fermer » reste visible
-  })
-  it('il se pose sous la rangée Quitter / Heure, de la hauteur d’une cible tactile (--tap, 56 px en « Grandes touches »)', () => {
-    expect(goto).toMatch(/top:\s*calc\(var\(--tap,\s*44px\)\s*\+\s*6px\)/)
-  })
-  it('sur scène étroite (< 480 px) les boutons de droite s’effacent derrière lui ; ouvert, il remplace la mini-carte et masque le bas (joystick, aide)', () => {
-    expect(containerBlock(css, '(max-width: 479px)')).toMatch(/\.g3d-top--walk\[data-goto\] \.g3d-tools\s*\{[^}]*display:\s*none/)
-    expect(css).toMatch(/\.g3d-top--walk\[data-goto\] \.g3d-minibtn\s*\{[^}]*display:\s*none/)
-    expect(css).toMatch(/\.g3d-overlay\[data-goto\] \.g3d-bottom\s*\{[^}]*visibility:\s*hidden/)
-  })
-  it('scène basse : le panneau de l’heure remplace la mini-carte et l’aide « Flèches ou ZQSD… » attend sa fermeture', () => {
-    const low = containerBlock(css, '(max-height: 480px)')
-    expect(low).toMatch(/\.g3d-top--walk\[data-hour\] \.g3d-minibtn\s*\{[^}]*display:\s*none/)
-    expect(low).toMatch(/\.g3d-top--walk\[data-hour\] ~ \.g3d-bottom \.g3d-helpchip\s*\{[^}]*visibility:\s*hidden/)
-  })
-  it('dans le composant, le panneau est rendu dans la colonne de gauche (avant les boutons de droite), et un seul panneau est ouvert à la fois', () => {
-    const src = read('Garden3D.tsx')
-    const left = src.indexOf('className="g3d-left"', src.indexOf('g3d-top--walk'))
-    const panel = src.indexOf('<GotoPanel')
-    const tools = src.indexOf('className="g3d-tools"', left)
-    expect(left).toBeGreaterThan(0)
-    expect(panel).toBeGreaterThan(left)
-    expect(panel).toBeLessThan(tools)
-    expect(src).toMatch(/data-goto=\{gotoOpen \|\| undefined\}/)
-    expect(src).toMatch(/data-hour=\{\(hourOpen && !gotoOpen\) \|\| undefined\}/)
-    expect(src).toMatch(/hourOpen && !gotoOpen &&/)
-  })
-  it('la grande carte d’« Aller à » rétrécit quand la fenêtre est basse (160 px sous 600 px), sinon 180 à 260 px', () => {
-    expect(gotoMapSize(853, 533)).toBe(160)
-    expect(gotoMapSize(740, 360)).toBe(160)
-    expect(gotoMapSize(360, 740)).toBe(260)
-    expect(gotoMapSize(320, 700)).toBe(256)
-    expect(gotoMapSize(280, 700)).toBe(216)
-    expect(gotoMapSize(200, 700)).toBe(180)
-    expect(gotoMapSize(1280, 800)).toBe(260)
-  })
-
+describe('panneau de la 3D : saisons visibles, scènes très basses', () => {
   // Lot 8A : à 360×740 en « Très grand » + « Grandes touches », le panneau « Heure et réglages » n'avait que 91 px sur 248 (barre poussée sous la feuille du bas).
   describe('panneau « Heure et réglages » en portrait étroit', () => {
     const tight = containerBlock(css, '(max-width: 479px) and (orientation: portrait)')
@@ -200,11 +127,10 @@ describe('promenade : « Aller à » ne recouvre jamais « Recentrer » ni les a
       expect(barOverflows(482.4, 584, 102)).toBe(false)
       expect(barOverflows(483, 584, 102)).toBe(true)
     })
-    it('le composant mesure sans l’attribut, pose le niveau 1 puis le niveau 2, et ne lance pas la mesure en promenade', () => {
+    it('le composant mesure sans l’attribut, pose le niveau 1 puis le niveau 2, ', () => {
       const src = read('Garden3D.tsx')
       expect(src).toMatch(/removeAttribute\('data-squeezed'\)[\s\S]{0,120}stackOverflows\(root\)/)
       expect(src).toMatch(/setAttribute\('data-squeezed', '1'\)[\s\S]{0,80}stackOverflows\(root\)[\s\S]{0,80}setAttribute\('data-squeezed', '2'\)/)
-      expect(src).toMatch(/if \(walking\) \{\s*root\.removeAttribute\('data-squeezed'\)/)
     })
     it('la CSS efface la carte de la date (niveau 1) puis « Voir l’ensoleillement » (niveau 2), sans condition d’orientation (360×321 px est « paysage »)', () => {
       const block = containerBlock(css, '(max-width: 479px)')
@@ -212,7 +138,7 @@ describe('promenade : « Aller à » ne recouvre jamais « Recentrer » ni les a
     })
     it('on n’observe jamais la carte de la date ni le bouton d’ensoleillement (leur taille change avec l’attribut : boucle)', () => {
       const src = read('Garden3D.tsx')
-      const effect = src.slice(src.indexOf("root.removeAttribute('data-squeezed')\n      return\n    }"), src.indexOf('}, [walking, collapsed, panelOpen])\n  const compassRef'))
+      const effect = src.slice(src.indexOf("const measure = () => {\n      root.removeAttribute('data-squeezed')"), src.indexOf('}, [collapsed, panelOpen])\n  const compassRef'))
       expect(effect).toContain('ro.observe(root)')
       expect(effect).not.toMatch(/g3d-info|g3d-sunbtn/)
     })

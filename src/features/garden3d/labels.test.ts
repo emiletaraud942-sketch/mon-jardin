@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ERROR_3D_TITLE, describeSun, describeSunShort, walkHelpShort, directionName, formatClock, gardenSummary, walkHelp, yearsLabel } from './labels'
+import { ERROR_3D_TITLE, describeSun, describeSunShort, directionName, formatClock, gardenSummary, yearsLabel } from './labels'
 
 describe('libellés 3D en langage clair', () => {
   it('direction en toutes lettres', () => {
@@ -23,11 +23,9 @@ describe('libellés 3D en langage clair', () => {
     expect(yearsLabel(1)).toBe('Dans 1 an')
     expect(yearsLabel(5)).toBe('Dans 5 ans')
   })
-  it('résumé du jardin et aide sans ZQSD', () => {
+  it('résumé du jardin et titre d’erreur', () => {
     expect(gardenSummary('Chez moi', 3, 0)).toContain('3 plantes')
     expect(gardenSummary(undefined, 0, 2)).toContain('2 maisons voisines')
-    expect(walkHelp(false)).not.toMatch(/ZQSD/i)
-    expect(walkHelp(false)).toContain('Touches fléchées')
     expect(ERROR_3D_TITLE).toBe('La vue 3D ne fonctionne pas sur cet appareil.')
   })
 })
@@ -36,9 +34,5 @@ describe('textes courts de la vue 3D', () => {
   it('soleil en une ligne', () => {
     expect(describeSunShort(17.25, 5, 235)).toBe('17:15 · soleil bas, sud-ouest')
     expect(describeSunShort(22, -5, 0)).toBe('22:00 · soleil couché')
-  })
-  it('aide courte : deux lignes au plus', () => {
-    expect(walkHelpShort(true).length).toBeLessThan(80)
-    expect(walkHelpShort(false)).toContain('Maj')
   })
 })

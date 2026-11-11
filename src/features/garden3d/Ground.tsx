@@ -7,7 +7,6 @@ import type { Building, LonLat, TerrainGrid, XY } from '../../types'
 import { buildBuildingsGeometry } from './roofs'
 import { orthoTextureUrl } from '../../lib/ign'
 import { buildTerrainGeometry, densifyRing, terrainSegments, type HeightSampler } from './terrain'
-import { createGroundDetail } from './groundDetail'
 import { heatmapUvTransform } from './heatmap'
 
 /** Charge l'orthophoto ; renvoie null tant qu'elle n'est pas prête ou si elle échoue (repli vert). */
@@ -66,26 +65,16 @@ interface GroundProps {
   halfSizeM: number
   /** Résolution demandée pour l'orthophoto (1024–2048). */
   px?: number
-  /** Mode Promenade : active le détail d'herbe procédural sous l'orthophoto. */
-  walking?: boolean
   sample: HeightSampler
   onPointerMove?: (e: ThreeEvent<PointerEvent>) => void
   onClick?: (e: ThreeEvent<MouseEvent>) => void
 }
 
 export const Ground = forwardRef<THREE.Mesh, GroundProps>(function Ground(
-  { center, terrain, halfSizeM, px = 1024, walking = false, sample, onPointerMove, onClick },
+  { center, terrain, halfSizeM, px = 1024, sample, onPointerMove, onClick },
   ref,
 ) {
-  const invalidate = useThree((s) => s.invalidate)
   const tex = useOrthoTexture(center, halfSizeM, px)
-  const detail = useMemo(() => createGroundDetail(), [])
-  useEffect(() => {
-    detail.uniforms.uWalk.value = walking ? 1 : 0
-    // Sans orthophoto, le vert uni reçoit tout le bruit de couleur ; avec la photo, une nuance légère seulement.
-    detail.uniforms.uNoise.value = tex ? 0.3 : 1
-    invalidate()
-  }, [detail, walking, tex, invalidate])
   const geometry = useMemo(
     () => buildTerrainGeometry(halfSizeM, terrainSegments(terrain, halfSizeM), sample),
     [halfSizeM, terrain, sample],
@@ -100,8 +89,6 @@ export const Ground = forwardRef<THREE.Mesh, GroundProps>(function Ground(
           color={tex ? '#ffffff' : '#7aa457'}
           roughness={1}
           metalness={0}
-          onBeforeCompile={detail.onBeforeCompile as unknown as THREE.Material['onBeforeCompile']}
-          customProgramCacheKey={detail.cacheKey}
         />
       </mesh>
       {/* Pourtour neutre au-delà de la zone cartographiée, pour éviter un vide à l'horizon. */}

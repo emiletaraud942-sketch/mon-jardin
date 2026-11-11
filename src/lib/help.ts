@@ -35,9 +35,9 @@ export const HELP: Record<Tab, HelpContent> = {
     title: 'La Vue 3D',
     steps: [
       'Faites tourner la vue avec deux doigts, ou avec la souris.',
-      'Choisissez « Vue de dessus », « Vue en perspective » ou « Se promener ».',
+      'Choisissez « Dessus » ou « Perspective ».',
       'Le curseur montre vos arbres dans quelques années, avec leur ombre.',
-      '« Se promener » vous place dans le jardin, à hauteur d’yeux.',
+      '« Heure » règle le soleil et les saisons : les ombres suivent.',
       'Pour déplacer une plante, glissez-la. Ou ouvrez sa fiche et touchez « Déplacer cette plante ».',
     ],
   },
@@ -108,8 +108,8 @@ export const HELP: Record<Tab, HelpContent> = {
 
 export const HELP_SCREENS = Object.keys(HELP) as Tab[]
 
-/** Écrans qui ne sont pas un onglet : le scanner, les photos du jardin et la promenade en 3D. */
-export type HelpExtra = 'scanner' | 'photos' | 'promenade'
+/** Écrans qui ne sont pas un onglet : le scanner et les photos du jardin. */
+export type HelpExtra = 'scanner' | 'photos'
 
 export const HELP_EXTRA: Record<HelpExtra, HelpContent> = {
   scanner: {
@@ -133,23 +133,12 @@ export const HELP_EXTRA: Record<HelpExtra, HelpContent> = {
       'Touchez « Accueil » pour revenir au début, ou « Fermer » pour revenir à la carte.',
     ],
   },
-  promenade: {
-    title: 'La promenade en 3D',
-    steps: [
-      'Poussez le rond pour marcher. Glissez sur la scène pour regarder autour.',
-      '« Courir » va plus vite. Les flèches rondes tournent la vue.',
-      '« Aller à » vous place près d’une plante ou d’un point photo. Vous pouvez aussi toucher la mini-carte.',
-      '« Mouvement réduit » avance par bonds, pour éviter le vertige.',
-      '« Quitter » revient à la vue en perspective. « Accueil » revient au début de l’appli.',
-    ],
-  },
 }
 
-/** Écran d'aide à ouvrir d'après ce qu'on voit : promenade, scanner ou photos du jardin d'abord, sinon l'onglet. */
+/** Écran d'aide à ouvrir d'après ce qu'on voit : scanner ou photos du jardin d'abord, sinon l'onglet. */
 export function helpExtraNow(doc: { documentElement: { dataset: DOMStringMap }; querySelector(s: string): unknown } = document): HelpExtra | undefined {
   if (doc.querySelector('.pano-overlay')) return 'photos'
   if (doc.querySelector('dialog.modal.full[open]')) return 'scanner'
-  if (doc.documentElement.dataset.immersive) return 'promenade'
   return undefined
 }
 
