@@ -1,6 +1,7 @@
 node_modules
 dist
 dist-entraide
+dist-synchro
 dev-dist
 .vercel
 *.log

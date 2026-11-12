@@ -54,6 +54,8 @@ jobs:
       - run: npx vite build
       # Second site (dist-entraide) avec une URL et une clé Supabase FAUSSES : e2e/entraide.spec.ts joue la connexion par code contre un faux serveur.
       - run: npm run build:e2e-entraide
+      # Troisième site (dist-synchro), URL et clé FAUSSES : e2e/synchro.spec.ts joue deux appareils contre un faux serveur (plantes et photo envoyées, puis reprises).
+      - run: npm run build:e2e-synchro
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e
       - uses: actions/upload-artifact@v4

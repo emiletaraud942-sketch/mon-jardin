@@ -33,6 +33,7 @@ import { plantName } from '../plants/PlantPanel'
 import { reviewToolsEnabled } from '../../lib/debugFlag'
 import { cssVar } from './colors'
 import { GardenSide, PlacingBanner, useSheetHead } from './GardenSide'
+import { FreeSpotCard } from './FreeSpotCard'
 import { PlantPeek } from './PlantPeek'
 import { SidePanel } from './SidePanel'
 import { movePlant, moveWithUndo, placePlant } from './placing'
@@ -150,7 +151,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
   const map = useRef<MLMap>()
   const markers = useRef(new Map<string, maplibregl.Marker>())
   const plants = useGardenPlants(garden.id)
-  const { selectedPlantId, placingSpeciesId, movingPlantId, aim, placingSpot, season } = useUi()
+  const { selectedPlantId, placingSpeciesId, movingPlantId, aim, placingSpot, season, freeSpot } = useUi()
   const head = useSheetHead(garden)
   const placingInfo = usePlacingInfo()
   const [base, setBase] = useState<'ortho' | 'plan'>('ortho')
@@ -167,6 +168,19 @@ function MapViewInner({ garden }: { garden: Garden }) {
   const [adult, setAdult] = useState(false)
   const [ready, setReady] = useState(false)
   const [tileProblem, setTileProblem] = useState(false)
+  // Repère de l'endroit libre touché (anneau), sous la carte d'infos « Cet endroit ».
+  useEffect(() => {
+    const m = map.current
+    if (!m || !ready || !freeSpot || freeSpot.gardenId !== garden.id) return
+    const el = document.createElement('div')
+    el.className = 'free-spot-pin'
+    el.setAttribute('aria-hidden', 'true')
+    const q = toLonLat(garden.center, freeSpot.point)
+    const mk = new maplibregl.Marker({ element: el }).setLngLat([q.lon, q.lat]).addTo(m)
+    return () => {
+      mk.remove()
+    }
+  }, [freeSpot, ready, garden.id, garden.center])
   const tileNoticeTurn = useBanner('carte', tileProblem)
   const [legendOpen, setLegendOpen] = useState(false)
   const [optionsOpen, setOptionsOpen] = useState(false)
@@ -522,8 +536,9 @@ function MapViewInner({ garden }: { garden: Garden }) {
       const mv = movingRef.current
       const sp = placingRef.current
       if (!mv && !sp) {
-        // Toucher la carte à vide : on ne choisit plus aucune plante.
+        // Toucher la carte à vide : on ne choisit plus aucune plante ; sans plante choisie, on regarde l'endroit (soleil, pente, humidité, distances).
         if (getUi().selectedPlantId) setUi({ selectedPlantId: undefined })
+        else setUi({ freeSpot: { gardenId: gardenRef.current.id, point: toLocal(gardenRef.current.center, { lon: e.lngLat.lng, lat: e.lngLat.lat }) } })
         return
       }
       const local = toLocal(gardenRef.current.center, { lon: e.lngLat.lng, lat: e.lngLat.lat })
@@ -913,13 +928,15 @@ function MapViewInner({ garden }: { garden: Garden }) {
     const m = map.current
     const host = el.current
     const wrap = host?.closest<HTMLElement>('.canvas-wrap')
-    if (!m || !ready || !host || !wrap || !selectedPlantId || !mobileMap || placingNow) return
+    const freePoint = freeSpot && freeSpot.gardenId === garden.id ? freeSpot.point : undefined
+    if (!m || !ready || !host || !wrap || !(selectedPlantId || freePoint) || !mobileMap || placingNow) return
     const t = window.setTimeout(() => {
-      const plant = plantsRef.current.find((x) => x.id === selectedPlantId)
-      const peek = wrap.querySelector('.plant-peek')?.getBoundingClientRect()
-      if (!plant || !peek) return
+      // Plante choisie ou endroit libre touché : même geste, la petite carte d'infos est `.plant-peek` ou `.free-spot-card`.
+      const target = selectedPlantId ? plantsRef.current.find((x) => x.id === selectedPlantId)?.position : freePoint
+      const peek = wrap.querySelector(selectedPlantId ? '.plant-peek' : '.free-spot-card')?.getBoundingClientRect()
+      if (!target || !peek) return
       const mb = host.getBoundingClientRect()
-      const ll = toLonLat(gardenRef.current.center, plant.position)
+      const ll = toLonLat(gardenRef.current.center, target)
       const p = m.project([ll.lon, ll.lat])
       const toolbar = wrap.querySelector('.map-toolbar')?.getBoundingClientRect()
       const freeTop = Math.max(0, (toolbar ? toolbar.bottom - mb.top : 0) + 24)
@@ -930,7 +947,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
       m.panBy([0, p.y - targetY], { duration: 250 })
     }, 90)
     return () => window.clearTimeout(t)
-  }, [selectedPlantId, mobileMap, placingNow, ready])
+  }, [selectedPlantId, freeSpot, garden.id, mobileMap, placingNow, ready])
   const aimPad = useRef({ top: 0, bottom: 0 })
   useEffect(() => {
     const m = map.current
@@ -1153,7 +1170,10 @@ function MapViewInner({ garden }: { garden: Garden }) {
   const photoNote =
     photoNoteWanted && !photoNoteGone ? (
       <p className="map-photo-note small" role="note">
-        La photo n’est pas plus précise de plus près.
+        La photo n’est pas plus précise de plus près.{' '}
+        <button className="link-btn map-photo-note-go" onClick={() => openScan('mesures', { kind: 'new' })}>
+          Placer au mètre
+        </button>
       </p>
     ) : null
   // L'invite se cache tant que les Options ou la légende sont ouvertes : elle les recouvrait (ordinateur). « Ajouter une plante » reste dans le panneau de droite.
@@ -1377,9 +1397,10 @@ function MapViewInner({ garden }: { garden: Garden }) {
         )}
         <PlacingBanner />
         <PlantPeek garden={garden} />
+        <FreeSpotCard garden={garden} />
       </div>
       <SidePanel {...head} tall={!!selectedPlantId && !mobileMap} collapse={!!(placingSpeciesId || movingPlantId)}>
-        <GardenSide garden={garden} hint="Touchez une plante pour la choisir, puis glissez-la pour la déplacer." />
+        <GardenSide garden={garden} hint="Touchez une plante pour la choisir et glissez-la, ou un endroit vide pour le décrire." />
       </SidePanel>
     </div>
   )

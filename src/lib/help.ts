@@ -26,7 +26,7 @@ export const HELP: Record<Tab, HelpContent> = {
       'Touchez « Ajouter une plante », puis choisissez la plante.',
       'Touchez la carte à l’endroit où elle pousse (ou « Viser »), puis « Valider ». « Annuler » arrête. « Ici » dit le soleil, la pente et l’humidité estimée. Les flèches ajustent de 10 cm.',
       '« Aides au placement » ouvre « Placer au mètre », « Je suis ici », « Coller aux bords », « Grille » et « Fond simple ».',
-      'Touchez une plante pour la choisir : une carte donne sa place (limite, maison, voisines) et le soleil. Glissez-la pour la déplacer. « Fiche » ouvre ses soins.',
+      'Touchez une plante pour la choisir : une carte donne sa place (limite, maison, voisines) et le soleil. Glissez-la pour la déplacer. « Fiche » ouvre ses soins. Un endroit vide touché donne ses distances, son soleil et « Que planter ici ? ».',
       'Pour la déplacer, touchez « Déplacer cette plante », le nouvel endroit, puis « Valider ».',
       'Pour zoomer, pincez avec deux doigts ou touchez + et −. Le trait jaune montre les limites du terrain.',
     ],

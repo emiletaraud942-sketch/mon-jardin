@@ -63,6 +63,26 @@ test('plante choisie : infos sur la carte, glisser, fiche sur demande', async ({
   // 4. Fermer la carte d'infos : plus aucune plante choisie.
   await peek.getByRole('button', { name: /Fermer/ }).click()
   await expect(peek).toHaveCount(0)
+
+  // 5. Toucher un endroit vide de la carte (aucune plante choisie) : la carte d'infos « Cet endroit » apparaît (distances, soleil, pente, humidité estimée).
+  const spot = page.locator('.free-spot-card')
+  await expect(spot).toHaveCount(0)
+  const canvas = (await page.locator('.maplibregl-canvas').first().boundingBox())!
+  for (const [fx, fy] of [[0.5, 0.55], [0.3, 0.5], [0.7, 0.5], [0.5, 0.4], [0.2, 0.6], [0.8, 0.6]]) {
+    if (await spot.count()) break
+    await page.mouse.click(canvas.x + canvas.width * fx, canvas.y + canvas.height * fy)
+    await page.waitForTimeout(300)
+  }
+  await expect(spot).toBeVisible()
+  await expect(spot.locator('.site-note')).toBeVisible()
+  await expect(page.locator('.free-spot-pin')).toHaveCount(1)
+  await expect(peek).toHaveCount(0)
+
+  // 6. « Que planter ici ? » ouvre « Où planter ? » avec cet endroit déjà choisi (soleil, pente, humidité estimée, idées de plantes).
+  await spot.getByRole('button', { name: 'Que planter ici ?' }).click()
+  await expect(page.getByRole('heading', { name: 'Quelle plante pour cet endroit ?' })).toBeVisible()
+  await expect(page.getByText(/estimation/).first()).toBeVisible({ timeout: 15_000 })
+  await expect(spot).toHaveCount(0)
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0)
   expect(errors).toEqual([])
 })

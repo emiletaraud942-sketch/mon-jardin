@@ -14,7 +14,7 @@ import { rulerSummary } from './placeAids'
 import { SiteNoteAt } from './SiteNote'
 
 /** Hauteur de la petite carte (px) posée dans `--peek-h` : l'échelle et l'attribution de la carte remontent d'autant. À brancher en `ref`. */
-function usePeekReserve() {
+export function usePeekReserve() {
   const stop = useRef<(() => void) | null>(null)
   return useCallback((el: HTMLElement | null) => {
     stop.current?.()

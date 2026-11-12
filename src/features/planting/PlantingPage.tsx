@@ -11,6 +11,7 @@ import { aspectLabel, slopeAt } from '../../lib/terrain'
 import { doyToLabel } from '../../lib/weather'
 import { obstaclesFor, seasonalSunHours } from '../../engine/sun'
 import { recommendSpecies } from '../../engine/planting'
+import { humidityEstimate } from '../map/siteNote'
 import { plainReason } from '../../engine/plain'
 import { rotationWarning } from '../../engine/rotation'
 import { RotationNote } from '../../components/RotationNote'
@@ -102,7 +103,9 @@ function BestForSpot({ garden }: { garden: Garden }) {
     // Rotation des cultures : la même famille de légumes a-t-elle poussé tout près ces dernières années ?
     const today = new Date()
     const rotation = Object.fromEntries(recos.map((r) => [r.species.id, rotationWarning(r.species.id, spot, plants, SPECIES_BY_ID, today)]))
-    return { sun, slope, recos, rotation }
+    // Humidité : ESTIMATION (relief, sol indiqué, pluie de la zone), jamais une mesure.
+    const humidity = humidityEstimate({ terrain: lidar.terrain ?? garden.terrain, point: spot, sol: garden.sol, rainMmPerYear: garden.rainMmPerYear })
+    return { sun, slope, humidity, recos, rotation }
   }, [spot, garden, plants, cat, lidar.trees, lidar.terrain])
 
   const results = analysis && spot && (
@@ -117,6 +120,9 @@ function BestForSpot({ garden }: { garden: Garden }) {
             {analysis.slope.pct > 2 ? `, orientée ${aspectLabel(analysis.slope.aspectDeg)}` : ''}
           </div>
         )}
+        <div>
+          💧 {analysis.humidity.text} <span className="muted small">(estimation{analysis.humidity.reasons.length ? ` : ${analysis.humidity.reasons.slice(0, 2).join(', ')}` : ', sans indice'})</span>
+        </div>
         <details className="np-details">
           <summary>Heures de soleil par saison</summary>
           <p className="small muted" style={{ margin: 0 }}>

@@ -10,6 +10,9 @@ const executablePath = process.env.PW_CHROMIUM_PATH || undefined
 // Hors CI, l'étape n'existe que si ce dossier existe ; en CI, elle est toujours là (un dossier manquant fait échouer le test au lieu de le sauter en silence).
 const PORT_ENTRAIDE = Number(process.env.E2E_ENTRAIDE_PORT ?? 4794)
 const withEntraide = existsSync('dist-entraide') || !!process.env.CI
+// Troisième site pour la copie en ligne (deux appareils simulés) : `npm run build:e2e-synchro` → dist-synchro, URL et clé FAUSSES, port 4795.
+const PORT_SYNCHRO = Number(process.env.E2E_SYNCHRO_PORT ?? 4795)
+const withSynchro = existsSync('dist-synchro') || !!process.env.CI
 // MapLibre exige WebGL 2 : rendu logiciel (SwiftShader) quand il n'y a pas de GPU, comme sur un serveur d'intégration.
 const args = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']
 
@@ -32,14 +35,23 @@ export default defineConfig({
     launchOptions: { executablePath, args },
   },
   projects: [
-    { name: 'mobile-390', testIgnore: /entraide\.spec/, use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 }, launchOptions: { executablePath, args } } },
-    { name: 'bureau-1280', testIgnore: /entraide\.spec/, use: { viewport: { width: 1280, height: 800 } } },
+    { name: 'mobile-390', testIgnore: /(entraide|synchro)\.spec/, use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 }, launchOptions: { executablePath, args } } },
+    { name: 'bureau-1280', testIgnore: /(entraide|synchro)\.spec/, use: { viewport: { width: 1280, height: 800 } } },
     ...(withEntraide
       ? [
           {
             name: 'entraide-390',
             testMatch: /entraide\.spec/,
             use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 }, baseURL: `http://127.0.0.1:${PORT_ENTRAIDE}`, launchOptions: { executablePath, args } },
+          },
+        ]
+      : []),
+    ...(withSynchro
+      ? [
+          {
+            name: 'synchro-390',
+            testMatch: /synchro\.spec/,
+            use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 }, baseURL: `http://127.0.0.1:${PORT_SYNCHRO}`, launchOptions: { executablePath, args } },
           },
         ]
       : []),
@@ -56,6 +68,16 @@ export default defineConfig({
           {
             command: `npx vite preview --outDir dist-entraide --host 127.0.0.1 --port ${PORT_ENTRAIDE} --strictPort`,
             url: `http://127.0.0.1:${PORT_ENTRAIDE}`,
+            reuseExistingServer: !process.env.CI,
+            timeout: 60_000,
+          },
+        ]
+      : []),
+    ...(withSynchro
+      ? [
+          {
+            command: `npx vite preview --outDir dist-synchro --host 127.0.0.1 --port ${PORT_SYNCHRO} --strictPort`,
+            url: `http://127.0.0.1:${PORT_SYNCHRO}`,
             reuseExistingServer: !process.env.CI,
             timeout: 60_000,
           },

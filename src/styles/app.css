@@ -4555,6 +4555,17 @@ dialog.modal.full .modal-body {
   display: none;
 }
 /* Mention discrète : la photo ne montre pas plus de détails de plus près (variantes de revue ?zoom=…). */
+.map-photo-note-go {
+  pointer-events: auto;
+  min-height: var(--tap);
+  padding: 0 4px;
+  font: inherit;
+  font-weight: var(--fw-strong);
+  color: var(--accent-2);
+  text-decoration: underline;
+  background: none;
+  border: 0;
+}
 .map-photo-note {
   margin: 0;
   padding: 4px 12px;

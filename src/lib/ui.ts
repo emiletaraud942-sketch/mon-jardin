@@ -123,6 +123,8 @@ interface UiState {
   selectedPlantId?: string
   /** Plante dont la fiche complète est ouverte (téléphone, depuis la carte). Toucher une plante la choisit seulement : la fiche s'ouvre sur « Fiche ». */
   ficheOpenId?: string
+  /** Endroit touché sur la carte à vide (aucune plante choisie) : la carte d'infos « Cet endroit » le décrit et propose « Que planter ici ? ». */
+  freeSpot?: { gardenId: string; point: XY }
   placingSpeciesId?: string
   /** Pour une plante hors base (identifiée par photo) : nom affiché. */
   placingCustomName?: string
@@ -283,6 +285,8 @@ export function setUi(patch: Partial<Omit<UiState, 'guide'>>, opts: { push?: boo
   if (patch.tab && !('parcours' in patch)) next.parcours = undefined
   // Choisir une autre plante (ou n'en choisir aucune) referme la fiche : elle ne se rouvre jamais toute seule.
   if ('selectedPlantId' in patch && patch.selectedPlantId !== prev.selectedPlantId && !('ficheOpenId' in patch)) next.ficheOpenId = undefined
+  // Choisir une plante ou commencer un placement efface l'endroit libre touché ; quitter la carte aussi.
+  if (!('freeSpot' in patch) && (patch.selectedPlantId || patch.placingSpeciesId || patch.movingPlantId || (patch.tab && patch.tab !== prev.tab))) next.freeSpot = undefined
   // Le rayon de l'écran devient le dernier rayon visité (mémorisé pour la prochaine ouverture).
   const r = patch.tab ? rayonOfTab(patch.tab) : undefined
   if (r && r !== prev.rayon) {

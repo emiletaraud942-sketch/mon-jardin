@@ -19,7 +19,7 @@ import { countDone, doneSentence, nextLesson, totalLessons } from '../lecons/pro
 import { useLessonsDone } from '../lecons/useDone'
 import type { Garden } from '../../types'
 import { useOnboarding } from './useOnboarding'
-import { useAutoSyncState } from '../../lib/autoSync'
+import { autoSyncMessage, autoSyncReconcile, useAutoSyncState } from '../../lib/autoSync'
 import { useEffect, useState } from 'react'
 
 const syncConfigured = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -39,6 +39,26 @@ function SyncNudge({ garden }: { garden: Garden }) {
     const t = window.setTimeout(() => setReady(true), 3000)
     return () => window.clearTimeout(t)
   }, [])
+  // Connecté : une petite ligne d'état permanente (à jour, en cours, hors ligne, échec avec « Réessayer », conflit).
+  if (syncConfigured && auto.status !== 'inactif') {
+    const bad = auto.status === 'erreur' || auto.status === 'conflit'
+    return (
+      <div className="home-sync" data-status={auto.status} data-feat="synchro-etat" role="status">
+        <Icon name={bad ? 'alert' : 'check'} size={16} />
+        <span>{autoSyncMessage(auto)}</span>
+        {auto.status === 'erreur' && (
+          <button className="btn small ghost" onClick={() => autoSyncReconcile()}>
+            Réessayer
+          </button>
+        )}
+        {auto.status === 'conflit' && (
+          <button className="btn small ghost" onClick={() => FEATURES.find((f) => f.id === 'synchro')?.run()}>
+            Choisir
+          </button>
+        )}
+      </div>
+    )
+  }
   if (!syncConfigured || !ready || auto.status !== 'inactif' || plants.length === 0 || isDemoGarden(garden)) return null
   if ((guide.syncNudgeUntil ?? 0) > Date.now()) return null
   return (

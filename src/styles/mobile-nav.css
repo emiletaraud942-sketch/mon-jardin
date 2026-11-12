@@ -638,14 +638,14 @@ html[data-offline] .page {
     justify-content: center;
   }
   /* « Ajouter une plante » se cache le temps qu'une plante est choisie ; l'échelle et l'attribution passent au-dessus de la carte d'infos. */
-  .app:has(.plant-peek) .add-fab {
+  .app:has(.plant-peek, .free-spot-card) .add-fab {
     display: none;
   }
-  .app:has(.plant-peek) .bsheet {
+  .app:has(.plant-peek, .free-spot-card) .bsheet {
     visibility: hidden;
   }
-  .app:has(.plant-peek) .workspace .maplibregl-ctrl-bottom-right,
-  .app:has(.plant-peek) .workspace .maplibregl-ctrl-bottom-left {
+  .app:has(.plant-peek, .free-spot-card) .workspace .maplibregl-ctrl-bottom-right,
+  .app:has(.plant-peek, .free-spot-card) .workspace .maplibregl-ctrl-bottom-left {
     margin-bottom: calc(16px + var(--peek-h, 150px));
   }
 }
@@ -678,4 +678,115 @@ html[data-offline] .page {
   flex: 1 1 0;
   min-height: var(--tap);
   justify-content: center;
+}
+
+/* Ligne d'état de la copie en ligne (accueil, connecté) : discrète, une ou deux lignes. */
+.home-sync {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  padding: 4px 4px;
+  font-size: calc(13 * var(--px));
+  color: var(--muted);
+}
+.home-sync svg {
+  flex: none;
+}
+.home-sync span {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+.home-sync[data-status='erreur'],
+.home-sync[data-status='conflit'] {
+  color: var(--danger);
+  font-weight: var(--fw-strong);
+}
+.home-sync .btn {
+  min-height: var(--tap);
+}
+
+/* ----- Endroit libre touché sur la carte : anneau + carte d'infos « Cet endroit » (téléphone et ordinateur) ----- */
+.free-spot-pin {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  background: rgba(184, 83, 45, 0.35);
+  box-shadow: 0 0 0 2px var(--cta, #b8532d), 0 1px 6px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+.free-spot-card {
+  left: 12px;
+  bottom: 44px;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: min(22rem, calc(100% - 24px));
+  padding: 8px 12px 10px;
+  border: 1.5px solid var(--accent-2);
+  border-radius: 22px;
+}
+.free-spot-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+}
+.free-spot-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: calc(17 * var(--px));
+  font-weight: var(--fw-strong);
+}
+.free-spot-close {
+  flex: none;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  justify-content: center;
+}
+.free-spot-dist {
+  font-weight: var(--fw-strong);
+  overflow-wrap: anywhere;
+}
+.free-spot-card .site-note {
+  font-size: calc(13 * var(--px));
+}
+.free-spot-card .site-note summary {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+}
+.free-spot-card .site-note ul {
+  margin: 0 0 4px;
+  padding: 0;
+  list-style: none;
+}
+.free-spot-go {
+  margin-top: 4px;
+  min-height: var(--btn-h);
+  justify-content: center;
+}
+@media (max-width: 760px) {
+  .free-spot-card {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    width: auto;
+  }
+}
+
+/* Carte plus légère (téléphone) : tant qu'une carte d'infos (plante choisie ou endroit touché) est posée, les avis du haut s'effacent. */
+@media (max-width: 760px) {
+  .app:has(.plant-peek, .free-spot-card) .map-chips {
+    display: none;
+  }
+}
+
+/* Ordinateur : la carte d'infos de l'endroit touché prend la place de la mention du bas de la carte (elles se recouvraient). */
+.app:has(.free-spot-card) .map-foot {
+  display: none;
 }

@@ -23,6 +23,7 @@ import { historyKeyHandler } from './lib/history'
 import { PurchaseDialog } from './features/plants/PurchaseDialog'
 import { getLoadWarnings, getState, useActiveGarden, useGardenPlants, useStore } from './lib/store'
 import { showToast } from './lib/toast'
+import { useAutoSyncState } from './lib/autoSync'
 import { RAYON_LABEL, RAYON_SHORT, TAB_LABEL, getUi, goRayon, noteVisit, openHelp, openParcours, rayonOfTab, setGuide, setHelpOpen, setUi, subTabs, useHelpOpen, useUi, visibleRayons, type Rayon, type Tab } from './lib/ui'
 import { useBanner } from './lib/banners'
 import { deriveOnboarding } from './lib/onboarding'
@@ -100,6 +101,8 @@ export function App() {
   )
 }
 
+const SYNC_CONFIGURED = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY
+
 function AppShell() {
   const loaded = useStore((s) => s.loaded)
   const garden = useActiveGarden()
@@ -140,6 +143,28 @@ function AppShell() {
   useEffect(() => {
     if (tasks.length) notifyDailyTasks(tasks, { weatherReady }).catch(() => undefined)
   }, [tasks, weatherReady])
+
+  // Une plante vient d'être ajoutée alors que l'appareil n'est pas connecté à la copie en ligne : on le dit une fois par lancement (« Plus tard » sur l'accueil
+  // fait taire aussi ce rappel). Sans cela, on découvre trop tard que rien n'a été sauvegardé en ligne.
+  const autoState = useAutoSyncState()
+  const lastPlantTotal = useRef<number>()
+  const remindedSync = useRef(false)
+  const plantTotal = useStore((s) => s.plants.length)
+  useEffect(() => {
+    if (!loaded) return
+    const prev = lastPlantTotal.current
+    lastPlantTotal.current = plantTotal
+    if (prev === undefined || plantTotal <= prev || remindedSync.current) return
+    if (!SYNC_CONFIGURED || autoState.status !== 'inactif' || (guide.syncNudgeUntil ?? 0) > Date.now()) return
+    if (garden && isDemoGarden(garden)) return
+    remindedSync.current = true
+    showToast({
+      message: 'Cette plante n’est pas encore sauvegardée en ligne.',
+      actionLabel: 'Me connecter',
+      onAction: () => FEATURES.find((f) => f.id === 'synchro')?.run(),
+      durationMs: 12000,
+    })
+  }, [plantTotal, loaded]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Messages de démarrage : données corrigées, rappel d'export mensuel.
   useEffect(() => {
