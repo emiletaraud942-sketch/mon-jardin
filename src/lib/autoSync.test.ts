@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
-import { autoSyncMessage, createAutoSync, getAutoSyncState, resetAutoSync, type AutoSyncDeps } from './autoSync'
+import { autoSyncMessage, createAutoSync, getAutoSyncState, photoNoteOf, resetAutoSync, type AutoSyncDeps, type PhotoReport } from './autoSync'
 
 class ConflictError extends Error {}
 
@@ -216,5 +216,104 @@ describe('autoSyncMessage', () => {
     }
     expect(autoSyncMessage({ status: 'ok', lastAt: new Date(2026, 9, 28, 14, 32).getTime() })).toContain('14:32')
     expect(autoSyncMessage({ status: 'erreur', error: 'Accès refusé.' })).toContain('Accès refusé.')
+  })
+})
+
+describe('synchronisation automatique : les photos', () => {
+  const report = (p: Partial<PhotoReport> = {}): PhotoReport => ({ uploaded: 0, downloaded: 0, skipped: 0, failed: 0, ...p })
+
+  it('après chaque envoi réussi, les photos sont mises à jour', async () => {
+    const f = fake({ remote: { signedIn: true, remote: T1, last: T1 } })
+    const photos = vi.fn(async () => report({ uploaded: 2 }))
+    const a = createAutoSync({ ...f.deps, photos })
+    await a.reconcile()
+    photos.mockClear()
+    f.change()
+    await vi.advanceTimersByTimeAsync(5500)
+    expect(f.push).toHaveBeenCalledTimes(1)
+    expect(photos).toHaveBeenCalledTimes(1)
+    a.stop()
+  })
+  it('après une reprise, les photos manquantes sont récupérées', async () => {
+    const f = fake({ data: false, remote: { signedIn: true, remote: T1, last: null } })
+    const photos = vi.fn(async () => report({ downloaded: 3 }))
+    const a = createAutoSync({ ...f.deps, photos })
+    await a.reconcile()
+    expect(f.pull).toHaveBeenCalled()
+    expect(photos).toHaveBeenCalled()
+    a.stop()
+  })
+  it('des photos qui ne suivent pas sont signalées, sans abîmer l’état de la synchronisation', async () => {
+    const f = fake({ remote: { signedIn: true, remote: T1, last: T1 } })
+    const a = createAutoSync({ ...f.deps, photos: async () => report({ skipped: 2, failed: 1 }) })
+    await a.reconcile()
+    await vi.advanceTimersByTimeAsync(10)
+    const st = getAutoSyncState()
+    expect(st.status).toBe('ok')
+    expect(st.photoNote).toMatch(/2 photos restent/)
+    expect(st.photoNote).toMatch(/1 photo n’a pas pu/)
+    expect(autoSyncMessage(st)).toContain('2 photos restent')
+    a.stop()
+  })
+  it('une erreur des photos n’est jamais une erreur de synchronisation', async () => {
+    const f = fake({ remote: { signedIn: true, remote: T1, last: T1 } })
+    const a = createAutoSync({ ...f.deps, photos: async () => { throw new Error('réseau') } })
+    await a.reconcile()
+    await vi.advanceTimersByTimeAsync(10)
+    expect(getAutoSyncState().status).toBe('ok')
+    a.stop()
+  })
+  it('une seule passe de photos à la fois', async () => {
+    const f = fake({ remote: { signedIn: true, remote: T1, last: T1 } })
+    let running = 0
+    let max = 0
+    const photos = vi.fn(async () => {
+      running++
+      max = Math.max(max, running)
+      await new Promise((r) => setTimeout(r, 1000))
+      running--
+      return report()
+    })
+    const a = createAutoSync({ ...f.deps, photos })
+    await a.reconcile()
+    await a.reconcile()
+    await a.reconcile()
+    await vi.advanceTimersByTimeAsync(3000)
+    expect(max).toBe(1)
+    a.stop()
+  })
+  it('phrases courtes, au singulier et au pluriel', () => {
+    expect(photoNoteOf(report())).toBeUndefined()
+    expect(photoNoteOf(report({ skipped: 1 }))).toBe('1 photo reste sur cet appareil (plus de place en ligne, ou trop lourde).')
+    expect(photoNoteOf(report({ failed: 3 }))).toMatch(/^3 photos n’ont pas pu être envoyées ou reçues/)
+    for (const sentence of (photoNoteOf(report({ skipped: 5, failed: 5 })) ?? '').split(/(?<=[.!?])\s+/)) expect(sentence.split(/\s+/).length).toBeLessThanOrEqual(20)
+  })
+})
+
+describe('synchronisation automatique : quitter l’appli', () => {
+  it('une modification en attente part tout de suite à la mise en arrière-plan', async () => {
+    const f = fake({ remote: { signedIn: true, remote: T1, last: T1 } })
+    const a = createAutoSync(f.deps)
+    await a.reconcile()
+    f.change()
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(f.push).not.toHaveBeenCalled()
+    await a.flush()
+    expect(f.push).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(f.push).toHaveBeenCalledTimes(1) // pas de second envoi quand le délai arrive
+    a.stop()
+  })
+  it('rien en attente : rien n’est envoyé ; sans accord non plus', async () => {
+    const f = fake({ remote: { signedIn: true, remote: T1, last: T1 } })
+    const a = createAutoSync(f.deps)
+    await a.reconcile()
+    await a.flush()
+    expect(f.push).not.toHaveBeenCalled()
+    f.consent = false
+    f.change()
+    await a.flush()
+    expect(f.push).not.toHaveBeenCalled()
+    a.stop()
   })
 })

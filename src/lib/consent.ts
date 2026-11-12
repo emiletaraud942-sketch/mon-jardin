@@ -7,7 +7,7 @@ import { useSyncExternalStore } from 'react'
 export type ConsentId = 'plantnet' | 'sync' | 'voisins' | 'notifications'
 export const CONSENT_IDS: readonly ConsentId[] = ['plantnet', 'sync', 'voisins', 'notifications']
 /** À incrémenter quand le sens d'un consentement change : les anciens accords ne comptent plus. */
-export const CONSENT_VERSION = 1
+export const CONSENT_VERSION = 2 // 2 : la copie en ligne envoie aussi les photos (12 nov. 2026) : l'accord est redemandé
 export const CONSENT_KEY = 'permajardin:consent'
 
 type Record_ = Partial<Record<ConsentId, string>>

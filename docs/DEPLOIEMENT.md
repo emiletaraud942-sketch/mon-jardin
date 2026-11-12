@@ -39,7 +39,8 @@ Deux projets **séparés** : la **synchronisation** (§4.1) et l'**entraide** (�
    - `20261017000000_garden_snapshots.sql` (table et règles RLS),
    - `20261018000000_snapshots_hardening.sql` (droits, idempotente),
    - `20261019000000_security_hardening.sql` (retire `TRUNCATE` et les droits inutiles, impose un objet JSON, ajoute `delete_my_account()` ; **ne pas l'oublier** : sans elle, le droit à l'effacement du compte n'existe pas côté serveur),
-   - `20261027000000_snapshots_no_anonymous.sql` (refuse les connexions anonymes Supabase ; rejouable).
+   - `20261027000000_snapshots_no_anonymous.sql` (refuse les connexions anonymes Supabase ; rejouable),
+   - `20261111000000_photos_storage.sql` (espace de fichiers PRIVÉ « photos » pour la synchronisation des photos : un dossier par utilisateur, 4 Mo et JPEG au plus par fichier, RLS ; rejouable. Sans elle, les photos restent sur l'appareil et l'appli le dit).
 
    Soit dans Supabase > **SQL Editor** (coller chaque fichier, *Run*), soit avec le CLI : `supabase link --project-ref <ref>` puis `supabase db push`.
 3. Supabase > **Authentication > URL Configuration** :

@@ -7,7 +7,7 @@ import { DATA_INVENTORY, type LegalBasis } from './security/inventory'
 export const DRAFT_BANNER = 'BROUILLON À FAIRE VALIDER PAR UN PROFESSIONNEL'
 export const DRAFT_NOTE = 'Texte provisoire, à faire valider par un professionnel avant publication. Il ne constitue pas un avis juridique.'
 
-export const LEGAL_VERSION = '1.10'
+export const LEGAL_VERSION = '1.11'
 /** Dernière mise à jour (AAAA-MM-JJ). */
 export const LEGAL_UPDATED = '2026-11-10'
 
@@ -83,7 +83,7 @@ export const CONFIDENTIALITE: LegalDoc = {
       titre: 'En bref',
       blocs: [
         ul(
-          'Vos jardins, plantes et photos restent sur votre appareil, dans votre navigateur.',
+          'Vos jardins, plantes et photos restent sur votre appareil, dans votre navigateur, sauf si vous activez la copie en ligne : elle envoie alors aussi vos photos.',
           'Pas de compte obligatoire, pas de publicité, pas de cookie, pas de traceur.',
           'Quelques services extérieurs reçoivent une partie de vos données uniquement quand la fonction l’exige : carte, météo, identification d’une plante, sauvegarde en ligne facultative, entraide entre voisins facultative (annonces et événements).',
           'L’entraide entre voisins demande un compte (adresse e-mail) et un âge minimum de 15 ans. Elle ne reçoit ni votre adresse ni votre position exacte, seulement un quartier arrondi : une zone d’environ 2 km, ou d’environ 5 km si vous le choisissez.',
@@ -421,7 +421,7 @@ export const CONSENT_TEXT: Record<'plantnet' | 'sync' | 'voisins' | 'notificatio
   sync: {
     titre: 'Enregistrer vos données en ligne ?',
     paragraphes: [
-      'Vos jardins, plantes et tâches (sans les images des photos, mais avec leurs dates et notes) seront enregistrés sur un serveur (Supabase ; région d’hébergement à confirmer par l’éditeur) lié à votre adresse e-mail, pour les retrouver sur un autre appareil.',
+      'Vos jardins, plantes, tâches ET photos (réduites, sans position GPS) seront enregistrés sur un serveur (Supabase ; région d’hébergement à confirmer par l’éditeur) lié à votre adresse e-mail, et mis à jour automatiquement à chaque modification, pour les retrouver sur un autre appareil.',
       `Destinataire : ${(compte?.destinataires ?? []).join(' ; ')}.`,
       'Vous pouvez retirer votre autorisation et supprimer vos données en ligne à tout moment dans Réglages.',
     ],

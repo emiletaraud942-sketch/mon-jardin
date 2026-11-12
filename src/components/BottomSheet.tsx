@@ -18,6 +18,7 @@ export function BottomSheet({
   children,
   fixed,
   label = 'Panneau',
+  action,
 }: {
   title: ReactNode
   summary?: ReactNode
@@ -27,6 +28,8 @@ export function BottomSheet({
   /** Fixée au bas de l'écran, au-dessus de la barre de navigation (pages qui défilent). Sinon : posée sur le bas de son conteneur. */
   fixed?: boolean
   label?: string
+  /** Petit bouton à droite du titre (discret) : par exemple « + Ajouter ». */
+  action?: ReactNode
 }) {
   const mobile = useIsMobile()
   const start = useRef<number | null>(null)
@@ -65,6 +68,7 @@ export function BottomSheet({
             <strong>{title}</strong>
             {summary && <span className="muted small">{summary}</span>}
           </div>
+          {action && <span className="sheet-action">{action}</span>}
           <button className="btn ghost icon-btn sheet-btn" aria-label="Réduire le panneau" disabled={i === 0} onClick={() => go(-1)}>
             <span style={{ display: 'inline-flex', transform: 'rotate(0deg)' }}><Icon name="chevron" size={20} /></span>
           </button>

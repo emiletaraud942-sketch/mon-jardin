@@ -649,3 +649,33 @@ html[data-offline] .page {
     margin-bottom: calc(16px + var(--peek-h, 150px));
   }
 }
+
+/* ----- Carte : plus de gros bouton « Ajouter une plante » flottant ; un petit bouton dans l'en-tête de la feuille du bas ----- */
+.sheet-action {
+  flex: none;
+}
+.sheet-add {
+  min-height: var(--tap);
+  padding-inline: 10px;
+  font-size: calc(14 * var(--px));
+  white-space: nowrap;
+}
+
+/* Invitation à se connecter (accueil) : texte en haut, les deux boutons dessous, sur toute la largeur. */
+.syncnudge {
+  flex-wrap: wrap;
+}
+.syncnudge .nextstep-text {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+.syncnudge-actions {
+  flex: 1 1 100%;
+  display: flex;
+  gap: 8px;
+}
+.syncnudge-actions .btn {
+  flex: 1 1 0;
+  min-height: var(--tap);
+  justify-content: center;
+}

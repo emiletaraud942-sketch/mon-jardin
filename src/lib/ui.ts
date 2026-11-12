@@ -72,6 +72,8 @@ export interface GuideState {
   installHidden: boolean
   /** Date (ms) avant laquelle on ne repropose pas « passer à l'entretien ». */
   nudgeUntil: number
+  /** Date (ms) avant laquelle on ne repropose pas « Mettre mes jardins en sécurité en ligne » sur l'accueil. */
+  syncNudgeUntil?: number
   /** Ids des jardins dont l'écran Entretien a déjà été ouvert. */
   openedEntretien: string[]
   /** Ids des jardins où l'utilisateur a dit « Je n'ai pas d'arbre » (la prochaine étape passe à la suivante). */
@@ -94,6 +96,7 @@ function readGuide(): GuideState {
       demoHidden: bool(raw.demoHidden, DEFAULT_GUIDE.demoHidden),
       installHidden: bool(raw.installHidden, DEFAULT_GUIDE.installHidden),
       nudgeUntil: typeof raw.nudgeUntil === 'number' && Number.isFinite(raw.nudgeUntil) ? raw.nudgeUntil : 0,
+      ...(typeof raw.syncNudgeUntil === 'number' && Number.isFinite(raw.syncNudgeUntil) ? { syncNudgeUntil: raw.syncNudgeUntil } : {}),
       openedEntretien: ids(raw.openedEntretien),
       onboarding: parseOnboarding(raw.onboarding),
       ...(Array.isArray(raw.noTree) ? { noTree: ids(raw.noTree) } : {}),

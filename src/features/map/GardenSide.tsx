@@ -8,7 +8,7 @@ import { UNKNOWN_SPECIES_ID, yourPlant } from '../../lib/customName'
 import { useInertBehind } from '../../lib/inert'
 import { useGardenPlants, useStore } from '../../lib/store'
 import { identifyOpen } from '../../lib/overlays'
-import { closeFiche, closePlantSheet, openHelp, setUi, startPlacing, stopPlacing, useUi } from '../../lib/ui'
+import { closeFiche, closePlantSheet, goRayon, openHelp, setUi, startPlacing, stopPlacing, useUi } from '../../lib/ui'
 import type { Garden } from '../../types'
 import { PlantPanel, plantName } from '../plants/PlantPanel'
 import { openScan } from '../scan/scanUi'
@@ -74,6 +74,9 @@ export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
       </div>
       <button className="btn primary" onClick={() => setPicking(true)}>
         <Icon name="plus" /> Ajouter une plante au jardin
+      </button>
+      <button className="btn" data-feat="carte-ou-planter" onClick={() => goRayon('planter')}>
+        <Icon name="leaf" /> Où planter ? Les conseils de lieu
       </button>
       <button className="btn" aria-haspopup="dialog" onClick={() => openPanorama('home')}>
         <Icon name="camera" /> Photos du jardin{(garden.panoramas?.length ?? 0) > 0 ? ` (${garden.panoramas!.length})` : ''}

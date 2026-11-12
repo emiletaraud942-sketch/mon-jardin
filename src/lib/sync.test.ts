@@ -13,6 +13,8 @@ interface Fake {
   verifyOtp: ReturnType<typeof vi.fn>
   signOut: ReturnType<typeof vi.fn>
   rpc: ReturnType<typeof vi.fn>
+  /** Espace de fichiers « photos » simulé : noms présents, et listes de noms effacés. */
+  storage: { files: string[]; removed: string[][]; from: () => unknown }
   options?: { auth?: Record<string, unknown> }
   afterRead?: () => void
   payloads: Record<string, unknown>[]
@@ -38,6 +40,17 @@ function makeFake(): Fake {
     verifyOtp: vi.fn(async () => ({ data: { session: { user: { id: 'u1', email: 'a@b.fr' } }, user: { id: 'u1', email: 'a@b.fr' } }, error: null })),
     signOut: vi.fn(async () => ({ error: null })),
     rpc: vi.fn(async () => ({ data: null, error: null })),
+    storage: {
+      files: [],
+      removed: [],
+      from: () => ({
+        list: async () => ({ data: f.storage.files.map((name) => ({ name, metadata: { size: 100 }, created_at: '2026-10-01T00:00:00Z' })), error: null }),
+        remove: async (names: string[]) => {
+          f.storage.removed.push(names)
+          return { data: null, error: null }
+        },
+      }),
+    },
     tick,
     from: (table: string) => {
       const q = (op: 'select' | 'insert' | 'update' | 'upsert' | 'delete', payload?: Record<string, unknown>) => {
@@ -128,7 +141,7 @@ vi.mock('./store', () => ({
 vi.mock('@supabase/supabase-js', () => ({
   createClient: (_u: string, _k: string, options: Fake['options']) => {
     fake.options = options
-    return { auth: fake, from: fake.from, rpc: fake.rpc }
+    return { auth: fake, from: fake.from, rpc: fake.rpc, storage: fake.storage }
   },
 }))
 
@@ -559,6 +572,21 @@ describe('effacement en ligne et déconnexion', () => {
     await expect(s.deleteRemoteSnapshot()).rejects.toThrow(/Connectez-vous/)
   })
 
+  it('les photos en ligne sont effacées avec la copie, jamais celles d’un autre dossier ni un fichier inconnu', async () => {
+    fake.session = { user: { id: '11111111-2222-3333-4444-555555555555' } }
+    fake.storage.files = ['abc123.jpg', 'def456.jpg', 'notes.txt', '../x.jpg']
+    const s = await load()
+    await s.deleteRemoteSnapshot()
+    expect(fake.storage.removed).toEqual([['11111111-2222-3333-4444-555555555555/abc123.jpg', '11111111-2222-3333-4444-555555555555/def456.jpg']])
+  })
+  it('deleteMyAccount efface d’abord les photos en ligne, puis le compte', async () => {
+    fake.session = { user: { id: '11111111-2222-3333-4444-555555555555' } }
+    fake.storage.files = ['abc123.jpg']
+    const s = await load()
+    await s.deleteMyAccount()
+    expect(fake.storage.removed).toEqual([['11111111-2222-3333-4444-555555555555/abc123.jpg']])
+    expect(fake.rpc).toHaveBeenCalledWith('delete_my_account')
+  })
   it('deleteMyAccount appelle delete_my_account puis déconnecte localement', async () => {
     const s = await load()
     local.set('sb-x-auth-token', 'jwt')

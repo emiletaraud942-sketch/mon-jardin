@@ -38,7 +38,7 @@ export const DATA_INVENTORY: readonly DataItem[] = [
     finalite: 'Illustrer les plantes',
     base: 'execution',
     duree: 'Jusqu’à suppression de la plante ou effacement',
-    effacement: 'Supprimer la photo ou la plante (la date et la note partent avec), ou Effacer toutes mes données. Les images des photos ne sont jamais synchronisées ; leurs dates et notes font partie des données du jardin.',
+    effacement: 'Supprimer la photo ou la plante (la date et la note partent avec), ou Effacer toutes mes données. Avec la copie en ligne activée, les images partent aussi dans votre espace privé en ligne (effacées avec la copie) ; leurs dates et notes font partie des données du jardin.',
   },
   {
     id: 'identification',
@@ -82,13 +82,13 @@ export const DATA_INVENTORY: readonly DataItem[] = [
   },
   {
     id: 'compte',
-    donnee: 'Adresse e-mail du compte, instantané en ligne des jardins (sans les images des photos, mais avec leurs dates et notes), jeton de session',
-    stockage: 'Supabase (table garden_snapshots, protégée par RLS) ; jeton dans le localStorage (clé sb-…-auth-token)',
+    donnee: 'Adresse e-mail du compte, instantané en ligne des jardins (avec les dates et notes des photos) et les images des photos (réduites, sans EXIF ni position GPS, 80 Mo au plus par utilisateur), jeton de session',
+    stockage: 'Supabase (table garden_snapshots et espace de fichiers privé « photos », un dossier par utilisateur, protégés par RLS) ; jeton dans le localStorage (clé sb-…-auth-token)',
     destinataires: ['Supabase (sous-traitant : hébergement et authentification)'],
     finalite: 'Sauvegarder et retrouver ses jardins sur un autre appareil. Fonction facultative.',
     base: 'consentement',
     duree: 'Jusqu’à suppression du compte ou de l’instantané',
-    effacement: 'Réglages > Vie privée > Effacer toutes mes données, avec la case « Supprimer aussi ma sauvegarde en ligne » (supprime l’instantané). Pour supprimer aussi le compte (adresse e-mail), écrire à l’éditeur',
+    effacement: 'Réglages > Vie privée > Effacer toutes mes données, avec la case « Supprimer aussi ma sauvegarde en ligne » (supprime l’instantané et les photos en ligne). Pour supprimer aussi le compte (adresse e-mail), écrire à l’éditeur',
   },
   {
     id: 'entraide-compte',
@@ -238,7 +238,7 @@ export const PERMISSIONS: readonly PermissionInfo[] = [
   {
     permission: 'Caméra',
     ou: 'Photos du jardin et scan, seulement après un appui. Le microphone n’est jamais utilisé.',
-    pourquoi: 'Prendre les photos. Elles restent sur cet appareil (rien n’est envoyé, sauf une photo que vous choisissez d’identifier).',
+    pourquoi: 'Prendre les photos. Elles restent sur cet appareil, sauf une photo que vous choisissez d’identifier et, si vous activez la copie en ligne, toutes vos photos.',
     siRefusee: 'Vous choisissez une photo déjà prise dans vos fichiers.',
   },
   {

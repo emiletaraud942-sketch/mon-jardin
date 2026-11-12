@@ -15,6 +15,24 @@ export interface AutoSyncState {
   /** Heure (ms) de la dernière synchro réussie, depuis le lancement de l'appli. */
   lastAt?: number
   error?: string
+  /** Phrase sur les photos qui n'ont pas pu suivre (place en ligne, réseau) ; absente quand tout est à jour. */
+  photoNote?: string
+}
+
+/** Ce que la synchronisation des photos rapporte (voir `photoSync.ts`). */
+export interface PhotoReport {
+  uploaded: number
+  downloaded: number
+  skipped: number
+  failed: number
+}
+
+/** Phrase pour les photos restées de côté, ou `undefined` quand tout va bien. */
+export function photoNoteOf(r: PhotoReport): string | undefined {
+  const parts: string[] = []
+  if (r.skipped > 0) parts.push(`${r.skipped} photo${r.skipped > 1 ? 's restent' : ' reste'} sur cet appareil (plus de place en ligne, ou trop lourde${r.skipped > 1 ? 's' : ''}).`)
+  if (r.failed > 0) parts.push(`${r.failed} photo${r.failed > 1 ? 's n’ont' : ' n’a'} pas pu être envoyée${r.failed > 1 ? 's' : ''} ou reçue${r.failed > 1 ? 's' : ''} : nouvel essai à la prochaine synchronisation.`)
+  return parts.length ? parts.join(' ') : undefined
 }
 
 export interface AutoSyncDeps {
@@ -30,6 +48,8 @@ export interface AutoSyncDeps {
   /** Mémoire du « modifié depuis la dernière synchro » (survit à la fermeture de l'appli). */
   readDirty(): boolean
   writeDirty(v: boolean): void
+  /** Met les photos à jour (envoi, réception, nettoyage) : appelé après chaque envoi ou reprise réussis. Facultatif. */
+  photos?(): Promise<PhotoReport>
   delayMs: number
 }
 
@@ -60,7 +80,7 @@ export function autoSyncMessage(st: AutoSyncState): string {
   const at = st.lastAt ? ` (${new Date(st.lastAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })})` : ''
   switch (st.status) {
     case 'ok':
-      return `✓ Copie en ligne à jour${at}.`
+      return `✓ Copie en ligne à jour${at}.${st.photoNote ? ' ' + st.photoNote : ''}`
     case 'en-cours':
       return 'Synchronisation en cours…'
     case 'hors-ligne':
@@ -89,6 +109,20 @@ export function createAutoSync(deps: AutoSyncDeps) {
     setCurrent({ status: 'erreur', error: e instanceof Error ? e.message : 'La synchronisation a échoué.' })
   }
 
+  // Photos : une seule passe à la fois, jamais bloquante ; un échec n'abîme pas l'état de la synchronisation (la prochaine passe réessaie).
+  let photosBusy = false
+  async function runPhotos() {
+    if (!deps.photos || photosBusy) return
+    photosBusy = true
+    try {
+      setCurrent({ photoNote: photoNoteOf(await deps.photos()) })
+    } catch {
+      /* hors ligne ou service lent : rien à signaler, on réessaiera */
+    } finally {
+      photosBusy = false
+    }
+  }
+
   async function pushNow() {
     if (busy) return
     busy = true
@@ -97,6 +131,7 @@ export function createAutoSync(deps: AutoSyncDeps) {
       await deps.push()
       deps.writeDirty(false)
       setCurrent({ status: 'ok', lastAt: deps.now() })
+      void runPhotos()
     } catch (e) {
       fail(e)
     } finally {
@@ -112,6 +147,7 @@ export function createAutoSync(deps: AutoSyncDeps) {
       seen = { g: s.gardens, p: s.plants, t: s.tasksDone }
       deps.writeDirty(false)
       setCurrent({ status: 'ok', lastAt: deps.now() })
+      void runPhotos()
     } finally {
       applyingRemote = false
     }
@@ -148,6 +184,7 @@ export function createAutoSync(deps: AutoSyncDeps) {
         return
       }
       setCurrent({ status: 'ok', lastAt: deps.now() })
+      void runPhotos()
     } catch (e) {
       fail(e)
     } finally {
@@ -164,11 +201,24 @@ export function createAutoSync(deps: AutoSyncDeps) {
     deps.writeDirty(true)
     if (!deps.hasConsent() || current.status === 'conflit' || current.status === 'inactif') return
     clearTimeout(timer)
-    timer = setTimeout(() => void pushNow(), deps.delayMs)
+    timer = setTimeout(() => {
+      timer = undefined
+      void pushNow()
+    }, deps.delayMs)
   })
+
+  /** À appeler quand l'appli passe en arrière-plan : un envoi en attente part tout de suite, sans attendre la fin du délai. */
+  async function flush() {
+    if (timer === undefined) return
+    clearTimeout(timer)
+    timer = undefined
+    if (!deps.hasConsent() || current.status === 'conflit' || current.status === 'inactif') return
+    await pushNow()
+  }
 
   return {
     reconcile,
+    flush,
     /** L'utilisateur a choisi de garder cet appareil ou la copie en ligne : on repart sur de bonnes bases. */
     resolved() {
       setCurrent({ status: 'ok', lastAt: deps.now() })
@@ -214,7 +264,8 @@ export async function startAutoSync(): Promise<() => void> {
     now: () => Date.now(),
     readDirty,
     writeDirty,
-    delayMs: 5000,
+    photos: () => sync.syncPhotos(),
+    delayMs: 2000,
   })
   // Attend que les données locales soient chargées avant la première comparaison.
   const waitLoaded = () =>
@@ -237,12 +288,20 @@ export async function startAutoSync(): Promise<() => void> {
     }
   }
   const onOnline = () => void auto.reconcile()
+  // Quitter l'appli (ou la mettre en arrière-plan) envoie tout de suite ce qui attend, sans attendre les 2 secondes.
+  const onHidden = () => {
+    if (document.visibilityState === 'hidden') void auto.flush()
+  }
   document.addEventListener('visibilitychange', onVisible)
+  document.addEventListener('visibilitychange', onHidden)
+  window.addEventListener('pagehide', onHidden)
   window.addEventListener('online', onOnline)
   autoHandle = auto
   return () => {
     auto.stop()
     document.removeEventListener('visibilitychange', onVisible)
+    document.removeEventListener('visibilitychange', onHidden)
+    window.removeEventListener('pagehide', onHidden)
     window.removeEventListener('online', onOnline)
     autoHandle = undefined
   }

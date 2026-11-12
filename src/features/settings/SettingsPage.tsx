@@ -584,7 +584,7 @@ function Sync() {
 
   return (
     <Fold title="Retrouver mes jardins sur un autre appareil" feat="synchro">
-      <p className="small muted">Connecté, vos jardins se mettent à jour en ligne tout seuls ; reprenez-les sur un autre appareil. Les photos ne sont pas copiées. Un code reçu par e-mail suffit, sans lien à ouvrir.</p>
+      <p className="small muted">Connecté, vos jardins se mettent à jour en ligne tout seuls ; reprenez-les sur un autre appareil. Les photos sont copiées aussi. Un code reçu par e-mail suffit, sans lien à ouvrir.</p>
       {user ? (
         <>
           <p>Connecté : {user.email}</p>

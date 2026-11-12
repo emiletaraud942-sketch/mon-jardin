@@ -4,6 +4,7 @@
 //   - Site URL : l'adresse de production (ex. https://permajardin.vercel.app)
 //   - Redirect URLs : https://permajardin.vercel.app/** et http://localhost:5173/** (développement)
 // Le lien doit être ouvert dans le MÊME navigateur que celui où il a été demandé (le « code verifier » PKCE y est stocké).
+import { removeAllRemotePhotos, runPhotoSync, type PhotoSyncResult } from './photoSync'
 import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js'
 import { migrateState, serializeState } from './migrate'
 import { getState, getStorageStatus, keepLocalSafetyCopy, replaceData, replaceRefusal } from './store'
@@ -247,7 +248,7 @@ async function requireUser() {
 export const MESSAGE_READ_FAILED = 'Les données de cet appareil n’ont pas pu être lues. La synchronisation est suspendue pour ne pas écraser votre sauvegarde en ligne.'
 
 /**
- * Envoie l'état local (jardins, plantes, tâches faites ; les photos restent sur l'appareil).
+ * Envoie l'état local (jardins, plantes, tâches faites). Les images des photos partent ensuite, à part (`syncPhotos`).
  * Sans `force`, refuse d'écraser des données en ligne plus récentes que notre dernière synchro :
  * lève `SyncConflictError` (l'interface propose alors « Récupérer » ou « Écraser » = `pushSnapshot({ force: true })`).
  */
@@ -285,6 +286,16 @@ export async function pushSnapshot(opts: { force?: boolean } = {}) {
 }
 
 /**
+ * Met les photos à jour avec le compte en ligne : récupère celles qui manquent ici, envoie celles qui manquent en ligne (dans la limite de place
+ * de `PHOTO_SYNC_CAP_BYTES`), efface les anciennes orphelines. Appelée par la synchronisation automatique après chaque envoi ou reprise.
+ */
+export async function syncPhotos(): Promise<PhotoSyncResult> {
+  const { sb, user } = await requireUser()
+  const { gardens, plants } = getState()
+  return runPhotoSync(sb, user.id, { gardens, plants })
+}
+
+/**
  * Où en est la copie en ligne par rapport à cet appareil : connecté ?, date de la copie en ligne, date de notre dernière synchro.
  * Un seul petit appel réseau (la date). Sert à la synchronisation automatique pour décider : envoyer, reprendre ou signaler un conflit.
  */
@@ -302,6 +313,7 @@ export async function syncStatus(): Promise<{ signedIn: boolean; remote: string 
  */
 export async function deleteRemoteSnapshot(): Promise<void> {
   const { sb, user } = await requireUser()
+  await removeAllRemotePhotos(sb, user.id) // les photos en ligne partent avec la copie (elles ne sont plus rattachées à rien)
   const { error } = await withTimeout(sb.from(TABLE).delete().eq('user_id', user.id))
   if (error) throw dbFailure(error)
   try {
@@ -316,7 +328,8 @@ export async function deleteRemoteSnapshot(): Promise<void> {
  * Appelle la fonction SQL `delete_my_account()` (migration 20261019000000) : elle ne peut effacer que le compte de l'appelant.
  */
 export async function deleteMyAccount(): Promise<void> {
-  const { sb } = await requireUser()
+  const { sb, user } = await requireUser()
+  await removeAllRemotePhotos(sb, user.id) // avant le compte : ensuite, plus personne ne pourrait les effacer
   const { error } = await withTimeout(sb.rpc('delete_my_account'))
   if (error) throw dbFailure(error)
   await signOutLocal()

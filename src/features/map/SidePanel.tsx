@@ -21,16 +21,17 @@ export function SidePanel({ children, tall, collapse, title, summary }: { childr
   useEffect(() => {
     if (collapse) setSnap('min')
   }, [collapse])
-  // Jardin vide : la carte a déjà sa grande carte d'invitation. Placement en cours : la bannière prend la place.
-  const fab = mobile && snap === 'min' && !collapse && !tall && count > 0
+  // Plus de gros bouton flottant sur la carte (il recouvrait les plantes) : un petit bouton discret dans l'en-tête de la feuille, et « Où planter ? » dans son
+  // contenu, où l'on trouve les conseils de lieu. Jardin vide : la carte a déjà sa grande carte d'invitation. Placement en cours : la consigne prend la place.
+  const action =
+    mobile && !collapse && !tall && count > 0 ? (
+      <PlaceAction className="btn ghost small sheet-add" title="Quelle plante ajouter ?">
+        <Icon name="plus" size={16} /> Ajouter
+      </PlaceAction>
+    ) : undefined
   return (
     <>
-      {fab && (
-        <PlaceAction className="btn primary add-fab">
-          <Icon name="plus" /> Ajouter une plante
-        </PlaceAction>
-      )}
-      <BottomSheet title={title} summary={summary} snap={snap} onSnap={setSnap} label="Plantes du jardin">
+      <BottomSheet title={title} summary={summary} snap={snap} onSnap={setSnap} label="Plantes du jardin" action={action}>
         {children}
       </BottomSheet>
     </>

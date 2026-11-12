@@ -19,6 +19,48 @@ import { countDone, doneSentence, nextLesson, totalLessons } from '../lecons/pro
 import { useLessonsDone } from '../lecons/useDone'
 import type { Garden } from '../../types'
 import { useOnboarding } from './useOnboarding'
+import { useAutoSyncState } from '../../lib/autoSync'
+import { useEffect, useState } from 'react'
+
+const syncConfigured = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY
+const SYNC_NUDGE_SNOOZE_MS = 7 * 24 * 3600 * 1000
+
+/**
+ * Invitation à mettre ses jardins (et ses photos) en sécurité en ligne : la copie se met alors à jour toute seule à chaque modification.
+ * Seulement si la synchro existe, si l'appareil n'est pas connecté (ou n'a pas donné son accord), hors jardin d'exemple et hors parcours de départ.
+ * « Plus tard » la cache 7 jours. Attend 3 s avant de s'afficher : au démarrage la synchro vérifie d'abord si l'appareil est déjà connecté.
+ */
+function SyncNudge({ garden }: { garden: Garden }) {
+  const auto = useAutoSyncState()
+  const { guide } = useUi()
+  const plants = useGardenPlants(garden.id)
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    const t = window.setTimeout(() => setReady(true), 3000)
+    return () => window.clearTimeout(t)
+  }, [])
+  if (!syncConfigured || !ready || auto.status !== 'inactif' || plants.length === 0 || isDemoGarden(garden)) return null
+  if ((guide.syncNudgeUntil ?? 0) > Date.now()) return null
+  return (
+    <section className="nextstep syncnudge" aria-label="Copie en ligne" data-feat="synchro-invite">
+      <span className="nextstep-icon" aria-hidden>
+        <Icon name="share" size={22} />
+      </span>
+      <div className="nextstep-text">
+        <h2>Gardez vos jardins en sécurité</h2>
+        <p className="nextstep-why">Avec votre e-mail, plantes et photos se copient en ligne toutes seules. Retrouvez-les sur un autre appareil.</p>
+      </div>
+      <div className="syncnudge-actions">
+        <button className="btn small primary" onClick={() => FEATURES.find((f) => f.id === 'synchro')?.run()}>
+          Me connecter
+        </button>
+        <button className="btn small ghost" onClick={() => setGuide({ syncNudgeUntil: Date.now() + SYNC_NUDGE_SNOOZE_MS })}>
+          Plus tard
+        </button>
+      </div>
+    </section>
+  )
+}
 
 /** Prénom lu dans « Chez Marie » (rien si le nom du jardin n'a pas cette forme). */
 const firstName = (gardenName: string) => gardenName.trim().match(/^chez\s+(.+)$/i)?.[1]
@@ -211,6 +253,7 @@ export function Accueil({ garden, openTasks, newsCount, alerts = [] }: { garden:
           <Icon name="forward" size={18} />
         </button>
       )}
+      {!route && <SyncNudge garden={garden} />}
       {!route && <NextStepCard garden={garden} openTasks={openTasks} />}
       <div className="home-grid" role="group" aria-label="Que voulez-vous faire ?">
         {actions.map((a) => (
