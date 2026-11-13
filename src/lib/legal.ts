@@ -7,9 +7,9 @@ import { DATA_INVENTORY, type LegalBasis } from './security/inventory'
 export const DRAFT_BANNER = 'BROUILLON À FAIRE VALIDER PAR UN PROFESSIONNEL'
 export const DRAFT_NOTE = 'Texte provisoire, à faire valider par un professionnel avant publication. Il ne constitue pas un avis juridique.'
 
-export const LEGAL_VERSION = '1.11'
+export const LEGAL_VERSION = '1.12'
 /** Dernière mise à jour (AAAA-MM-JJ). */
-export const LEGAL_UPDATED = '2026-11-10'
+export const LEGAL_UPDATED = '2026-11-13'
 
 // ---------- Champs à compléter par l'éditeur (aucune donnée personnelle pré-remplie) ----------
 export const TO_COMPLETE = '[à compléter]'

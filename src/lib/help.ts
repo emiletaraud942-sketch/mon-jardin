@@ -60,7 +60,7 @@ export const HELP: Record<Tab, HelpContent> = {
       'L’appli regarde le soleil, la pente et les voisins de cet endroit.',
       'Les plantes sont classées de la plus adaptée à la moins adaptée.',
       '« Prévoir ici » ajoute la plante comme prévue.',
-      'Plus bas, voyez ce que vous pouvez semer ou planter ce mois-ci.',
+      'Plus bas, voyez ce que vous pouvez semer ou planter ce mois-ci, à imprimer ou à partager.',
     ],
   },
   catalogue: {

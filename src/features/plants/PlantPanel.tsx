@@ -303,6 +303,11 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
             <span>Notes</span>
             <textarea className="input" rows={3} value={plant.notes ?? ''} onChange={(e) => updatePlant(plant.id, { notes: e.target.value })} placeholder="Variété, où vous l’avez achetée, observations…" />
           </label>
+          <label className="field" data-feat="qui-sen-occupe">
+            <span>Qui s’en occupe ? (facultatif)</span>
+            <input className="input" maxLength={30} value={plant.keeper ?? ''} onChange={(e) => updatePlant(plant.id, { keeper: e.target.value })} placeholder="Un prénom ou un surnom" />
+            <span className="small muted">Utile à plusieurs sur un jardin partagé. Écrivez seulement un prénom ou un surnom, avec l’accord de la personne.</span>
+          </label>
           <NoteAssist plant={plant} species={species} />
         </div>
       </details>

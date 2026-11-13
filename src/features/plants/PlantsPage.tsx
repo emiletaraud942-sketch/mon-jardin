@@ -57,7 +57,7 @@ export function PlantsPage({ garden }: { garden: Garden }) {
 
   const groups = useMemo(() => {
     const n = normalize(q)
-    const list = plants.filter((p) => (!status || p.status === status) && (!n || normalize(plantName(p)).includes(n)))
+    const list = plants.filter((p) => (!status || p.status === status) && (!n || normalize(plantName(p)).includes(n) || normalize(p.keeper ?? '').includes(n)))
     const by = new Map<string, typeof list>()
     for (const p of list) {
       const cat = SPECIES_BY_ID[p.speciesId] ? CATEGORY_LABEL[SPECIES_BY_ID[p.speciesId].categorie] : 'Autres'
@@ -144,6 +144,7 @@ export function PlantsPage({ garden }: { garden: Garden }) {
                           <strong>{plantName(p)}</strong>
                           <span className="muted small" style={{ display: 'block' }}>
                             {p.status === 'projet' ? `Prévue pour le ${formatDate(p.plantedAt)}` : `${p.status === 'en-place' ? '' : STATUS_LABEL[p.status] + ' · '}Plantée le ${formatDate(p.plantedAt)}`}
+                            {p.keeper ? ` · ${p.keeper}` : ''}
                           </span>
                         </span>
                       </button>

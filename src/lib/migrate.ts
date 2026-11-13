@@ -6,7 +6,7 @@ import { isValidCalibration } from './calibration'
 import { uid } from './geo'
 import { sanitizePhotoMeta } from './journal'
 import { LIMITS } from './security/limits'
-import { cleanExtras, clipText, isPhotoId, isSafeId } from './security/sanitize'
+import { cleanExtras, cleanLine, clipText, isPhotoId, isSafeId } from './security/sanitize'
 
 /** Version du format stocké. Toute évolution incompatible = +1 et une étape dans `migrateState`. */
 export const STATE_VERSION = 2
@@ -38,7 +38,7 @@ const inRange = (n: number, max: number) => Math.abs(n) <= max
 const text = (v: string, max: number = LIMITS.shortText) => clipText(v, max)
 
 const GARDEN_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'address', 'center', 'altitudeM', 'parcel', 'parcelRefs', 'areaM2', 'buildings', 'terrain', 'sol', 'lastFrostDoy', 'firstFrostDoy', 'minAbsC', 'climateZone', 'rainMmPerYear', 'calibration', 'panoramas', 'createdAt'])
-const PLANT_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'speciesId', 'customName', 'position', 'plantedAt', 'ageAtPlanting', 'purchase', 'status', 'notes', 'photos', 'photoMeta', 'measurements'])
+const PLANT_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'speciesId', 'customName', 'position', 'plantedAt', 'ageAtPlanting', 'purchase', 'status', 'notes', 'keeper', 'photos', 'photoMeta', 'measurements'])
 const TASK_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'taskKey', 'status', 'until', 'doneAt'])
 
 /** Date ISO plausible : « 2024-03-10 » ou date-heure complète. Rejette « 2024-13-45 ». */
@@ -303,6 +303,10 @@ function sanitizePlant(raw: unknown, gardenIds: Set<string>, report: Report): Pl
     else delete p.purchase
   }
   if (typeof raw.notes === 'string') p.notes = text(raw.notes, LIMITS.longText)
+  // Qui s'en occupe : une ligne courte, sans caractère invisible ; vide = retiré.
+  const keeper = typeof raw.keeper === 'string' ? cleanLine(raw.keeper, 30) : ''
+  if (keeper) p.keeper = keeper
+  else delete p.keeper
   if (typeof raw.customName === 'string') p.customName = text(raw.customName)
   return p
 }

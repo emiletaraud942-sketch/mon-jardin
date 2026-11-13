@@ -22,7 +22,7 @@ export interface DataItem {
 export const DATA_INVENTORY: readonly DataItem[] = [
   {
     id: 'jardins',
-    donnee: 'Jardins : nom, adresse, position du centre, contour de parcelle, bâtiments, relief, plantes (position au mètre près, notes, informations d’achat facultatives : forme, hauteur, lieu et prix ; date et note facultative liées à chaque photo, dans le journal de la plante), tâches faites',
+    donnee: 'Jardins : nom, adresse, position du centre, contour de parcelle, bâtiments, relief, plantes (position au mètre près, notes, nom facultatif de la personne qui s’en occupe : un prénom ou un surnom que vous écrivez, informations d’achat facultatives : forme, hauteur, lieu et prix ; date et note facultative liées à chaque photo, dans le journal de la plante), tâches faites',
     stockage: 'IndexedDB du navigateur (clé permajardin:state:v1) ; copies de sécurité (« avant migration », « précédente », « illisible ») : l’état d’avant une correction au chargement, un remplacement par la synchro ou l’import, ou des données illisibles ; copie de secours dans le localStorage (clé permajardin:state:v1:miroir) qui évite de perdre la dernière modification si le navigateur se ferme trop vite',
     destinataires: [],
     finalite: 'Fournir le service : carte, calendrier d’entretien',
@@ -172,8 +172,8 @@ export const DATA_INVENTORY: readonly DataItem[] = [
   },
   {
     id: 'preferences',
-    donnee: 'Préférences et repères : thème, date du dernier export, première utilisation, dernière notification, dernière synchronisation, date de votre dernière visite à l’entraide (pour afficher les nouveautés), leçons « Apprendre à jardiner » terminées (liste d’identifiants, jamais envoyée ni synchronisée)',
-    stockage: 'localStorage (clés permajardin:… et pj.lessons)',
+    donnee: 'Préférences et repères : thème, date du dernier export, première utilisation, dernière notification, dernière synchronisation, date de votre dernière visite à l’entraide (pour afficher les nouveautés), leçons « Apprendre à jardiner » terminées (liste d’identifiants, jamais envoyée ni synchronisée), liste « Mes graines » (noms de sachets que vous écrivez, dates, à donner ou non ; cet appareil seulement, jamais envoyée ni synchronisée)',
+    stockage: 'localStorage (clés permajardin:… et pj.lessons, pj.seeds)',
     destinataires: [],
     finalite: 'Confort d’usage (rappel de sauvegarde, une notification par jour au plus)',
     base: 'interet-legitime',
@@ -295,6 +295,7 @@ export const LOCAL_STORAGE_KEYS: readonly StorageKeyInfo[] = [
   { cle: 'pj.guide', contenu: 'Aides et repères mémorisés : étapes d’accueil, cartes repliées, identifiants des jardins dont l’Entretien a été ouvert' },
   { cle: 'pj.bigTaps', contenu: 'Réglage « Grandes touches » : boutons de 56 px de haut' },
   { cle: 'pj.lessons', contenu: 'Leçons « Apprendre à jardiner » terminées (liste d’identifiants de leçons, rien d’autre ; jamais envoyée ni synchronisée)' },
+  { cle: 'pj.seeds', contenu: 'Liste « Mes graines » : noms de sachets, date de récolte, à donner ou non, note courte (cet appareil seulement ; jamais envoyée ni synchronisée)' },
   { cle: 'pj.tourSeen', contenu: 'Visite des fonctions déjà montrée au premier lancement (elle se rejoue depuis l’aide)' },
   { cle: 'pj.lidar', contenu: 'Réglage du relevé LiDAR HD' },
   { cle: 'pj.mapNames', contenu: 'Noms des plantes sur la carte affichés ou non' },

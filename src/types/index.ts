@@ -237,6 +237,8 @@ export interface Plant {
   purchase?: PlantPurchase
   status: PlantStatus
   notes?: string
+  /** Qui s'en occupe (prénom ou surnom, 30 caractères au plus) : utile pour un jardin partagé. Facultatif. */
+  keeper?: string
   photos: string[] // ids de photos (IndexedDB)
   /**
    * Journal : date (jour local AAAA-MM-JJ, posée à la prise) et note (140 caractères au plus) de chaque photo, par identifiant de `photos`.

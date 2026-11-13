@@ -226,7 +226,7 @@ describe('leçons : registre et ouverture', () => {
     expect(f.rubrique).toBe('afaire')
     expect(wordCount(f.phrase)).toBeLessThanOrEqual(MAX_WORDS)
     expect(visibleFeatures().map((x) => x.id)).toContain('apprendre-jardiner')
-    expect(FEATURES).toHaveLength(81)
+    expect(FEATURES).toHaveLength(85)
   })
   it('on la trouve avec les mots d’un débutant', () => {
     for (const q of ['leçon', 'leçons', 'apprendre', 'formation', 'permaculture', 'débutant', 'cours'])

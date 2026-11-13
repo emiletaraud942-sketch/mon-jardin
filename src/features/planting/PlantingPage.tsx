@@ -1,4 +1,5 @@
-import { lazy, Suspense, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { BottomSheet, type SheetSnap } from '../../components/BottomSheet'
 import { useIsMobile } from '../../components/useMedia'
 import { SPECIES, SPECIES_BY_ID } from '../../data/species'
@@ -21,8 +22,15 @@ import { MONTH_NAMES, whatToSowNow } from '../../engine/calendar'
 import type { Category, Garden, Month, Species, XY } from '../../types'
 import { placePlant } from '../map/placing'
 import { scoreLabel, slopePhrase, sunPhrase } from './scoreLabel'
+import { Icon } from '../../components/Icon'
+import { canShareText, copyText, shareOrCopy } from '../../lib/shareText'
+import { showToast } from '../../lib/toast'
+import { printWeek } from '../tasks/WeekSheet'
+import { buildSowSheet, sowSheetText } from './sowSheet'
 import '../../styles/novice-pages.css'
 
+// « Mes graines » se charge à la demande : l'écran « Où planter ? » reste léger (budget du chunk d'entrée).
+const SeedsCard = lazy(() => import('./Seeds').then((m) => ({ default: m.SeedsCard })))
 const SpotPicker = lazy(() => import('./SpotPicker').then((m) => ({ default: m.SpotPicker })))
 
 function SpeciesChips({ list }: { list: Species[] }) {
@@ -34,6 +42,75 @@ function SpeciesChips({ list }: { list: Species[] }) {
           <span className="dot" style={{ background: s.couleurAccent ?? s.couleur }} /> {s.nomCommun}
         </button>
       ))}
+    </div>
+  )
+}
+
+/** « Imprimer » et « Partager » la feuille du mois (même mécanique que « Ma semaine » : la feuille est cachée à l'écran). */
+function SowActions({ garden, month, now }: { garden: Garden; month: Month; now: { semisAbri: Species[]; semisPleineTerre: Species[]; plantation: Species[]; recolte: Species[] } }) {
+  const [today] = useState(() => new Date())
+  const sheet = useMemo(
+    () =>
+      buildSowSheet({
+        monthName: MONTH_NAMES[month - 1],
+        gardenName: garden.name,
+        now: today,
+        semisAbri: now.semisAbri.map((s) => s.nomCommun),
+        semisPleineTerre: now.semisPleineTerre.map((s) => s.nomCommun),
+        plantation: now.plantation.map((s) => s.nomCommun),
+        recolte: now.recolte.map((s) => s.nomCommun),
+      }),
+    [garden.name, month, now, today],
+  )
+  const [manual, setManual] = useState(false)
+  const field = useRef<HTMLTextAreaElement>(null)
+  const share = canShareText()
+  const text = sowSheetText(sheet)
+  useEffect(() => {
+    if (manual) field.current?.select()
+  }, [manual])
+  async function go() {
+    const r = share ? await shareOrCopy(text, sheet.title) : await copyText(text)
+    if (r === 'copied') showToast({ message: 'Liste copiée. Collez-la dans vos notes ou un message.' })
+    if (r === 'manual') setManual(true)
+  }
+  return (
+    <div className="afaire-print">
+      {createPortal(
+        <section className="print-week" aria-hidden="true">
+          <h1>{sheet.title}</h1>
+          <p className="pw-range">{sheet.subtitle}</p>
+          {sheet.empty && <p>Rien à indiquer ce mois-ci.</p>}
+          {sheet.groups.map((g) => (
+            <div key={g.id} className="pw-group">
+              <h2>
+                {g.title} ({g.names.length})
+              </h2>
+              <ul>
+                {g.names.map((n) => (
+                  <li key={n}>
+                    <span className="pw-box" />
+                    <span className="pw-text">
+                      <strong>{n}</strong>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+          <p className="pw-footer">{sheet.footer}</p>
+        </section>,
+        document.body,
+      )}
+      <div className="row" style={{ marginTop: 12 }}>
+        <button type="button" className="btn" data-feat="imprimer-semis" disabled={sheet.empty} onClick={printWeek}>
+          <Icon name="download" /> Imprimer cette liste
+        </button>
+        <button type="button" className="btn" data-feat="partager-semis" disabled={sheet.empty} onClick={() => void go()}>
+          <Icon name="users" /> {share ? 'Partager cette liste' : 'Copier cette liste'}
+        </button>
+      </div>
+      {manual && <textarea ref={field} className="input" readOnly rows={6} value={text} aria-label="Liste à copier" onFocus={(e) => e.currentTarget.select()} />}
     </div>
   )
 }
@@ -75,6 +152,7 @@ function SowNow({ garden }: { garden: Garden }) {
       <SpeciesChips list={now.plantation} />
       <h3 style={{ marginTop: 12 }}>Récolter</h3>
       <SpeciesChips list={now.recolte} />
+      <SowActions garden={garden} month={month} now={now} />
     </div>
   )
 }
@@ -262,6 +340,9 @@ export function PlantingPage({ garden }: { garden: Garden }) {
         <BestForSpot garden={garden} />
         <SowNow garden={garden} />
       </div>
+      <Suspense fallback={null}>
+        <SeedsCard />
+      </Suspense>
     </div>
   )
 }

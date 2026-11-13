@@ -33,6 +33,15 @@ describe('migrateState', () => {
     expect(r.warnings.length).toBeGreaterThan(0)
   })
 
+  it('garde « qui s’en occupe » (une ligne courte, nettoyée) et retire une valeur vide ou d’un autre type', () => {
+    const k = (v: unknown) => ok({ gardens: [garden], plants: [{ ...plant, keeper: v }] }).data.plants[0].keeper
+    expect(k('  Marie\n\u202e et   Paul ')).toBe('Marie et Paul')
+    expect(k('x'.repeat(200))!.length).toBeLessThanOrEqual(30)
+    expect(k('   ')).toBeUndefined()
+    expect(k(42)).toBeUndefined()
+    expect(ok({ gardens: [garden], plants: [plant] }).data.plants[0].keeper).toBeUndefined()
+  })
+
   it('garde la zone et la pluie du climat (champs plats) et écarte les valeurs absurdes', () => {
     const g = ok({ gardens: [{ ...garden, climateZone: '8a', rainMmPerYear: 647 }], plants: [] }).data.gardens[0]
     expect(g.climateZone).toBe('8a')
