@@ -127,6 +127,8 @@ jobs:
         with:
           persist-credentials: false
       - run: bash supabase/neighbors/tests/run.sh
+      # Jardins partagés : même principe (base « shared_test » jetable, échec au premier FAIL).
+      - run: bash supabase/tests/shared-gardens/run.sh
 
   codeql:
     name: Analyse CodeQL (JavaScript et TypeScript)
