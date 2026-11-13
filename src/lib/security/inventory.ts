@@ -91,6 +91,16 @@ export const DATA_INVENTORY: readonly DataItem[] = [
     effacement: 'Réglages > Vie privée > Effacer toutes mes données, avec la case « Supprimer aussi ma sauvegarde en ligne » (supprime l’instantané et les photos en ligne). Pour supprimer aussi le compte (adresse e-mail), écrire à l’éditeur',
   },
   {
+    id: 'jardins-partages',
+    donnee: 'Jardins partagés (facultatif) : nom, position et plan du jardin ; pour chaque plante son nom, sa place, ses notes, son état et le prénom ou surnom de la personne qui s’en occupe (jamais les photos ni les achats) ; votre nom d’affichage et votre rôle dans le jardin ; les codes d’invitation (7 jours)',
+    stockage: 'Supabase (tables shared_gardens, shared_garden_members, shared_garden_invites et shared_plants, protégées par RLS : seuls les membres du jardin y accèdent ; aucun accès sans compte)',
+    destinataires: ['Supabase (sous-traitant : hébergement)', 'Les autres membres du jardin partagé (20 au plus, invités par un responsable avec un code)'],
+    finalite: 'Jardiner à plusieurs sur le même jardin. Fonction facultative : chaque membre garde aussi le jardin sur son appareil.',
+    base: 'consentement',
+    duree: 'Jusqu’à ce que le jardin soit supprimé par un responsable ou que le dernier membre parte. Les plantes ajoutées par une personne qui quitte le jardin y restent.',
+    effacement: 'Réglages > Jardin partagé > Quitter ce jardin (votre appartenance est effacée) ou Supprimer le jardin partagé (responsable : tout est effacé en ligne). La suppression du compte efface aussi votre appartenance.',
+  },
+  {
     id: 'entraide-compte',
     donnee: 'Entraide entre voisins : adresse e-mail du compte (code de connexion), jeton de session, adresse IP et navigateur des connexions (conservés par le service d’authentification Supabase)',
     stockage: 'Projet Supabase DÉDIÉ à l’entraide (authentification, distinct de la synchronisation) ; jeton dans le localStorage (clé sb-neighbors-auth-token)',

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import type { SyncConflictError } from '../../lib/sync'
 import { ConfirmModal } from '../../components/ConfirmModal'
@@ -484,6 +484,8 @@ function Backup() {
 type SyncModule = typeof import('../../lib/sync')
 
 const syncConfigured = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY
+// « Jardin partagé » se charge à la demande : l'écran Réglages et le chunk d'entrée restent légers.
+const SharedGardensCard = lazy(() => import('../shared/SharedGardens').then((m) => ({ default: m.SharedGardensCard })))
 
 function Sync() {
   // supabase-js est chargé à l'ouverture des Réglages seulement (pas au démarrage de l'appli).
@@ -918,6 +920,11 @@ export function SettingsPage({ garden }: { garden: Garden }) {
           <TourCard />
           <InstallCard />
           <Sync />
+          {syncConfigured && (
+            <Suspense fallback={null}>
+              <SharedGardensCard />
+            </Suspense>
+          )}
           <PrivacyCard />
           <Fold title="Sources et licences">
               <ul className="list small">
