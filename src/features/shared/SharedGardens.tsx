@@ -6,7 +6,7 @@ import { Modal } from '../../components/Modal'
 import { hasConsent } from '../../lib/consent'
 import { getState, setActiveGarden, updateGarden, useActiveGarden } from '../../lib/store'
 import { canShareText, copyText, shareOrCopy } from '../../lib/shareText'
-import { currentUser } from '../../lib/sync'
+import { currentUser, supabase } from '../../lib/sync'
 import { showToast } from '../../lib/toast'
 import { createInvite, createSharedGarden, deleteSharedGarden, joinSharedGarden, leaveSharedGarden, listMembers, removeMember, renameMe, setMemberRole, type Member } from '../../lib/shared/api'
 import { detachGarden, importSharedGarden, syncSharedGarden } from '../../lib/shared/engine'
@@ -30,9 +30,13 @@ export function SharedGardensCard() {
   const [pending, setPending] = useState<'share' | 'join'>()
   useEffect(() => {
     let alive = true
-    void currentUser().then((u) => alive && setSignedIn(!!u)).catch(() => alive && setSignedIn(false))
+    const check = () => void currentUser().then((u) => alive && setSignedIn(!!u)).catch(() => alive && setSignedIn(false))
+    check()
+    // Connexion ou déconnexion pendant que l'écran est ouvert : la carte se met à jour toute seule.
+    const sub = supabase()?.auth.onAuthStateChange(() => check())
     return () => {
       alive = false
+      sub?.data.subscription.unsubscribe()
     }
   }, [])
 
