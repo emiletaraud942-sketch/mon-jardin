@@ -26,6 +26,18 @@ test('graines et liste des semis', async ({ page, baseURL }) => {
   await expect(semer.locator('[data-feat=imprimer-semis]')).toBeVisible()
   await expect(semer.locator('[data-feat=partager-semis]')).toBeVisible()
 
+  // 1 bis. Les listes sont courtes d'emblée (4 plantes au plus), le reste est derrière « Voir les N autres ».
+  for (const h of await semer.locator('h3').all()) {
+    const chips = h.locator('xpath=following-sibling::div[1]').locator('button.btn.small:not(.ghost)')
+    expect(await chips.count()).toBeLessThanOrEqual(4)
+  }
+  const plus = semer.getByRole('button', { name: /^Voir les \d+ autres$/ }).first()
+  if (await plus.count()) {
+    await plus.click()
+    await expect(semer.getByRole('button', { name: 'Voir moins' }).first()).toBeVisible()
+    await semer.getByRole('button', { name: 'Voir moins' }).first().click()
+  }
+
   // 2. Mes graines : ajouter, marquer « à donner », retirer, annuler.
   const graines = page.locator('[data-feat=mes-graines]')
   await graines.scrollIntoViewIfNeeded()

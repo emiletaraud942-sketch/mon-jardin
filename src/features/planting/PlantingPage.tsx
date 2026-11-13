@@ -26,7 +26,7 @@ import { Icon } from '../../components/Icon'
 import { canShareText, copyText, shareOrCopy } from '../../lib/shareText'
 import { showToast } from '../../lib/toast'
 import { printWeek } from '../tasks/WeekSheet'
-import { buildSowSheet, sowSheetText } from './sowSheet'
+import { buildSowSheet, previewList, SOW_PREVIEW, sowSheetText } from './sowSheet'
 import '../../styles/novice-pages.css'
 
 // « Mes graines » se charge à la demande : l'écran « Où planter ? » reste léger (budget du chunk d'entrée).
@@ -34,14 +34,27 @@ const SeedsCard = lazy(() => import('./Seeds').then((m) => ({ default: m.SeedsCa
 const SpotPicker = lazy(() => import('./SpotPicker').then((m) => ({ default: m.SpotPicker })))
 
 function SpeciesChips({ list }: { list: Species[] }) {
+  // Liste courte d'emblée (les idées suivantes derrière un bouton) : sinon « Mes graines » et le partage restaient très loin en bas de l'écran.
+  const [expanded, setExpanded] = useState(false)
   if (list.length === 0) return <p className="muted small">Rien à faire ce mois-ci.</p>
+  const { shown, hidden } = previewList(list, expanded)
   return (
     <div className="row">
-      {list.map((s) => (
+      {shown.map((s) => (
         <button key={s.id} className="btn small" onClick={() => openSpecies(s.id)}>
           <span className="dot" style={{ background: s.couleurAccent ?? s.couleur }} /> {s.nomCommun}
         </button>
       ))}
+      {hidden > 0 && (
+        <button type="button" className="btn small ghost" aria-expanded={false} onClick={() => setExpanded(true)}>
+          Voir les {hidden} autres
+        </button>
+      )}
+      {expanded && list.length > SOW_PREVIEW && (
+        <button type="button" className="btn small ghost" aria-expanded={true} onClick={() => setExpanded(false)}>
+          Voir moins
+        </button>
+      )}
     </div>
   )
 }
@@ -144,7 +157,8 @@ function SowNow({ garden }: { garden: Garden }) {
         )}
         <p className="small muted">« À l’abri » : dans la maison, une serre ou un châssis.</p>
       </details>
-      <h3>Semer à l’abri</h3>
+      <SowActions garden={garden} month={month} now={now} />
+      <h3 style={{ marginTop: 12 }}>Semer à l’abri</h3>
       <SpeciesChips list={now.semisAbri} />
       <h3 style={{ marginTop: 12 }}>Semer en pleine terre</h3>
       <SpeciesChips list={now.semisPleineTerre} />
@@ -152,7 +166,6 @@ function SowNow({ garden }: { garden: Garden }) {
       <SpeciesChips list={now.plantation} />
       <h3 style={{ marginTop: 12 }}>Récolter</h3>
       <SpeciesChips list={now.recolte} />
-      <SowActions garden={garden} month={month} now={now} />
     </div>
   )
 }

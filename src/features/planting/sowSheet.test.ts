@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildSowSheet, sowSheetText } from './sowSheet'
+import { buildSowSheet, previewList, SOW_PREVIEW, sowSheetText } from './sowSheet'
 
 const now = new Date(2026, 10, 13)
 const base = { monthName: 'Novembre', gardenName: 'Chez moi', now, semisAbri: [], semisPleineTerre: [], plantation: [], recolte: [] }
@@ -23,5 +23,17 @@ describe('feuille « Que semer ce mois »', () => {
     expect(t).toContain('☐ Tomate')
     expect(t).toContain('Jardin : Chez moi')
     expect(t).toContain('conseils généraux')
+  })
+})
+
+describe('listes raccourcies du mois', () => {
+  const list = Array.from({ length: 15 }, (_, i) => i)
+  it('montre les premières seulement, et dit combien restent', () => {
+    expect(previewList(list, false)).toEqual({ shown: list.slice(0, SOW_PREVIEW), hidden: 15 - SOW_PREVIEW })
+  })
+  it('montre tout une fois dépliée, ou quand la liste est courte', () => {
+    expect(previewList(list, true)).toEqual({ shown: list, hidden: 0 })
+    expect(previewList(list.slice(0, SOW_PREVIEW), false).hidden).toBe(0)
+    expect(previewList([], false)).toEqual({ shown: [], hidden: 0 })
   })
 })

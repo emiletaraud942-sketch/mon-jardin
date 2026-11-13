@@ -58,3 +58,12 @@ export function sowSheetText(s: SowSheet): string {
   lines.push(s.footer)
   return lines.join('\n')
 }
+
+/** Nombre de plantes montrées d'emblée dans chaque liste du mois : les suivantes sont derrière « Voir les N autres ». */
+export const SOW_PREVIEW = 4
+
+/** Les plantes à montrer : les `max` premières, ou toutes si la liste est dépliée ; `hidden` = combien restent cachées. */
+export function previewList<T>(list: readonly T[], expanded: boolean, max: number = SOW_PREVIEW): { shown: T[]; hidden: number } {
+  if (expanded || list.length <= max) return { shown: [...list], hidden: 0 }
+  return { shown: list.slice(0, max), hidden: list.length - max }
+}
