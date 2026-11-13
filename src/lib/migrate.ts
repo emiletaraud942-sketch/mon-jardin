@@ -37,7 +37,7 @@ const inRange = (n: number, max: number) => Math.abs(n) <= max
 /** Texte raccourci à `max` caractères (les données importées ne sont pas dignes de confiance). */
 const text = (v: string, max: number = LIMITS.shortText) => clipText(v, max)
 
-const GARDEN_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'address', 'center', 'altitudeM', 'parcel', 'parcelRefs', 'areaM2', 'buildings', 'terrain', 'sol', 'lastFrostDoy', 'firstFrostDoy', 'minAbsC', 'climateZone', 'rainMmPerYear', 'calibration', 'panoramas', 'createdAt'])
+const GARDEN_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'address', 'center', 'altitudeM', 'parcel', 'parcelRefs', 'areaM2', 'buildings', 'terrain', 'sol', 'lastFrostDoy', 'firstFrostDoy', 'minAbsC', 'climateZone', 'rainMmPerYear', 'calibration', 'panoramas', 'shared', 'createdAt'])
 const PLANT_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'speciesId', 'customName', 'position', 'plantedAt', 'ageAtPlanting', 'purchase', 'status', 'notes', 'keeper', 'photos', 'photoMeta', 'measurements'])
 const TASK_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'taskKey', 'status', 'until', 'doneAt'])
 
@@ -121,6 +121,10 @@ function sanitizeGarden(raw: unknown, report: Report): Garden | undefined {
   }
   if (isNum(raw.rainMmPerYear) && raw.rainMmPerYear >= 0 && raw.rainMmPerYear <= 15_000) g.rainMmPerYear = raw.rainMmPerYear
   if (typeof raw.sol === 'string' && SOILS.has(raw.sol)) g.sol = raw.sol as SoilTexture
+  // Jardin partagé : identifiant du jardin en ligne (un UUID) et rôle ; toute autre forme est ignorée (le jardin redevient personnel).
+  const sh = raw.shared as { id?: unknown; role?: unknown } | undefined
+  if (sh && typeof sh === 'object' && typeof sh.id === 'string' && /^[0-9a-f-]{36}$/i.test(sh.id)) g.shared = { id: sh.id.toLowerCase(), role: sh.role === 'admin' ? 'admin' : 'member' }
+  else delete g.shared
   if (Array.isArray(raw.parcelRefs)) {
     g.parcelRefs = raw.parcelRefs
       .filter((r): r is string => typeof r === 'string')

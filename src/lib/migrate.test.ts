@@ -42,6 +42,16 @@ describe('migrateState', () => {
     expect(ok({ gardens: [garden], plants: [plant] }).data.plants[0].keeper).toBeUndefined()
   })
 
+  it('garde le lien d’un jardin partagé (identifiant et rôle) et écarte toute autre forme', () => {
+    const id = '11111111-1111-4111-8111-111111111111'
+    const sh = (v: unknown) => ok({ gardens: [{ ...garden, shared: v }], plants: [] }).data.gardens[0].shared
+    expect(sh({ id, role: 'admin' })).toEqual({ id, role: 'admin' })
+    expect(sh({ id: id.toUpperCase(), role: 'chef' })).toEqual({ id, role: 'member' })
+    expect(sh({ id: 'pas-un-uuid', role: 'admin' })).toBeUndefined()
+    expect(sh('oui')).toBeUndefined()
+    expect(sh(undefined)).toBeUndefined()
+  })
+
   it('garde la zone et la pluie du climat (champs plats) et écarte les valeurs absurdes', () => {
     const g = ok({ gardens: [{ ...garden, climateZone: '8a', rainMmPerYear: 647 }], plants: [] }).data.gardens[0]
     expect(g.climateZone).toBe('8a')

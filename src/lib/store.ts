@@ -660,6 +660,17 @@ export function removePlant(id: string, opts: { keepPhotos?: boolean } = {}) {
   if (!opts.keepPhotos) dropPhotos(removed, state.plants)
 }
 
+/**
+ * Jardin partagé : remplace les plantes d'UN jardin par celles qu'on vient de reprendre en ligne (déjà validées). Les photos des plantes
+ * retirées sont purgées ; rien n'est ajouté à l'historique « Annuler » (ce ne sont pas des gestes de cette personne).
+ */
+export function applySharedPlants(gardenId: string, plants: Plant[]) {
+  const before = state.plants.filter((p) => p.gardenId === gardenId)
+  setState((s) => ({ plants: [...s.plants.filter((p) => p.gardenId !== gardenId), ...plants] }))
+  const gone = before.filter((p) => !plants.some((q) => q.id === p.id))
+  if (gone.length) dropPhotos(gone, state.plants)
+}
+
 export function markTaskDone(t: TaskDone) {
   setState((s) => ({ tasksDone: [...s.tasksDone, t] }))
 }

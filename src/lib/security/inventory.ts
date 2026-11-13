@@ -173,7 +173,7 @@ export const DATA_INVENTORY: readonly DataItem[] = [
   {
     id: 'preferences',
     donnee: 'Préférences et repères : thème, date du dernier export, première utilisation, dernière notification, dernière synchronisation, date de votre dernière visite à l’entraide (pour afficher les nouveautés), leçons « Apprendre à jardiner » terminées (liste d’identifiants, jamais envoyée ni synchronisée), liste « Mes graines » (noms de sachets que vous écrivez, dates, à donner ou non ; cet appareil seulement, jamais envoyée ni synchronisée)',
-    stockage: 'localStorage (clés permajardin:… et pj.lessons, pj.seeds)',
+    stockage: 'localStorage (clés permajardin:… et pj.lessons, pj.seeds, pj.sharedSync)',
     destinataires: [],
     finalite: 'Confort d’usage (rappel de sauvegarde, une notification par jour au plus)',
     base: 'interet-legitime',
@@ -295,6 +295,7 @@ export const LOCAL_STORAGE_KEYS: readonly StorageKeyInfo[] = [
   { cle: 'pj.guide', contenu: 'Aides et repères mémorisés : étapes d’accueil, cartes repliées, identifiants des jardins dont l’Entretien a été ouvert' },
   { cle: 'pj.bigTaps', contenu: 'Réglage « Grandes touches » : boutons de 56 px de haut' },
   { cle: 'pj.lessons', contenu: 'Leçons « Apprendre à jardiner » terminées (liste d’identifiants de leçons, rien d’autre ; jamais envoyée ni synchronisée)' },
+  { cle: 'pj.sharedSync', contenu: 'Jardins partagés : pour chaque jardin, l’heure de la dernière reprise et, par plante, l’heure et l’empreinte de la version connue (jamais le contenu des plantes ; cet appareil seulement)' },
   { cle: 'pj.seeds', contenu: 'Liste « Mes graines » : noms de sachets, date de récolte, à donner ou non, note courte (cet appareil seulement ; jamais envoyée ni synchronisée)' },
   { cle: 'pj.tourSeen', contenu: 'Visite des fonctions déjà montrée au premier lancement (elle se rejoue depuis l’aide)' },
   { cle: 'pj.lidar', contenu: 'Réglage du relevé LiDAR HD' },

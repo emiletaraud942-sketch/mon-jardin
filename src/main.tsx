@@ -57,6 +57,8 @@ function startSync() {
     .then((r) => {
       // Synchronisation automatique (compte connecté et accord donné) : jamais d'écrasement silencieux (voir autoSync.ts).
       void startAutoSync().catch((e) => console.warn('Synchronisation automatique indisponible', e))
+      // Jardins partagés : chargés à la demande (rien ne part sans jardin partagé ni compte connecté).
+      void import('./lib/shared/engine').then((m) => m.startSharedSync()).catch((e) => console.warn('Jardins partagés indisponibles', e))
       if (!r.handled) return
       setUi({ tab: 'reglages' })
       if (r.error) showToast({ message: r.error, tone: 'error' })

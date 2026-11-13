@@ -170,7 +170,14 @@ export interface Garden {
   calibration?: Calibration
   /** Points de vue en photos (façon Street View). Métadonnées seulement : les photos sont dans IndexedDB (src/lib/photos.ts), jamais synchronisées ; exportées seulement dans la sauvegarde complète (src/lib/backupFull.ts), fichier que la personne garde. */
   panoramas?: Panorama[]
+  /** Jardin partagé : identifiant du jardin en ligne et rôle de cette personne. Absent : jardin personnel. Les plantes se synchronisent avec les autres membres (src/lib/shared). */
+  shared?: SharedLink
   createdAt: string
+}
+
+export interface SharedLink {
+  id: string
+  role: 'admin' | 'member'
 }
 
 /** Une photo d'un point de vue : son cap (0 = nord, sens horaire) et sa largeur de champ (degrés). */
