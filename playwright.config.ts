@@ -35,8 +35,8 @@ export default defineConfig({
     launchOptions: { executablePath, args },
   },
   projects: [
-    { name: 'mobile-390', testIgnore: /(entraide|synchro|jardin-partage)\.spec/, use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 }, launchOptions: { executablePath, args } } },
-    { name: 'bureau-1280', testIgnore: /(entraide|synchro|jardin-partage)\.spec/, use: { viewport: { width: 1280, height: 800 } } },
+    { name: 'mobile-390', testIgnore: /(entraide|synchro|jardin-partage|jardin-partage-accueil)\.spec/, use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 }, launchOptions: { executablePath, args } } },
+    { name: 'bureau-1280', testIgnore: /(entraide|synchro|jardin-partage|jardin-partage-accueil)\.spec/, use: { viewport: { width: 1280, height: 800 } } },
     ...(withEntraide
       ? [
           {
@@ -50,7 +50,7 @@ export default defineConfig({
       ? [
           {
             name: 'synchro-390',
-            testMatch: /(synchro|jardin-partage)\.spec/,
+            testMatch: /(synchro|jardin-partage|jardin-partage-accueil)\.spec/,
             use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 }, baseURL: `http://127.0.0.1:${PORT_SYNCHRO}`, launchOptions: { executablePath, args } },
           },
         ]

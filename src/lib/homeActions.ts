@@ -19,9 +19,10 @@ export interface HomeAction {
   featured?: boolean
 }
 
-/** Les actions principales, dans l'ordre. « Voisins » ne s'affiche que si l'entraide est configurée (`visibleSi` du registre). */
+/** Les actions principales, dans l'ordre. « Voisins » et « Jardin partagé » ne s'affichent que si le service en ligne est configuré (`visibleSi` du registre). L'aide de l'écran reste dans l'en-tête (« Aide »). */
 export const HOME_ACTIONS: HomeAction[] = [
   { id: 'ajouter', mot: 'Ajouter une plante', phrase: 'Touchez la carte pour la poser.', icon: 'plus', featureId: 'ajouter-plante', primary: true },
+  { id: 'partage', mot: 'Jardin partagé', phrase: 'Jardiner à plusieurs, avec un code.', icon: 'users', featureId: 'jardin-partage' },
   { id: 'apprendre', mot: 'Apprendre à jardiner', phrase: `${LECON_OUTLINE.length} leçons courtes et un petit quiz.`, icon: 'book', featureId: 'apprendre-jardiner', featured: true },
   { id: 'conseils', mot: 'Compost et économie d’eau', phrase: 'Faire son compost, arroser moins.', icon: 'drop', featureId: 'conseils-compost-eau', featured: true },
   { id: 'carte', mot: 'Voir mon jardin', phrase: 'Votre terrain, vu du ciel.', icon: 'map', featureId: 'carte' },
@@ -32,7 +33,6 @@ export const HOME_ACTIONS: HomeAction[] = [
   { id: 'planter', mot: 'Où planter ?', phrase: 'Quelle plante va où, chez vous.', icon: 'leaf', featureId: 'ou-planter' },
   { id: 'voisins', mot: 'Voisins', phrase: 'Dons, échanges, rendez-vous.', icon: 'users', featureId: 'voisins' },
   { id: 'tout', mot: 'Tout ce que je peux faire', phrase: 'Chaque fonction, avec recherche.', icon: 'list', special: 'tout' },
-  { id: 'aide', mot: 'Aide', phrase: 'Explique l’écran où vous êtes.', icon: 'help', featureId: 'aide-ecran' },
 ]
 
 /** Boutons de pied : le mode guidé et la feuille « Je suis perdu » (la pastille flottante est cachée sur l'accueil). */

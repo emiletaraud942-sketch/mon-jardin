@@ -235,7 +235,7 @@ test('jardin partagé : Alice partage, Bob rejoint avec un code et modifie, Alic
   await a.getByRole('button', { name: 'Partager ce jardin' }).click()
   await expect(carteA.getByText('est partagé. Vous y êtes responsable.')).toBeVisible({ timeout: 30_000 })
   await expect(carteA.getByRole('list', { name: 'Membres du jardin' }).getByText('Alice')).toBeVisible()
-  expect([...srv.plantes.values()].filter((r) => r.data.speciesId === 'abricotier'), 'les deux abricotiers sont en ligne').toHaveLength(2)
+  await expect.poll(() => [...srv.plantes.values()].filter((r) => r.data.speciesId === 'abricotier').length, { message: 'les deux abricotiers sont en ligne', timeout: 20_000 }).toBe(2)
   await carteA.getByRole('button', { name: 'Inviter quelqu’un' }).click()
   const code = (await a.getByTestId('invite-code').innerText()).replace(/\s/g, '')
   expect(code).toMatch(/^[A-Z0-9]{8}$/)

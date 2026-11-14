@@ -11,6 +11,7 @@ describe('gros boutons de l’accueil', () => {
   it('l’ordre est fixe et les mots sont ceux du propriétaire', () => {
     expect(HOME_ACTIONS.map((a) => a.mot)).toEqual([
       'Ajouter une plante',
+      'Jardin partagé',
       'Apprendre à jardiner',
       'Compost et économie d’eau',
       'Voir mon jardin',
@@ -21,18 +22,17 @@ describe('gros boutons de l’accueil', () => {
       'Où planter ?',
       'Voisins',
       'Tout ce que je peux faire',
-      'Aide',
     ])
     expect(HOME_HELPERS.map((a) => a.mot)).toEqual(['Je ne sais pas par où commencer', 'Je suis perdu'])
   })
 
-  it('« Apprendre à jardiner » puis « Compost et économie d’eau » sont sur l’accueil, juste après « Ajouter une plante », mis à l’honneur sans être le bouton plein', () => {
+  it('« Apprendre à jardiner » puis « Compost et économie d’eau » sont sur l’accueil, juste après « Ajouter une plante » et « Jardin partagé », mis à l’honneur sans être le bouton plein', () => {
     const i = HOME_ACTIONS.findIndex((a) => a.id === 'apprendre')
-    expect(i).toBe(1)
+    expect(i).toBe(2)
     expect(HOME_ACTIONS[i]).toMatchObject({ featureId: 'apprendre-jardiner', featured: true })
     expect(HOME_ACTIONS[i].primary).toBeFalsy()
-    expect(HOME_ACTIONS[2]).toMatchObject({ id: 'conseils', featureId: 'conseils-compost-eau', featured: true })
-    expect(HOME_ACTIONS[2].primary).toBeFalsy()
+    expect(HOME_ACTIONS[3]).toMatchObject({ id: 'conseils', featureId: 'conseils-compost-eau', featured: true })
+    expect(HOME_ACTIONS[3].primary).toBeFalsy()
     expect(HOME_ACTIONS.filter((a) => a.featured).map((a) => a.id)).toEqual(['apprendre', 'conseils'])
     expect(HOME_ACTIONS.filter((a) => a.primary).map((a) => a.id)).toEqual(['ajouter'])
     expect(css).toMatch(/\.home-btn\.featured \{\s*border-color: var\(--accent\);\s*background: var\(--accent-soft\);/)
