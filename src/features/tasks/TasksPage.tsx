@@ -169,6 +169,9 @@ function FlashCard({ item, onUndo, onClose }: { item: Flash; onUndo: () => void;
   );
 }
 
+/** Réglage « sans produit » : une tâche « Traiter » devient « Protéger » (le geste reste la prévention, sans produit). */
+const noTreat = (text: string, type: string, zero: boolean) => (zero && type === "traitement" ? text.replace(/Traiter/g, "Protéger").replace(/traiter/g, "protéger") : text);
+
 function TaskItem({
   garden,
   task,
@@ -198,8 +201,8 @@ function TaskItem({
         {task.alert ? <Icon name={ALERT_ICON[task.alert]} size={30} /> : <span className="tcard-emoji">{TASK_ICON[task.type]}</span>}
       </div>
       <div className="tcard-body">
-        <strong className="tcard-title">{task.title}</strong>
-        <span className="tcard-sub">{task.reason}</span>
+        <strong className="tcard-title">{noTreat(task.title, task.type, zero)}</strong>
+        <span className="tcard-sub">{noTreat(task.reason, task.type, zero)}</span>
         {task.alert ||
         (task.priority === "haute" && !task.blockedBy) ||
         task.blockedBy ||
