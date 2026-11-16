@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Teaser PermaJardin</title>
+<style>
+@font-face{font-family:'DM Serif Display';src:url('FONT_SERIF') format('woff2');font-weight:400}
+@font-face{font-family:'DM Sans';src:url('FONT_SANS') format('woff2');font-weight:100 1000}
+:root{--ink:#1c4429;--ink2:#3a5a43;--green:#2f6b3d;--track:rgba(28,68,41,.22);--gold:#f0cf86}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#e9f1dc}
+#cv{position:relative;width:var(--W);height:var(--H);overflow:hidden;font-family:'DM Sans',sans-serif;
+ background:radial-gradient(1200px 900px at 78% 30%,#f5f9ec 0%,#e6efd6 55%,#d7e6c4 100%)}
+.logo{position:absolute;display:flex;align-items:center;gap:18px;color:var(--ink);font-family:'DM Serif Display',serif}
+.logo i{display:block;border-radius:22%;background:var(--green);position:relative}
+.logo i svg{position:absolute;inset:0;margin:auto}
+#cap{position:absolute}
+.cap{position:absolute;left:0;top:0;opacity:0;will-change:opacity,transform}
+.badge{display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--green);color:#fff;font-family:'DM Serif Display',serif}
+.capt{font-family:'DM Serif Display',serif;color:var(--ink);line-height:1.04;letter-spacing:-.01em}
+#prog{position:absolute;display:flex;align-items:center;gap:14px}
+#prog .seg{height:8px;border-radius:4px;background:var(--track);flex:1;position:relative;overflow:hidden}
+#prog .seg b{position:absolute;inset:0;background:var(--green);transform-origin:left;transform:scaleX(0)}
+#prog span{font-weight:600;color:var(--ink2);min-width:3.2em;text-align:right}
+#stage{position:absolute}
+#ph{position:absolute;left:0;top:0;perspective:2600px}
+#tilt{position:absolute;left:0;top:0;transform:rotateY(-6deg) rotateX(1.5deg);transform-style:preserve-3d;
+ filter:drop-shadow(0 38px 46px rgba(25,55,32,.30)) drop-shadow(0 8px 14px rgba(25,55,32,.18))}
+.body{position:absolute;inset:0;border-radius:64px;background:linear-gradient(145deg,#4a4d52 0%,#202225 38%,#121315 62%,#3d4045 100%)}
+.body:after{content:"";position:absolute;inset:3px;border-radius:61px;border:2px solid rgba(255,255,255,.10);background:#0a0a0b}
+.btn{position:absolute;width:5px;border-radius:3px;background:linear-gradient(90deg,#3b3e43,#17181a)}
+.screen{position:absolute;left:14px;top:14px;width:393px;height:899px;border-radius:50px;overflow:hidden;background:var(--appbg)}
+.sbar{position:absolute;left:0;top:0;width:393px;height:47px;z-index:50;color:#111;font-weight:600}
+.sbar .time{position:absolute;left:52px;top:14px;font-size:17px;letter-spacing:.2px}
+.sbar .ico{position:absolute;right:30px;top:19px;display:flex;gap:6px;align-items:center}
+.isl{position:absolute;left:50%;top:11px;width:120px;height:34px;margin-left:-60px;border-radius:20px;background:#050506;z-index:60}
+.isl:after{content:"";position:absolute;right:14px;top:11px;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#2a3550,#0b0d14 70%)}
+.home{position:absolute;left:50%;bottom:7px;width:134px;height:5px;margin-left:-67px;border-radius:3px;background:rgba(10,10,10,.82);z-index:60}
+.glare{position:absolute;inset:0;z-index:70;pointer-events:none;border-radius:50px;background:linear-gradient(115deg,rgba(255,255,255,.14) 0%,rgba(255,255,255,0) 28%,rgba(255,255,255,0) 72%,rgba(255,255,255,.05) 100%)}
+.lay{position:absolute;left:0;top:47px;width:393px;height:852px;overflow:hidden;opacity:0;background:var(--appbg)}
+.lay img.base{position:absolute;left:0;top:0;width:393px;height:852px;display:block}
+.lay .win{position:absolute;left:0;overflow:hidden;width:393px}
+.lay .win img{position:absolute;left:0;top:0;width:393px;display:block;will-change:transform}
+#ring{position:absolute;left:0;top:47px;width:393px;height:852px;z-index:40;pointer-events:none}
+#ring i{position:absolute;border-radius:50%;opacity:0}
+#ring .dot{background:rgba(20,40,25,.30)}
+#ring .rg{border:3px solid rgba(255,255,255,.95);box-shadow:0 0 0 2px rgba(30,70,40,.55)}
+.note{position:absolute;left:0;right:0;text-align:center;color:var(--ink2);font-weight:500}
+#ttl,#end{position:absolute;inset:0;opacity:0}
+#ttl{background:radial-gradient(1200px 900px at 50% 40%,#f7faef 0%,#e6efd6 60%,#d7e6c4 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+#end{background:linear-gradient(135deg,#2a5a34 0%,#1d4727 100%);color:#fff}
+.qr{position:absolute;background:#fff;border-radius:34px;padding:28px;box-shadow:0 24px 50px rgba(0,0,0,.28)}
+.qr img{display:block;width:100%;height:100%;image-rendering:pixelated}
+</style></head>
+<body><div id="cv">
+ <div class="logo" id="logo"><i id="logoI"><svg viewBox="0 0 24 24" width="62%" height="62%" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.2 4.3L19 7"/></svg></i><span>PermaJardin</span></div>
+ <div id="cap"></div>
+ <div id="stage"><div id="ph"><div id="tilt">
+   <div class="body"></div>
+   <i class="btn" style="left:-3px;top:200px;height:44px"></i><i class="btn" style="left:-3px;top:270px;height:78px"></i><i class="btn" style="left:-3px;top:365px;height:78px"></i><i class="btn" style="right:-3px;top:300px;height:120px"></i>
+   <div class="screen" id="screen">
+     <div class="sbar"><span class="time">9:41</span><span class="ico">
+       <svg width="19" height="12" viewBox="0 0 19 12" fill="#111"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+       <svg width="17" height="12" viewBox="0 0 17 12" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round"><path d="M1.5 4.2a10 10 0 0 1 14 0M4 7a6.4 6.4 0 0 1 9 0"/><circle cx="8.5" cy="10" r="1.3" fill="#111" stroke="none"/></svg>
+       <svg width="27" height="13" viewBox="0 0 27 13"><rect x=".6" y=".6" width="22.4" height="11.8" rx="3.6" fill="none" stroke="#111" stroke-opacity=".45"/><rect x="2.2" y="2.2" width="19.2" height="8.6" rx="2.2" fill="#111"/><rect x="24" y="4.2" width="2" height="4.6" rx="1" fill="#111" fill-opacity=".45"/></svg></span></div>
+     <div class="isl"></div>
+     <div id="layers"></div><div id="ring"></div>
+     <div class="home"></div><div class="glare"></div>
+   </div>
+ </div></div></div>
+ <div id="prog"></div>
+ <div id="ttl"><div class="logo" id="tlogo" style="position:static"><i id="tlogoI"><svg viewBox="0 0 24 24" width="62%" height="62%" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.2 4.3L19 7"/></svg></i><span id="tname">PermaJardin</span></div><div id="tsub" style="color:var(--ink2);font-weight:500">Votre jardin en 6 étapes</div></div>
+ <div id="end"></div>
+</div>
+<script>
+// Scène déterministe : render(t) pose tout à l'instant t (secondes). Aucune horloge, aucune animation CSS.
+const P = new URLSearchParams(location.search)
+const FMT = P.get('fmt') === '9x16' ? '9x16' : '16x9'
+const W = FMT === '9x16' ? 1080 : 1920, H = FMT === '9x16' ? 1920 : 1080
+const cv = document.getElementById('cv'); cv.style.setProperty('--W', W + 'px'); cv.style.setProperty('--H', H + 'px')
+const META = window.META, SHOTS = window.SHOTS
+cv.style.setProperty('--appbg', META.bg)
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x))
+const ease = (u) => (u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2)
+const $ = (id) => document.getElementById(id)
+const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e }
+
+// ---------- Phases ----------
+const PH = [
+ { n: 1, t: 2.5, cap: 'Trouvez votre terrain' },
+ { n: 2, t: 6.5, cap: 'Placez vos plantes' },
+ { n: 3, t: 10.5, cap: 'Suivez ce qu’il faut faire' },
+ { n: 4, t: 14.5, cap: 'Choisissez où planter' },
+ { n: 5, t: 18.0, cap: 'Apprenez et soignez sans produit' },
+ { n: 6, t: 22.0, cap: 'Gardez la mémoire' },
+]
+const END = 26.0, TOTAL = 30.0, TR = 0.4, XF = 0.3
+// Écrans : chaque couche apparaît (fondu) à `t`, reste dessous jusqu'à être recouverte. tall : défilement réel d'une capture longue.
+const LAYERS = [
+ { id: 'a1', shot: 'p1-adresse', t: 2.5, fade: TR },
+ { id: 'a2', shot: 'p1-carte', t: 4.4, fade: XF },
+ { id: 'b1', shot: 'p2-choix', t: 6.5, fade: TR },
+ { id: 'b2', shot: 'p2-viser', t: 8.0, fade: XF },
+ { id: 'b3', shot: 'p2-apres', t: 9.4, fade: XF },
+ { id: 'c1', shot: 'p3-afaire', t: 10.5, fade: TR, tall: 'p3', scroll: [0, 920, 11.4, 13.6] },
+ { id: 'd1', shot: 'p4-0', t: 14.5, fade: TR },
+ { id: 'd2', shot: 'p4-1', t: 16.1, fade: XF },
+ { id: 'e1', shot: 'p5-lecons', t: 18.0, fade: TR, tall: 'p5a', scroll: [0, 640, 18.8, 20.3] },
+ { id: 'e2', shot: 'p5-pucerons', t: 20.6, fade: XF, tall: 'p5b', scroll: [0, 300, 21.2, 21.9] },
+ { id: 'f1', shot: 'p6-journal', t: 22.0, fade: TR, tall: 'p6', scroll: [1090, 1560, 22.8, 24.4] },
+]
+const TAPS = [ // x, y en px de capture (écran 393 × 852), début, durée
+ { x: META.taps.p1adresse[0], y: META.taps.p1adresse[1], t: 3.9, d: 0.5 },
+ { x: META.taps.p2lavande[0], y: META.taps.p2lavande[1], t: 7.5, d: 0.5 },
+ { x: META.taps.p2valider[0], y: META.taps.p2valider[1], t: 8.9, d: 0.5 },
+ { x: META.taps.p4carte[0], y: META.taps.p4carte[1], t: 15.6, d: 0.5 },
+]
+const ZOOMS = [{ t: 5.1, d: 0.8 }, { t: 16.9, d: 0.8 }]
+// Liste des mouvements (une seule animation à la fois) : vérifiée par le script de rendu.
+window.EVENTS = [
+ { k: 'titre → phase 1', a: 2.5, b: 2.5 + TR },
+ ...PH.slice(1).map((p) => ({ k: 'phase ' + p.n, a: p.t, b: p.t + TR })),
+ { k: 'fin', a: END, b: END + TR },
+ ...LAYERS.filter((l) => !PH.some((p) => p.t === l.t)).map((l) => ({ k: 'fondu ' + l.id, a: l.t, b: l.t + l.fade })),
+ ...LAYERS.filter((l) => l.scroll).map((l) => ({ k: 'défilement ' + l.id, a: l.scroll[2], b: l.scroll[3] })),
+ ...TAPS.map((x, i) => ({ k: 'toucher ' + i, a: x.t, b: x.t + x.d })),
+ ...ZOOMS.map((z, i) => ({ k: 'zoom ' + i, a: z.t, b: z.t + z.d })),
+].sort((p, q) => p.a - q.a)
+
+// ---------- Mise en page ----------
+const L = FMT === '9x16'
+ ? { mx: 54, logoY: 90, logoH: 74, logoF: 54, capX: 54, capY: 220, capW: 972, capF: 86, badge: 96, badgeF: 60, center: true,
+     phone: { cx: 540, top: 560, h: 1190 }, prog: { x: 54, y: 1818, w: 972, f: 30 } }
+ : { mx: 96, logoY: 76, logoH: 76, logoF: 54, capX: 96, capY: 330, capW: 900, capF: 104, badge: 120, badgeF: 76, center: false,
+     phone: { cx: 1480, top: 60, h: 960 }, prog: { x: 96, y: 962, w: 640, f: 30 } }
+const PHW = 14 + 393 + 14, PHH = 14 + 899 + 14
+const sc = L.phone.h / PHH
+const stage = $('stage'); Object.assign(stage.style, { left: (L.phone.cx - PHW * sc / 2) + 'px', top: L.phone.top + 'px', width: PHW * sc + 'px', height: PHH * sc + 'px' })
+const ph = $('ph'); Object.assign(ph.style, { width: PHW + 'px', height: PHH + 'px', transform: `scale(${sc})`, transformOrigin: '0 0' })
+// ph porte l'échelle de base ; #zoom (mouvement) est appliqué sur #stage
+for (const id of ['tilt']) Object.assign($(id).style, { width: PHW + 'px', height: PHH + 'px' })
+const logo = $('logo'); Object.assign(logo.style, { left: L.mx + 'px', top: L.logoY + 'px', fontSize: L.logoF + 'px', ...(L.center ? { left: 0, right: 0, justifyContent: 'center' } : {}) })
+$('logoI').style.width = $('logoI').style.height = L.logoH + 'px'
+// Légendes
+const cap = $('cap'); Object.assign(cap.style, { left: L.capX + 'px', top: L.capY + 'px', width: L.capW + 'px' })
+const capEls = PH.map((p) => {
+  const d = el('div', 'cap'); d.style.width = L.capW + 'px'
+  const b = el('div', 'badge', String(p.n)); Object.assign(b.style, { width: L.badge + 'px', height: L.badge + 'px', fontSize: L.badgeF + 'px', marginBottom: (L.center ? 26 : 34) + 'px', ...(L.center ? { margin: '0 auto 26px' } : {}) })
+  const c = el('div', 'capt', p.cap); Object.assign(c.style, { fontSize: L.capF + 'px', textAlign: L.center ? 'center' : 'left' })
+  d.append(b, c); cap.append(d); return d
+})
+// Barre de progression : 6 segments + « n / 6 »
+const prog = $('prog'); Object.assign(prog.style, { left: L.prog.x + 'px', top: L.prog.y + 'px', width: L.prog.w + 'px' })
+const segs = PH.map(() => { const s = el('div', 'seg', '<b></b>'); prog.append(s); return s.firstChild })
+const plab = el('span'); plab.style.fontSize = L.prog.f + 'px'; prog.append(plab)
+// Couches d'écran
+const layersEl = $('layers')
+const layEls = LAYERS.map((l) => {
+  const d = el('div', 'lay'); const base = el('img', 'base'); base.src = SHOTS + '/' + l.shot + '.png'; d.append(base)
+  let img = null, m = null
+  if (l.tall) { m = META.tall[l.tall]; const w = el('div', 'win'); Object.assign(w.style, { top: m.y + 'px', height: m.h + 'px' }); img = el('img'); img.src = SHOTS + '/' + l.tall + '-tall.png'; w.append(img); d.append(w) }
+  layersEl.append(d); return { d, img, m, l }
+})
+// Toucher
+const ring = $('ring'); const tapEls = TAPS.map(() => { const dt = el('i', 'dot'), rg = el('i', 'rg'); ring.append(dt, rg); return [dt, rg] })
+// Titre et fin
+const ttl = $('ttl'); const end = $('end')
+{
+  const k = FMT === '9x16' ? 1.15 : 1
+  $('tlogoI').style.width = $('tlogoI').style.height = 118 * k + 'px'; $('tlogo').style.fontSize = 112 * k + 'px'; $('tlogo').style.gap = 30 * k + 'px'
+  $('tsub').style.fontSize = 62 * k + 'px'; $('tsub').style.marginTop = 40 * k + 'px'
+  const wrap = (html, st) => { const d = el('div', '', html); Object.assign(d.style, { position: 'absolute', ...st }); end.append(d); return d }
+  if (FMT === '9x16') {
+    const lg = wrap('<div class="logo" style="color:#fff;position:static;justify-content:center;font-size:58px"><i style="width:80px;height:80px;background:#3d8b4f"><svg viewBox="0 0 24 24" width="62%" height="62%" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.2 4.3L19 7"/></svg></i><span>PermaJardin</span></div>', { left: 0, right: 0, top: 110 + 'px' })
+    wrap('<div style="font-family:\'DM Serif Display\';font-size:130px;line-height:1.05;text-align:center"><span style="color:var(--gold)">Gratuit.</span><br>Sans publicité.</div>', { left: 0, right: 0, top: 330 + 'px' })
+    const q = wrap('<img src="QR">'.replace('QR', SHOTS + '/qr.png'), { left: 340 + 'px', top: 1000 + 'px', width: 400 + 'px', height: 400 + 'px' }); q.className = 'qr'
+    wrap('<div style="font-weight:600;font-size:52px;text-align:center">mon-jardin-app.vercel.app</div>', { left: 0, right: 0, top: 1480 + 'px' })
+  } else {
+    wrap('<div class="logo" style="color:#fff;position:static;font-size:58px"><i style="width:80px;height:80px;background:#3d8b4f"><svg viewBox="0 0 24 24" width="62%" height="62%" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.2 4.3L19 7"/></svg></i><span>PermaJardin</span></div>', { left: 96 + 'px', top: 76 + 'px' })
+    wrap('<div style="font-family:\'DM Serif Display\';font-size:150px;line-height:1.06"><span style="color:var(--gold)">Gratuit.</span><br>Sans publicité.</div>', { left: 96 + 'px', top: 330 + 'px' })
+    const q = wrap('<img src="QR">'.replace('QR', SHOTS + '/qr.png'), { left: 1210 + 'px', top: 250 + 'px', width: 420 + 'px', height: 420 + 'px' }); q.className = 'qr'
+    wrap('<div style="font-weight:600;font-size:52px;text-align:center;width:800px;white-space:nowrap">mon-jardin-app.vercel.app</div>', { left: 1020 + 'px', top: 720 + 'px' })
+  }
+}
+
+// ---------- Rendu ----------
+function render(t) {
+  // Titre / fin
+  ttl.style.opacity = String(t < 2.5 ? 1 : 1 - clamp((t - 2.5) / TR))
+  end.style.opacity = String(clamp((t - END) / TR))
+  // Phase courante (pour légende et progression) et fondus de légende : sortie 0,2 s puis entrée 0,2 s
+  PH.forEach((p, i) => {
+    const nxt = PH[i + 1] ? PH[i + 1].t : END
+    const fin = clamp((t - p.t - TR / 2) / (TR / 2)), fout = 1 - clamp((t - nxt) / (TR / 2))
+    const o = i === 0 && t < p.t ? 0 : Math.min(t < p.t + TR / 2 ? 0 : fin, fout)
+    capEls[i].style.opacity = String(o); capEls[i].style.transform = `translateY(${(1 - fin) * 14}px)`
+    const u = clamp((t - p.t) / TR)
+    segs[i].style.transform = `scaleX(${t < p.t ? 0 : 1})`
+    if (t >= p.t && t < nxt) plab.textContent = `${p.n} / 6`
+  })
+  const inMain = t >= 2.5 && t < END + TR
+  logo.style.opacity = String(t < 2.5 ? 0 : 1 - clamp((t - END) / TR))
+  prog.style.opacity = String(t < 2.5 ? 0 : 1 - clamp((t - END) / TR))
+  if (t < 2.5) plab.textContent = ''
+  // Téléphone : entrée (glissement + fondu) avec la phase 1, sortie avec la fin
+  const pin = ease(clamp((t - 2.5) / TR)), pout = clamp((t - END) / TR)
+  const zoom = ZOOMS.reduce((a, z) => a + (t > z.t && t < z.t + z.d ? 0.05 * Math.sin(Math.PI * (t - z.t) / z.d) : 0), 0)
+  stage.style.opacity = String(Math.min(pin, 1 - pout))
+  stage.style.transform = `translateY(${(1 - pin) * 60}px) scale(${1 + zoom})`
+  // Écrans
+  layEls.forEach(({ d, img, m, l }, i) => {
+    const o = clamp((t - l.t) / l.fade); d.style.opacity = String(o)
+    const nxt = LAYERS[i + 1]; d.style.display = nxt && t >= nxt.t + nxt.fade ? 'none' : 'block'
+    if (img) {
+      const [y0, y1, a, b] = l.scroll; const y = y0 + (y1 - y0) * ease(clamp((t - a) / (b - a)))
+      img.style.transform = `translateY(${-y}px)`
+    }
+  })
+  // Touchers
+  TAPS.forEach((k, i) => {
+    const u = (t - k.t) / k.d; const [dt, rg] = tapEls[i]
+    const on = u >= 0 && u <= 1
+    Object.assign(dt.style, { opacity: on ? String(0.55 * (1 - clamp(u / 0.6))) : '0', width: '34px', height: '34px', left: (k.x - 17) + 'px', top: (k.y - 17) + 'px' })
+    const r = 18 + 30 * ease(clamp(u))
+    Object.assign(rg.style, { opacity: on ? String(1 - clamp((u - 0.15) / 0.85)) : '0', width: 2 * r + 'px', height: 2 * r + 'px', left: (k.x - r) + 'px', top: (k.y - r) + 'px' })
+  })
+}
+window.render = render
+window.__ready = Promise.all([document.fonts.ready, ...[...document.images].map((i) => i.decode().catch(() => {}))])
+render(0)
+</script></body></html>
