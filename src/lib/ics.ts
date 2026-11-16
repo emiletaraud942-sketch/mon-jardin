@@ -1,3 +1,4 @@
+import { adviceText, getZeroTraitement } from './zeroTraitement'
 import { TASK_LABEL } from '../data/labels'
 import type { Month, Plant, Species, TaskType } from '../types'
 import { yearPlan } from '../engine/tasks'
@@ -67,7 +68,7 @@ export function buildIcs(plants: Plant[], speciesById: Record<string, Species>, 
       const endYear = opts.year + Math.floor(endMonthIndex / 12)
       const endMonth = (endMonthIndex % 12) + 1
       const summary = `${TASK_LABEL[e.type]} : ${sp.nomCommun}${e.count > 1 ? ` (${e.count})` : ''}`
-      const description = [rule?.howTo, 'Période conseillée pour votre jardin. Calendrier PermaJardin.'].filter(Boolean).join('\n\n')
+      const description = [rule?.howTo ? adviceText(rule.howTo, getZeroTraitement()) : undefined, 'Période conseillée pour votre jardin. Calendrier PermaJardin.'].filter(Boolean).join('\n\n')
       lines.push(
         'BEGIN:VEVENT',
         `UID:${e.type}-${e.speciesId}-m${w.start}@permajardin.local`,

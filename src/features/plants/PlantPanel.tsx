@@ -1,3 +1,4 @@
+import { adviceText, useZeroTraitement } from '../../lib/zeroTraitement'
 import { SPECIES_BY_ID } from '../../data/species'
 import { CATEGORY_LABEL, STATUS_LABEL, SUN_LABEL, TASK_ICON, WATER_LABEL } from '../../data/labels'
 import { Icon } from '../../components/Icon'
@@ -54,6 +55,7 @@ function plantedLabel(plant: Plant): string {
  * Sans `fiche` : panneau compact (feuille du bas de la carte, colonne de droite sur grand écran).
  */
 export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { garden: Garden; plant: Plant; onClose?: () => void; fiche?: boolean; onShowOnMap?: () => void }) {
+  const zero = useZeroTraitement()
   const plants = useGardenPlants(garden.id)
   const species = SPECIES_BY_ID[plant.speciesId]
   const { tasks } = useTasks(garden)
@@ -250,7 +252,7 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
               <li key={t.key}>
                 {TASK_ICON[t.type]} <strong>{t.title}</strong>
                 {t.blockedBy && <span className="badge warn" style={{ marginLeft: 6 }}>{t.blockedBy}</span>}
-                <div className="muted">{t.howTo}</div>
+                <div className="muted">{adviceText(t.howTo, zero)}</div>
               </li>
             ))}
           </ul>

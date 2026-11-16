@@ -12,6 +12,7 @@ import { useActiveGarden, useGardenPlants } from '../../lib/store'
 import { RUN_DELAY_MS } from '../aide/ToutFaire'
 import { EnnuiIcon } from './EnnuiIcon'
 import { filterEnnuis, GROUPS, monthsText, NO_FILTER, touchesMyPlants, TYPE_LABEL, type EnnuiFilter, type EnnuiGroup } from './filter'
+import { linesWithoutProducts, mentionsProduct, useZeroTraitement } from '../../lib/zeroTraitement'
 import '../../styles/novice-pages.css'
 import '../../styles/ennuis.css'
 
@@ -47,6 +48,7 @@ function Lines({ items }: { items: string[] }) {
 
 /** La fiche d'un ennui : ce que je vois, quand, comment l'éviter, que faire, quand demander conseil. */
 export function EnnuiSheet({ e, mine, onSpecies }: { e: Ennui; mine: ReadonlySet<string>; onSpecies: (id: string) => void }) {
+  const zero = useZeroTraitement()
   // Les plantes du jardin d'abord ; un identifiant inconnu du catalogue n'est jamais proposé.
   const plants = e.planteIds.filter((id) => SPECIES_BY_ID[id]).sort((a, b) => Number(mine.has(b)) - Number(mine.has(a)))
   return (
@@ -68,9 +70,9 @@ export function EnnuiSheet({ e, mine, onSpecies }: { e: Ennui; mine: ReadonlySet
       </section>
       <section aria-labelledby={`ennui-${e.id}-agir`}>
         <h2 id={`ennui-${e.id}-agir`}>Que faire</h2>
-        <Lines items={e.agir} />
+        <Lines items={zero ? linesWithoutProducts(e.agir) : e.agir} />
       </section>
-      {e.avertissement && (
+      {e.avertissement && !(zero && mentionsProduct(e.avertissement)) && (
         <aside className="ennui-warn" role="note">
           <Icon name="alert" size={22} />
           <div>

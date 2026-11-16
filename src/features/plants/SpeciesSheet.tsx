@@ -1,3 +1,4 @@
+import { adviceText, useZeroTraitement } from '../../lib/zeroTraitement'
 import { SPECIES_BY_ID } from '../../data/species'
 import { CATEGORY_LABEL, STRATE_LABEL, SUN_LABEL, TASK_ICON, TASK_LABEL, WATER_LABEL } from '../../data/labels'
 import { Icon } from '../../components/Icon'
@@ -41,6 +42,7 @@ function SpeciesLinks({ ids }: { ids: string[] }) {
 }
 
 export function SpeciesSheet({ species: s, garden }: { species: Species; garden: Garden }) {
+  const zero = useZeroTraitement()
   const cal = plantingCalendar(s, garden)
   // Même règle de rusticité que « Où planter ? » ; rien hors France métropolitaine ni sans donnée de froid.
   const winter = winterAdvice(s, garden)
@@ -120,7 +122,7 @@ export function SpeciesSheet({ species: s, garden }: { species: Species; garden:
                 {t.frequencyDays ? `, tous les ${t.frequencyDays} jours` : ''}
                 {t.minAgeYears ? `, dès ${t.minAgeYears} an${t.minAgeYears > 1 ? 's' : ''}` : ''}
               </span>
-              <div>{t.howTo}</div>
+              <div>{adviceText(t.howTo, zero)}</div>
               {t.tool && <div className="muted">Outil : {t.tool}</div>}
             </li>
           ))}

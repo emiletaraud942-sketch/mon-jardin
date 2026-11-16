@@ -1,3 +1,4 @@
+import { mentionsProduct } from '../../lib/zeroTraitement'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
@@ -28,7 +29,8 @@ describe('guide des ennuis : fiche', () => {
   it('l’avertissement porte un mot et une icône, seulement quand la fiche en a un', () => {
     for (const e of ENNUIS) {
       const h = html(e.id)
-      if (e.avertissement) {
+      // Réglage « sans produit » actif par défaut : l'avertissement d'un produit n'est pas montré.
+      if (e.avertissement && !mentionsProduct(e.avertissement)) {
         expect(h, e.id).toContain('<strong>Attention</strong>')
         expect(h, e.id).toContain('role="note"')
       } else expect(h, e.id).not.toContain('Attention')

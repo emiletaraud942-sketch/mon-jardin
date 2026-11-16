@@ -9,6 +9,7 @@ import { SafetyCopyButton } from '../../components/StorageBanner'
 import { DiagnosticButton } from '../../components/DiagnosticButton'
 import { TextSizeButton } from '../../components/TextSizeButton'
 import { setBigTaps, useBigTaps } from '../../lib/bigTaps'
+import { setZeroTraitement, useZeroTraitement } from '../../lib/zeroTraitement'
 import { tourOpen } from '../../lib/overlays'
 import { climateSummary } from '../../engine/climate'
 import { Segmented } from '../../components/Segmented'
@@ -723,6 +724,7 @@ function ReadingCard() {
   const size = useTextSize()
   const [reopen, setReopen] = useState(reopenWhereIWas())
   const bigTaps = useBigTaps()
+  const zeroTraitement = useZeroTraitement()
   const [saved, flash] = useFlash()
   return (
     <div className="card">
@@ -745,6 +747,10 @@ function ReadingCard() {
         <label className="check-row" data-feat="grandes-touches">
           <input type="checkbox" checked={bigTaps} onChange={(e) => (setBigTaps(e.target.checked), flash())} />
           <span>Grandes touches : des boutons plus hauts, plus faciles à toucher.</span>
+        </label>
+        <label className="check-row" data-feat="zero-traitement">
+          <input type="checkbox" checked={zeroTraitement} onChange={(e) => (setZeroTraitement(e.target.checked), flash())} />
+          <span>Jardiner sans produit de traitement : l’appli ne propose ni cuivre, ni soufre, ni savon insecticide.</span>
         </label>
         <label className="check-row" data-feat="rouvrir">
           <input type="checkbox" checked={reopen} onChange={(e) => (setReopenWhereIWas(e.target.checked), setReopen(e.target.checked), flash())} />

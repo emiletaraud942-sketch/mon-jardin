@@ -37,6 +37,7 @@ import { doneOnLabel, doneTaskLabel } from "./taskLabel";
 import { frostSentence, rainWord, weatherSentences } from "./weatherText";
 import "../../styles/novice-pages.css";
 import { PlantScene } from "../../components/illustrations";
+import { adviceText, useZeroTraitement } from "../../lib/zeroTraitement";
 import { speak, speechSupported, stopSpeaking, taskSpeech, useSpeakingKey, useStopSpeakingOnLeave } from "../../lib/speech";
 
 /** Types de tâches dont la faisabilité dépend de la météo : grisés tant qu'elle n'est pas chargée. */
@@ -180,6 +181,7 @@ function TaskItem({
   onDecide: (task: GeneratedTask, choice: TaskChoice, snooze?: Snooze) => void;
 }) {
   const plants = useGardenPlants(garden.id);
+  const zero = useZeroTraitement();
   const names = task.plantIds.length;
   const [menu, setMenu] = useState(false);
   const speaking = useSpeakingKey() === task.key;
@@ -249,7 +251,7 @@ function TaskItem({
       )}
       <details className="tcard-more np-details">
         <summary>Comment faire ?</summary>
-        <div className="small">{task.howTo}</div>
+        <div className="small">{adviceText(task.howTo, zero)}</div>
         {task.alert && ALERT_CONSEIL[task.alert] && (
           <button type="button" className="btn small tcard-read" onClick={() => openConseil(ALERT_CONSEIL[task.alert!]!.id)}>
             <Icon name="drop" size={16} /> {ALERT_CONSEIL[task.alert]!.label}
