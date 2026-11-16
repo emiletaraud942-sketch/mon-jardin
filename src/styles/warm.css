@@ -198,3 +198,58 @@
 html[data-big-taps] .home-tile {
   min-height: 104px;
 }
+
+/* ---------- Autres écrans : même style crème (étiquettes, cartes rondes, pastilles) ---------- */
+.afaire-group-title,
+.afaire-extra > h2,
+.plants-ui h2 {
+  font-family: var(--font-body);
+  font-size: calc(12 * var(--px));
+  font-weight: var(--fw-key);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.task,
+.card,
+.plants-ui .plant-row,
+.cat-row {
+  border-radius: 22px;
+  box-shadow: var(--shadow-tile);
+  border-color: var(--border);
+}
+.plant-tile {
+  border-radius: 16px;
+}
+.btn,
+.chip-filter,
+.afaire-all {
+  border-radius: 999px;
+}
+.chip-filter,
+.afaire-all {
+  background: var(--surface);
+  border: var(--border-w) solid var(--border);
+}
+.plants-actions > .btn {
+  box-shadow: var(--shadow-tile);
+}
+input[type='search'],
+input[type='text'],
+select {
+  border-radius: 999px;
+  background: var(--surface);
+}
+.afaire-frost,
+.afaire-notif,
+.afaire-year {
+  border-radius: 22px;
+}
+.fold > details {
+  border-radius: 24px;
+  box-shadow: var(--shadow-tile);
+}
+.tcards .task .btn.primary,
+.task .btn.primary {
+  border-radius: 999px;
+}
