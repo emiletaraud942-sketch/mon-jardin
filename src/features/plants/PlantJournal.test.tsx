@@ -139,3 +139,27 @@ describe('registre : ouvrir le journal', () => {
     expect(host).toMatch(/journal: '[^']+'/)
   })
 })
+
+describe('journal : saison de la photo', () => {
+  const plant = { id: 'p1', gardenId: 'g1', speciesId: 'pommier', position: { x: 0, y: 0 }, plantedAt: '2018-03-01', status: 'en-place', photos: [A, B, C] } as const
+  const withPlant = (over: Partial<Parameters<typeof JournalList>[0]> = {}) => list({ plant: { ...plant, photos: [...plant.photos] }, ...over })
+  it('sous chaque photo datée : la saison et l’état d’ordinaire de l’espèce', () => {
+    const h = withPlant()
+    expect(h).toContain('Au printemps : en fleurs d’ordinaire.') // 9 mars 2026 -> printemps
+    expect(h).toContain('En automne : ')
+    expect(h.match(/class="journal-season small muted"/g)).toHaveLength(2)
+  })
+  it('rien pour « Date inconnue », ni quand la plante n’est pas donnée', () => {
+    const h = withPlant({ entries: [{ id: C }] })
+    expect(h).not.toContain('journal-season')
+    expect(h).toContain('Date inconnue')
+    expect(list()).not.toContain('journal-season')
+  })
+  it('une date impossible n’a pas de mention de saison', () => {
+    expect(withPlant({ entries: [{ id: A, at: '2026-02-30' }] })).not.toContain('journal-season')
+  })
+  it('la mention est un texte court et ne casse pas la mise en page', () => {
+    expect(css).toMatch(/\.journal-season/)
+    for (const m of withPlant().matchAll(/journal-season small muted">([^<]*)</g)) expect(m[1].split(/\s+/).length).toBeLessThanOrEqual(20)
+  })
+})

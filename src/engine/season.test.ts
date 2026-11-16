@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { SPECIES_BY_ID } from '../data/species'
 import type { Plant } from '../types'
-import { canopyLook, mixHex, phaseOf, seasonDate, seasonSummary, SEASONS, SEASON_CHOICES, stateAtSeason } from './season'
+import { canopyLook, journalSeasonNote, mixHex, phaseOf, photoDate, photoSeasonPhrase, plantLabelAtSeason, seasonDate, seasonOfMonth, seasonOfPhoto, seasonSummary, SEASONS, SEASON_CHOICES, stateAtSeason } from './season'
 
 const NOW = new Date(2026, 9, 29, 10) // 29 octobre 2026
 const plant = (speciesId: string, extra: Partial<Plant> = {}): Plant => ({ id: speciesId, gardenId: 'g1', speciesId, position: { x: 0, y: 0 }, plantedAt: '2018-03-01', status: 'en-place', photos: [], ...extra })
@@ -89,3 +89,62 @@ describe('seasonSummary', () => {
     expect(seasonSummary([plant('tomate', { status: 'recoltee' })], by, 'ete', NOW)).toBe('En été : aucune plante en place.')
   })
 })
+
+describe('saison d’une photo (hémisphère nord)', () => {
+  it('mois -> saison : déc.-fév. hiver, mars-mai printemps, juin-août été, sept.-nov. automne', () => {
+    const got = Array.from({ length: 12 }, (_, i) => seasonOfMonth(i + 1))
+    expect(got).toEqual(['hiver', 'hiver', 'printemps', 'printemps', 'printemps', 'ete', 'ete', 'ete', 'automne', 'automne', 'automne', 'hiver'])
+    expect(seasonOfMonth(0)).toBeUndefined()
+    expect(seasonOfMonth(13)).toBeUndefined()
+    expect(seasonOfMonth(2.5)).toBeUndefined()
+  })
+  it('date de photo : un jour ou une date ISO ; faux, ancien ou futur = pas de date', () => {
+    expect(photoDate('2026-06-12', NOW)?.getMonth()).toBe(5)
+    expect(photoDate('2026-06-12T08:30:00.000Z', NOW)?.getFullYear()).toBe(2026)
+    for (const bad of [undefined, '', 'pas une date', '2026-02-30', '1969-07-20', '2031-01-01', '2026-13-01']) expect(photoDate(bad, NOW), String(bad)).toBeUndefined()
+    expect(seasonOfPhoto('2025-12-01', NOW)).toBe('hiver')
+    expect(seasonOfPhoto('2026-02-28', NOW)).toBe('hiver')
+    expect(seasonOfPhoto('2026-03-01', NOW)).toBe('printemps')
+    expect(seasonOfPhoto('2026-08-31', NOW)).toBe('ete')
+    expect(seasonOfPhoto('2026-09-01', NOW)).toBe('automne')
+  })
+  it('un jour « AAAA-MM-JJ » ne glisse pas à la veille (lu en heure locale)', () => {
+    expect(photoDate('2026-06-01', NOW)?.getDate()).toBe(1)
+    expect(seasonOfPhoto('2026-06-01', NOW)).toBe('ete')
+    expect(seasonOfPhoto('2026-05-31', NOW)).toBe('printemps')
+  })
+  it('la phrase de la visionneuse', () => {
+    expect(photoSeasonPhrase('2026-06-12', NOW)).toBe('Photo prise le 12 juin 2026 (été) : les plantes sont décrites à cette date.')
+    expect(photoSeasonPhrase('2026-01-01', NOW)).toBe('Photo prise le 1er janvier 2026 (hiver) : les plantes sont décrites à cette date.')
+    expect(photoSeasonPhrase('n’importe quoi', NOW)).toBeUndefined()
+    expect(photoSeasonPhrase('2026-06-12', NOW)!.split(/\s+/).length).toBeLessThanOrEqual(20)
+  })
+  it('état en mots à la saison de la photo : pommier en fleurs au printemps, sans feuilles en hiver ; rien pour un projet ou une plante morte', () => {
+    const pom = plant('pommier')
+    const sp = SPECIES_BY_ID.pommier
+    expect(plantLabelAtSeason(pom, sp, NOW, 'printemps')).toBe('en fleurs')
+    expect(plantLabelAtSeason(pom, sp, NOW, 'hiver')).toBe('sans feuilles')
+    expect(plantLabelAtSeason(plant('pommier', { status: 'projet' }), sp, NOW, 'ete')).toBeUndefined()
+    expect(plantLabelAtSeason(plant('pommier', { status: 'mort' }), sp, NOW, 'ete')).toBeUndefined()
+    expect(plantLabelAtSeason(plant('tomate', { status: 'recoltee' }), SPECIES_BY_ID.tomate, NOW, 'ete')).toBe('récoltée')
+    expect(plantLabelAtSeason(pom, undefined, NOW, 'ete')).toBeUndefined()
+    // une annuelle semée en août 2026 n'existe pas encore au « cœur de l'été » (10 juillet 2026) : aucune mention, jamais « sans feuilles »
+    const tom = plant('tomate', { plantedAt: '2026-08-05' })
+    expect(plantLabelAtSeason(tom, SPECIES_BY_ID.tomate, NOW, 'ete')).toBeUndefined()
+    expect(plantLabelAtSeason({ ...tom, plantedAt: '2026-05-05' }, SPECIES_BY_ID.tomate, NOW, 'ete')).toBeDefined()
+    // même résultat que de choisir la saison à la main
+    expect(plantLabelAtSeason(pom, sp, NOW, 'ete')).toBe(PHASE_LABEL_OF(pom, 'ete'))
+  })
+  it('mention du journal : saison + état d’ordinaire ; rien sans date', () => {
+    const pom = plant('pommier')
+    const sp = SPECIES_BY_ID.pommier
+    expect(journalSeasonNote('2026-04-20', pom, sp, NOW)).toBe('Au printemps : en fleurs d’ordinaire.')
+    expect(journalSeasonNote('2026-01-10', pom, sp, NOW)).toBe('En hiver : sans feuilles d’ordinaire.')
+    expect(journalSeasonNote('2026-04-20', pom, undefined, NOW)).toBe('Photo prise au printemps.')
+    expect(journalSeasonNote('2026-04-20', plant('tomate', { status: 'recoltee' }), SPECIES_BY_ID.tomate, NOW)).toBe('Photo prise au printemps.')
+    expect(journalSeasonNote(undefined, pom, sp, NOW)).toBeUndefined()
+    expect(journalSeasonNote('2026-02-30', pom, sp, NOW)).toBeUndefined()
+  })
+})
+
+const PHASE_LABEL_OF = (p: Plant, season: 'ete') => ({ fleurs: 'en fleurs', fruits: 'avec ses fruits', automne: 'aux couleurs d’automne', nu: 'sans feuilles', bourgeons: 'aux premières feuilles', feuilles: 'en feuilles', morte: 'morte' })[phaseOf(stateAtSeason(p, SPECIES_BY_ID[p.speciesId], NOW, seasonDate(season, NOW)))]

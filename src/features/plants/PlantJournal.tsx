@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Icon } from '../../components/Icon'
 import { PhotoThumb } from '../../components/PhotoThumb'
+import { SPECIES_BY_ID } from '../../data/species'
+import { journalSeasonNote } from '../../engine/season'
 import { isoDate } from '../../lib/dates'
 import { recordWithToast } from '../../lib/history'
 import { agoText, cleanNote, isDay, journalEntries, JOURNAL_NOTE_MAX, pruneMeta, withPhotoMeta, type JournalEntry } from '../../lib/journal'
@@ -51,10 +53,17 @@ function EntryEditor({ entry, today, onSave, onCancel }: { entry: JournalEntry; 
   )
 }
 
+/** Le jour `today` (« AAAA-MM-JJ », jour local) en milieu de journée : la date de référence de la frise. */
+function photoNow(today: string): Date {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(today)
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12) : new Date()
+}
+
 /** La frise : une entrée par photo, les plus récentes d'abord. Présentation seule (les actions viennent de `PlantJournal`). */
 export function JournalList({
   entries,
   today,
+  plant,
   editingId,
   onEdit,
   onSave,
@@ -62,6 +71,8 @@ export function JournalList({
 }: {
   entries: readonly JournalEntry[]
   today: string
+  /** La plante : sous chaque photo datée, la saison et l'état d'ordinaire de son espèce à cette saison. */
+  plant?: Plant
   editingId?: string
   onEdit: (id: string | undefined) => void
   onSave: (id: string, at: string | null, note: string) => void
@@ -70,6 +81,8 @@ export function JournalList({
   return (
     <ol className="journal-list">
       {entries.map((e) => {
+        const now = photoNow(today)
+        const seasonNote = plant && e.at ? journalSeasonNote(e.at, plant, SPECIES_BY_ID[plant.speciesId], now) : undefined
         const ago = agoText(e.at, today)
         const label = e.at ? `du ${dayLabel(e.at)}` : '(date inconnue)'
         return (
@@ -84,6 +97,7 @@ export function JournalList({
                     <strong>{dayLabel(e.at)}</strong>
                     {ago && <span className="muted small journal-ago">{ago}</span>}
                   </p>
+                  {seasonNote && <p className="journal-season small muted">{seasonNote}</p>}
                   {e.note && <p className="journal-note">{e.note}</p>}
                   {!e.at && <p className="small muted journal-hint">Photo ancienne : touchez « Modifier » pour ajouter sa date.</p>}
                   <div className="journal-actions">
@@ -199,7 +213,7 @@ export function PlantJournal({ plant }: { plant: Plant }) {
       {entries.length === 0 ? (
         <p className="small muted journal-empty">Aucune photo pour l’instant. La première sera datée d’aujourd’hui.</p>
       ) : (
-        <JournalList entries={entries} today={today} editingId={editingId} onEdit={setEditingId} onSave={save} onRemove={remove} />
+        <JournalList entries={entries} today={today} plant={plant} editingId={editingId} onEdit={setEditingId} onSave={save} onRemove={remove} />
       )}
       {entries.length >= 2 && <BeforeAfter entries={entries} today={today} />}
     </section>
