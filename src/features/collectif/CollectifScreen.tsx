@@ -13,6 +13,7 @@ import { showToast } from '../../lib/toast'
 import { useBackLayer } from '../../lib/ui'
 import type { Garden, GesteType } from '../../types'
 import { addComposteur, addGeste, clearPlots, createPlots, removeComposteur, removeGeste, setCollectif, setHolder, toggleHabitat, turnComposteur } from './actions'
+import { INVASIVES } from '../../data/species/invasives'
 import { chantierEvent, chantierText, chantierValid, EMPTY_CHANTIER, type ChantierForm } from './chantier'
 import { DossierSheet, printDossier } from './DossierSheet'
 import '../../styles/novice-pages.css'
@@ -310,6 +311,16 @@ function Biodiversite({ garden }: { garden: Garden }) {
                 <span className="small muted">{h.idea}</span>
               </span>
             </label>
+          </li>
+        ))}
+      </ul>
+      <h3 className="coll-h3">Deux plantes à ne pas planter</h3>
+      <p className="small muted">La Métropole Rouen Normandie les signale comme très communes et nuisibles à la nature en Normandie.</p>
+      <ul className="coll-list">
+        {INVASIVES.map((i) => (
+          <li key={i.id}>
+            <strong>{i.titre}</strong>
+            <span className="small">{i.texte}</span>
           </li>
         ))}
       </ul>

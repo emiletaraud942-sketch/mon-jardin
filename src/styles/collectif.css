@@ -9,6 +9,7 @@
 .collectif .coll-list li, .collectif .coll-plots li { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 12px; }
 .collectif .coll-compost.tourner { border-color: var(--warn); background: var(--warn-soft); color: var(--warn-text); }
 .collectif .coll-compost.mur { border-color: var(--accent-2); background: var(--accent-soft); }
+.collectif .coll-h3 { font-size: 1rem; margin: 6px 0 0; }
 .collectif .coll-bilan { width: 100%; border-collapse: collapse; }
 .collectif .coll-bilan td { padding: 6px 4px; border-bottom: 1px solid var(--border); }
 .collectif .coll-bilan td:last-child { text-align: right; white-space: nowrap; }

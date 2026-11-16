@@ -4,6 +4,7 @@ import { CATEGORY_LABEL } from '../data/labels'
 import type { Category, Species, Sun } from '../types'
 import { RiskBadges } from './RiskNotes'
 import { cleanCustomName } from '../lib/customName'
+import { invasiveWarning } from '../data/species/invasives'
 import { Icon } from './Icon'
 import { Modal } from './Modal'
 import { useIsMobile, useMedia } from './useMedia'
@@ -80,6 +81,7 @@ export function SpeciesPicker({
         </select>
       </div>
       )}
+      {custom === undefined && <InvasiveNote query={q} />}
       {onScan && custom === undefined && (
         <button className="btn custom-open" onClick={onScan}>
           <Icon name="camera" /> Scanner mon jardin
@@ -111,6 +113,7 @@ export function SpeciesPicker({
               Retour à la liste
             </button>
           </div>
+          <InvasiveNote query={custom} />
           {!cleanCustomName(custom) && <p className="small muted" style={{ margin: 0 }}>Écrivez un nom pour continuer.</p>}
         </form>
       )}
@@ -140,5 +143,16 @@ export function SpeciesPicker({
       )}
       </div>
     </Modal>
+  )
+}
+
+/** Alerte douce : la Métropole Rouen Normandie déconseille de planter ces espèces (buddleia, renouée du Japon). */
+function InvasiveNote({ query }: { query: string }) {
+  const w = invasiveWarning(query)
+  if (!w) return null
+  return (
+    <p className="alert small" role="note" data-feat="invasive-note">
+      <strong>{w.titre} : à ne pas planter.</strong> {w.texte}
+    </p>
   )
 }

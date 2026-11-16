@@ -9,6 +9,7 @@ import { useActiveGarden } from '../../lib/store'
 import { AIDES_COMPOST_URL, GUIDE_EAU_URL, GUIDE_PARCELLE_URL, HERISSON_URL, HORAIRES_OUTILS, HORAIRES_ROUEN_URL, inMetropole, JARDINONS_URL } from '../../lib/territoire'
 import { showToast } from '../../lib/toast'
 import { useBackLayer } from '../../lib/ui'
+import { DECHETTERIES_SOURCE, nearestDechetteries } from './dechetteries'
 import { AGENDA_SOURCE, fetchJardinons, type JardinonsEvent } from './jardinons'
 import '../../styles/novice-pages.css'
 import '../../styles/ennuis.css'
@@ -150,6 +151,20 @@ export default function TerritoireScreen() {
           </ul>
           <Out href={HORAIRES_ROUEN_URL}>Page de la Ville de Rouen</Out>
         </section>
+
+        {garden && (
+          <section aria-labelledby="terr-dech" className="terr-section" data-feat="dechetterie">
+            <h2 id="terr-dech">Déchetteries les plus proches</h2>
+            <ul className="terr-hours">
+              {nearestDechetteries(garden.center).map(({ d, km }) => (
+                <li key={d.nom}>
+                  <strong>{d.nom}</strong> : {d.adresse}, à environ {km.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km à vol d’oiseau
+                </li>
+              ))}
+            </ul>
+            <p className="small muted">Pour les branchages et les déchets de jardin en trop. Vérifiez les horaires et ce qui est accepté auprès de la Métropole. Source : {DECHETTERIES_SOURCE}.</p>
+          </section>
+        )}
 
         <section aria-labelledby="terr-coll" className="terr-section">
           <h2 id="terr-coll">Un jardin partagé ou familial ?</h2>

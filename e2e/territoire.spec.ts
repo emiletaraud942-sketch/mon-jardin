@@ -38,6 +38,7 @@ test('jardin à Rouen : page Jardinons ! avec agenda, aides et heures de tonte',
   await ecran.getByRole('button', { name: 'Ajouter à mon calendrier' }).click()
   expect((await dl).suggestedFilename()).toMatch(/\.ics$/)
   await expect(ecran.getByText('10 h à 12 h')).toBeVisible()
+  await expect(ecran.locator('[data-feat=dechetterie] li')).toHaveCount(3)
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0)
   await ecran.getByRole('button', { name: 'Accueil' }).click()
   await expect(ecran).toHaveCount(0)

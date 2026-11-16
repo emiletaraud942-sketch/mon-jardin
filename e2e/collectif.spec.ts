@@ -69,6 +69,7 @@ test('jardin collectif', async ({ page, baseURL }) => {
   // Biodiversité et chantier.
   await ecran.locator('summary', { hasText: 'Pour la biodiversité' }).click()
   await ecran.locator('[data-feat=biodiversite]').getByRole('checkbox').first().check()
+  await expect(ecran.locator('[data-feat=biodiversite]').getByText('Renouée du Japon')).toBeVisible()
   await ecran.locator('summary', { hasText: 'Inviter à un chantier' }).click()
   const ch = ecran.locator('[data-feat=chantier-participatif]')
   await ch.getByRole('button', { name: 'Partager l’invitation' }).click()
