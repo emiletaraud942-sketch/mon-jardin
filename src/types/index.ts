@@ -172,7 +172,50 @@ export interface Garden {
   panoramas?: Panorama[]
   /** Jardin partagé : identifiant du jardin en ligne et rôle de cette personne. Absent : jardin personnel. Les plantes se synchronisent avec les autres membres (src/lib/shared). */
   shared?: SharedLink
+  /** Jardin collectif (facultatif) : responsable, gestes de compostage, parcelles, composteurs, habitats. Voir src/lib/collectifData.ts. */
+  collectif?: Collectif
+  gestes?: Geste[]
+  plots?: Plot[]
+  composteurs?: Composteur[]
+  habitats?: HabitatKind[]
   createdAt: string
+}
+
+export type GesteType = 'compost' | 'broyat' | 'tonte' | 'feuilles' | 'eau-pluie'
+/** Un geste du jardin : une quantité (kg, ou litres pour l'eau de pluie) un jour donné. */
+export interface Geste {
+  id: string
+  /** AAAA-MM-JJ */
+  date: string
+  type: GesteType
+  quantite: number
+  note?: string
+}
+/** Une parcelle individuelle d'un jardin partagé : rectangle aligné sur le nord, en mètres locaux (coin sud-ouest + largeur + hauteur). */
+export interface Plot {
+  id: string
+  n: number
+  x: number
+  y: number
+  w: number
+  h: number
+  /** Prénom ou surnom de la personne qui cultive la parcelle (donnée sur une tierce personne). */
+  holder?: string
+}
+export interface Composteur {
+  id: string
+  nom: string
+  /** AAAA-MM-JJ : mise en route. */
+  debut: string
+  /** AAAA-MM-JJ : dernier retournement. */
+  retourne?: string
+}
+export type HabitatKind = 'haie' | 'mare' | 'tas-bois' | 'hotel' | 'herisson' | 'nichoir' | 'prairie'
+export interface Collectif {
+  coordinateur?: string
+  association?: string
+  /** AAAA-MM-JJ : jour où la charte du jardin collectif a été affichée et lue. */
+  charteAt?: string
 }
 
 export interface SharedLink {

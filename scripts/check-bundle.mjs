@@ -9,7 +9,7 @@ import { entryChunkFromHtml, findChunk, gzipSize, ko, overBudget, precacheUrls }
 
 const DIST = process.env.DIST_DIR || join(dirname(fileURLToPath(import.meta.url)), '..', 'dist')
 const LIMITS = {
-  entree: 250_000,
+  entree: 260_000, // relevé de 250 à 260 Ko le 16 nov. 2026 : registre des fonctions et validation du jardin collectif (le reste est chargé à la demande)
   precache: 1_200_000,
   maplibre: 330_000,
 }

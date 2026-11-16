@@ -13,6 +13,7 @@ import { detachGarden, importSharedGarden, syncSharedGarden } from '../../lib/sh
 import { ConsentDialog } from '../legal/ConsentDialog'
 import { isDemoGarden } from '../settings/demo'
 import type { Garden } from '../../types'
+import { collectifOpen } from '../../lib/overlays'
 
 /** Ce que les autres membres voient, écrit une fois pour la boîte de partage et pour l'entrée dans un jardin. */
 const WHAT_THEY_SEE =
@@ -61,6 +62,11 @@ export function SharedGardensCard() {
           </button>
         </div>
       )}
+      <div className="row" style={{ marginTop: 10 }}>
+        <button type="button" className="btn" onClick={() => collectifOpen.set({})}>
+          Gérer un jardin collectif : parcelles, bilan, dossier
+        </button>
+      </div>
       {dialog === 'share' && garden && <ShareDialog garden={garden} onClose={() => setDialog(undefined)} />}
       {dialog === 'join' && <JoinDialog onClose={() => setDialog(undefined)} />}
       {dialog === 'consent' && (

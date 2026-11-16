@@ -1,0 +1,95 @@
+/* ---------- Impression : « Dossier du jardin collectif » ----------
+   Caché à l'écran. À l'impression : noir sur blanc, 11 pt (papier : seule exception aux couleurs de l'interface, comme « Ma semaine »). */
+.print-dossier {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 14mm;
+  }
+  html[data-print-dossier] .topbar,
+  html[data-print-dossier] .sidenav,
+  html[data-print-dossier] .lost-fab,
+  html[data-print-dossier] .toast-host,
+  html[data-print-dossier] dialog,
+  html[data-print-dossier] button {
+    display: none !important;
+  }
+  html[data-print-dossier] body > *:not(.print-dossier) {
+    display: none !important;
+  }
+  html[data-print-dossier] body {
+    background: #fff;
+    color: #000;
+    overflow: visible;
+    height: auto;
+  }
+  html[data-print-dossier] .print-dossier {
+    display: block;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-size: 11pt;
+    line-height: 1.35;
+    color: #000;
+    background: #fff;
+  }
+  .print-dossier h1,
+  .print-dossier h2 {
+    font-family: inherit;
+    color: #000;
+  }
+  .print-dossier h1 {
+    font-size: 20pt;
+    margin: 0 0 2pt;
+    font-weight: var(--fw-key);
+  }
+  .print-dossier h2 {
+    font-size: 13pt;
+    font-weight: var(--fw-key);
+    margin: 14pt 0 5pt;
+    padding-bottom: 2pt;
+    border-bottom: 1.2pt solid #000;
+    break-after: avoid;
+  }
+  .print-dossier .pd-sub,
+  .print-dossier .pd-note,
+  .print-dossier .pd-footer {
+    font-size: 9.5pt;
+    margin: 4pt 0;
+  }
+  .print-dossier .pd-footer {
+    margin-top: 16pt;
+    padding-top: 5pt;
+    border-top: 0.5pt solid #000;
+  }
+  .print-dossier .pd-list {
+    margin: 0;
+    padding-left: 14pt;
+  }
+  .print-dossier .pd-plan {
+    width: 100%;
+    max-height: 175mm;
+    border: 0.75pt solid #000;
+    break-inside: avoid;
+  }
+  .print-dossier .pd-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .print-dossier .pd-table th,
+  .print-dossier .pd-table td {
+    text-align: left;
+    padding: 3pt 5pt;
+    border-bottom: 0.5pt solid #777;
+  }
+  .print-dossier .pd-table tr {
+    break-inside: avoid;
+  }
+  .print-dossier .pd-bold {
+    font-weight: var(--fw-key);
+  }
+  .print-dossier .pd-total td {
+    font-weight: var(--fw-key);
+    border-top: 1pt solid #000;
+  }
+}

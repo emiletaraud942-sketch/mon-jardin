@@ -4,7 +4,7 @@ import { goHome } from '../../lib/goHome'
 import { downloadBlob } from '../../lib/backup'
 import { useInertBehind } from '../../lib/inert'
 import { buildEventIcs, eventIcsFilename } from '../../lib/neighbors/eventIcs'
-import { territoireOpen } from '../../lib/overlays'
+import { collectifOpen, territoireOpen } from '../../lib/overlays'
 import { useActiveGarden } from '../../lib/store'
 import { AIDES_COMPOST_URL, GUIDE_EAU_URL, GUIDE_PARCELLE_URL, HERISSON_URL, HORAIRES_OUTILS, HORAIRES_ROUEN_URL, inMetropole, JARDINONS_URL } from '../../lib/territoire'
 import { showToast } from '../../lib/toast'
@@ -149,6 +149,14 @@ export default function TerritoireScreen() {
             ))}
           </ul>
           <Out href={HORAIRES_ROUEN_URL}>Page de la Ville de Rouen</Out>
+        </section>
+
+        <section aria-labelledby="terr-coll" className="terr-section">
+          <h2 id="terr-coll">Un jardin partagé ou familial ?</h2>
+          <p>Notez les gestes de compostage, découpez les parcelles et imprimez un dossier avec le plan : utile pour une demande d’aide.</p>
+          <button className="btn" onClick={() => collectifOpen.set({})}>
+            Ouvrir « Jardin collectif »
+          </button>
         </section>
 
         <section aria-labelledby="terr-plus" className="terr-section">

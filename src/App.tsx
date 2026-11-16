@@ -11,7 +11,7 @@ import { LostButton, LostSheet } from './features/aide/Perdu'
 import { Guide } from './features/aide/Guide'
 import { Visite } from './features/aide/Visite'
 import { tourSeen } from './lib/featureTour'
-import { conseilsOpen, ennuisOpen, guideOpen, leconsOpen, lostSheet, rotationOpen, territoireOpen, toutFaire, tourOpen } from './lib/overlays'
+import { conseilsOpen, ennuisOpen, guideOpen, leconsOpen, lostSheet, rotationOpen, territoireOpen, collectifOpen, toutFaire, tourOpen } from './lib/overlays'
 import { SubTabs, type SubTabExtra } from './components/SubTabs'
 import { FEATURES } from './lib/features'
 import { StorageBanner } from './components/StorageBanner'
@@ -62,6 +62,7 @@ const EnnuisScreen = lazy(() => import('./features/ravageurs/EnnuisScreen'))
 const ConseilsScreen = lazy(() => import('./features/conseils/ConseilsScreen'))
 const LeconsScreen = lazy(() => import('./features/lecons/LeconsScreen'))
 const RotationScreen = lazy(() => import('./features/rotation/RotationScreen'))
+const CollectifScreen = lazy(() => import('./features/collectif/CollectifScreen'))
 const TerritoireScreen = lazy(() => import('./features/territoire/TerritoireScreen'))
 const MapView = lazy(() => import('./features/map/MapView').then((m) => ({ default: m.MapView })))
 
@@ -133,6 +134,7 @@ function AppShell() {
   const leconsShown = leconsOpen.use()
   const rotationShown = rotationOpen.use()
   const territoireShown = territoireOpen.use()
+  const collectifShown = collectifOpen.use()
   const mainRef = useRef<HTMLElement>(null)
   const firstPaint = useRef(true)
   const open = tasks.filter((t) => !t.blockedBy && !t.done).length
@@ -414,6 +416,11 @@ function AppShell() {
       {rotationShown && (
         <Suspense fallback={null}>
           <RotationScreen />
+        </Suspense>
+      )}
+      {collectifShown && (
+        <Suspense fallback={null}>
+          <CollectifScreen key={collectifShown.section ?? 'tout'} section={collectifShown.section} />
         </Suspense>
       )}
       {territoireShown && (

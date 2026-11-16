@@ -46,6 +46,8 @@ export const openConseil = (id?: string) => conseilsOpen.set({ id })
 /** Parcours « Apprendre à jardiner » ouvert ; `id` : la leçon à montrer d'emblée. */
 export const leconsOpen = createValue<{ id?: string } | undefined>(undefined)
 export const openLecon = (id?: string) => leconsOpen.set({ id })
+/** Écran « Jardin collectif » ouvert ; `section` : la partie à ouvrir d'emblée. */
+export const collectifOpen = createValue<{ section?: 'responsable' | 'parcelles' | 'gestes' | 'composteurs' | 'biodiversite' | 'chantier' | 'dossier' } | undefined>(undefined)
 /** Écran « Jardinons ! et la Métropole » ouvert. */
 export const territoireOpen = createValue(false)
 /** Écran « Rotation de mon potager » ouvert. */

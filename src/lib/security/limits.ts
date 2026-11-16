@@ -28,6 +28,10 @@ export const LIMITS = {
   panoramasPerGarden: 12,
   shotsPerPanorama: 12,
   parcelRefs: 50,
+  /** Jardin collectif : gestes, parcelles individuelles, composteurs par jardin. */
+  gestesPerGarden: 1_000,
+  plotsPerGarden: 200,
+  composteursPerGarden: 6,
   parcelRefLength: 100,
   /** Points d'un contour (parcelle, bâtiment). */
   ringPoints: 5_000,

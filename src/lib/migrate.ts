@@ -4,6 +4,7 @@ import type { Building, Garden, Panorama, PanoramaShot, Plant, PlantMeasurement,
 import { isoDate } from './dates'
 import { isValidCalibration } from './calibration'
 import { uid } from './geo'
+import { sanitizeCollectifFields } from './collectifData'
 import { sanitizePhotoMeta } from './journal'
 import { LIMITS } from './security/limits'
 import { cleanExtras, cleanLine, clipText, isPhotoId, isSafeId } from './security/sanitize'
@@ -37,7 +38,7 @@ const inRange = (n: number, max: number) => Math.abs(n) <= max
 /** Texte raccourci à `max` caractères (les données importées ne sont pas dignes de confiance). */
 const text = (v: string, max: number = LIMITS.shortText) => clipText(v, max)
 
-const GARDEN_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'address', 'center', 'altitudeM', 'parcel', 'parcelRefs', 'areaM2', 'buildings', 'terrain', 'sol', 'lastFrostDoy', 'firstFrostDoy', 'minAbsC', 'climateZone', 'rainMmPerYear', 'calibration', 'panoramas', 'shared', 'createdAt'])
+const GARDEN_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'address', 'center', 'altitudeM', 'parcel', 'parcelRefs', 'areaM2', 'buildings', 'terrain', 'sol', 'lastFrostDoy', 'firstFrostDoy', 'minAbsC', 'climateZone', 'rainMmPerYear', 'calibration', 'panoramas', 'shared', 'collectif', 'gestes', 'plots', 'composteurs', 'habitats', 'createdAt'])
 const PLANT_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'speciesId', 'customName', 'position', 'plantedAt', 'ageAtPlanting', 'purchase', 'status', 'notes', 'keeper', 'photos', 'photoMeta', 'measurements'])
 const TASK_KEYS: ReadonlySet<string> = new Set(['id', 'gardenId', 'taskKey', 'status', 'until', 'doneAt'])
 
@@ -180,6 +181,7 @@ function sanitizeGarden(raw: unknown, report: Report): Garden | undefined {
     if (list.length > 0) g.panoramas = list
     else delete g.panoramas
   }
+  sanitizeCollectifFields(raw, g)
   return g
 }
 

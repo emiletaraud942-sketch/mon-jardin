@@ -1,0 +1,15 @@
+/* Écran « Jardin collectif » : sections repliables, grilles de champs, listes. */
+.collectif .coll-section { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; margin: 0 0 10px; }
+.collectif .coll-section > summary { padding: 14px; font-weight: var(--fw-strong); cursor: pointer; min-height: var(--tap, 44px); }
+.collectif .coll-body { padding: 0 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+.collectif .coll-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 560px) { .collectif .coll-grid { grid-template-columns: 1fr 1fr; } }
+.collectif .field { display: flex; flex-direction: column; gap: 4px; }
+.collectif .coll-list, .collectif .coll-plots { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.collectif .coll-list li, .collectif .coll-plots li { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 12px; }
+.collectif .coll-compost.tourner { border-color: var(--warn); background: var(--warn-soft); color: var(--warn-text); }
+.collectif .coll-compost.mur { border-color: var(--accent-2); background: var(--accent-soft); }
+.collectif .coll-bilan { width: 100%; border-collapse: collapse; }
+.collectif .coll-bilan td { padding: 6px 4px; border-bottom: 1px solid var(--border); }
+.collectif .coll-bilan td:last-child { text-align: right; white-space: nowrap; }
+.collectif .coll-total td { font-weight: var(--fw-key); }

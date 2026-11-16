@@ -22,7 +22,7 @@ export interface DataItem {
 export const DATA_INVENTORY: readonly DataItem[] = [
   {
     id: 'jardins',
-    donnee: 'Jardins : nom, adresse, position du centre, contour de parcelle, bâtiments, relief, plantes (position au mètre près, notes, nom facultatif de la personne qui s’en occupe : un prénom ou un surnom que vous écrivez, informations d’achat facultatives : forme, hauteur, lieu et prix ; date et note facultative liées à chaque photo, dans le journal de la plante), tâches faites',
+    donnee: 'Jardins : nom, adresse, position du centre, contour de parcelle, bâtiments, relief, plantes (position au mètre près, notes, nom facultatif de la personne qui s’en occupe : un prénom ou un surnom que vous écrivez, informations d’achat facultatives : forme, hauteur, lieu et prix ; date et note facultative liées à chaque photo, dans le journal de la plante), tâches faites ; pour un jardin collectif (facultatif) : le prénom ou surnom de la personne qui coordonne, le nom d’une association, le prénom ou surnom de la personne qui cultive chaque parcelle, les gestes de compostage notés (date, quantité, note courte), les composteurs et les aménagements pour la biodiversité cochés',
     stockage: 'IndexedDB du navigateur (clé permajardin:state:v1) ; copies de sécurité (« avant migration », « précédente », « illisible ») : l’état d’avant une correction au chargement, un remplacement par la synchro ou l’import, ou des données illisibles ; copie de secours dans le localStorage (clé permajardin:state:v1:miroir) qui évite de perdre la dernière modification si le navigateur se ferme trop vite',
     destinataires: [],
     finalite: 'Fournir le service : carte, calendrier d’entretien',
