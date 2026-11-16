@@ -1,0 +1,10 @@
+/* Page « Jardinons ! et la Métropole » : sections en cartes, liens sortants, rendez-vous. */
+.territoire .terr-intro { margin: 0 0 12px; font-weight: var(--fw-strong); }
+.territoire .terr-section { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin: 0 0 12px; display: flex; flex-direction: column; gap: 10px; }
+.territoire .terr-section h2 { margin: 0; font-size: 1.1rem; }
+.territoire .terr-section p { margin: 0; }
+.territoire .terr-events { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.territoire .terr-event { display: flex; flex-direction: column; gap: 4px; padding: 10px; border: 1px solid var(--border); border-radius: 12px; }
+.territoire .terr-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.territoire .terr-link { text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.territoire .terr-hours { margin: 0; padding-left: 1.1em; }

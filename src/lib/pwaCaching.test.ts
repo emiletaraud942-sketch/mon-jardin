@@ -33,6 +33,7 @@ describe('règles de cache du service worker', () => {
       '/ext/apicarto/api/cadastre/parcelle?geom=x',
       '/ext/meteo/v1/forecast?latitude=49',
       '/ext/meteo-archive/v1/archive?latitude=49',
+      '/ext/agenda/api/explore/v2.1/catalog/datasets/agenda-metropole-rouen-normandie/records?limit=5',
       '/api/identify',
     ]
     for (const p of jamais) expect(rule(p), p).toBeUndefined()

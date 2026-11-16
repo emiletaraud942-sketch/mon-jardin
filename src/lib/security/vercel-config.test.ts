@@ -29,9 +29,9 @@ describe('rewrites /ext/* : chemins exacts', () => {
     }
   })
 
-  it('chaque destination est l’un des 4 hôtes autorisés', () => {
+  it('chaque destination est l’un des 5 hôtes autorisés', () => {
     const hosts = new Set(proxies.map((r) => new URL(r.destination).host))
-    expect([...hosts].sort()).toEqual(['api.open-meteo.com', 'apicarto.ign.fr', 'archive-api.open-meteo.com', 'data.geopf.fr'])
+    expect([...hosts].sort()).toEqual(['api.open-meteo.com', 'apicarto.ign.fr', 'archive-api.open-meteo.com', 'data.geopf.fr', 'data.metropole-rouen-normandie.fr'])
   })
 
   it('chaque appel /ext/ du code source est couvert par un rewrite', () => {

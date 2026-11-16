@@ -1,3 +1,5 @@
+import { territoireOpen } from '../../lib/overlays'
+import { inMetropole } from '../../lib/territoire'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Fold } from '../../components/Fold'
 import { useIntent } from '../../lib/overlays'
@@ -63,6 +65,20 @@ const EXAMPLES: { kind: PostKind; title: string; who: string }[] = [
 
 const EXAMPLE_EVENT = { title: 'Atelier de taille des rosiers', when: 'Un samedi, de 14 h 00 à 16 h 00', where: 'Jardin partagé du quartier', who: 'Organisé par Les Jardiniers du quartier' }
 
+/** Dans la Métropole Rouen Normandie, la communauté Jardinons ! existe déjà : on la montre sans cacher l'entraide. */
+export function JardinonsNote({ garden }: { garden: Garden }) {
+  if (inMetropole(garden) !== true) return null
+  return (
+    <div className="np-example" data-feat="jardinons-note">
+      <strong>Vous jardinez dans la Métropole de Rouen ?</strong>
+      <span className="small muted">La communauté Jardinons ! propose des ateliers, des dons et des prêts. Elle complète cette entraide.</span>
+      <button className="btn" onClick={() => territoireOpen.set(true)}>
+        Voir Jardinons !
+      </button>
+    </div>
+  )
+}
+
 /** Écran « Entraide ». Aucune requête ne part avant l'accord : un seul écran explique et demande l'autorisation. */
 export function NeighborsPage({ garden }: { garden: Garden }) {
   const { voisins } = useConsents()
@@ -74,6 +90,7 @@ export function NeighborsPage({ garden }: { garden: Garden }) {
           Donnez, prêtez ou posez une question à des jardiniers près de chez vous. C’est gratuit.
         </p>
       </header>
+      <JardinonsNote garden={garden} />
       {voisins ? (
         <Connected garden={garden} />
       ) : (

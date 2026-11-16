@@ -9,6 +9,7 @@
 //   /ext/geopf/geocodage/search      adresses                                                                 → aucun cache
 //   /ext/geopf/altimetrie/…          relief RGE ALTI                                                          → aucun cache
 //   /ext/apicarto/…                  cadastre (API Carto)                                                     → aucun cache
+//   /ext/agenda/…                    événements « Jardinons ! » de la Métropole (données ouvertes)           → aucun cache
 export interface RuntimeRule {
   urlPattern: (ctx: { url: URL }) => boolean
   handler: 'CacheFirst' | 'StaleWhileRevalidate'

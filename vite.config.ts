@@ -16,6 +16,7 @@ const proxies = {
   '/ext/apicarto': 'https://apicarto.ign.fr',
   '/ext/meteo-archive': 'https://archive-api.open-meteo.com',
   '/ext/meteo': 'https://api.open-meteo.com',
+  '/ext/agenda': 'https://data.metropole-rouen-normandie.fr',
 }
 
 // Lecture de l'étiquette (Tesseract) : les modules sont servis par NOTRE domaine (la CSP interdit les CDN) et ne sont ni précachés

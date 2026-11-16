@@ -34,6 +34,10 @@
       "destination": "https://api.open-meteo.com/v1/forecast"
     },
     {
+      "source": "/ext/agenda/api/explore/v2.1/catalog/datasets/agenda-metropole-rouen-normandie/records",
+      "destination": "https://data.metropole-rouen-normandie.fr/api/explore/v2.1/catalog/datasets/agenda-metropole-rouen-normandie/records"
+    },
+    {
       "source": "/((?!api/|ext/|assets/|.*\\.).*)",
       "destination": "/index.html"
     }

@@ -1,7 +1,8 @@
 import { neighborsEnabled } from './neighbors/enabled'
 import { speechSupported } from './speech'
 import { getState } from './store'
-import { addPicker, conseilsOpen, ennuisOpen, guideOpen, identifyOpen, leconsOpen, plantChoice, postIntent, rotationOpen, shoppingOpen, tourOpen, type PlantAsk } from './overlays'
+import { inMetropole } from './territoire'
+import { addPicker, conseilsOpen, ennuisOpen, guideOpen, identifyOpen, leconsOpen, plantChoice, postIntent, rotationOpen, shoppingOpen, territoireOpen, tourOpen, type PlantAsk } from './overlays'
 import { reveal } from './reveal'
 import { redoWithToast, undoWithToast } from './history'
 import { showToast } from './toast'
@@ -194,6 +195,7 @@ export const FEATURES: Feature[] = [
   F('guide-ravageurs', 'Reconnaître un ennui du jardin', 'afaire', 'Pucerons, limaces, taches sur les feuilles : cherchez ce que vous voyez, et que faire.', ['puceron', 'limace', 'maladie', 'feuilles', 'mildiou', 'bestiole', 'traitement', 'insecte', 'champignon', 'taches', 'trous', 'jaunes', 'ennui', 'oïdium'], 'guide-ennuis', () => ennuisOpen.set({})),
   F('conseils-compost-eau', 'Lire les conseils compost et économie d’eau', 'afaire', 'Faire son compost, pailler, arroser moins : des conseils pas à pas, sans internet.', ['compost', 'eau', 'arrosage', 'paillage', 'pluie', 'épluchures', 'économiser', 'arroser', 'récupérer', 'sécheresse', 'canicule'], 'conseils', () => conseilsOpen.set({})),
   F('apprendre-jardiner', 'Apprendre à jardiner', 'afaire', 'Des leçons courtes, pas à pas, avec un petit quiz pour vérifier ce que vous avez retenu.', ['leçon', 'leçons', 'apprendre', 'formation', 'permaculture', 'débutant', 'cours'], 'lecons', () => leconsOpen.set({})),
+  F('jardinons', 'Jardinons ! et la Métropole', 'afaire', 'Rendez-vous, aides au compost et heures de tonte pour les habitants de la Métropole de Rouen.', ['jardinons', 'métropole', 'rouen', 'ateliers', 'événements', 'rendez-vous', 'composteur', 'broyeur', 'aide', 'tonte', 'horaires'], 'territoire', () => territoireOpen.set(true), () => inMetropole(getState().gardens.find((g) => g.id === getState().activeGardenId)) === true),
   F('rotation-potager', 'Voir la rotation de mon potager', 'afaire', 'Quels légumes ne pas remettre au même endroit, et quoi planter l’an prochain.', ['rotation', 'potager', 'famille', 'légumes', 'assolement', 'cultures', 'an prochain', 'tomate'], 'rotation', () => rotationOpen.set(true)),
   F('aide-ecran', 'Aide de cet écran', 'afaire', 'Explique l’écran où vous êtes, en quelques phrases.', ['aide', 'comment faire', 'explication', 'besoin d’aide', 'problème'], 'help', () => openHelp()),
   F('guide', 'Je ne sais pas par où commencer', 'afaire', 'Quelques questions simples, une à la fois : l’appli vous amène au bon endroit.', ['guide', 'commencer', 'par où', 'aide', 'débuter', 'perdu', 'questions'], 'guide', () => guideOpen.set(true)),

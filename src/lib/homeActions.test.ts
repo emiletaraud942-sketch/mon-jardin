@@ -20,6 +20,7 @@ describe('gros boutons de l’accueil', () => {
       'Scanner mon jardin',
       'Ce qu’il y a à faire',
       'Où planter ?',
+      'Jardinons ! (Métropole)',
       'Voisins',
       'Tout ce que je peux faire',
     ])

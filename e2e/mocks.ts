@@ -14,6 +14,8 @@ const place = { type: 'Feature', geometry: { type: 'Point', coordinates: [LON, L
 export interface WeatherMock {
   heatWave?: boolean
   gust?: number
+  /** Identifiant de parcelle renvoyé par l'API Carto (« 76540000AB0001 » = un jardin à Rouen). */
+  idu?: string
 }
 
 function weather(opts: WeatherMock = {}) {
@@ -57,12 +59,43 @@ function archive() {
   return { latitude: LAT, longitude: LON, daily: { time, temperature_2m_min: mn, temperature_2m_max: mx, precipitation_sum: pr } }
 }
 
+/** Parcelle carrée autour du point demandé à l'API Carto (`geom` = Point GeoJSON) : le jardin d'exemple y trouve une parcelle. */
+function squareAround(url: string, h: number) {
+  try {
+    const g = JSON.parse(new URL(url).searchParams.get('geom') || '{}') as { coordinates?: [number, number] }
+    const [lon, lat] = g.coordinates ?? [LON, LAT]
+    return [[[lon - h, lat - h], [lon + h, lat - h], [lon + h, lat + h], [lon - h, lat + h], [lon - h, lat - h]]]
+  } catch {
+    return square(h)
+  }
+}
+
 function ext(route: Route, wx: WeatherMock) {
   const url = route.request().url()
   const json = (body: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) })
   if (url.includes('geocodage/search') || url.includes('geocodage/reverse')) return json({ type: 'FeatureCollection', features: [place] })
   if (url.includes('apicarto')) {
-    return json({ type: 'FeatureCollection', features: [{ type: 'Feature', id: 'p1', geometry: { type: 'Polygon', coordinates: square(0.0001) }, properties: { idu: 'x', contenance: 480, nom_com: 'Lyon' } }] })
+    return json({ type: 'FeatureCollection', features: [{ type: 'Feature', id: 'p1', geometry: { type: 'Polygon', coordinates: wx.idu ? squareAround(url, 0.0001) : square(0.0001) }, properties: { idu: wx.idu ?? 'x', contenance: 480, nom_com: 'Lyon' } }] })
+  }
+  if (url.includes('/ext/agenda/')) {
+    const start = new Date(Date.now() + 3 * 86_400_000)
+    const end = new Date(start.getTime() + 3 * 3_600_000)
+    return json({
+      total_count: 1,
+      results: [
+        {
+          uid: '4021973',
+          title_fr: 'Jardinons ! Un apéro sain et gourmand',
+          canonicalurl: 'https://openagenda.com/rouen-normandie-metropole/events/un-apero-sain-et-gourmand',
+          daterange_fr: 'Dans quelques jours, 18h00',
+          timings: JSON.stringify([{ begin: start.toISOString(), end: end.toISOString() }]),
+          location_city: 'Rouen',
+          location_name: 'Métropole Rouen Normandie',
+          description_fr: 'Atelier cuisine',
+          conditions_fr: 'Sur inscription',
+        },
+      ],
+    })
   }
   if (url.includes('elevation.json')) {
     const n = (new URL(url).searchParams.get('lon') || '').split('|').length
