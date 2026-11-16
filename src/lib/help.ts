@@ -48,9 +48,9 @@ export const HELP: Record<Tab, HelpContent> = {
       'La liste dit quoi faire cette semaine : tailler, désherber, arroser, récolter. « Urgent » passe en premier.',
       '« Voir tout » montre toutes les tâches et celles mises de côté.',
       'La météo et la saison sont prises en compte. Canicule, sécheresse et vent fort passent en « Urgent ».',
+      'Chaque jour de la météo donne deux températures : « Jour », la plus chaude, et « Nuit », la plus froide.',
       'Cochez une tâche quand elle est faite. « Annuler » la remet dans la liste.',
-      'Touchez le nom d’une plante pour la voir sur la carte.',
-      'Le calendrier de l’année montre les mois à venir.',
+      'Touchez le nom d’une plante pour la voir sur la carte. Le calendrier de l’année montre les mois à venir.',
     ],
   },
   planter: {

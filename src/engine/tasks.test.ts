@@ -282,7 +282,7 @@ describe('generateTasks : météo', () => {
     const tasks = run({ plants: [plant('pommier'), plant('citronnier')], weather: w, today })
     const taille = tasks.find(tailleHiver)!
     expect(taille.blockedBy).toBe('Attendre : risque de gel')
-    expect(taille.detail).toContain('Gel prévu jeudi (-2 °C)')
+    expect(taille.detail).toContain('Gel prévu jeudi (-2 °C la nuit)')
     const prot = tasks.find((t) => t.type === 'protection')!
     expect(prot.priority).toBe('haute')
     expect(prot.plantIds).toHaveLength(1) // le pommier supporte -25 °C
@@ -323,7 +323,7 @@ describe('generateTasks : météo', () => {
     expect(frais.find((t) => t.type === 'paillage')).toBeUndefined()
     const chaud = run({ plants: [plant('tomate')], today, weather: weather(today, [{ rainMm: 5 }], [{}, { tMax: 31 }]) })
     expect(chaud.find((t) => t.type === 'paillage')?.reason).toContain('Chaleur prévue demain')
-    expect(chaud.find((t) => t.type === 'paillage')?.detail).toContain('31 °C prévus demain')
+    expect(chaud.find((t) => t.type === 'paillage')?.detail).toContain('31 °C prévus demain dans la journée.')
   })
 
   it('déficit hydrique : arrosage haute priorité des plantes concernées', () => {
