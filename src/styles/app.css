@@ -25,15 +25,15 @@
   --fw-strong: 500;
   --fw-key: 600;
   --font-body: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --bg: #ffffff; /* blanc pur (maquette Leafora) */
-  --surface: #ffffff; /* cartes, barres, champs */
-  --surface-2: #eef0e3; /* fonds discrets, zones inactives */
-  --track: #e4e8d6; /* sauge : rail des onglets, jauges */
-  --border: #ecefe4; /* contour très doux des cartes génériques (les cartes de la maquette n'en ont pas : ombre seule) */
+  --bg: #f5efe3; /* crème chaud (refonte du 16 nov. d'après la maquette « Bean & Bloom » du propriétaire) */
+  --surface: #fcf9f2; /* cartes, barres, champs : crème clair */
+  --surface-2: #ece4d3; /* fonds discrets, zones inactives */
+  --track: #e9e3d1; /* beige : rail des onglets, jauges */
+  --border: #e8dfcd; /* contour très doux des cartes génériques */
   --border-strong: #7f8a7c; /* contour des champs et boutons : 3,1:1 au moins sur les fonds clairs */
   --focus: #0b57d0; /* anneau de focus clavier : 5,7:1 et plus */
   --text: #1f2a22; /* 13,6:1 sur --bg */
-  --muted: #6b7468; /* gris exact de la maquette : 4,9:1 sur blanc (sur sauge : utiliser --muted-2) */
+  --muted: #626c5f; /* gris vert : 4,8:1 sur --bg crème (sur beige ou sauge : utiliser --muted-2) */
   --tab-off: #9aa396; /* gris exact de la maquette : onglets et étapes « à venir » (2,6:1 sur blanc : choix de fidélité) */
   --muted-2: #4b5b49; /* gris foncé pour les textes posés sur la sauge (5,8:1) */
   --step-off: #dde3d0; /* barre d'étapes, pastille « à venir » */
@@ -58,7 +58,7 @@
   --danger-soft: #f6dcd7;
   --sun: #e2a72e;
   --parcel: #ffe066; /* limite de parcelle, dessinée sur la photo aérienne */
-  --cal-abri: #336a9e; /* semis abrité : 5,9:1 sur --surface, 4,9:1 sur --surface-2 */
+  --cal-abri: #2f6492; /* semis abrité : plus foncé pour rester lisible sur le beige --surface-2 (>= 4,5:1) */
   --cal-harvest: #8f5800; /* récolte : 5,9:1 sur --surface, 5,1:1 sur --surface-2 */
   /* Étiquettes et tuiles colorées */
   --dry-bg: #e4e8d6;

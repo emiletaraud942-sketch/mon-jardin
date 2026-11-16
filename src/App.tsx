@@ -54,6 +54,7 @@ import './styles/leafora.css'
 import './styles/mobile-nav.css'
 import './styles/panorama.css'
 import './styles/facile.css'
+import './styles/warm.css'
 
 const NeighborsPage = lazy(() => import('./features/neighbors/NeighborsPage').then((m) => ({ default: m.NeighborsPage })))
 const ScanHost = lazy(() => import('./features/scan/ScanHost'))

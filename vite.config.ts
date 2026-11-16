@@ -119,7 +119,7 @@ export default defineConfig({
         lang: 'fr',
         dir: 'ltr',
         theme_color: '#ffffff',
-        background_color: '#ffffff',
+        background_color: '#f5efe3',
         display: 'standalone',
         display_override: ['standalone'],
         orientation: 'any',

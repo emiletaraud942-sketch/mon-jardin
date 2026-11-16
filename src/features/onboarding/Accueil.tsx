@@ -219,6 +219,36 @@ export function lessonsPhrase(done: readonly string[]): string | undefined {
   return `${doneSentence(done)}. On continue ?`
 }
 
+/** Les quatre actions du quotidien, en tuiles (refonte du 16 nov.). Libellé court à l'écran ; le nom accessible reste le mot complet du registre (il le contient). */
+const TILE_IDS = ['ajouter', 'carte', 'afaire', 'planter']
+const TILE_LABEL: Record<string, string> = { ajouter: 'Ajouter', carte: 'Mon jardin', afaire: 'À faire', planter: 'Planter' }
+
+function HomeTile({ a }: { a: HomeAction }) {
+  return (
+    <button className={'home-tile' + (a.primary ? ' primary' : '')} data-home={a.id} aria-label={a.mot} onClick={() => runHomeAction(a)}>
+      <span className="home-tile-icon" aria-hidden>
+        <Icon name={a.icon} size={26} />
+      </span>
+      <span className="home-tile-label">{TILE_LABEL[a.id] ?? a.mot}</span>
+    </button>
+  )
+}
+
+/** « À la une » : une grande carte vert profond (leçons), avec l'illustration du pot. Toute la carte est le bouton. */
+function HomeFeature({ a, phrase }: { a: HomeAction; phrase?: string }) {
+  return (
+    <button className="home-feature" data-home={a.id} onClick={() => runHomeAction(a)}>
+      <span className="home-feature-kicker">À la une</span>
+      <strong className="home-feature-title">{a.mot}</strong>
+      <span className="home-feature-text">{phrase ?? a.phrase}</span>
+      <span className="home-feature-pill" aria-hidden>
+        Commencer
+      </span>
+      <PlantPot size={104} className="home-feature-art" />
+    </button>
+  )
+}
+
 /** Un gros bouton de l'accueil : une icône, un verbe, une phrase. Le nom accessible est le texte écrit. */
 function HomeButton({ a, badge, phrase }: { a: HomeAction; badge?: number; phrase?: string }) {
   return (
@@ -251,12 +281,18 @@ export function Accueil({ garden, openTasks, newsCount, alerts = [] }: { garden:
   const climate = climateSummary(garden, { short: true })
   const alertText = alertHomeSentence(alerts)
   const lessonsDone = useLessonsDone()
+  const byId = (id: string) => actions.find((a) => a.id === id)
+  const tiles = TILE_IDS.map(byId).filter((a): a is HomeAction => !!a)
+  const partage = byId('partage')
+  const feature = byId('apprendre')
+  const rest = actions.filter((a) => !TILE_IDS.includes(a.id) && a.id !== 'partage' && a.id !== 'apprendre')
 
   return (
     <div className="page accueil">
       {route && <RouteCard garden={garden} />}
       <PageHead compact kicker={who ? `Bonjour ${who}` : 'Bonjour'} title="Que voulez-vous faire ?" onHelp={openHelp} />
       <button className={'chez' + (climate ? ' has-climate' : '')} onClick={() => setUi({ tab: 'carte' })}>
+        <span className="chez-kicker">Votre jardin</span>
         <span className="chez-title">{demoHomeTitle(garden, chezTitle(garden.name))}</span>
         <span className="chez-sum">
           {plants.length} plante{plants.length > 1 ? 's' : ''}
@@ -275,9 +311,21 @@ export function Accueil({ garden, openTasks, newsCount, alerts = [] }: { garden:
       )}
       {!route && <SyncNudge garden={garden} />}
       {!route && <NextStepCard garden={garden} openTasks={openTasks} />}
+      <div className="home-tiles" role="group" aria-label="Les actions du quotidien">
+        {tiles.map((a) => (
+          <HomeTile key={a.id} a={a} />
+        ))}
+      </div>
+      {partage && (
+        <div className="home-grid home-grid-solo">
+          <HomeButton a={partage} />
+        </div>
+      )}
+      {feature && <HomeFeature a={feature} phrase={lessonsPhrase(lessonsDone)} />}
+      <h2 className="home-label">Et aussi</h2>
       <div className="home-grid" role="group" aria-label="Que voulez-vous faire ?">
-        {actions.map((a) => (
-          <HomeButton key={a.id} a={a} badge={a.id === 'voisins' ? newsCount : undefined} phrase={a.id === 'apprendre' ? lessonsPhrase(lessonsDone) : undefined} />
+        {rest.map((a) => (
+          <HomeButton key={a.id} a={a} badge={a.id === 'voisins' ? newsCount : undefined} />
         ))}
         {HOME_HELPERS.map((a) => (
           <HomeButton key={a.id} a={a} />

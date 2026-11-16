@@ -1,0 +1,200 @@
+/* Refonte du 16 nov. 2026 : style « crème et vert profond » d'après la maquette du propriétaire (« Bean & Bloom »).
+   Chargé en dernier. Couleurs : variables de :root seulement (clair et sombre). Rien ne change aux fonctions : seuls l'habillage et l'accueil bougent. */
+
+/* ---------- Ombres chaudes (clair seulement : le sombre garde les siennes) ---------- */
+:root {
+  --shadow: 0 10px 28px rgb(90 65 30 / 12%);
+  --shadow-soft: 0 6px 18px rgb(90 65 30 / 10%);
+  --shadow-chip: 0 3px 10px rgb(90 65 30 / 12%);
+  --shadow-tile: 0 6px 16px rgb(90 65 30 / 10%);
+  --shadow-now: 0 10px 26px rgb(90 65 30 / 14%);
+  --shadow-float: 0 10px 30px rgb(90 65 30 / 18%);
+  --shadow-up: 0 -8px 30px rgb(90 65 30 / 10%);
+}
+
+/* ---------- En-tête de l'accueil : un grand titre en serif ---------- */
+.accueil .pagehead h1 {
+  font-size: calc(36 * var(--px));
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+.accueil .pagehead-kicker {
+  font-size: calc(15 * var(--px));
+  color: var(--muted-2);
+}
+
+/* ---------- Carte du jardin : le « plat du jour » ---------- */
+.accueil .chez {
+  margin-top: 14px;
+  padding: 16px 104px 16px 18px;
+  border: var(--border-w) solid var(--border);
+  border-radius: 26px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.accueil .chez .chez-art {
+  right: 12px;
+  width: 84px;
+}
+.chez-kicker {
+  font-size: calc(11 * var(--px));
+  font-weight: var(--fw-key);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cta);
+}
+.accueil .chez-title {
+  font-size: calc(26 * var(--px));
+  line-height: 1.1;
+  margin-top: 2px;
+}
+
+/* ---------- Tuiles : les quatre actions du quotidien ---------- */
+.home-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.home-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 92px;
+  padding: 12px 4px 10px;
+  border: var(--border-w) solid var(--border);
+  border-radius: 22px;
+  background: var(--surface);
+  box-shadow: var(--shadow-tile);
+  color: var(--title);
+  font: inherit;
+  cursor: pointer;
+}
+.home-tile:hover,
+.home-tile:active {
+  background: var(--surface-2);
+}
+.home-tile:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.home-tile-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+}
+.home-tile-label {
+  font-size: calc(12.5 * var(--px));
+  font-weight: var(--fw-strong);
+  line-height: 1.15;
+  text-align: center;
+  color: var(--text);
+}
+.home-tile.primary {
+  background: var(--btn-green);
+  border-color: var(--btn-green);
+  color: var(--on-btn-green);
+}
+.home-tile.primary .home-tile-icon {
+  background: rgb(255 255 255 / 18%);
+}
+.home-tile.primary .home-tile-label {
+  color: var(--on-btn-green);
+}
+
+/* ---------- Carte « à la une » : vert profond, pot en illustration ---------- */
+.home-feature {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  min-height: 168px;
+  margin-top: 14px;
+  padding: 18px 132px 18px 20px;
+  border: 0;
+  border-radius: 28px;
+  background: var(--btn-green);
+  color: var(--on-btn-green);
+  box-shadow: var(--shadow-now);
+  font: inherit;
+  text-align: left;
+  overflow: hidden;
+  cursor: pointer;
+}
+.home-feature:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+.home-feature-kicker {
+  font-size: calc(11 * var(--px));
+  font-weight: var(--fw-key);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.home-feature-title {
+  font-family: var(--font-title);
+  font-size: calc(27 * var(--px));
+  font-weight: var(--fw-text);
+  line-height: 1.08;
+}
+.home-feature-text {
+  font-size: calc(14 * var(--px));
+  line-height: 1.35;
+  opacity: 0.92;
+}
+.home-feature-pill {
+  margin-top: auto;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--title);
+  font-size: calc(14 * var(--px));
+  font-weight: var(--fw-key);
+}
+.home-feature-art {
+  position: absolute;
+  right: 6px;
+  bottom: 4px;
+}
+
+/* ---------- Étiquette de section et liste ---------- */
+.home-label {
+  margin: 22px 2px 8px;
+  font-family: var(--font-body);
+  font-size: calc(12 * var(--px));
+  font-weight: var(--fw-key);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.home-grid-solo {
+  margin-top: 12px;
+}
+.home-btn {
+  border-radius: 22px;
+  box-shadow: var(--shadow-tile);
+}
+.home-btn-icon {
+  border-radius: 50%;
+}
+
+/* ---------- Barre du bas : plus ronde, plus légère ---------- */
+@media (max-width: 760px) {
+  .sidenav {
+    box-shadow: var(--shadow-float);
+    border: var(--border-w) solid var(--border);
+  }
+}
+
+/* ---------- Grandes touches : les tuiles suivent ---------- */
+html[data-big-taps] .home-tile {
+  min-height: 104px;
+}

@@ -15,9 +15,9 @@ test('accueil : Jardin partagé en vue, Aide seulement dans l’en-tête', async
   await page.getByRole('button', { name: 'Visiter un jardin d’exemple' }).click()
   const bouton = page.locator('[data-home=partage]')
   await expect(bouton).toBeVisible({ timeout: 60_000 })
-  // Tout en haut de la liste : le premier gros bouton est « Ajouter une plante », le deuxième « Jardin partagé ».
+  // Les quatre tuiles du quotidien d'abord, puis « Jardin partagé » juste en dessous (refonte du 16 nov.).
   const ordre = await page.evaluate(() => [...document.querySelectorAll('[data-home]')].map((e) => (e as HTMLElement).dataset.home))
-  expect(ordre.slice(0, 2)).toEqual(['ajouter', 'partage'])
+  expect(ordre.slice(0, 5)).toEqual(['ajouter', 'carte', 'afaire', 'planter', 'partage'])
   await expect(page.locator('[data-home=aide]')).toHaveCount(0)
   await expect(page.getByRole('button', { name: /^Aide/ }).first()).toBeVisible()
   await bouton.click()
