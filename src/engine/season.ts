@@ -128,3 +128,76 @@ export function seasonSummary(plants: Plant[], speciesById: Record<string, Speci
   const parts = order.filter((p) => counts.has(p)).map((p) => `${counts.get(p)} ${PHASE_LABEL[p]}`)
   return `${head} : ${parts.slice(0, 3).join(', ')}.`
 }
+
+// ---------- Saison d'une photo (hémisphère nord) ----------
+
+export type SeasonId = Exclude<SeasonChoice, 'aujourdhui'>
+
+/** Mois (1 à 12) -> saison, façon météorologique : hiver déc.-fév., printemps mars-mai, été juin-août, automne sept.-nov. */
+export function seasonOfMonth(month: number): SeasonId | undefined {
+  if (!Number.isInteger(month) || month < 1 || month > 12) return undefined
+  if (month === 12 || month <= 2) return 'hiver'
+  if (month <= 5) return 'printemps'
+  if (month <= 8) return 'ete'
+  return 'automne'
+}
+
+/**
+ * Date lisible d'une photo : un jour « AAAA-MM-JJ » (midi, heure locale) ou une date ISO avec heure. Sinon `undefined`.
+ * Valide = réelle, en 2000 ou après, pas dans le futur (un jour de marge : fuseaux et horloge du téléphone).
+ */
+export function photoDate(raw: string | undefined, now: Date = new Date()): Date | undefined {
+  if (typeof raw !== 'string' || raw.length > 40) return undefined
+  const day = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw)
+  const d = day ? new Date(Number(day[1]), Number(day[2]) - 1, Number(day[3]), 12) : new Date(raw)
+  const t = d.getTime()
+  if (!Number.isFinite(t)) return undefined
+  if (day && (d.getMonth() !== Number(day[2]) - 1 || d.getDate() !== Number(day[3]))) return undefined // « 2026-02-30 »
+  if (d.getFullYear() < 2000 || t > now.getTime() + 86_400_000) return undefined
+  return d
+}
+
+/** Saison d'une photo d'après sa date, ou `undefined` sans date valide. */
+export function seasonOfPhoto(raw: string | undefined, now: Date = new Date()): SeasonId | undefined {
+  const d = photoDate(raw, now)
+  return d ? seasonOfMonth(d.getMonth() + 1) : undefined
+}
+
+const seasonInfo = (id: SeasonId) => SEASONS.find((s) => s.id === id)!
+
+/** « 12 juin 2026 » (« 1er » pour le premier du mois). */
+export function photoDayText(d: Date): string {
+  const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre']
+  return `${d.getDate() === 1 ? '1er' : d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`
+}
+
+/** « Photo prise le 12 juin 2026 (été) : les plantes sont décrites à cette date. » ; `undefined` sans date valide. */
+export function photoSeasonPhrase(raw: string | undefined, now: Date = new Date()): string | undefined {
+  const d = photoDate(raw, now)
+  const id = seasonOfPhoto(raw, now)
+  if (!d || !id) return undefined
+  return `Photo prise le ${photoDayText(d)} (${seasonInfo(id).label.toLowerCase()}) : les plantes sont décrites à cette date.`
+}
+
+/**
+ * Ce que l'on voit sur la plante à une saison, en mots (« en fleurs », « sans feuilles »), comme si l'on choisissait cette saison.
+ * `undefined` pour une plante prévue ou morte, ou une annuelle pas encore semée à cette saison ; « récoltée » pour une annuelle qui a fini sa saison.
+ */
+export function plantLabelAtSeason(plant: Plant, species: Species | undefined, now: Date, season: SeasonId): string | undefined {
+  if (!species || plant.status === 'projet' || plant.status === 'mort') return undefined
+  if (plant.status === 'recoltee') return 'récoltée' // fin de saison : jamais « en fleurs » ni « en feuilles »
+  const at = seasonDate(season, now)
+  // Une annuelle semée plus tard dans la même année n'existe pas encore à cette saison : on ne dit rien plutôt que « sans feuilles ».
+  const planted = new Date(plant.plantedAt)
+  if (!species.vivace && Number.isFinite(planted.getTime()) && planted.getFullYear() === at.getFullYear() && at.getTime() < planted.getTime()) return undefined
+  return PHASE_LABEL[phaseOf(stateAtSeason(plant, species, now, at))]
+}
+
+/** Mention sous une photo du journal : « En hiver : sans feuilles d’ordinaire. » (ou « Photo prise en hiver. » si l'état est inconnu). */
+export function journalSeasonNote(raw: string | undefined, plant: Plant, species: Species | undefined, now: Date = new Date()): string | undefined {
+  const id = seasonOfPhoto(raw, now)
+  if (!id) return undefined
+  const phrase = seasonInfo(id).phrase
+  const label = plant.status === 'recoltee' ? undefined : plantLabelAtSeason(plant, species, now, id)
+  return label ? `${phrase.charAt(0).toUpperCase() + phrase.slice(1)} : ${label} d’ordinaire.` : `Photo prise ${phrase}.`
+}

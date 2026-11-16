@@ -2,8 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '../../components/Icon'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { plantSizeAt } from '../../engine/growth'
-import { PHASE_LABEL, phaseOf, seasonDate, stateAtSeason } from '../../engine/season'
-import { SeasonPicker } from '../../components/SeasonPicker'
+import { photoSeasonPhrase, plantLabelAtSeason, SEASON_CHOICES, SEASONS, seasonOfPhoto, type SeasonId } from '../../engine/season'
 import { setUi, useUi } from '../../lib/ui'
 import { SPECIES_BY_ID } from '../../data/species'
 import { frMeters } from '../../lib/format'
@@ -20,6 +19,7 @@ import { arrivalYaw, jumpTo, startTour, stepLabel, sweepDeg, tickTour, tourOrder
 
 const ZOOM_MAX = 2.5
 const LABEL_ROW_PX = 28
+/** Photo sans date valide : la photo montre le jour de la prise de vue, les noms disent l'état à la saison choisie. */
 const SEASON_PHOTO_NOTE = 'La photo montre le jour de la prise de vue. Les noms disent l’état de la plante à la saison choisie.'
 
 function cssColor(name: string, fallback: string): string {
@@ -81,23 +81,21 @@ export function Viewer({ garden, pointId }: { garden: Garden; pointId: string })
     })
     return plantsSeenFrom(point, list)
   }, [point, plants, northOk])
-  // Saison choisie : la photo ne change pas (elle montre le jour de la prise de vue), mais chaque nom dit l'état de la plante à cette saison.
+  // État décrit dans les noms : par défaut celui de la DATE DE PRISE de la photo (saison déduite de `takenAt`, hémisphère nord) ;
+  // une autre saison choisie (ou « Aujourd'hui ») prend le dessus, comme avant. Sans date valide : le comportement d'avant.
+  const takenSeason = point ? seasonOfPhoto(point.takenAt) : undefined
+  const atPhotoDate = takenSeason !== undefined && season === undefined
+  const describedSeason: SeasonId | undefined = atPhotoDate ? takenSeason : season && season !== 'aujourdhui' ? season : undefined
   const seasonText = useMemo(() => {
     const out = new Map<string, string>()
-    if (!season || season === 'aujourdhui') return out
+    if (!describedSeason) return out
     const now = new Date()
-    const at = seasonDate(season, now)
     for (const p of plants) {
-      const sp = SPECIES_BY_ID[p.speciesId]
-      if (!sp || p.status === 'projet' || p.status === 'mort') continue
-      if (p.status === 'recoltee') {
-        out.set(p.id, 'récoltée') // fin de saison : jamais « en fleurs » ni « en feuilles »
-        continue
-      }
-      out.set(p.id, PHASE_LABEL[phaseOf(stateAtSeason(p, sp, now, at))])
+      const label = plantLabelAtSeason(p, SPECIES_BY_ID[p.speciesId], now, describedSeason)
+      if (label) out.set(p.id, label)
     }
     return out
-  }, [season, plants])
+  }, [describedSeason, plants])
   const neighbors = useMemo(() => (point ? neighborsOf(point, points) : []), [point, points])
   const seenRef = useRef(seen)
   seenRef.current = seen
@@ -551,9 +549,30 @@ export function Viewer({ garden, pointId }: { garden: Garden; pointId: string })
           <span>{photoDateLabel(point.takenAt)}</span>
         </div>
       </div>
-      <div className="pano-season">
-        <SeasonPicker value={season} onChange={(c) => setUi({ season: c })} buttonClass="btn pano-pill" />
-        {season && season !== 'aujourdhui' && <span className="pano-season-note">{SEASON_PHOTO_NOTE}</span>}
+      <div className="pano-season" data-feat="saison-photo">
+        <div className="season-picker" role="group" aria-label="Saison des plantes">
+          {takenSeason && (
+            <button type="button" className={'btn pano-pill pano-season-date' + (atPhotoDate ? ' primary' : '')} aria-pressed={atPhotoDate} onClick={() => setUi({ season: undefined })}>
+              À la date de la photo
+            </button>
+          )}
+          {SEASON_CHOICES.map((c) => {
+            const on = !atPhotoDate && (season ?? 'aujourdhui') === c.id
+            const info = SEASONS.find((x) => x.id === c.id)
+            return (
+              <button key={c.id} type="button" className={'btn pano-pill' + (on ? ' primary' : '')} aria-pressed={on} aria-label={info ? `Voir comme ${info.phrase}` : undefined} onClick={() => setUi({ season: c.id })}>
+                {c.label}
+              </button>
+            )
+          })}
+        </div>
+        {atPhotoDate ? (
+          <span className="pano-season-note">{photoSeasonPhrase(point.takenAt)}</span>
+        ) : describedSeason ? (
+          <span className="pano-season-note">
+            {takenSeason ? `Les plantes sont décrites ${SEASONS.find((x) => x.id === describedSeason)!.phrase}, pas à la date de la photo.` : SEASON_PHOTO_NOTE}
+          </span>
+        ) : null}
       </div>
 
       <div

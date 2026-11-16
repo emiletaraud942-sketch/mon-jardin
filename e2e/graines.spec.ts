@@ -57,3 +57,60 @@ test('graines et liste des semis', async ({ page, baseURL }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0)
   expect(erreurs).toEqual([])
 })
+
+// « Lire le sachet en photo » : un sachet fabriqué (image dessinée), lu par le vrai Tesseract servi sous /ocr/.
+// L'écran propose (nom, note) ; rien n'est ajouté avant « Ajouter ce sachet ».
+test('lire un sachet en photo : champs proposés, rien d’ajouté tout seul', async ({ page, baseURL }) => {
+  test.setTimeout(180_000)
+  const externes = await mockNetwork(page, baseURL!)
+  const erreurs: string[] = []
+  page.on('pageerror', (e) => erreurs.push(e.message))
+  await page.addInitScript(() => {
+    try {
+      if (sessionStorage.getItem('e2e-init')) return
+      sessionStorage.setItem('e2e-init', '1')
+      localStorage.setItem('pj.tourSeen', '1')
+    } catch {
+      /* stockage indisponible */
+    }
+  })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Visiter un jardin d’exemple' }).click()
+  await expect(page.locator('[data-home=planter]')).toBeVisible({ timeout: 60_000 })
+  await page.locator('[data-home=planter]').click()
+  const graines = page.locator('[data-feat=mes-graines]')
+  await graines.scrollIntoViewIfNeeded()
+  await expect(graines.getByText('La photo n’est pas gardée et ne quitte pas l’appareil.')).toBeVisible()
+
+  const url = await page.evaluate(() => {
+    const c = document.createElement('canvas')
+    c.width = 900
+    c.height = 1200
+    const g = c.getContext('2d')!
+    g.fillStyle = '#e9f2d8'
+    g.fillRect(0, 0, 900, 1200)
+    g.fillStyle = '#2d4a1e'
+    g.font = 'bold 70px sans-serif'
+    g.fillText('TOMATE', 80, 200)
+    g.font = '60px sans-serif'
+    g.fillText('Marmande', 80, 300)
+    g.fillStyle = '#222'
+    g.font = '48px sans-serif'
+    g.fillText('Semis : mars à mai', 80, 500)
+    g.fillText('Récolte 2025', 80, 600)
+    return c.toDataURL('image/png')
+  })
+  await graines.locator('input[type=file]').nth(1).setInputFiles({ name: 'sachet.png', mimeType: 'image/png', buffer: Buffer.from(url.split(',')[1], 'base64') })
+  await expect(graines.getByText(/Lu sur le sachet : nom : Tomate/)).toBeVisible({ timeout: 150_000 })
+  await expect(graines.getByText(/Semis indiqué sur le sachet : mars, avril et mai/)).toBeVisible()
+  await expect(graines.getByLabel('Nom du sachet')).toHaveValue('Tomate')
+  expect(await page.evaluate(() => localStorage.getItem('pj.seeds'))).toBeNull() // jamais d'ajout automatique
+  await graines.getByRole('button', { name: 'Ajouter ce sachet' }).click()
+  const liste = await page.evaluate(() => JSON.parse(localStorage.getItem('pj.seeds') || '[]'))
+  expect(liste).toHaveLength(1)
+  expect(liste[0]).toMatchObject({ name: 'Tomate', note: 'Récolte 2025' })
+  expect(liste[0].at).toBeUndefined() // une année seule n'est pas un jour
+  expect(externes).toEqual([])
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0)
+  expect(erreurs).toEqual([])
+})

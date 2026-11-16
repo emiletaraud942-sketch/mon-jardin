@@ -148,10 +148,10 @@ function caniculeAlert(weather: WeatherBundle, todayIso: string): WeatherAlert |
     kind: 'canicule',
     date: first.date,
     title: 'Canicule : protéger le jardin',
-    reason: `Canicule ${when}. Maximum prévu : ${deg(max)} °C.`,
+    reason: `Canicule ${when}. Jusqu'à ${deg(max)} °C le jour.`,
     detail:
-      `Températures maximales : ${ahead.map((d) => `${dayWord(d.date, todayIso)} ${deg(d.tMax)} °C`).join(', ')}. ` +
-      `Alerte à partir de ${ALERT_THRESHOLDS.caniculeTmaxC} °C pendant ${ALERT_THRESHOLDS.caniculeDays} jours de suite.`,
+      `Températures le jour : ${ahead.map((d) => `${dayWord(d.date, todayIso)} ${deg(d.tMax)} °C`).join(', ')}. ` +
+      `Alerte à partir de ${ALERT_THRESHOLDS.caniculeTmaxC} °C le jour, pendant ${ALERT_THRESHOLDS.caniculeDays} jours de suite.`,
     howTo: HOWTO_CANICULE,
   }
 }

@@ -94,7 +94,7 @@ describe('canicule', () => {
 
   it('maximum et jours cités dans les phrases', () => {
     const [a] = alerts(bundle(TODAY_ISO, [], [{}, {}, hot(33.4), hot(36.6), hot(34)]))
-    expect(a.reason).toBe('Canicule prévue du mercredi au vendredi. Maximum prévu : 37 °C.')
+    expect(a.reason).toBe("Canicule prévue du mercredi au vendredi. Jusqu'à 37 °C le jour.")
     expect(a.detail).toContain('mercredi 33 °C, jeudi 37 °C, vendredi 34 °C')
     expect(a.detail).toContain('32 °C')
     expect(a.title).toContain('Canicule')

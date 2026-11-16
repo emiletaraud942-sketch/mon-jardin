@@ -113,6 +113,15 @@ test('visite en photos : départ, rotation, pause, suivant, arrêt, légendes', 
   await expect(page.locator('.pano-title strong')).toHaveText('Point 3')
   await expect(page.getByRole('button', { name: /Précédent/ })).toBeEnabled()
 
+  // Saison : par défaut, l'état décrit est celui de la date de prise (1er novembre 2026 = automne) ; on peut voir comme en hiver, puis revenir.
+  await expect(page.locator('.pano-season-note')).toHaveText('Photo prise le 1er novembre 2026 (automne) : les plantes sont décrites à cette date.')
+  await expect(page.getByRole('button', { name: 'À la date de la photo' })).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'Voir comme en hiver' }).click()
+  await expect(page.locator('.pano-season-note')).toContainText('décrites en hiver, pas à la date de la photo')
+  await expect(page.getByRole('button', { name: 'À la date de la photo' })).toHaveAttribute('aria-pressed', 'false')
+  await page.getByRole('button', { name: 'À la date de la photo' }).click()
+  await expect(page.locator('.pano-season-note')).toContainText('(automne)')
+
   // Légendes : bouton à bascule, jamais caché (le nord est connu ici).
   const legendes = page.getByRole('button', { name: /Légendes/ })
   await expect(legendes).toHaveAttribute('aria-pressed', 'true')

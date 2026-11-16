@@ -34,7 +34,7 @@ import { PlaceAction } from "../../components/PlaceAction";
 import { useTasks } from "./useTasks";
 import { WeekActions } from "./WeekSheet";
 import { doneOnLabel, doneTaskLabel } from "./taskLabel";
-import { frostSentence, rainWord, weatherSentences } from "./weatherText";
+import { dayTemps, frostSentence, rainWord, TEMP_LEGEND, TEMP_WORD, weatherSentences } from "./weatherText";
 import "../../styles/novice-pages.css";
 import { PlantScene } from "../../components/illustrations";
 import { adviceText, useZeroTraitement } from "../../lib/zeroTraitement";
@@ -49,35 +49,41 @@ const WEATHER_TYPES = new Set<TaskType>([
   "protection",
 ]);
 
-/** Nombre signé avec un vrai signe moins (−2). */
-const signed = (n: number) => (n < 0 ? "−" + Math.abs(n) : String(n));
-
 /** Tâches visibles avant « Voir tout ». */
 const TASKS_SHOWN = 3;
 
-/** Jours de la semaine à venir : tuiles de la maquette (jour, température, temps). Le premier jour de gel est en vert foncé. */
+/**
+ * Jours de la semaine à venir : une tuile par jour. Chaque tuile dit les DEUX températures avec leur mot (« Jour 14° », « Nuit 3° ») :
+ * un nombre seul ne disait pas si c'était la plus haute ou la plus basse. Gel (0 °C ou moins la nuit) : « ❄ Gel » ; le premier jour de gel est en vert foncé.
+ */
 function WeatherDays({ weather }: { weather: WeatherBundle }) {
   const days = weather.forecast.slice(0, 7);
   const firstFrost = days.findIndex((d) => d.tMin <= 0);
   return (
     <ul className="wx-days" aria-label="Météo des 7 prochains jours" data-feat="meteo">
       {days.map((d, i) => {
-        const frost = d.tMin <= 0;
+        const t = dayTemps(d);
         const label = new Date(d.date)
           .toLocaleDateString("fr-FR", { weekday: "short" })
           .replace(".", "");
+        const long = new Date(d.date).toLocaleDateString("fr-FR", { weekday: "long" });
         return (
           <li
             key={d.date}
-            className={"wx-day" + (i === firstFrost ? " hot" : "")}
+            className={"wx-day" + (i === firstFrost ? " hot" : "") + (t.frost ? " frost" : "")}
           >
-            <span className="wx-d">
+            <span className="wx-d" aria-hidden>
               {label.charAt(0).toUpperCase() + label.slice(1)}
             </span>
-            <strong>{signed(Math.round(frost ? d.tMin : d.tMax))}°</strong>
-            <span className="wx-w">{frost ? "❄ Gel" : rainWord(d.rainMm)}</span>
+            <span className="wx-t" aria-hidden>
+              <span className="wx-k">{TEMP_WORD.jour}</span> <strong>{t.jour}</strong>
+            </span>
+            <span className="wx-t wx-night" aria-hidden>
+              <span className="wx-k">{TEMP_WORD.nuit}</span> <strong>{t.nuit}</strong>
+            </span>
+            <span className="wx-w" aria-hidden>{t.frost ? "❄ Gel" : rainWord(d.rainMm)}</span>
             <span className="sr-only">
-              , {Math.round(d.tMin)} à {Math.round(d.tMax)} °C{frost ? ", gel : la température minimale est affichée" : ""}
+              {long} : {t.spoken}, {rainWord(d.rainMm).toLowerCase()}.
             </span>
           </li>
         );
@@ -117,14 +123,14 @@ function WeatherMore({ weather }: { weather: WeatherBundle }) {
               day: "numeric",
               month: "long",
             })}{" "}
-            : {Math.round(d.tMin)} à {Math.round(d.tMax)} °C
+            : {dayTemps(d).text}
             {d.rainMm >= 0.5
               ? `, ${d.rainMm.toLocaleString("fr-FR", { maximumFractionDigits: 0 })} mm de pluie`
               : ""}
           </p>
         ))}
         <p className="small muted" style={{ margin: "6px 0 0" }}>
-          Source : Open-Meteo.
+          {TEMP_LEGEND} Source : Open-Meteo.
         </p>
       </details>
     </div>

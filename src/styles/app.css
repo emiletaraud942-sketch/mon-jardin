@@ -4028,14 +4028,32 @@ dialog.modal.full .modal-body {
   font-size: calc(12 * var(--px));
   line-height: normal; /* texte à 100 % d'opacité : lisible */
 }
+/* Deux températures par tuile, chacune avec son mot : « Jour 14° », « Nuit 3° ». Le mot et le nombre passent l'un sous l'autre si la tuile est étroite. */
+.wx-day .wx-t {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  column-gap: 4px;
+  max-width: 100%;
+  line-height: normal;
+}
+.wx-day .wx-k {
+  font-size: calc(12 * var(--px));
+}
 .wx-day strong {
-  margin: 2px 0;
-  font-size: calc(19 * var(--px));
+  font-size: calc(16 * var(--px));
   line-height: normal;
 }
 .wx-day .wx-w {
+  margin-top: 2px;
   font-size: calc(12 * var(--px));
   line-height: normal;
+}
+/* Gel : la nuit et le mot « Gel » ressortent. */
+.wx-day.frost .wx-night .wx-k,
+.wx-day.frost .wx-w {
+  font-weight: var(--fw-key);
 }
 .wx-day.hot {
   background: var(--btn-green);

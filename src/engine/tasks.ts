@@ -53,7 +53,7 @@ const CONDITION_LABEL: Record<TaskCondition, string> = {
   'hors-gel': "À faire seulement s'il ne gèle pas.",
   'apres-pluie': 'Mieux vaut le faire après une pluie.',
   'temps-sec': 'Choisissez un temps sec.',
-  chaleur: 'À faire par forte chaleur (plus de 25 °C).',
+  chaleur: 'À faire par forte chaleur (plus de 25 °C le jour).',
   'apres-recolte': 'À faire après la récolte.',
 }
 
@@ -538,7 +538,7 @@ export function generateTasks(ctx: TaskContext): GeneratedTask[] {
           howTo: HOWTO_GEL,
           plantIds: atRisk.map((p) => p.id),
           priority: 'haute',
-          reason: `Gel prévu ${dayLabel(first.date, todayIso)} (${fmtT(first.tMin)} °C${stronger}) : ${list} ${verb} de geler.`,
+          reason: `Gel prévu ${dayLabel(first.date, todayIso)} (${fmtT(first.tMin)} °C la nuit${stronger}) : ${list} ${verb} de geler.`,
         })
       }
     }
@@ -644,7 +644,7 @@ export function generateTasks(ctx: TaskContext): GeneratedTask[] {
       case 'hors-gel':
         if (frostSoon) {
           blockedBy = 'Attendre : risque de gel'
-          details.push(`Gel prévu ${dayLabel(frostSoon.date, todayIso)} (${fmtT(frostSoon.tMin)} °C).`)
+          details.push(`Gel prévu ${dayLabel(frostSoon.date, todayIso)} (${fmtT(frostSoon.tMin)} °C la nuit).`)
         }
         break
       case 'apres-pluie':
@@ -670,7 +670,7 @@ export function generateTasks(ctx: TaskContext): GeneratedTask[] {
           if (!hot) continue // pas de chaleur prévue : rien à faire
           priority = 'haute'
           reason += ` Chaleur prévue ${dayLabel(hot.date, todayIso)}.`
-          details.push(`${fmtT(hot.tMax)} °C prévus ${dayLabel(hot.date, todayIso)}.`)
+          details.push(`${fmtT(hot.tMax)} °C prévus ${dayLabel(hot.date, todayIso)} dans la journée.`)
         } else {
           priority = 'basse'
         }

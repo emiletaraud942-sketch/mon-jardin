@@ -73,7 +73,8 @@
 }
 .journal-date,
 .journal-note,
-.journal-hint {
+.journal-hint,
+.journal-season {
   margin: 0;
   overflow-wrap: anywhere;
 }
