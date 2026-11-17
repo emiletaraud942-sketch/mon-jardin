@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { hasSpeciesPhoto } from './SpeciesThumb'
+import { LARGE_IDS } from '../data/species/photoIds'
 import type { Tab } from '../lib/ui'
 
-/** Une photo par écran (espèces ayant une photo libre dans public/plantes). Pas de photo sur la carte : elle remplit l'écran. */
+/** Une photo par écran (Carte, Plantes et Photos partagent celle de « Mon jardin »). */
 const PHOTO_OF: Partial<Record<Tab, string>> = {
   accueil: 'basilic',
+  carte: 'romarin',
   plantes: 'romarin',
   entretien: 'pommier',
   planter: 'lavande',
@@ -15,9 +16,11 @@ const PHOTO_OF: Partial<Record<Tab, string>> = {
 
 export const BACKDROP_PHOTOS: string[] = Object.values(PHOTO_OF) as string[]
 
+/** Photo du fond pour un écran : celle prévue si sa version large est là, sinon le basilic (large, toujours présent). */
 export const backdropPhoto = (tab: Tab): string | undefined => {
   const id = PHOTO_OF[tab]
-  return id && hasSpeciesPhoto(id) ? id : undefined
+  if (!id) return undefined
+  return LARGE_IDS.has(id) ? id : LARGE_IDS.has('basilic') ? 'basilic' : undefined
 }
 
 /**
