@@ -432,3 +432,57 @@ html[data-big-taps] .home-tile {
 .plants-ui .grid > .card:first-child .list > li:last-child {
   border-bottom: 0;
 }
+
+/* ---------- Fiche d'une plante : grande photo en tête, feuille blanche à filet ---------- */
+.fiche-hero.has-photo {
+  height: 300px;
+  background: var(--accent-soft);
+}
+.fiche-hero .fh-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.fiche-hero .fh-credit {
+  position: absolute;
+  left: 14px;
+  bottom: 40px;
+  z-index: 1;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: rgb(12 42 26 / 55%);
+  color: #f1f6ee;
+  font-size: calc(10.5 * var(--px));
+}
+.fiche-sheet {
+  box-shadow: none;
+  border-radius: 26px 26px 0 0;
+  margin-top: -26px;
+  border-top: var(--border-w) solid var(--border);
+}
+.fiche .fiche-name {
+  font-family: var(--font-title);
+  font-size: calc(40 * var(--px));
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
+.fiche .fiche-latin {
+  font-family: var(--font-title);
+  font-size: calc(17 * var(--px));
+}
+.fiche-chips li {
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.fiche-chips {
+  gap: 0;
+  border-block: var(--border-w) solid var(--border);
+}
+.fiche-chips li + li {
+  border-left: var(--border-w) solid var(--border);
+}

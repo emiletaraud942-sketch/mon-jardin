@@ -56,3 +56,24 @@ export function SpeciesHero({ id, name }: { id: string; name: string }) {
     </figure>
   )
 }
+
+/** Crédit d'une photo (auteur, licence) : petite ligne posée sur une photo ou sous elle. Rien sans photo. */
+export function SpeciesCredit({ id, className }: { id: string; className?: string }) {
+  const [credit, setCredit] = useState<Credit | null>(null)
+  const has = PHOTO_IDS.has(id)
+  useEffect(() => {
+    let live = true
+    if (has) void loadCredits().then((c) => live && setCredit(c[id] ?? null))
+    return () => {
+      live = false
+    }
+  }, [id, has])
+  if (!has || !credit) return null
+  return (
+    <span className={className}>
+      Photo : {credit.a} · {credit.l}
+    </span>
+  )
+}
+
+export const hasSpeciesPhoto = (id: string) => PHOTO_IDS.has(id)

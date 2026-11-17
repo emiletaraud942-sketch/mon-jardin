@@ -1,4 +1,5 @@
 import { adviceText, useZeroTraitement } from '../../lib/zeroTraitement'
+import { hasSpeciesPhoto, SpeciesCredit } from '../../components/SpeciesThumb'
 import { SPECIES_BY_ID } from '../../data/species'
 import { CATEGORY_LABEL, STATUS_LABEL, SUN_LABEL, TASK_ICON, WATER_LABEL } from '../../data/labels'
 import { Icon } from '../../components/Icon'
@@ -147,9 +148,18 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
   return (
     <div className={fiche ? 'fiche plants-ui' : 'stack plants-ui'} style={fiche ? undefined : { gap: 12 }} data-feat="fiche">
       {fiche && (
-        <div className="fiche-hero">
-          <Blob size={330} height={280} className="fh-blob" />
-          <PlantPot size={200} className="fh-plant" />
+        <div className={'fiche-hero' + (hasSpeciesPhoto(plant.speciesId) ? ' has-photo' : '')}>
+          {hasSpeciesPhoto(plant.speciesId) ? (
+            <>
+              <img className="fh-photo" src={`/plantes/${plant.speciesId}.jpg`} alt="" decoding="async" />
+              <SpeciesCredit id={plant.speciesId} className="fh-credit" />
+            </>
+          ) : (
+            <>
+              <Blob size={330} height={280} className="fh-blob" />
+              <PlantPot size={200} className="fh-plant" />
+            </>
+          )}
           {onClose && (
             <button className="fiche-back" onClick={onClose} aria-label="Fermer la fiche et revenir à la liste">
               <Icon name="back" size={22} />
