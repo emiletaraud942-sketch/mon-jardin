@@ -615,3 +615,17 @@ html[data-big-taps] .home-tile {
     border-top: var(--border-w) solid color-mix(in srgb, var(--surface) 70%, transparent);
   }
 }
+
+/* Carte (téléphone) : pas de place perdue sous le titre, la carte remonte sous les onglets. */
+@media (max-width: 760px) {
+  .app.has-pb[data-tab='carte'] .pagehead {
+    padding-bottom: 0;
+  }
+  .app.has-pb[data-tab='carte'] .phead-slot {
+    padding-bottom: 0;
+  }
+  .app.has-pb[data-tab='carte'] .modebar {
+    padding-top: 0;
+    padding-bottom: 6px;
+  }
+}
