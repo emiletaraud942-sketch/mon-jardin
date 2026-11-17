@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { hasSpeciesPhoto } from './SpeciesThumb'
 import type { Tab } from '../lib/ui'
 
@@ -12,6 +13,8 @@ const PHOTO_OF: Partial<Record<Tab, string>> = {
   voisins: 'tilleul',
 }
 
+export const BACKDROP_PHOTOS: string[] = Object.values(PHOTO_OF) as string[]
+
 export const backdropPhoto = (tab: Tab): string | undefined => {
   const id = PHOTO_OF[tab]
   return id && hasSpeciesPhoto(id) ? id : undefined
@@ -22,12 +25,15 @@ export const backdropPhoto = (tab: Tab): string | undefined => {
  * sur toute la page, voilée de la couleur du fond pour que le texte reste lisible. Décoratif : caché des lecteurs d'écran.
  */
 export function PageBackdrop({ photo }: { photo: string }) {
-  const src = `/plantes/${photo}.jpg`
+  // Version large (1280 px) : la photo est étirée sur toute la largeur, la petite (640 px) serait floue.
+  const [small, setSmall] = useState(false) // version large absente : on retombe sur la petite
+  const src = `/plantes/${photo}${small ? '' : '-lg'}.jpg`
+  const onError = () => setSmall(true)
   return (
     <div className="page-backdrop" aria-hidden="true">
-      <img className="pb-blur" src={src} alt="" decoding="async" />
+      <img className="pb-blur" src={src} alt="" decoding="async" onError={onError} />
       <div className="pb-veil" />
-      <img className="pb-sharp" src={src} alt="" decoding="async" />
+      <img className="pb-sharp" src={src} alt="" decoding="async" onError={onError} />
       <div className="pb-top" />
     </div>
   )

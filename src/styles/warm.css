@@ -562,3 +562,30 @@ html[data-big-taps] .home-tile {
     border-bottom-color: rgb(255 255 255 / 35%);
   }
 }
+
+/* ---------- Ordinateur : menus visibles, photo plus basse, titre blanc dans la bande photo ---------- */
+.app.has-pb > .sidenav,
+.app.has-pb > .topbar,
+.app.has-pb > .modebar {
+  position: relative;
+  z-index: 3;
+}
+@media (min-width: 761px) {
+  .app.has-pb > .sidenav {
+    background: var(--surface);
+  }
+  .app.has-pb > .topbar {
+    background: var(--surface);
+  }
+  .pb-sharp {
+    height: min(34dvh, 300px);
+  }
+  .pb-top {
+    height: 300px;
+    background: linear-gradient(to bottom, rgb(10 34 22 / 66%), rgb(10 34 22 / 0%));
+  }
+  .app.has-pb .main h1 {
+    color: #fff;
+    text-shadow: 0 1px 14px rgb(0 0 0 / 45%);
+  }
+}
