@@ -631,9 +631,6 @@ html[data-big-taps] .home-tile {
 }
 
 /* ---------- Téléphone : l'appli prend tout l'écran, y compris sous l'heure et la batterie ---------- */
-.app.has-pb {
-  padding-top: env(safe-area-inset-top, 0px);
-}
 .app.has-pb .pb-top {
   height: calc(230px + env(safe-area-inset-top, 0px));
 }
@@ -662,4 +659,60 @@ html[data-big-taps] .home-tile {
   box-shadow:
     0 0 14px 6px color-mix(in srgb, var(--surface) 80%, transparent),
     0 0 34px 18px color-mix(in srgb, var(--surface) 45%, transparent);
+}
+
+
+/* ---------- Retours iPhone du 17 nov. : photo qui défile, plus de barres, zones blanches vraiment en fondu ---------- */
+/* La photo nette suit le défilement (voir PageBackdrop) : le texte ne passe plus jamais dessus. */
+.pb-sharp,
+.pb-top {
+  will-change: transform;
+  transform: translateY(var(--pb-shift, 0px));
+}
+/* Haut de l'écran (heure, batterie) : un simple fondu, plus de bande. */
+.app.has-pb::before {
+  content: '';
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: calc(env(safe-area-inset-top, 0px) + 14px);
+  z-index: 40;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgb(10 34 22 / 50%), rgb(10 34 22 / 0%));
+}
+/* Les en-têtes se posent sous l'heure, mais la photo, elle, passe dessous. */
+.app.has-pb .main > .pagehead,
+.app.has-pb .main .accueil .pagehead,
+.app.has-pb .phead-slot {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+/* Le contenu qui défile s'efface en douceur sous l'en-tête (plus de coupure nette). */
+@media (max-width: 760px) {
+  .app.has-pb .main:not(.full) {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 26px);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 26px);
+  }
+}
+/* Lisibilité du texte posé sur le fond flou. */
+.pb-veil {
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--bg) 22%, transparent) 0%, color-mix(in srgb, var(--bg) 70%, transparent) 36%, color-mix(in srgb, var(--bg) 80%, transparent) 100%);
+}
+/* Zones blanches : plus de rectangle. Le texte est posé sur une tache claire floue qui se fond dans la photo. */
+.app.has-pb .main .card {
+  position: relative;
+  isolation: isolate;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.app.has-pb .main .card::before {
+  content: '';
+  position: absolute;
+  inset: -16px;
+  z-index: -1;
+  border-radius: 44px;
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+  filter: blur(16px);
+  pointer-events: none;
 }

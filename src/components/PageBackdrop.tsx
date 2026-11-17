@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { LARGE_IDS } from '../data/species/photoIds'
 import type { Tab } from '../lib/ui'
 
@@ -32,8 +32,25 @@ export function PageBackdrop({ photo }: { photo: string }) {
   const [small, setSmall] = useState(false) // version large absente : on retombe sur la petite
   const src = `/plantes/${photo}${small ? '' : '-lg'}.jpg`
   const onError = () => setSmall(true)
+  const root = useRef<HTMLDivElement>(null)
+  // La photo nette défile avec la page : le texte ne passe jamais par-dessus (on lit le défilement de la zone principale).
+  useEffect(() => {
+    const el = root.current
+    if (!el) return
+    const move = (y: number) => {
+      el.style.setProperty('--pb-shift', `${-Math.min(Math.max(y, 0), 420)}px`)
+    }
+    const onScroll = (e: Event) => {
+      const t = e.target as HTMLElement | Document
+      const y = t instanceof Document ? window.scrollY : (t as HTMLElement).scrollTop
+      if (t instanceof Document || (t as HTMLElement).classList?.contains('main')) move(y)
+    }
+    move(0)
+    document.addEventListener('scroll', onScroll, { capture: true, passive: true })
+    return () => document.removeEventListener('scroll', onScroll, { capture: true })
+  }, [photo])
   return (
-    <div className="page-backdrop" aria-hidden="true">
+    <div className="page-backdrop" aria-hidden="true" ref={root}>
       <img className="pb-blur" src={src} alt="" decoding="async" onError={onError} />
       <div className="pb-veil" />
       <img className="pb-sharp" src={src} alt="" decoding="async" onError={onError} />
