@@ -207,6 +207,19 @@ function monthsAfter(rawText: string, word: RegExp, cutWords: string): number[] 
     let seg = t.slice(m.index + m[0].length, m.index + m[0].length + 90)
     const cut = seg.search(cutRe)
     if (cut >= 0) seg = seg.slice(0, cut)
+    // Mois en chiffres : « semis : 03 à 05 », « récolte 9-11 » (jamais une mesure : cm, jours, g…).
+    const numeric = /^\s*:?\s*(\d{1,2})\s*(?:a|au|à|-|–|—)\s*(\d{1,2})(?!\d)(?!\s*(?:cm|mm|jours?|j\b|g\b|gr|semaines?|sem\b|°|%|m\b|l\b))/.exec(seg)
+    if (numeric) {
+      const a = Number(numeric[1])
+      const b = Number(numeric[2])
+      if (a >= 1 && a <= 12 && b >= 1 && b <= 12) {
+        for (let k = a; ; k = (k % 12) + 1) {
+          months.add(k)
+          if (k === b) break
+        }
+        continue
+      }
+    }
     // Un mois lu doit venir avant tout chiffre : « semis mars à mai 60 cm » s'arrête à « 60 ».
     const num = seg.search(/\d/)
     if (num >= 0) seg = seg.slice(0, num)
@@ -247,7 +260,8 @@ const cleanLine = (l: string) => l.replace(/[|_~=*#<>{}[\]]/g, ' ').replace(/\s+
 
 /** Nom d'espèce du catalogue le plus net dans les lignes : ligne exacte d'abord, puis nom entier dans une ligne ; égalité = la plus haute sur le sachet. */
 export function findSeedSpecies(lines: string[], species: readonly Species[] = SPECIES): Species | undefined {
-  let best: { s: Species; score: number } | undefined
+  const scores = new Map<Species, number>()
+  const whole = ` ${normalizeSearch(lines.join(' '))} `
   lines.forEach((line, li) => {
     const n = normalizeSearch(line)
     if (n.length < 3 || n.length > 60) return
@@ -265,11 +279,22 @@ export function findSeedSpecies(lines: string[], species: readonly Species[] = S
       if (latin.length >= 8 && padded.includes(` ${latin} `)) score = Math.max(score, 60 + latin.length)
       // Un peu plus haut sur le sachet = un peu mieux (le titre est en tête).
       score = score ? score - li * 0.1 : 0
-      if (score && (!best || score > best.score)) best = { s, score }
+      if (score && score > (scores.get(s) ?? 0)) scores.set(s, score)
     }
   })
+  // Variantes d'une même plante (« Haricot nain » / « Haricot à rames ») : le mot qui les distingue, lu ailleurs sur le sachet, tranche.
+  let best: { s: Species; score: number } | undefined
+  const top = Math.max(0, ...scores.values())
+  for (const [s, base] of scores) {
+    const extra = [...new Set([s.nomCommun, ...(s.alias ?? [])].flatMap((nm) => normalizeSearch(nm).split(' ')))].filter((w) => w.length >= 4 && !GENERIC_WORDS.has(w))
+    const first = normalizeSearch(s.nomCommun).split(' ')[0]
+    const bonus = base >= top - 1 && extra.some((w) => w !== first && whole.includes(` ${w} `)) ? 30 : 0
+    const score = base + bonus
+    if (!best || score > best.score) best = { s, score }
+  }
   return best?.s
 }
+const GENERIC_WORDS = new Set(['vert', 'verte', 'rouge', 'blanc', 'blanche', 'petit', 'petite', 'grand', 'grande', 'commun', 'commune', 'doux', 'douce'])
 
 /** Ligne la plus plausible comme nom, quand aucune plante du catalogue n'est reconnue : texte court, surtout des lettres, en tête du sachet. */
 export function guessSeedName(lines: string[]): string | undefined {

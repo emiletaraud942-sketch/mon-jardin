@@ -43,7 +43,10 @@ const round1 = (n: number) => Math.round(n * 10) / 10
 /** « profondeur de semis : 1 à 2 cm » -> 1,5. Accepte les mm. */
 export function parseDepthCm(rawText: string): number | undefined {
   const t = normalizeSearch(rawText).replace(/,/g, '.')
-  const m = /profondeur[^\d]{0,25}(\d+(?:\.\d+)?)(?:\s*(?:-|a|à)\s*(\d+(?:\.\d+)?))?\s*(cm|mm)/.exec(t)
+  const after = /profondeur[^\d\n]{0,25}(\d+(?:\.\d+)?)(?:\s*(?:-|a|à)\s*(\d+(?:\.\d+)?))?\s*(cm|mm)/.exec(t)
+  // « semer à 1 cm de profondeur », « enterrer à 0,5 cm », « recouvrir de 2 cm de terre »
+  const before = /(?:semer|semez|enterrer|enterrez|recouvrir|recouvrez|couvrir|couvrez|enfouir|enfouissez|planter|plantez)[^\d.\n]{0,20}(\d+(?:\.\d+)?)(?:\s*(?:-|a|à)\s*(\d+(?:\.\d+)?))?\s*(cm|mm)\s*(?:de\s+(?:profondeur|terre|terreau)|sous)?/.exec(t)
+  const m = before?.[0].includes('profondeur') ? before : (after ?? before)
   if (!m) return undefined
   const v = mid(m[1], m[2]) / (m[3] === 'mm' ? 10 : 1)
   return v > 0 && v <= 40 ? round1(v) : undefined
@@ -52,7 +55,11 @@ export function parseDepthCm(rawText: string): number | undefined {
 /** « distance entre les plants : 30 cm », « espacement 20-30 cm », « écartement 40 cm » -> cm. */
 export function parseSpacingCm(rawText: string): number | undefined {
   const t = normalizeSearch(rawText).replace(/,/g, '.')
-  const m = /(?:distance|espacement|ecartement)[^\d]{0,30}(\d+(?:\.\d+)?)(?:\s*(?:-|a|à)\s*(\d+(?:\.\d+)?))?\s*cm/.exec(t)
+  const grid = /(?:distance|espacement|ecartement|plantation)[^\d\n]{0,30}(\d+(?:\.\d+)?)\s*(?:x|×|\*)\s*(\d+(?:\.\d+)?)\s*cm/.exec(t) // « 40 x 60 cm » : sur le rang, entre les rangs
+  if (grid) return Math.round(Number(grid[1]))
+  const m =
+    /(?:distance|espacement|ecartement|espacer|espacez|ecarter|ecartez|eclaircir|eclaircissez)[^\d\n]{0,30}(\d+(?:\.\d+)?)(?:\s*(?:-|a|à)\s*(\d+(?:\.\d+)?))?\s*cm/.exec(t) ??
+    /(\d+(?:\.\d+)?)(?:\s*(?:-|a|à)\s*(\d+(?:\.\d+)?))?\s*cm\s*(?:entre\s+(?:les|chaque|deux)\s+(?:plants?|pieds?|graines?|rangs?|lignes?)|d['’ ]ecart|d['’ ]espace)/.exec(t)
   if (!m) return undefined
   const v = mid(m[1], m[2])
   return v > 0 && v <= 500 ? Math.round(v) : undefined
@@ -61,15 +68,15 @@ export function parseSpacingCm(rawText: string): number | undefined {
 /** « germination : 8 à 12 jours », « levée en 10 jours » -> jours. */
 export function parseGerminationDays(rawText: string): number | undefined {
   const t = normalizeSearch(rawText).replace(/,/g, '.')
-  const m = /(?:germination|levee)[^\d]{0,30}(\d+)(?:\s*(?:-|a|à)\s*(\d+))?\s*(?:jours?|j)\b/.exec(t)
+  const m = /(?:germination|levee)[^\d\n]{0,30}(\d+)(?:\s*(?:-|a|à)\s*(\d+))?\s*(jours?|j|semaines?|sem)\b/.exec(t)
   if (!m) return undefined
-  const v = Math.round(mid(m[1], m[2]))
+  const v = Math.round(mid(m[1], m[2]) * (/^s/.test(m[3]) ? 7 : 1))
   return v > 0 && v <= 365 ? v : undefined
 }
 
 export function parseSun(rawText: string): Sun | undefined {
   const t = normalizeSearch(rawText)
-  if (/mi[- ]?ombre|soleil\s*(?:ou|\/)\s*mi/.test(t)) return 'mi-ombre'
+  if (/mi\s*[-–—_.]?\s*ombre|soleil\s*(?:ou|\/|et)\s*mi/.test(t)) return 'mi-ombre'
   if (/plein soleil|\bsoleil\b|ensoleille/.test(t)) return 'soleil'
   if (/\bombre\b|ombrage/.test(t)) return 'ombre'
   return undefined
@@ -100,6 +107,14 @@ export function classifyLabel(rawText: string): LabelKind {
   return 'autre'
 }
 
+/** Retire les lignes de profondeur, de distance et d'espacement avant de chercher une hauteur. */
+function withoutSowingLines(rawText: string): string {
+  return rawText
+    .split(/\r?\n/)
+    .filter((l) => !/profondeur|distance|espac|ecart|écart|enterrer|eclaircir|éclaircir|entre (?:les|chaque)/i.test(l))
+    .join('\n')
+}
+
 export function parseLabelScan(rawText: string, now: Date = new Date(), species: readonly Species[] = SPECIES): LabelScan {
   const seed = parseSeedText(rawText, now, species)
   const label = parseLabel(rawText)
@@ -113,11 +128,13 @@ export function parseLabelScan(rawText: string, now: Date = new Date(), species:
   if (days !== undefined) extras.leveeJours = days
   const sun = parseSun(rawText)
   if (sun) extras.soleil = sun
-  const height = parseHeightCm(rawText)
+  // Une hauteur n'est lue que s'il y a le mot, ou sur une étiquette de plante : sur un sachet, « 50 cm » est une distance, pas une hauteur.
+  const kind = classifyLabel(rawText)
+  const height = kind === 'plante' || /\bhauteur\b|\bh\.?\s*\d/i.test(rawText) ? parseHeightCm(withoutSowingLines(rawText)) : undefined
   if (height !== undefined) extras.hauteurCm = height
   const content = parseContent(rawText)
   if (content) extras.contenu = content
   const price = parsePriceEur(rawText)
   if (price !== undefined) extras.prixEur = price
-  return { kind: classifyLabel(rawText), seed, label, extras, species: speciesId ? species.find((s) => s.id === speciesId) : undefined }
+  return { kind, seed, label, extras, species: speciesId ? species.find((s) => s.id === speciesId) : undefined }
 }

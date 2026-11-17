@@ -58,3 +58,41 @@ describe('étiquettes et sachets : tout lire', () => {
     expect(classifyLabel('facture n° 123')).toBe('autre')
   })
 })
+
+describe('étiquettes réelles : formulations variées (banc d’essai scripts/qa/ocr-bench)', () => {
+  it('lit la profondeur avant le mot, l’espacement en verbe et la mi-ombre coupée', () => {
+    const t = 'CAROTTE\nSemer à 1 cm de profondeur\nEspacer de 5 cm\nMi -ombre\nPoids net : 5 g'
+    expect(parseDepthCm(t)).toBe(1)
+    expect(parseSpacingCm(t)).toBe(5)
+    expect(parseSun(t)).toBe('mi-ombre')
+    expect(parseDepthCm('Enterrer à 0,5 cm')).toBe(0.5)
+    expect(parseSpacingCm('Laisser 30 cm entre les plants')).toBe(30)
+  })
+  it('ne prend pas une distance de plantation pour une hauteur sur un sachet', () => {
+    const t = 'TOMATE\nSemis : mars à mai\nGermination : 8 à 12 jours\nDistance entre plants : 50 cm\nProfondeur : 1 cm'
+    expect(parseLabelScan(t).extras.hauteurCm).toBeUndefined()
+    expect(parseLabelScan('LAVANDE\nGodet 1 L\nVariété Hidcote\nHauteur 60 cm').extras.hauteurCm).toBe(60)
+  })
+  it('distingue haricot nain et haricot à rames par le mot en plus', () => {
+    expect(parseLabelScan('HARICOT\nHaricot vert nain\nSemis : mai à juillet\nProfondeur : 3 cm').species?.id).toBe('haricot-nain')
+    expect(parseLabelScan('HARICOT\nHaricot à rames\nSemis : mai à juillet\nProfondeur : 3 cm').species?.id).toBe('haricot-grimpant')
+  })
+})
+
+describe('formulations de sachets et de prix (trouvées par le banc d’essai)', () => {
+  it('lit mois en chiffres, semaines, grille 40 x 60 et mm', () => {
+    const t = 'Poireau\nSemis : 03 à 05\nRécolte : 09 à 12\nProfondeur : 10 mm\nLevée 2 semaines\nDistance de plantation : 40 x 60 cm'
+    const r = parseLabelScan(t)
+    expect(r.seed.sowMonths).toEqual([3, 4, 5])
+    expect(r.extras.recolteMois).toEqual([9, 10, 11, 12])
+    expect(r.extras.profondeurCm).toBe(1)
+    expect(r.extras.leveeJours).toBe(14)
+    expect(r.extras.espacementCm).toBe(40)
+  })
+  it('un prix n’est jamais lu dans « Hauteur 50 cm » ni sur la ligne d’à côté', () => {
+    expect(parseLabelScan('LAVANDE\nGodet 1 L\nHauteur 50 cm\n5€90').extras.prixEur).toBe(5.9)
+    expect(parseLabelScan('Rosier\nPot C3\n€ 14,90\nHauteur 80 cm').extras.prixEur).toBe(14.9)
+    expect(parseLabelScan('Poireau\nProfondeur 1 cm').extras.prixEur).toBeUndefined()
+    expect(parseLabelScan('Thym\nPot 9 cm\n3,50 EUR').extras.prixEur).toBe(3.5)
+  })
+})

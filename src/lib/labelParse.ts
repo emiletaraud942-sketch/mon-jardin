@@ -40,11 +40,16 @@ export function parseHeightCm(text: string): number | undefined {
 }
 
 export function parsePriceEur(text: string): number | undefined {
-  const t = text.replace(/\s/g, ' ').replace(/,/g, '.')
-  const m = /(?<![\d.])(\d{1,4}(?:\.\d{1,2})?)\s*(?:€|eur\b|euros?)/i.exec(t) ?? /(?:€|eur\b)\s*(\d{1,4}(?:\.\d{1,2})?)(?![\d.])/i.exec(t)
-  if (!m) return undefined
-  const n = Number(m[1])
-  return n > 0 && n <= 10_000 ? n : undefined
+  // Ligne par ligne : « C3 » sur une ligne et « € 14,90 » sur la suivante ne doivent pas se mélanger.
+  for (const line of text.split(/\r?\n/)) {
+    const t = line.replace(/\s+/g, ' ').replace(/,/g, '.')
+    const cents = /(?<![\d.])(\d{1,4})\s?€\s?(\d{2})(?!\d)/.exec(t) // 5€90
+    const m = cents ?? /(?<![\d.])(\d{1,4}(?:\.\d{1,2})?)\s*(?:€|(?<![a-z])eur\b|(?<![a-z])euros?\b)/i.exec(t) ?? /(?:€|(?<![a-z])eur\b)\s*(\d{1,4}(?:\.\d{1,2})?)(?![\d.])/i.exec(t)
+    if (!m) continue
+    const n = cents ? Number(`${m[1]}.${m[2]}`) : Number(m[1])
+    if (n > 0 && n <= 10_000) return n
+  }
+  return undefined
 }
 
 /** Forme d'achat d'après les mots de l'étiquette. L'ordre compte : « demi-tige » avant « tige ». */
