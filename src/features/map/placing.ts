@@ -8,6 +8,7 @@ import { warmWord } from '../../lib/progress'
 import { getUi, setUi, type Tab } from '../../lib/ui'
 import { plantName } from '../plants/PlantPanel'
 import { uid } from '../../lib/geo'
+import { hasPurchaseDraft } from '../../lib/purchaseDraft'
 import type { Garden, Plant, XY } from '../../types'
 
 let lastSeriesToast: number | undefined
@@ -91,7 +92,7 @@ export function placePlant(
     const placed = getState().plants.find((p) => p.id === id)
     if (placed) recordWithToast(placementEntry(placed), `« ${name} » placée.${warmWord(getState().plants, garden.id)}`)
     // Comment l'avez-vous achetée ? Une fois, juste après le placement ; passable, et désactivable.
-    if (placed && askPurchaseEnabled()) setUi({ purchasePlantId: id })
+    if (placed && (askPurchaseEnabled() || hasPurchaseDraft(placed.speciesId))) setUi({ purchasePlantId: id })
   }
   return id
 }

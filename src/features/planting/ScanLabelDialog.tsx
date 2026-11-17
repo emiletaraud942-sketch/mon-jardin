@@ -8,6 +8,7 @@ import { seedProposal } from '../../lib/seedParse'
 import { addSeed, MAX_SEEDS, readSeeds, type SeedInfo } from '../../lib/seeds'
 import { showToast } from '../../lib/toast'
 import { startPlacing } from '../../lib/ui'
+import { setPurchaseDraft } from '../../lib/purchaseDraft'
 
 const MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.']
 const KIND_LABEL: Record<LabelKind, string> = { sachet: 'Sachet de graines', plante: 'Étiquette de plante', autre: 'Autre fiche' }
@@ -122,6 +123,12 @@ export function ScanLabelDialog({ onClose }: { onClose: () => void }) {
   }
   function addPlant() {
     if (!speciesId) return
+    // Étiquette de plante : forme, hauteur, prix lus sont proposés dans « Comment l'avez-vous achetée ? » après le placement.
+    setPurchaseDraft(
+      kind === 'plante'
+        ? { speciesId, form: scan?.label.form, heightCm: asNum(haut), priceEur: scan?.extras.prixEur, note: scan?.label.noteLines.join(' · ').slice(0, 80) || undefined }
+        : undefined,
+    )
     onClose()
     window.setTimeout(() => startPlacing(speciesId), 160)
   }
@@ -246,7 +253,7 @@ export function ScanLabelDialog({ onClose }: { onClose: () => void }) {
               <span>Note</span>
               <input className="input" value={note} maxLength={80} onChange={(e) => setNote(e.target.value)} />
             </label>
-            {scan.extras.prixEur !== undefined && <p className="small muted" style={{ margin: 0 }}>Prix lu : {scan.extras.prixEur.toLocaleString('fr-FR')} €. Vous pourrez le noter dans l’achat de la plante.</p>}
+            {scan.extras.prixEur !== undefined && <p className="small muted" style={{ margin: 0 }}>Prix lu : {scan.extras.prixEur.toLocaleString('fr-FR')} €. Il sera proposé dans l’achat de la plante, à vérifier.</p>}
             <label className="row" style={{ gap: 8, alignItems: 'center' }}>
               <input type="checkbox" checked={give} onChange={(e) => setGive(e.target.checked)} /> À donner ou échanger
             </label>

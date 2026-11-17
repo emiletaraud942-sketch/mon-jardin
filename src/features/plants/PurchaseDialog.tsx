@@ -6,6 +6,7 @@ import { OcrUnavailableError, readLabelText, type OcrStage } from '../../lib/lab
 import { SPECIES_BY_ID } from '../../data/species'
 import { isoDate } from '../../lib/dates'
 import { askPurchaseEnabled, formsFor, isTree, purchaseFormLabel, purchasePatch, purchaseSummary, setAskPurchaseEnabled, suggestedAgeYears, suggestedHeightCm } from '../../lib/purchase'
+import { clearPurchaseDraft, peekPurchaseDraft } from '../../lib/purchaseDraft'
 import { getState, updatePlant, useStore } from '../../lib/store'
 import { setUi, useUi } from '../../lib/ui'
 import type { PlantPurchase, PurchaseForm } from '../../types'
@@ -14,15 +15,6 @@ import { plantName } from './PlantPanel'
 const num = (t: string): number | undefined => {
   const n = Number(t.replace(',', '.'))
   return t.trim() !== '' && Number.isFinite(n) && n >= 0 ? n : undefined
-}
-
-/** Texte lu à l'étiquette (scan) : le formulaire le propose, jamais sans que la personne le voie et le corrige. */
-export interface PurchaseDraft {
-  form?: PurchaseForm
-  heightCm?: number
-  shop?: string
-  priceEur?: number
-  note?: string
 }
 
 /**
@@ -41,12 +33,15 @@ function PurchaseForm({ plantId }: { plantId: string }) {
   const species = SPECIES_BY_ID[plant.speciesId]
   const forms = formsFor(species)
   const existing = plant.purchase
-  const [form, setForm] = useState<PurchaseForm | undefined>(existing?.form)
-  const [height, setHeight] = useState(existing?.heightCm ? String(existing.heightCm) : '')
+  // Étiquette de pépinière scannée juste avant : proposée, jamais enregistrée sans être vue (champs modifiables).
+  const [draft] = useState(() => (existing ? undefined : peekPurchaseDraft(plant.speciesId)))
+  const draftForm = draft?.form && forms.some((f) => f.id === draft.form) ? draft.form : undefined
+  const [form, setForm] = useState<PurchaseForm | undefined>(existing?.form ?? draftForm)
+  const [height, setHeight] = useState(existing?.heightCm ? String(existing.heightCm) : draft?.heightCm ? String(draft.heightCm) : '')
   const [shop, setShop] = useState(existing?.shop ?? '')
-  const [price, setPrice] = useState(existing?.priceEur !== undefined ? String(existing.priceEur) : '')
+  const [price, setPrice] = useState(existing?.priceEur !== undefined ? String(existing.priceEur) : draft?.priceEur !== undefined ? String(draft.priceEur).replace('.', ',') : '')
   const [boughtAt, setBoughtAt] = useState(existing?.boughtAt ?? '')
-  const [note, setNote] = useState(existing?.note ?? '')
+  const [note, setNote] = useState(existing?.note ?? draft?.note ?? '')
   const [always, setAlways] = useState(askPurchaseEnabled)
   const [ocr, setOcr] = useState<{ busy: boolean; stage?: OcrStage; ratio?: number; error?: string; facts?: LabelFacts; read?: string[] }>({ busy: false })
 
@@ -92,6 +87,7 @@ function PurchaseForm({ plantId }: { plantId: string }) {
   }
 
   const close = () => {
+    clearPurchaseDraft()
     setAskPurchaseEnabled(always)
     setUi({ purchasePlantId: undefined })
   }
@@ -115,6 +111,11 @@ function PurchaseForm({ plantId }: { plantId: string }) {
         <p className="small" style={{ margin: 0 }}>
           {plantName(plant)} : tout est facultatif. Ces informations rendent sa taille plus juste sur la carte.
         </p>
+        {draft && (
+          <p className="alert info small" role="status" style={{ margin: 0 }}>
+            Repris de l’étiquette que vous avez lue. Vérifiez, corrigez si besoin, puis enregistrez.
+          </p>
+        )}
         <div className="label-scan stack" style={{ gap: 6 }}>
           <label className={'btn file-btn' + (ocr.busy ? ' disabled' : '')}>
             <Icon name="camera" size={18} /> {ocr.busy ? 'Lecture en cours…' : 'Lire l’étiquette avec l’appareil photo'}
