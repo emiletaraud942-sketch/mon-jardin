@@ -245,7 +245,7 @@ function HomeTile({ a }: { a: HomeAction }) {
 function HomeFeature({ a, phrase }: { a: HomeAction; phrase?: string }) {
   return (
     <button className="home-feature" data-home={a.id} onClick={() => runHomeAction(a)}>
-      <img className="home-feature-photo" src="/plantes/basilic.jpg" alt="" loading="lazy" onError={(e) => (e.currentTarget.style.display = 'none')} />
+      <img className="home-feature-photo" src="/plantes/lavande.jpg" alt="" loading="lazy" onError={(e) => (e.currentTarget.style.display = 'none')} />
       <span className="home-feature-kicker">À la une</span>
       <strong className="home-feature-title">{a.mot}</strong>
       <span className="home-feature-text">{phrase ?? a.phrase}</span>

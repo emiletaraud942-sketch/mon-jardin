@@ -486,3 +486,79 @@ html[data-big-taps] .home-tile {
 .fiche-chips li + li {
   border-left: var(--border-w) solid var(--border);
 }
+
+/* ---------- Fond de page photo (variante C) : plante nette en haut, même photo en fond flou sur toute la page ---------- */
+.page-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.page-backdrop img {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  object-fit: cover;
+}
+.pb-blur {
+  top: -6%;
+  height: 112%;
+  filter: blur(30px) saturate(1.15);
+  transform: scale(1.1);
+}
+.pb-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--bg) 20%, transparent) 0%, color-mix(in srgb, var(--bg) 62%, transparent) 38%, color-mix(in srgb, var(--bg) 72%, transparent) 100%);
+}
+.pb-sharp {
+  top: 0;
+  height: min(46dvh, 340px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
+}
+.pb-top {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 230px;
+  background: linear-gradient(to bottom, rgb(10 34 22 / 62%), rgb(10 34 22 / 0%));
+}
+.app.has-pb {
+  position: relative;
+  background: transparent;
+}
+.app.has-pb .main,
+.app.has-pb .phead-slot {
+  position: relative;
+  z-index: 1;
+}
+.app.has-pb .main {
+  background: transparent;
+}
+@media (max-width: 760px) {
+  .app.has-pb .pagehead h1,
+  .app.has-pb .pagehead-kicker {
+    color: #fff !important;
+    text-shadow: 0 1px 14px rgb(0 0 0 / 40%);
+  }
+}
+
+@media (max-width: 760px) {
+  /* Place pour voir la plante : le titre est sur la photo, le contenu commence plus bas. */
+  .app.has-pb .pagehead {
+    padding-bottom: 64px;
+  }
+  .app.has-pb .accueil .chez,
+  .app.has-pb .accueil .chez-title,
+  .app.has-pb .accueil .chez-kicker,
+  .app.has-pb .accueil .chez .muted,
+  .app.has-pb .accueil .chez p,
+  .app.has-pb .accueil .chez span {
+    color: #fff;
+    text-shadow: 0 1px 12px rgb(0 0 0 / 45%);
+  }
+  .app.has-pb .accueil .chez {
+    border-bottom-color: rgb(255 255 255 / 35%);
+  }
+}

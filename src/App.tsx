@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useRef } from 'react'
+import { backdropPhoto, PageBackdrop } from './components/PageBackdrop'
 import { notifyDailyTasks } from './lib/notify'
 import { Icon } from './components/Icon'
 import { PageHead } from './components/PageHead'
@@ -272,7 +273,8 @@ function AppShell() {
   const placing = !!(placingSpeciesId || movingPlantId)
 
   return (
-    <div data-tab={tab} className={'app' + (tab === 'accueil' || tab === 'entretien' || phead ? ' has-pagehead' : '') + (phead ? ' has-phead' : '') + (placing ? ' is-placing' : '') + (tab === 'accueil' && shouldShowRoute(onboarding.state, onboarding.neighbors) ? ' route-open' : '')}>
+    <div data-tab={tab} className={'app' + (backdropPhoto(tab) ? ' has-pb' : '') + (tab === 'accueil' || tab === 'entretien' || phead ? ' has-pagehead' : '') + (phead ? ' has-phead' : '') + (placing ? ' is-placing' : '') + (tab === 'accueil' && shouldShowRoute(onboarding.state, onboarding.neighbors) ? ' route-open' : '')}>
+      {backdropPhoto(tab) && <PageBackdrop photo={backdropPhoto(tab)!} />}
       <a
         className="skip-link"
         href="#main-panel"
