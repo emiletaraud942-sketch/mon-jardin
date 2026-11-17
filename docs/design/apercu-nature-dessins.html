@@ -1,0 +1,209 @@
+<title>PermaJardin Nature</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Concept : trois écrans de téléphone côte à côte, fond vert très pâle, filets fins, botanique réaliste. */
+:root{
+  --bg:#eef1ea; --surface:#fbfcf9; --ink:#14231a; --ink2:#55645a; --forest:#1d4a32; --forest2:#2d6a47;
+  --leaf:#5d9a63; --mist:#e1e9dd; --hair:rgba(20,35,26,.13); --lav:#8a78b8; --apple:#b8312f; --shadow:0 24px 60px -28px rgba(20,50,30,.35);
+  --font-d:'Cormorant Garamond','Cormorant',Georgia,serif; --font-b:'Inter',system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1612; --surface:#15201a; --ink:#e8efe6; --ink2:#9db0a2; --forest:#0f2a1c; --forest2:#2d6a47; --mist:#1b2a21; --hair:rgba(232,239,230,.14); --shadow:0 24px 60px -28px #000; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1612; --surface:#15201a; --ink:#e8efe6; --ink2:#9db0a2; --forest:#0f2a1c; --forest2:#2d6a47; --mist:#1b2a21; --hair:rgba(232,239,230,.14); --shadow:0 24px 60px -28px #000; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-b);font-weight:300;margin:0;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-block:40px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1{font-family:var(--font-d);font-weight:500;font-size:clamp(34px,6vw,54px);line-height:1.04;margin:0 0 10px;letter-spacing:-.01em;text-wrap:balance}
+.lead{max-width:56ch;color:var(--ink2);margin:0 0 36px;font-size:16px}
+.row{display:flex;flex-wrap:wrap;gap:28px;justify-content:center;align-items:flex-start}
+.phone{width:320px;max-width:100%;background:var(--surface);border:1px solid var(--hair);border-radius:42px;box-shadow:var(--shadow);overflow:hidden;position:relative;height:680px;display:flex;flex-direction:column}
+.cap{width:320px;max-width:100%;text-align:center;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);margin-top:14px}
+.scr{padding:26px 22px 0;flex:1;min-width:0}
+.kick{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink2);font-weight:400}
+.dh{font-family:var(--font-d);font-weight:500;font-size:34px;line-height:1.05;margin:6px 0 18px;letter-spacing:-.01em}
+.hero{position:relative;border-radius:26px;overflow:hidden;background:linear-gradient(160deg,#1f5a3b 0%,#123824 62%,#0c2a1a 100%);color:#f1f6ee;padding:20px 20px 18px;min-height:176px;display:flex;flex-direction:column;justify-content:flex-end}
+.hero svg.bg{position:absolute;inset:0;width:100%;height:100%}
+.hero>*:not(.bg){position:relative}
+.hero .kick{color:rgba(241,246,238,.72)}
+.hero h3{font-family:var(--font-d);font-weight:500;font-size:27px;line-height:1.08;margin:6px 0 12px}
+.pill{align-self:flex-start;border:1px solid rgba(241,246,238,.5);border-radius:99px;padding:6px 14px;font-size:12px;font-weight:400;backdrop-filter:blur(4px);background:rgba(255,255,255,.08)}
+.list{margin-top:14px}
+.li{display:flex;align-items:center;gap:14px;padding:13px 0;border-top:1px solid var(--hair)}
+.li:last-child{border-bottom:1px solid var(--hair)}
+.li .ic{width:22px;height:22px;flex:none;stroke:var(--forest2);fill:none;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round}
+.li b{font-weight:400;font-size:15px;display:block}
+.li span{font-size:12.5px;color:var(--ink2)}
+.li .ch{margin-left:auto;width:14px;height:14px;stroke:var(--ink2);fill:none;stroke-width:1.2}
+.nav{display:flex;justify-content:space-around;padding:12px 10px 18px;border-top:1px solid var(--hair);background:var(--surface)}
+.nav a{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10.5px;color:var(--ink2);letter-spacing:.04em}
+.nav svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round}
+.nav a.on{color:var(--forest2)}
+.nav a.on::after{content:"";width:4px;height:4px;border-radius:50%;background:var(--forest2)}
+.search{display:flex;align-items:center;gap:10px;border:1px solid var(--hair);border-radius:99px;padding:10px 16px;font-size:14px;color:var(--ink2);margin:14px 0 16px}
+.search svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.3}
+.tabs{display:flex;gap:20px;font-size:13px;color:var(--ink2);border-bottom:1px solid var(--hair);margin-bottom:4px}
+.tabs span{padding-bottom:9px}
+.tabs .on{color:var(--ink);border-bottom:1.5px solid var(--forest2);font-weight:400}
+.pl{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--hair)}
+.th{width:58px;height:58px;border-radius:50%;background:var(--mist);flex:none;overflow:hidden;display:grid;place-items:center}
+.th svg{width:100%;height:100%}
+.pl h4{font-family:var(--font-d);font-weight:600;font-size:20px;line-height:1.1;margin:0}
+.pl i{font-size:12px;color:var(--ink2)}
+.st{margin-left:auto;font-size:11px;color:var(--ink2);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.st::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--c,var(--leaf))}
+.big{background:var(--mist);margin:-26px -22px 0;height:250px;position:relative;overflow:hidden}
+.big svg{position:absolute;inset:0;width:100%;height:100%}
+.back{position:absolute;top:18px;left:18px;width:36px;height:36px;border-radius:50%;background:var(--surface);border:1px solid var(--hair);display:grid;place-items:center}
+.back svg{position:static;width:15px;height:15px;stroke:var(--ink);fill:none;stroke-width:1.3}
+.fh{font-family:var(--font-d);font-weight:500;font-size:38px;line-height:1;margin:20px 0 2px}
+.fl{font-style:italic;color:var(--ink2);font-size:14px;margin-bottom:18px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);border-block:1px solid var(--hair)}
+.stats div{padding:13px 0;text-align:center}
+.stats div+div{border-left:1px solid var(--hair)}
+.stats b{display:block;font-family:var(--font-d);font-weight:600;font-size:18px;white-space:nowrap}
+.stats span{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2)}
+.mois{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin:8px 0 6px}
+.mois i{height:26px;border-radius:2px;background:var(--mist)}
+.mois i.f{background:var(--lav);opacity:.75}.mois i.t{background:var(--leaf);opacity:.6}
+.ml{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;font-size:9px;color:var(--ink2);text-align:center}
+.sec{margin-top:20px}
+.note{font-size:13.5px;color:var(--ink2);margin:6px 0 0}
+.pal{display:flex;flex-wrap:wrap;gap:36px 56px;margin-top:56px;padding-top:32px;border-top:1px solid var(--hair)}
+.pal h2{font-size:11px;font-weight:400;letter-spacing:.2em;text-transform:uppercase;color:var(--ink2);margin:0 0 14px}
+.sw{display:flex;gap:0;border-radius:12px;overflow:hidden;border:1px solid var(--hair)}
+.sw i{width:52px;height:52px;display:block}
+.pal p{max-width:44ch;margin:0;font-size:14.5px;color:var(--ink2)}
+.ty{font-family:var(--font-d);font-size:30px;font-weight:500;line-height:1.1;margin:0 0 4px}
+@media (prefers-reduced-motion:no-preference){.hero svg.bg g.sway{transform-origin:50% 100%;animation:sw 9s ease-in-out infinite alternate}@keyframes sw{to{transform:rotate(1.2deg)}}}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,400&family=Inter:wght@300;400&display=swap">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="gA" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#2f6a3e"/><stop offset=".55" stop-color="#5f9c58"/><stop offset="1" stop-color="#8dbb6e"/></linearGradient>
+  <linearGradient id="gB" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#23563a"/><stop offset=".6" stop-color="#3f7f50"/><stop offset="1" stop-color="#6fa261"/></linearGradient>
+  <linearGradient id="gC" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4d7d5a"/><stop offset="1" stop-color="#a8c3a0"/></linearGradient>
+  <radialGradient id="gApple" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#e05a4a"/><stop offset=".6" stop-color="#b8312f"/><stop offset="1" stop-color="#7d1d22"/></radialGradient>
+  <linearGradient id="gFlower" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#5c4b93"/><stop offset="1" stop-color="#a995d6"/></linearGradient>
+  <filter id="blur3"><feGaussianBlur stdDeviation="3"/></filter><filter id="blur1"><feGaussianBlur stdDeviation="1.2"/></filter>
+</defs></svg>
+
+<div class="wrap">
+  <h1>Un jardin vrai, pas un jardin dessiné.</h1>
+  <p class="lead">Aperçu du nouveau style : filets fins, beaucoup d’air, un vert profond, des plantes botaniques détaillées à la place des icônes rondes. Trois écrans de l’appli, avec les mêmes fonctions qu’aujourd’hui.</p>
+
+  <div class="row">
+    <!-- ACCUEIL -->
+    <div><div class="phone">
+      <div class="scr">
+        <div class="kick">Chez vous · Rouen</div>
+        <div class="dh">Bonjour Émile</div>
+        <div class="hero">
+          <svg class="bg" id="heroBg" viewBox="0 0 300 180" preserveAspectRatio="xMidYMid slice"></svg>
+          <div class="kick">Cette semaine</div>
+          <h3>Trois gestes pour<br>vos fruitiers</h3>
+          <span class="pill">Voir les tâches</span>
+        </div>
+        <div class="list">
+          <div class="li"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21v-8M12 13c0-4 2.5-6.500 7-7 0 4.500-2.500 7-7 7ZM12 15c0-3-2-5-6-5.500 0 3.500 2 5.500 6 5.500Z"/></svg><div><b>Ajouter une plante</b><span>La choisir, puis la poser sur la carte</span></div><svg class="ch" viewBox="0 0 14 14"><path d="m5 2 5 5-5 5"/></svg></div>
+          <div class="li"><svg class="ic" viewBox="0 0 24 24"><path d="M3 6.500 9 4l6 2.500L21 4v13.500L15 20l-6-2.500L3 20Z M9 4v13.500M15 6.500V20"/></svg><div><b>Voir mon jardin</b><span>La carte, plante par plante</span></div><svg class="ch" viewBox="0 0 14 14"><path d="m5 2 5 5-5 5"/></svg></div>
+          <div class="li"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12.500 3 3 5-6"/></svg><div><b>Ce qu’il y a à faire</b><span>Tailler, arroser, récolter</span></div><svg class="ch" viewBox="0 0 14 14"><path d="m5 2 5 5-5 5"/></svg></div>
+          <div class="li"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.600 5.600 7 7M17 17l1.400 1.400M5.600 18.400 7 17M17 7l1.400-1.400"/></svg><div><b>Où planter ?</b><span>Soleil, pente, humidité</span></div><svg class="ch" viewBox="0 0 14 14"><path d="m5 2 5 5-5 5"/></svg></div>
+        </div>
+      </div>
+      <nav class="nav">
+        <a class="on"><svg viewBox="0 0 24 24"><path d="m3 11 9-7 9 7v9H3Z"/></svg>Accueil</a>
+        <a><svg viewBox="0 0 24 24"><path d="M3 6.500 9 4l6 2.500L21 4v13.500L15 20l-6-2.500L3 20Z"/></svg>Mon jardin</a>
+        <a><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12.500 3 3 5-6"/></svg>À faire</a>
+        <a><svg viewBox="0 0 24 24"><path d="M12 21v-8M12 13c0-4 2.500-6.500 7-7 0 4.500-2.500 7-7 7Z"/></svg>Planter</a>
+      </nav>
+    </div><div class="cap">Accueil</div></div>
+
+    <!-- MES PLANTES -->
+    <div><div class="phone">
+      <div class="scr">
+        <div class="kick">Mon jardin</div>
+        <div class="dh">Mes plantes <span style="color:var(--ink2);font-size:20px">· 13</span></div>
+        <div class="tabs"><span>Carte</span><span class="on">Plantes</span><span>Photos</span></div>
+        <div class="search"><svg viewBox="0 0 16 16"><circle cx="7" cy="7" r="5"/><path d="m11 11 3.500 3.500"/></svg>Rechercher une plante</div>
+        <div class="kick" style="margin-bottom:2px">Aromatiques</div>
+        <div class="pl"><div class="th" data-plant="basilic"></div><div><h4>Basilic</h4><i>Ocimum basilicum</i></div><div class="st" style="--c:#8dbb6e">En pousse</div></div>
+        <div class="pl"><div class="th" data-plant="lavande"></div><div><h4>Lavande vraie</h4><i>Lavandula angustifolia</i></div><div class="st" style="--c:var(--lav)">En fleurs</div></div>
+        <div class="pl"><div class="th" data-plant="romarin"></div><div><h4>Romarin</h4><i>Salvia rosmarinus</i></div><div class="st" style="--c:#7aa3c9">À tailler</div></div>
+        <div class="kick" style="margin:16px 0 2px">Fruitiers</div>
+        <div class="pl" style="border-bottom:0"><div class="th" data-plant="pommier"></div><div><h4>Pommier</h4><i>Malus domestica</i></div><div class="st" style="--c:var(--apple)">Fruits mûrs</div></div>
+      </div>
+      <nav class="nav">
+        <a><svg viewBox="0 0 24 24"><path d="m3 11 9-7 9 7v9H3Z"/></svg>Accueil</a>
+        <a class="on"><svg viewBox="0 0 24 24"><path d="M3 6.500 9 4l6 2.500L21 4v13.500L15 20l-6-2.500L3 20Z"/></svg>Mon jardin</a>
+        <a><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12.500 3 3 5-6"/></svg>À faire</a>
+        <a><svg viewBox="0 0 24 24"><path d="M12 21v-8M12 13c0-4 2.500-6.500 7-7 0 4.500-2.500 7-7 7Z"/></svg>Planter</a>
+      </nav>
+    </div><div class="cap">Mes plantes</div></div>
+
+    <!-- FICHE -->
+    <div><div class="phone">
+      <div class="scr">
+        <div class="big"><svg id="bigPlant" viewBox="0 0 320 250" preserveAspectRatio="xMidYMax meet"></svg><div class="back"><svg viewBox="0 0 16 16"><path d="m10 3-5 5 5 5"/></svg></div></div>
+        <div class="fh">Lavande vraie</div>
+        <div class="fl">Lavandula angustifolia · Lamiacées</div>
+        <div class="stats"><div><b>Plein soleil</b><span>Exposition</span></div><div><b>Peu</b><span>Eau</span></div><div><b>60 cm</b><span>Hauteur</span></div></div>
+        <div class="sec"><div class="kick">Floraison et taille</div>
+          <div class="mois"><i></i><i></i><i></i><i class="t"></i><i></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="t"></i><i></i><i></i><i></i></div>
+          <div class="ml"><span>J</span><span>F</span><span>M</span><span>A</span><span>M</span><span>J</span><span>J</span><span>A</span><span>S</span><span>O</span><span>N</span><span>D</span></div>
+          <p class="note">Taillez après la floraison, en août ou septembre, sans entrer dans le vieux bois.</p></div>
+      </div>
+      <nav class="nav">
+        <a><svg viewBox="0 0 24 24"><path d="m3 11 9-7 9 7v9H3Z"/></svg>Accueil</a>
+        <a class="on"><svg viewBox="0 0 24 24"><path d="M3 6.500 9 4l6 2.500L21 4v13.500L15 20l-6-2.500L3 20Z"/></svg>Mon jardin</a>
+        <a><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12.500 3 3 5-6"/></svg>À faire</a>
+        <a><svg viewBox="0 0 24 24"><path d="M12 21v-8M12 13c0-4 2.500-6.500 7-7 0 4.500-2.500 7-7 7Z"/></svg>Planter</a>
+      </nav>
+    </div><div class="cap">Fiche d’une plante</div></div>
+  </div>
+
+  <div class="pal">
+    <div><h2>Verts</h2><div class="sw"><i style="background:#0c2a1a"></i><i style="background:#1d4a32"></i><i style="background:#2d6a47"></i><i style="background:#5d9a63"></i><i style="background:#8dbb6e"></i><i style="background:#e1e9dd"></i><i style="background:#eef1ea"></i></div></div>
+    <div><h2>Typographie</h2><p class="ty">Cormorant Garamond</p><p>Titres en serif fin, texte en sans-serif léger. Filets de 1 px, jamais de contours épais ni d’ombres lourdes.</p></div>
+    <div><h2>Les plantes</h2><p>Ici ce sont des dessins botaniques détaillés, avec nervures et dégradés. L’étape suivante est de les remplacer par de vraies photos libres de droits, une par espèce.</p></div>
+  </div>
+</div>
+
+<script>
+// Générateur de feuilles : forme, nervure centrale, nervures latérales, dégradé.
+function leaf(x,y,len,w,ang,g,op){
+  var s='<g transform="translate('+x+' '+y+') rotate('+ang+')" opacity="'+(op||1)+'">';
+  s+='<path d="M0 0C'+w+' '+(-len*.25)+' '+w*.95+' '+(-len*.72)+' 0 '+(-len)+'C'+(-w*.95)+' '+(-len*.72)+' '+(-w)+' '+(-len*.25)+' 0 0Z" fill="url(#'+g+')" stroke="#1d4a32" stroke-opacity=".35" stroke-width=".5"/>';
+  s+='<path d="M0 0 0 '+(-len*.94)+'" stroke="#e8f2dc" stroke-opacity=".55" stroke-width=".6" fill="none"/>';
+  for(var t=.2;t<.85;t+=.14){var k=w*.62*(1-t*.55);
+    s+='<path d="M0 '+(-len*t)+' L'+k+' '+(-len*(t+.13))+' M0 '+(-len*t)+' L'+(-k)+' '+(-len*(t+.13))+'" stroke="#e8f2dc" stroke-opacity=".32" stroke-width=".4" fill="none"/>';}
+  return s+'</g>';
+}
+function stem(d,wd,col){return '<path d="'+d+'" stroke="'+(col||'#3b6a44')+'" stroke-width="'+wd+'" fill="none" stroke-linecap="round"/>';}
+function rnd(seed){return function(){seed=(seed*16807)%2147483647;return (seed-1)/2147483646}}
+var P={
+ basilic:function(){var o=stem('M50 98 C50 70 52 50 50 30',2.4);
+   [[50,78,30,17,-58,'gA'],[50,78,30,17,58,'gB'],[50,58,28,16,-52,'gB'],[50,58,28,16,52,'gA'],[50,40,24,14,-34,'gA'],[50,40,24,14,34,'gB'],[50,32,22,12,0,'gA']].forEach(function(a){o+=leaf.apply(null,a)});return o},
+ lavande:function(){var o='';[[34,-8],[50,0],[66,8]].forEach(function(p,i){var x=p[0],r=p[1];
+   o+='<g transform="rotate('+r+' 50 98)">'+stem('M50 98 C'+(x-6)+' 70 '+x+' 45 '+x+' 14',1.4,'#6d8a63');
+   for(var k=0;k<9;k++){var yy=14+k*5.2,s=3.3-k*.12;o+='<ellipse cx="'+(x-2.4)+'" cy="'+yy+'" rx="'+s*.6+'" ry="'+s*.9+'" fill="url(#gFlower)" transform="rotate(-28 '+x+' '+yy+')"/><ellipse cx="'+(x+2.4)+'" cy="'+(yy+2.4)+'" rx="'+s*.6+'" ry="'+s*.9+'" fill="url(#gFlower)" transform="rotate(28 '+x+' '+yy+')"/>';}
+   o+='</g>'});
+   o+=leaf(50,98,34,3.2,-24,'gC')+leaf(50,98,32,3.2,24,'gC')+leaf(50,98,28,3,-46,'gC')+leaf(50,98,28,3,46,'gC');return o},
+ romarin:function(){var o=stem('M18 90 C34 70 52 52 84 24',2);
+   for(var i=0;i<14;i++){var t=i/13,x=18+66*t,y=90-66*t-Math.sin(t*3)*2;o+='<path d="M'+x+' '+y+' l-9 -9 M'+x+' '+y+' l9 9" stroke="#3f6f4a" stroke-width="1.3" stroke-linecap="round" fill="none" transform="rotate('+(i%2?-8:6)+' '+x+' '+y+')"/>';
+     o+='<path d="M'+x+' '+y+' l-9 -9 M'+x+' '+y+' l9 9" stroke="#8fb68a" stroke-width=".5" fill="none"/>';
+     if(i%3==1)o+='<circle cx="'+(x+3)+'" cy="'+(y-4)+'" r="1.8" fill="#9db9dc"/>';}return o},
+ pommier:function(){var o=stem('M10 82 C34 66 58 56 92 34',2.6,'#6b4a35');
+   o+=leaf(32,70,26,12,-30,'gA')+leaf(46,64,26,12,25,'gB')+leaf(58,56,24,11,-40,'gB')+leaf(72,46,24,11,20,'gA')+leaf(84,38,20,9,-30,'gB');
+   o+='<path d="M44 68 L44 82" stroke="#6b4a35" stroke-width="1"/><circle cx="44" cy="87" r="9" fill="url(#gApple)"/><ellipse cx="41" cy="83" rx="2.5" ry="1.6" fill="#fff" opacity=".4"/>';
+   o+='<path d="M70 52 L72 64" stroke="#6b4a35" stroke-width="1"/><circle cx="73" cy="70" r="8" fill="url(#gApple)"/><ellipse cx="70.500" cy="66.500" rx="2.200" ry="1.400" fill="#fff" opacity=".4"/>';return o}
+};
+document.querySelectorAll('[data-plant]').forEach(function(el){el.innerHTML='<svg viewBox="0 0 100 100">'+P[el.dataset.plant]()+'</svg>'});
+document.getElementById('bigPlant').innerHTML='<g transform="translate(35 0) scale(2.5)">'+P.lavande()+'</g>';
+// Fond de l'accueil : feuillage en profondeur (flou en arrière, net devant).
+(function(){var r=rnd(7),o='<g filter="url(#blur3)" opacity=".5">',i;
+  for(i=0;i<9;i++)o+=leaf(10+r()*280,190,70+r()*50,22+r()*10,-70+r()*140,'gB');
+  o+='</g><g class="sway" opacity=".9">';
+  for(i=0;i<9;i++)o+=leaf(190+r()*130,200,60+r()*40,16+r()*8,-40+r()*70,i%2?'gA':'gB');
+  document.getElementById('heroBg').innerHTML=o+'</g>'})();
+</script>
