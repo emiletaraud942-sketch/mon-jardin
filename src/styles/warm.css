@@ -688,8 +688,8 @@ html[data-big-taps] .home-tile {
 /* Le contenu qui défile s'efface en douceur sous l'en-tête (plus de coupure nette). */
 @media (max-width: 760px) {
   .app.has-pb .main:not(.full) {
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 26px);
-    mask-image: linear-gradient(to bottom, transparent 0, #000 26px);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 26px, #000 calc(100% - 56px), transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 26px, #000 calc(100% - 56px), transparent 100%);
   }
 }
 /* Lisibilité du texte posé sur le fond flou. */
@@ -715,4 +715,11 @@ html[data-big-taps] .home-tile {
   background: color-mix(in srgb, var(--surface) 84%, transparent);
   filter: blur(16px);
   pointer-events: none;
+}
+
+
+/* Si le système laisse une marge en haut ou en bas (barre d'état, anciennes installations), elle prend le vert de la photo, jamais du blanc. */
+html:has(.app.has-pb),
+body:has(.app.has-pb) {
+  background: #14231a;
 }
