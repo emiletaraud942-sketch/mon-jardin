@@ -40,7 +40,7 @@ const PATHS: Record<string, string> = {
   move: 'M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20',
 }
 
-export function Icon({ name, size = 20, weight = 1.7 }: { name: keyof typeof PATHS | string; size?: number; weight?: number }) {
+export function Icon({ name, size = 20, weight = 1.3 }: { name: keyof typeof PATHS | string; size?: number; weight?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={weight} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d={PATHS[name] ?? ''} />

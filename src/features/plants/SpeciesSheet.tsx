@@ -1,4 +1,5 @@
 import { adviceText, useZeroTraitement } from '../../lib/zeroTraitement'
+import { SpeciesHero } from '../../components/SpeciesThumb'
 import { SPECIES_BY_ID } from '../../data/species'
 import { CATEGORY_LABEL, STRATE_LABEL, SUN_LABEL, TASK_ICON, TASK_LABEL, WATER_LABEL } from '../../data/labels'
 import { Icon } from '../../components/Icon'
@@ -49,7 +50,8 @@ export function SpeciesSheet({ species: s, garden }: { species: Species; garden:
   return (
     <div className="stack plants-ui" style={{ gap: 14 }}>
       <div>
-        <h2 style={{ marginBottom: 2 }}>{s.nomCommun}</h2>
+        <SpeciesHero id={s.id} name={s.nomCommun} />
+        <h2 style={{ marginBottom: 2, marginTop: 12 }}>{s.nomCommun}</h2>
         <div className="muted small">
           <i>{s.nomLatin}</i> · {s.famille}
         </div>

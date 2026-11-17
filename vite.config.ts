@@ -119,7 +119,7 @@ export default defineConfig({
         lang: 'fr',
         dir: 'ltr',
         theme_color: '#ffffff',
-        background_color: '#f5efe3',
+        background_color: '#fbfcf9',
         display: 'standalone',
         display_override: ['standalone'],
         orientation: 'any',
@@ -142,7 +142,7 @@ export default defineConfig({
         // MapLibre reste dans le précache : la carte est l'écran d'accueil et doit s'ouvrir hors ligne
         // dès la première installation (son nom ne change qu'avec la bibliothèque, il n'est donc
         // retéléchargé qu'à une mise à jour de MapLibre).
-        // Polices autohébergées (DM Serif Display + DM Sans, 2 fichiers woff2 latin, ~60 ko) : précachées pour que le texte s'affiche pareil hors ligne.
+        // Polices autohébergées (Cormorant Garamond + Inter, 4 fichiers woff2 latin, ~120 ko) : précachées pour que le texte s'affiche pareil hors ligne.
         globPatterns: ['**/*.{js,css,html,woff2}'],
         globIgnores: ['push-sw.js', 'ocr/**'],
         // Alertes de nouveaux messages : deux gestionnaires (push, notificationclick) dans public/push-sw.js, chargés par le

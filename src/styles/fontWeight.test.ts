@@ -52,9 +52,10 @@ describe('graisses de police', () => {
   it(':root définit --fw-text, --fw-strong et --fw-key (≤ 600)', () => {
     const css = readFileSync(join(SRC, 'styles/app.css'), 'utf8')
     const get = (n: string) => Number(css.match(new RegExp(`--${n}:\\s*(\\d+)\\s*;`))?.[1])
-    expect(get('fw-text')).toBe(400)
-    expect(get('fw-strong')).toBe(500)
-    expect(get('fw-key')).toBe(600)
+    // Direction « Nature » : Inter variable (300 à 600), texte léger.
+    expect(get('fw-text')).toBe(350)
+    expect(get('fw-strong')).toBe(450)
+    expect(get('fw-key')).toBe(550)
   })
 
   it('b et strong reprennent --fw-strong', () => {
@@ -62,8 +63,8 @@ describe('graisses de police', () => {
     expect(css).toMatch(/b,\s*strong,[^{]*\{\s*font-weight:\s*var\(--fw-strong\)/)
   })
 
-  it('la police DM Sans variable couvre 400 à 600 sans gras synthétique', () => {
+  it('la police Inter variable couvre 300 à 600 sans gras synthétique', () => {
     const css = readFileSync(join(SRC, 'styles/app.css'), 'utf8')
-    expect(css).toMatch(/font-family:\s*'DM Sans';[^}]*font-weight:\s*400 600/)
+    expect(css).toMatch(/font-family:\s*'Inter';[^}]*font-weight:\s*300 600/)
   })
 })

@@ -15,6 +15,7 @@ import { ShoppingListDialog } from './ShoppingListDialog'
 import { openScan } from '../scan/scanUi'
 import { PlantScene } from '../../components/illustrations'
 import { useIsMobile } from '../../components/useMedia'
+import { SpeciesThumb } from '../../components/SpeciesThumb'
 
 export function PlantsPage({ garden }: { garden: Garden }) {
   const plants = useGardenPlants(garden.id)
@@ -137,9 +138,13 @@ export function PlantsPage({ garden }: { garden: Garden }) {
                         aria-current={p.id === selectedPlantId ? 'true' : undefined}
                         onClick={() => setUi({ selectedPlantId: p.id })}
                       >
-                        <span className="plant-tile">
-                          {p.photos[0] ? <PhotoThumb id={p.photos[0]} /> : <span className="dot" style={{ width: 16, height: 16, background: s?.couleurAccent ?? s?.couleur ?? 'var(--accent-2)' }} />}
-                        </span>
+                        {p.photos[0] ? (
+                          <span className="plant-thumb">
+                            <PhotoThumb id={p.photos[0]} />
+                          </span>
+                        ) : (
+                          <SpeciesThumb id={p.speciesId} color={s?.couleurAccent ?? s?.couleur} />
+                        )}
                         <span style={{ textAlign: 'left', flex: 1 }}>
                           <strong>{plantName(p)}</strong>
                           <span className="muted small" style={{ display: 'block' }}>

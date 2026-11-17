@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { SpeciesThumb } from '../../components/SpeciesThumb'
 import { createPortal } from 'react-dom'
 import { SPECIES_BY_ID } from '../../data/species'
 import { STATUS_LABEL } from '../../data/labels'
@@ -103,7 +104,7 @@ export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
             return (
               <li key={p.id}>
                 <button className="btn ghost small tall plant-row" style={{ width: '100%', justifyContent: 'flex-start' }} onClick={() => setUi({ selectedPlantId: p.id, focusPlantId: p.id })}>
-                  <span className="dot" style={{ background: s?.couleurAccent ?? s?.couleur ?? 'var(--accent-2)' }} /> {plantName(p)}
+                  <SpeciesThumb id={p.speciesId} color={s?.couleurAccent ?? s?.couleur} size="sm" /> {plantName(p)}
                   {p.status !== 'en-place' && <span className="badge">{STATUS_LABEL[p.status]}</span>}
                 </button>
               </li>

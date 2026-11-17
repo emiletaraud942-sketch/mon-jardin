@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { SpeciesThumb } from '../../components/SpeciesThumb'
 import { SPECIES_BY_ID } from '../../data/species'
 import { CATEGORY_LABEL, SUN_LABEL } from '../../data/labels'
 import { filterSpecies } from '../../components/SpeciesPicker'
@@ -42,7 +43,7 @@ export function CataloguePage({ garden }: { garden: Garden }) {
               aria-current={s.id === speciesId ? 'true' : undefined}
               onClick={() => setUi({ speciesId: s.id })}
             >
-              <span className="dot" style={{ background: s.couleurAccent ?? s.couleur }} />
+              <SpeciesThumb id={s.id} color={s.couleurAccent ?? s.couleur} size="lg" />
               <span style={{ textAlign: 'left' }}>
                 {s.nomCommun}
                 <span className="muted small" style={{ display: 'block' }}>

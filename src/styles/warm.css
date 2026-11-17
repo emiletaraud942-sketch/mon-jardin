@@ -1,75 +1,97 @@
-/* Refonte du 16 nov. 2026 : style « crème et vert profond » d'après la maquette du propriétaire (« Bean & Bloom »).
-   Chargé en dernier. Couleurs : variables de :root seulement (clair et sombre). Rien ne change aux fonctions : seuls l'habillage et l'accueil bougent. */
+/* Direction « Nature » (17 nov. 2026) : d'après l'aperçu validé par le propriétaire (docs/design/apercu-nature-photos.html).
+   Fond blanc à peine teinté de vert, filets de 1 px, vert forêt profond, titres en Cormorant Garamond, vraies photos de plantes.
+   Chargé en dernier. Couleurs : variables de :root seulement (clair et sombre). Aucune fonction ne change : seul l'habillage bouge. */
 
-/* ---------- Ombres chaudes (clair seulement : le sombre garde les siennes) ---------- */
+/* ---------- Ombres : presque aucune, les filets font le travail ---------- */
 :root {
-  --shadow: 0 10px 28px rgb(90 65 30 / 12%);
-  --shadow-soft: 0 6px 18px rgb(90 65 30 / 10%);
-  --shadow-chip: 0 3px 10px rgb(90 65 30 / 12%);
-  --shadow-tile: 0 6px 16px rgb(90 65 30 / 10%);
-  --shadow-now: 0 10px 26px rgb(90 65 30 / 14%);
-  --shadow-float: 0 10px 30px rgb(90 65 30 / 18%);
-  --shadow-up: 0 -8px 30px rgb(90 65 30 / 10%);
+  --shadow: 0 1px 2px rgb(20 50 30 / 4%);
+  --shadow-soft: 0 1px 2px rgb(20 50 30 / 4%);
+  --shadow-chip: 0 1px 2px rgb(20 50 30 / 5%);
+  --shadow-tile: none;
+  --shadow-now: 0 10px 30px -14px rgb(20 50 30 / 30%);
+  --shadow-float: 0 -1px 0 rgb(20 50 30 / 0%);
+  --shadow-up: 0 -8px 30px rgb(20 50 30 / 5%);
+}
+:root[data-theme='dark'] {
+  --shadow: none;
+  --shadow-soft: none;
+  --shadow-chip: none;
+  --shadow-float: none;
 }
 
-/* ---------- En-tête de l'accueil : un grand titre en serif ---------- */
+/* ---------- Titres : serif fin, étiquettes en petites capitales espacées ---------- */
+h1,
+h2,
+h3 {
+  font-family: var(--font-title);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
 .accueil .pagehead h1 {
-  font-size: calc(36 * var(--px));
-  line-height: 1.05;
+  font-size: calc(40 * var(--px));
+  line-height: 1.04;
   letter-spacing: -0.01em;
 }
-.accueil .pagehead-kicker {
-  font-size: calc(15 * var(--px));
-  color: var(--muted-2);
+.accueil .pagehead-kicker,
+.chez-kicker,
+.home-label,
+.home-feature-kicker,
+.afaire-group-title,
+.afaire-extra > h2,
+.plants-ui h2 {
+  font-family: var(--font-body);
+  font-size: calc(11 * var(--px));
+  font-weight: var(--fw-strong);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
-/* ---------- Carte du jardin : le « plat du jour » ---------- */
+/* ---------- Carte du jardin : une ligne discrète sous le titre ---------- */
 .accueil .chez {
-  margin-top: 14px;
-  padding: 16px 104px 16px 18px;
-  border: var(--border-w) solid var(--border);
-  border-radius: 26px;
-  background: var(--surface);
-  box-shadow: var(--shadow);
+  margin-top: 10px;
+  padding: 0 0 14px;
+  border: 0;
+  border-bottom: var(--border-w) solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 .accueil .chez .chez-art {
-  right: 12px;
-  width: 84px;
-}
-.chez-kicker {
-  font-size: calc(11 * var(--px));
-  font-weight: var(--fw-key);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--cta);
+  display: none;
 }
 .accueil .chez-title {
+  font-family: var(--font-title);
   font-size: calc(26 * var(--px));
   line-height: 1.1;
   margin-top: 2px;
 }
+.chez-kicker {
+  color: var(--muted);
+}
 
-/* ---------- Tuiles : les quatre actions du quotidien ---------- */
+/* ---------- Les quatre actions du quotidien : des lignes à filet (icône fine, mot, phrase, chevron) ---------- */
 .home-tiles {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  margin-top: 6px;
 }
 .home-tile {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 92px;
-  padding: 12px 4px 10px;
-  border: var(--border-w) solid var(--border);
-  border-radius: 22px;
-  background: var(--surface);
-  box-shadow: var(--shadow-tile);
-  color: var(--title);
+  gap: 14px;
+  width: 100%;
+  min-height: 64px;
+  padding: 12px 2px;
+  border: 0;
+  border-top: var(--border-w) solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text);
   font: inherit;
+  text-align: left;
   cursor: pointer;
 }
 .home-tile:hover,
@@ -78,149 +100,175 @@
 }
 .home-tile:focus-visible {
   outline: 3px solid var(--focus);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 .home-tile-icon {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--accent-soft);
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 0;
+  background: transparent;
+  color: var(--accent-2);
+}
+.home-tile-icon svg {
+  stroke-width: 1.25;
+}
+.home-tile-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 .home-tile-label {
-  font-size: calc(12.5 * var(--px));
-  font-weight: var(--fw-strong);
-  line-height: 1.15;
-  text-align: center;
+  font-size: calc(16 * var(--px));
+  font-weight: var(--fw-text);
+  line-height: 1.25;
+  text-align: left;
   color: var(--text);
 }
-.home-tile.primary {
-  background: var(--btn-green);
-  border-color: var(--btn-green);
-  color: var(--on-btn-green);
+.home-tile-sub {
+  font-size: calc(13 * var(--px));
+  color: var(--muted);
+  line-height: 1.3;
 }
-.home-tile.primary .home-tile-icon {
-  background: rgb(255 255 255 / 18%);
+.home-tile-chev {
+  margin-left: auto;
+  color: var(--muted);
+  flex: none;
+}
+.home-tile.primary {
+  background: transparent;
 }
 .home-tile.primary .home-tile-label {
-  color: var(--on-btn-green);
+  font-weight: var(--fw-strong);
 }
 
-/* ---------- Carte « à la une » : vert profond, pot en illustration ---------- */
+/* ---------- « À la une » : une photo sous un voile vert foncé ---------- */
 .home-feature {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  justify-content: flex-end;
   gap: 4px;
   width: 100%;
-  min-height: 168px;
-  margin-top: 14px;
-  padding: 18px 132px 18px 20px;
+  min-height: 188px;
+  margin-top: 16px;
+  padding: 20px;
   border: 0;
-  border-radius: 28px;
-  background: var(--btn-green);
-  color: var(--on-btn-green);
-  box-shadow: var(--shadow-now);
+  border-radius: 26px;
+  background: linear-gradient(160deg, #1f5a3b 0%, #123824 62%, #0c2a1a 100%);
+  color: #f1f6ee;
+  box-shadow: none;
   font: inherit;
   text-align: left;
   overflow: hidden;
   cursor: pointer;
+}
+.home-feature::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(to bottom, rgb(12 42 26 / 25%), rgb(12 42 26 / 70%) 55%, rgb(10 34 22 / 92%));
+}
+.home-feature-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.home-feature > *:not(.home-feature-photo) {
+  position: relative;
+  z-index: 2;
 }
 .home-feature:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 3px;
 }
 .home-feature-kicker {
-  font-size: calc(11 * var(--px));
-  font-weight: var(--fw-key);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  opacity: 0.85;
+  color: rgb(241 246 238 / 78%);
 }
 .home-feature-title {
   font-family: var(--font-title);
-  font-size: calc(27 * var(--px));
-  font-weight: var(--fw-text);
-  line-height: 1.08;
+  font-size: calc(30 * var(--px));
+  font-weight: 500;
+  line-height: 1.05;
 }
 .home-feature-text {
   font-size: calc(14 * var(--px));
   line-height: 1.35;
-  opacity: 0.92;
+  color: rgb(241 246 238 / 90%);
 }
 .home-feature-pill {
-  margin-top: auto;
-  padding: 9px 18px;
+  margin-top: 10px;
+  padding: 7px 16px;
+  border: var(--border-w) solid rgb(241 246 238 / 55%);
   border-radius: 999px;
-  background: var(--surface);
-  color: var(--title);
-  font-size: calc(14 * var(--px));
-  font-weight: var(--fw-key);
+  background: rgb(255 255 255 / 10%);
+  color: #f1f6ee;
+  font-size: calc(13 * var(--px));
+  font-weight: var(--fw-strong);
+  backdrop-filter: blur(4px);
 }
 .home-feature-art {
-  position: absolute;
-  right: 6px;
-  bottom: 4px;
+  display: none;
 }
 
-/* ---------- Étiquette de section et liste ---------- */
+/* ---------- Étiquette de section et gros boutons restants : mêmes lignes à filet ---------- */
 .home-label {
-  margin: 22px 2px 8px;
-  font-family: var(--font-body);
-  font-size: calc(12 * var(--px));
-  font-weight: var(--fw-key);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted);
+  margin: 26px 0 6px;
 }
 .home-grid-solo {
-  margin-top: 12px;
+  margin-top: 0;
 }
 .home-btn {
-  border-radius: 22px;
-  box-shadow: var(--shadow-tile);
+  border: 0;
+  border-top: var(--border-w) solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding-inline: 2px;
 }
-.home-btn-icon {
-  border-radius: 50%;
-}
-
-/* ---------- Barre du bas : plus ronde, plus légère ---------- */
-@media (max-width: 760px) {
-  .sidenav {
-    box-shadow: var(--shadow-float);
-    border: var(--border-w) solid var(--border);
-  }
-}
-
-/* ---------- Grandes touches : les tuiles suivent ---------- */
-html[data-big-taps] .home-tile {
-  min-height: 104px;
-}
-
-/* ---------- Autres écrans : même style crème (étiquettes, cartes rondes, pastilles) ---------- */
-.afaire-group-title,
-.afaire-extra > h2,
-.plants-ui h2 {
-  font-family: var(--font-body);
-  font-size: calc(12 * var(--px));
-  font-weight: var(--fw-key);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.task,
-.card,
-.plants-ui .plant-row,
-.cat-row {
-  border-radius: 22px;
-  box-shadow: var(--shadow-tile);
+.home-btn.featured,
+.home-btn.primary {
+  background: transparent;
   border-color: var(--border);
 }
-.plant-tile {
-  border-radius: 16px;
+.home-btn-icon {
+  border-radius: 0;
+  background: transparent;
+  color: var(--accent-2);
+  width: 28px;
+  height: 28px;
 }
+.home-btn-icon svg {
+  stroke-width: 1.25;
+}
+.home-btn strong {
+  font-weight: var(--fw-text);
+}
+
+/* ---------- Cartes : filet fin, coins moyens, sans ombre ---------- */
+.card,
+.task,
+.plants-ui .plant-row,
+.cat-row,
+.fold > details {
+  border: var(--border-w) solid var(--border);
+  border-radius: 18px;
+  box-shadow: none;
+}
+.plants-ui .plant-row,
+.cat-row {
+  border-width: 0 0 var(--border-w) 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* ---------- Boutons et champs : pilule, filet fin ---------- */
 .btn,
 .chip-filter,
 .afaire-all {
@@ -228,28 +276,159 @@ html[data-big-taps] .home-tile {
 }
 .chip-filter,
 .afaire-all {
-  background: var(--surface);
-  border: var(--border-w) solid var(--border);
-}
-.plants-actions > .btn {
-  box-shadow: var(--shadow-tile);
+  background: transparent;
+  border: var(--border-w) solid var(--border-strong);
 }
 input[type='search'],
 input[type='text'],
-select {
+input[type='email'],
+select,
+textarea {
   border-radius: 999px;
-  background: var(--surface);
+  background: transparent;
+  border-color: var(--border);
 }
-.afaire-frost,
-.afaire-notif,
-.afaire-year {
-  border-radius: 22px;
+textarea {
+  border-radius: 16px;
 }
-.fold > details {
-  border-radius: 24px;
-  box-shadow: var(--shadow-tile);
+
+/* ---------- Miniatures de plantes : rondes, vraies photos ---------- */
+.plant-tile,
+.plant-thumb {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  overflow: hidden;
 }
-.tcards .task .btn.primary,
-.task .btn.primary {
-  border-radius: 999px;
+.plant-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.plant-thumb.lg {
+  width: 72px;
+  height: 72px;
+}
+.plant-thumb.sm {
+  width: 40px;
+  height: 40px;
+}
+.plants-ui .plant-row strong {
+  font-family: var(--font-title);
+  font-weight: 600;
+  font-size: calc(21 * var(--px));
+  line-height: 1.1;
+  color: var(--title);
+}
+
+/* ---------- Grande photo en tête d'une fiche espèce ---------- */
+.species-hero {
+  position: relative;
+  margin: 0 0 14px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--accent-soft);
+  aspect-ratio: 16 / 10;
+}
+.species-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.species-credit {
+  margin: 6px 2px 0;
+  font-size: calc(11 * var(--px));
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+/* ---------- Barre du bas : filet en haut, point sous l'écran actif ---------- */
+@media (max-width: 760px) {
+  .sidenav {
+    margin: 0;
+    padding: 10px 4px max(10px, env(safe-area-inset-bottom));
+    border: 0;
+    border-top: var(--border-w) solid var(--border);
+    border-radius: 0;
+    background: var(--surface);
+    box-shadow: none;
+  }
+  .navbtn {
+    border-radius: 0;
+  }
+  .navbtn svg {
+    stroke-width: 1.25;
+  }
+  .navbtn[aria-current='page'] {
+    color: var(--accent-2);
+    font-weight: var(--fw-text);
+  }
+  .navbtn[aria-current='page'] svg {
+    color: var(--accent-2);
+  }
+  .navbtn[aria-current='page']::after {
+    content: '';
+    width: 4px;
+    height: 4px;
+    margin-top: 1px;
+    border-radius: 50%;
+    background: var(--accent-2);
+  }
+}
+
+/* ---------- Grandes touches : les lignes suivent ---------- */
+html[data-big-taps] .home-tile {
+  min-height: 72px;
+}
+
+/* ---------- Liste des plantes : lignes à filet, sans cartes empilées ---------- */
+.plants-ui .grid > .card:first-child,
+.plants-ui .list .btn.ghost.plant-row,
+.plants-ui .list .btn.ghost.cat-row,
+.catalogue-list {
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.plants-ui .grid > .card:first-child,
+.catalogue-list {
+  border: 0;
+}
+.plants-ui .list .btn.ghost.plant-row,
+.plants-ui .list .btn.ghost.cat-row {
+  border: 0;
+  border-bottom: var(--border-w) solid var(--border);
+  min-height: 78px;
+  padding: 10px 2px;
+  gap: 14px;
+}
+.plants-ui .list .btn.ghost.plant-row:hover,
+.plants-ui .list .btn.ghost.cat-row:hover {
+  background: var(--surface-2);
+}
+
+/* ---------- Barre du bas : plus de pastille ronde, un point sous l'écran actif ---------- */
+@media (max-width: 760px) {
+  .navbtn[aria-current='page'] svg {
+    background: transparent;
+    color: var(--accent-2);
+  }
+}
+
+.plants-ui .grid > .card:first-child .list > li,
+.catalogue-list .list > li {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.plants-ui .grid > .card:first-child .list > li:last-child {
+  border-bottom: 0;
 }

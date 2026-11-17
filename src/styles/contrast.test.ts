@@ -62,11 +62,11 @@ describe('contrastes des paires de texte', () => {
     }
   }
 
-  it('--muted (gris de la maquette) n’est jamais posé sur --surface-2 ni --track : on y utilise --muted-2', () => {
-    // 4,21:1 et 3,89:1 en thème clair : sous le seuil.
-    expect(ratio(light.muted, light['surface-2'])).toBeLessThan(4.5)
-    expect(ratio(light.muted, light.track)).toBeLessThan(4.5)
-    expect(ratio(light['muted-2'], light.track)).toBeGreaterThanOrEqual(4.5)
+  it('--muted et --muted-2 restent lisibles (≥ 4,5:1) sur --surface-2 et --track (direction « Nature » : gris vert plus foncé)', () => {
+    for (const k of ['muted', 'muted-2']) {
+      expect(ratio(light[k], light['surface-2'])).toBeGreaterThanOrEqual(4.5)
+      expect(ratio(light[k], light.track)).toBeGreaterThanOrEqual(4.5)
+    }
   })
 
   it('--sun (2,1:1 sur blanc) ne sert jamais de couleur de texte', () => {

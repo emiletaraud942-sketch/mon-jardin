@@ -1,0 +1,694 @@
+[
+{
+"id": "rosier",
+"latin": "Rosa × hybrida"
+},
+{
+"id": "hortensia",
+"latin": "Hydrangea macrophylla"
+},
+{
+"id": "thuya",
+"latin": "Thuja plicata"
+},
+{
+"id": "laurier-palme",
+"latin": "Prunus laurocerasus"
+},
+{
+"id": "lilas",
+"latin": "Syringa vulgaris"
+},
+{
+"id": "dahlia",
+"latin": "Dahlia × hybrida"
+},
+{
+"id": "hemerocalle",
+"latin": "Hemerocallis fulva"
+},
+{
+"id": "pivoine",
+"latin": "Paeonia lactiflora"
+},
+{
+"id": "camomille",
+"latin": "Matricaria chamomilla"
+},
+{
+"id": "ortie",
+"latin": "Urtica dioica"
+},
+{
+"id": "chou-rouge",
+"latin": "Brassica oleracea var. capitata f. rubra"
+},
+{
+"id": "cardon",
+"latin": "Cynara cardunculus"
+},
+{
+"id": "pak-choi",
+"latin": "Brassica rapa subsp. chinensis"
+},
+{
+"id": "rutabaga",
+"latin": "Brassica napus var. napobrassica"
+},
+{
+"id": "cresson-alenois",
+"latin": "Lepidium sativum"
+},
+{
+"id": "courge-spaghetti",
+"latin": "Cucurbita pepo"
+},
+{
+"id": "chene",
+"latin": "Quercus robur"
+},
+{
+"id": "hetre",
+"latin": "Fagus sylvatica"
+},
+{
+"id": "tilleul",
+"latin": "Tilia cordata"
+},
+{
+"id": "erable-champetre",
+"latin": "Acer campestre"
+},
+{
+"id": "charme",
+"latin": "Carpinus betulus"
+},
+{
+"id": "aulne-glutineux",
+"latin": "Alnus glutinosa"
+},
+{
+"id": "robinier",
+"latin": "Robinia pseudoacacia"
+},
+{
+"id": "bouleau",
+"latin": "Betula pendula"
+},
+{
+"id": "saule-osier",
+"latin": "Salix viminalis"
+},
+{
+"id": "sureau-noir",
+"latin": "Sambucus nigra"
+},
+{
+"id": "cornouiller-male",
+"latin": "Cornus mas"
+},
+{
+"id": "eleagnus",
+"latin": "Elaeagnus × ebbingei"
+},
+{
+"id": "aubepine",
+"latin": "Crataegus monogyna"
+},
+{
+"id": "prunellier",
+"latin": "Prunus spinosa"
+},
+{
+"id": "viorne-obier",
+"latin": "Viburnum opulus"
+},
+{
+"id": "troene",
+"latin": "Ligustrum vulgare"
+},
+{
+"id": "buis",
+"latin": "Buxus sempervirens"
+},
+{
+"id": "photinia",
+"latin": "Photinia × fraseri"
+},
+{
+"id": "if",
+"latin": "Taxus baccata"
+},
+{
+"id": "basilic",
+"latin": "Ocimum basilicum"
+},
+{
+"id": "persil",
+"latin": "Petroselinum crispum"
+},
+{
+"id": "coriandre",
+"latin": "Coriandrum sativum"
+},
+{
+"id": "aneth",
+"latin": "Anethum graveolens"
+},
+{
+"id": "cerfeuil",
+"latin": "Anthriscus cerefolium"
+},
+{
+"id": "sarriette",
+"latin": "Satureja hortensis"
+},
+{
+"id": "ciboulette",
+"latin": "Allium schoenoprasum"
+},
+{
+"id": "thym",
+"latin": "Thymus vulgaris"
+},
+{
+"id": "romarin",
+"latin": "Salvia rosmarinus"
+},
+{
+"id": "sauge",
+"latin": "Salvia officinalis"
+},
+{
+"id": "menthe",
+"latin": "Mentha spicata"
+},
+{
+"id": "melisse",
+"latin": "Melissa officinalis"
+},
+{
+"id": "origan",
+"latin": "Origanum vulgare"
+},
+{
+"id": "estragon",
+"latin": "Artemisia dracunculus"
+},
+{
+"id": "liveche",
+"latin": "Levisticum officinale"
+},
+{
+"id": "laurier-sauce",
+"latin": "Laurus nobilis"
+},
+{
+"id": "verveine-citronnelle",
+"latin": "Aloysia citrodora"
+},
+{
+"id": "lavande",
+"latin": "Lavandula angustifolia"
+},
+{
+"id": "hysope",
+"latin": "Hyssopus officinalis"
+},
+{
+"id": "oseille",
+"latin": "Rumex acetosa"
+},
+{
+"id": "marjolaine",
+"latin": "Origanum majorana"
+},
+{
+"id": "ciboule",
+"latin": "Allium fistulosum"
+},
+{
+"id": "capucine",
+"latin": "Tropaeolum majus"
+},
+{
+"id": "souci",
+"latin": "Calendula officinalis"
+},
+{
+"id": "oeillet-d-inde",
+"latin": "Tagetes patula"
+},
+{
+"id": "bourrache",
+"latin": "Borago officinalis"
+},
+{
+"id": "cosmos",
+"latin": "Cosmos bipinnatus"
+},
+{
+"id": "tournesol",
+"latin": "Helianthus annuus"
+},
+{
+"id": "coquelicot",
+"latin": "Papaver rhoeas"
+},
+{
+"id": "consoude",
+"latin": "Symphytum officinale"
+},
+{
+"id": "achillee",
+"latin": "Achillea millefolium"
+},
+{
+"id": "tanaisie",
+"latin": "Tanacetum vulgare"
+},
+{
+"id": "echinacee",
+"latin": "Echinacea purpurea"
+},
+{
+"id": "phacelie",
+"latin": "Phacelia tanacetifolia"
+},
+{
+"id": "moutarde-blanche",
+"latin": "Sinapis alba"
+},
+{
+"id": "trefle-blanc",
+"latin": "Trifolium repens"
+},
+{
+"id": "trefle-incarnat",
+"latin": "Trifolium incarnatum"
+},
+{
+"id": "vesce",
+"latin": "Vicia sativa"
+},
+{
+"id": "seigle",
+"latin": "Secale cereale"
+},
+{
+"id": "sarrasin",
+"latin": "Fagopyrum esculentum"
+},
+{
+"id": "lupin",
+"latin": "Lupinus angustifolius"
+},
+{
+"id": "luzerne",
+"latin": "Medicago sativa"
+},
+{
+"id": "narcisse",
+"latin": "Narcissus pseudonarcissus"
+},
+{
+"id": "tulipe",
+"latin": "Tulipa gesneriana"
+},
+{
+"id": "pommier",
+"latin": "Malus domestica"
+},
+{
+"id": "poirier",
+"latin": "Pyrus communis"
+},
+{
+"id": "cerisier",
+"latin": "Prunus avium"
+},
+{
+"id": "prunier",
+"latin": "Prunus domestica"
+},
+{
+"id": "mirabellier",
+"latin": "Prunus domestica subsp. syriaca"
+},
+{
+"id": "abricotier",
+"latin": "Prunus armeniaca"
+},
+{
+"id": "pecher",
+"latin": "Prunus persica"
+},
+{
+"id": "cognassier",
+"latin": "Cydonia oblonga"
+},
+{
+"id": "figuier",
+"latin": "Ficus carica"
+},
+{
+"id": "noyer",
+"latin": "Juglans regia"
+},
+{
+"id": "noisetier",
+"latin": "Corylus avellana"
+},
+{
+"id": "chataignier",
+"latin": "Castanea sativa"
+},
+{
+"id": "amandier",
+"latin": "Prunus dulcis"
+},
+{
+"id": "plaqueminier",
+"latin": "Diospyros kaki"
+},
+{
+"id": "neflier",
+"latin": "Mespilus germanica"
+},
+{
+"id": "murier-noir",
+"latin": "Morus nigra"
+},
+{
+"id": "olivier",
+"latin": "Olea europaea"
+},
+{
+"id": "grenadier",
+"latin": "Punica granatum"
+},
+{
+"id": "asiminier",
+"latin": "Asimina triloba"
+},
+{
+"id": "argousier",
+"latin": "Hippophae rhamnoides"
+},
+{
+"id": "citronnier",
+"latin": "Citrus limon"
+},
+{
+"id": "tomate",
+"latin": "Solanum lycopersicum"
+},
+{
+"id": "poivron",
+"latin": "Capsicum annuum"
+},
+{
+"id": "piment",
+"latin": "Capsicum annuum"
+},
+{
+"id": "aubergine",
+"latin": "Solanum melongena"
+},
+{
+"id": "physalis",
+"latin": "Physalis peruviana"
+},
+{
+"id": "pomme-de-terre",
+"latin": "Solanum tuberosum"
+},
+{
+"id": "courgette",
+"latin": "Cucurbita pepo"
+},
+{
+"id": "concombre",
+"latin": "Cucumis sativus"
+},
+{
+"id": "cornichon",
+"latin": "Cucumis sativus"
+},
+{
+"id": "courge-butternut",
+"latin": "Cucurbita moschata"
+},
+{
+"id": "potiron",
+"latin": "Cucurbita maxima"
+},
+{
+"id": "potimarron",
+"latin": "Cucurbita maxima"
+},
+{
+"id": "melon",
+"latin": "Cucumis melo"
+},
+{
+"id": "pasteque",
+"latin": "Citrullus lanatus"
+},
+{
+"id": "haricot-nain",
+"latin": "Phaseolus vulgaris"
+},
+{
+"id": "haricot-grimpant",
+"latin": "Phaseolus vulgaris"
+},
+{
+"id": "feve",
+"latin": "Vicia faba"
+},
+{
+"id": "pois",
+"latin": "Pisum sativum"
+},
+{
+"id": "laitue",
+"latin": "Lactuca sativa"
+},
+{
+"id": "mache",
+"latin": "Valerianella locusta"
+},
+{
+"id": "epinard",
+"latin": "Spinacia oleracea"
+},
+{
+"id": "roquette",
+"latin": "Eruca vesicaria"
+},
+{
+"id": "chicoree",
+"latin": "Cichorium endivia"
+},
+{
+"id": "blette",
+"latin": "Beta vulgaris subsp. vulgaris var. cicla"
+},
+{
+"id": "pourpier",
+"latin": "Portulaca oleracea"
+},
+{
+"id": "tetragone",
+"latin": "Tetragonia tetragonioides"
+},
+{
+"id": "arroche",
+"latin": "Atriplex hortensis"
+},
+{
+"id": "chou-pomme",
+"latin": "Brassica oleracea var. capitata"
+},
+{
+"id": "chou-fleur",
+"latin": "Brassica oleracea var. botrytis"
+},
+{
+"id": "brocoli",
+"latin": "Brassica oleracea var. italica"
+},
+{
+"id": "chou-de-bruxelles",
+"latin": "Brassica oleracea var. gemmifera"
+},
+{
+"id": "chou-kale",
+"latin": "Brassica oleracea var. sabellica"
+},
+{
+"id": "chou-rave",
+"latin": "Brassica oleracea var. gongylodes"
+},
+{
+"id": "radis",
+"latin": "Raphanus sativus"
+},
+{
+"id": "navet",
+"latin": "Brassica rapa subsp. rapa"
+},
+{
+"id": "carotte",
+"latin": "Daucus carota subsp. sativus"
+},
+{
+"id": "panais",
+"latin": "Pastinaca sativa"
+},
+{
+"id": "celeri-rave",
+"latin": "Apium graveolens var. rapaceum"
+},
+{
+"id": "celeri-branche",
+"latin": "Apium graveolens var. dulce"
+},
+{
+"id": "fenouil",
+"latin": "Foeniculum vulgare var. azoricum"
+},
+{
+"id": "betterave",
+"latin": "Beta vulgaris subsp. vulgaris"
+},
+{
+"id": "salsifis",
+"latin": "Tragopogon porrifolius"
+},
+{
+"id": "patate-douce",
+"latin": "Ipomoea batatas"
+},
+{
+"id": "poireau",
+"latin": "Allium porrum"
+},
+{
+"id": "oignon",
+"latin": "Allium cepa"
+},
+{
+"id": "echalote",
+"latin": "Allium cepa var. aggregatum"
+},
+{
+"id": "ail",
+"latin": "Allium sativum"
+},
+{
+"id": "mais",
+"latin": "Zea mays"
+},
+{
+"id": "radis-noir",
+"latin": "Raphanus sativus var. niger"
+},
+{
+"id": "patisson",
+"latin": "Cucurbita pepo var. patisson"
+},
+{
+"id": "framboisier",
+"latin": "Rubus idaeus"
+},
+{
+"id": "ronce-sans-epines",
+"latin": "Rubus fruticosus"
+},
+{
+"id": "groseillier",
+"latin": "Ribes rubrum"
+},
+{
+"id": "cassissier",
+"latin": "Ribes nigrum"
+},
+{
+"id": "groseillier-maquereau",
+"latin": "Ribes uva-crispa"
+},
+{
+"id": "myrtillier",
+"latin": "Vaccinium corymbosum"
+},
+{
+"id": "casseillier",
+"latin": "Ribes × nidigrolaria"
+},
+{
+"id": "goji",
+"latin": "Lycium barbarum"
+},
+{
+"id": "aronia",
+"latin": "Aronia melanocarpa"
+},
+{
+"id": "kiwi",
+"latin": "Actinidia deliciosa"
+},
+{
+"id": "kiwai",
+"latin": "Actinidia arguta"
+},
+{
+"id": "vigne",
+"latin": "Vitis vinifera"
+},
+{
+"id": "camerisier",
+"latin": "Lonicera caerulea var. kamtschatica"
+},
+{
+"id": "artichaut",
+"latin": "Cynara cardunculus var. scolymus"
+},
+{
+"id": "asperge",
+"latin": "Asparagus officinalis"
+},
+{
+"id": "rhubarbe",
+"latin": "Rheum × hybridum"
+},
+{
+"id": "topinambour",
+"latin": "Helianthus tuberosus"
+},
+{
+"id": "poireau-perpetuel",
+"latin": "Allium ampeloprasum"
+},
+{
+"id": "chou-daubenton",
+"latin": "Brassica oleracea var. ramosa"
+},
+{
+"id": "ail-des-ours",
+"latin": "Allium ursinum"
+},
+{
+"id": "fraisier",
+"latin": "Fragaria × ananassa"
+},
+{
+"id": "crosne",
+"latin": "Stachys affinis"
+},
+{
+"id": "bon-henri",
+"latin": "Blitum bonus-henricus"
+}
+]

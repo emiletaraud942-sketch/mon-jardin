@@ -221,15 +221,22 @@ export function lessonsPhrase(done: readonly string[]): string | undefined {
 
 /** Les quatre actions du quotidien, en tuiles (refonte du 16 nov.). Libellé court à l'écran ; le nom accessible reste le mot complet du registre (il le contient). */
 const TILE_IDS = ['ajouter', 'carte', 'afaire', 'planter']
-const TILE_LABEL: Record<string, string> = { ajouter: 'Ajouter', carte: 'Mon jardin', afaire: 'À faire', planter: 'Planter' }
 
 function HomeTile({ a }: { a: HomeAction }) {
   return (
     <button className={'home-tile' + (a.primary ? ' primary' : '')} data-home={a.id} aria-label={a.mot} onClick={() => runHomeAction(a)}>
       <span className="home-tile-icon" aria-hidden>
-        <Icon name={a.icon} size={26} />
+        <Icon name={a.icon} size={24} />
       </span>
-      <span className="home-tile-label">{TILE_LABEL[a.id] ?? a.mot}</span>
+      <span className="home-tile-text">
+        <span className="home-tile-label">{a.mot}</span>
+        <span className="home-tile-sub">{a.phrase}</span>
+      </span>
+      <span className="home-tile-chev" aria-hidden>
+        <span style={{ display: 'inline-flex', transform: 'rotate(-90deg)' }}>
+          <Icon name="chevron" size={16} />
+        </span>
+      </span>
     </button>
   )
 }
@@ -238,6 +245,7 @@ function HomeTile({ a }: { a: HomeAction }) {
 function HomeFeature({ a, phrase }: { a: HomeAction; phrase?: string }) {
   return (
     <button className="home-feature" data-home={a.id} onClick={() => runHomeAction(a)}>
+      <img className="home-feature-photo" src="/plantes/basilic.jpg" alt="" loading="lazy" onError={(e) => (e.currentTarget.style.display = 'none')} />
       <span className="home-feature-kicker">À la une</span>
       <strong className="home-feature-title">{a.mot}</strong>
       <span className="home-feature-text">{phrase ?? a.phrase}</span>
