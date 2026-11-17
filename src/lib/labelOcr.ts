@@ -14,7 +14,7 @@ export class OcrUnavailableError extends Error {
 export type OcrStage = 'preparation' | 'telechargement' | 'lecture'
 
 /** Étire les gris pour que le texte ressorte (étiquettes ternes ou brillantes) : percentiles 0,1 % et 99,9 % ramenés à 0 et 255 (le texte fin d’une étiquette pâle pèse bien moins de 2 % des points : 2 % l’écrasait). */
-export function stretchGray(gray: Uint8ClampedArray | number[]): Uint8ClampedArray {
+export function stretchGray(gray: Uint8ClampedArray | number[], lowQ = 0.001, highQ = 0.999): Uint8ClampedArray {
   const hist = new Array<number>(256).fill(0)
   for (let i = 0; i < gray.length; i++) hist[Math.max(0, Math.min(255, Math.round(gray[i])))]++
   const total = gray.length
@@ -26,8 +26,8 @@ export function stretchGray(gray: Uint8ClampedArray | number[]): Uint8ClampedArr
     }
     return 255
   }
-  const lo = at(0.001)
-  const hi = at(0.999)
+  const lo = at(lowQ)
+  const hi = at(highQ)
   const out = new Uint8ClampedArray(gray.length)
   if (hi - lo < 16) {
     for (let i = 0; i < gray.length; i++) out[i] = gray[i] // image quasi uniforme : on ne touche à rien
@@ -159,9 +159,38 @@ export async function readLabelText(file: Blob, onProgress?: (stage: OcrStage, r
   return (await readLabelData(file, onProgress)).text
 }
 
+/** Seconde lecture : autre contraste (2 % / 98 %) et image agrandie de moitié. L'OCR lit parfois mal une ligne avec un réglage et bien avec l'autre. */
+export function variantCanvas(color: ImageData): HTMLCanvasElement {
+  const { width, height } = color
+  const gray = new Uint8ClampedArray(width * height)
+  for (let i = 0, j = 0; i < color.data.length; i += 4, j++) gray[j] = 0.299 * color.data[i] + 0.587 * color.data[i + 1] + 0.114 * color.data[i + 2]
+  const s = stretchGray(gray, 0.02, 0.98)
+  const base = document.createElement('canvas')
+  base.width = width
+  base.height = height
+  const bc = base.getContext('2d')!
+  const img = bc.createImageData(width, height)
+  for (let i = 0, j = 0; i < img.data.length; i += 4, j++) {
+    img.data[i] = img.data[i + 1] = img.data[i + 2] = s[j]
+    img.data[i + 3] = 255
+  }
+  bc.putImageData(img, 0, 0)
+  const k = Math.max(width, height) < 1400 ? 1.5 : 1
+  if (k === 1) return base
+  const out = document.createElement('canvas')
+  out.width = Math.round(width * k)
+  out.height = Math.round(height * k)
+  const oc = out.getContext('2d')!
+  oc.imageSmoothingQuality = 'high'
+  oc.drawImage(base, 0, 0, out.width, out.height)
+  return out
+}
+
 /** Texte lu et, s'il y en a un, calendrier en grille (J F M A M J J A S O N D) : mois de semis et de récolte cochés. */
 export interface LabelRead {
   text: string
+  /** Texte de la seconde lecture (autre contraste), s'il a pu être lu. */
+  alt?: string
   grid?: GridMonths
 }
 
@@ -191,7 +220,13 @@ export async function readLabelData(file: Blob, onProgress?: (stage: OcrStage, r
     } catch {
       grid = undefined // la grille est un plus : le texte seul suffit
     }
-    return { text: data.text, grid }
+    let alt: string | undefined
+    try {
+      alt = (await worker.recognize(variantCanvas(color))).data.text
+    } catch {
+      alt = undefined // la seconde lecture est un plus
+    }
+    return { text: data.text, alt, grid }
   } catch (e) {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) throw new OcrUnavailableError()
     throw e

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { classifyLabel, parseContent, parseDepthCm, parseGerminationDays, parseLabelScan, parseSpacingCm, parseSun } from './labelFacts'
+import { mergeLabelScans, classifyLabel, parseContent, parseDepthCm, parseGerminationDays, parseLabelScan, parseSpacingCm, parseSun } from './labelFacts'
 
 const NOW = new Date(2026, 10, 17)
 
@@ -125,5 +125,18 @@ describe('sachets et étiquettes en anglais', () => {
     expect(r.extras.hauteurCm).toBe(60)
     expect(r.label.form).toBe('godet')
     expect(r.species?.id).toBe('lavande')
+  })
+})
+
+describe('deux lectures de la même photo', () => {
+  it('garde la plus riche et comble ses trous avec l’autre, sans mélanger les valeurs', () => {
+    const a = parseLabelScan('ROMARIN\nRosmarinus officinalis\nPot 2 L\nHauteur : 40 cm\n87.')
+    const b = parseLabelScan('ROMARIN\nPot 2 L\nHauteur : 45 cm\n8,95 €\nSoleil')
+    const m = mergeLabelScans(a, b)
+    expect(m.extras.prixEur).toBe(8.95)
+    expect(m.extras.soleil).toBe('soleil')
+    expect(m.extras.hauteurCm).toBe(45) // b a lu plus de champs : sa valeur fait foi
+    expect(m.label.form).toBe('godet')
+    expect(mergeLabelScans(a, undefined)).toBe(a)
   })
 })

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Icon } from '../../components/Icon'
 import { Modal } from '../../components/Modal'
 import { SPECIES, SPECIES_BY_ID } from '../../data/species'
-import { parseLabelScan, type LabelKind, type Sun } from '../../lib/labelFacts'
+import { mergeLabelScans, parseLabelScan, type LabelKind, type Sun } from '../../lib/labelFacts'
 import { OcrUnavailableError, readLabelData, type OcrStage } from '../../lib/labelOcr'
 import type { GridMonths } from '../../lib/monthGrid'
 import { seedProposal } from '../../lib/seedParse'
@@ -45,14 +45,16 @@ function MonthPicker({ label, value, onChange }: { label: string; value: number[
  */
 export function ScanLabelDialog({ onClose }: { onClose: () => void }) {
   const [texts, setTexts] = useState<string[]>([])
+  const [alts, setAlts] = useState<string[]>([])
   const [grids, setGrids] = useState<GridMonths[]>([])
   const [busy, setBusy] = useState<{ stage?: OcrStage; ratio?: number } | null>(null)
   const [error, setError] = useState<string>()
   const scan = useMemo(() => {
     if (!texts.length) return undefined
     const grid: GridMonths | undefined = grids.length ? { semis: [...new Set(grids.flatMap((g) => g.semis))].sort((a, b) => a - b), recolte: [...new Set(grids.flatMap((g) => g.recolte))].sort((a, b) => a - b) } : undefined
-    return parseLabelScan(texts.join('\n'), new Date(), undefined, grid)
-  }, [texts, grids])
+    const first = parseLabelScan(texts.join('\n'), new Date(), undefined, grid)
+    return mergeLabelScans(first, alts.length === texts.length ? parseLabelScan(alts.join('\n'), new Date(), undefined, grid) : undefined)
+  }, [texts, alts, grids])
   // Formulaire (rempli par la lecture, modifiable).
   const [kind, setKind] = useState<LabelKind>('autre')
   const [name, setName] = useState('')
@@ -98,6 +100,7 @@ export function ScanLabelDialog({ onClose }: { onClose: () => void }) {
     try {
       const r = await readLabelData(file, (stage, ratio) => setBusy({ stage, ratio }))
       setTexts((prev) => [...prev, r.text])
+      setAlts((prev) => (r.alt !== undefined ? [...prev, r.alt] : prev))
       if (r.grid) setGrids((prev) => [...prev, r.grid!])
     } catch (e) {
       setError(e instanceof OcrUnavailableError ? e.message : 'La photo n’a pas pu être lue. Essayez une photo plus nette, bien éclairée, bien cadrée.')
@@ -283,6 +286,7 @@ export function ScanLabelDialog({ onClose }: { onClose: () => void }) {
                 className="btn ghost"
                 onClick={() => {
                   setTexts([])
+                  setAlts([])
                   setGrids([])
                   setError(undefined)
                 }}

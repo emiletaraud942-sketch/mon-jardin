@@ -154,3 +154,24 @@ export function parseLabelScan(rawText: string, now: Date = new Date(), species:
   }
   return { kind, seed, label, extras, species: speciesId ? species.find((s) => s.id === speciesId) : undefined }
 }
+
+/** Nombre de champs lus : sert à choisir quelle lecture fait foi quand les deux diffèrent. */
+function filled(s: LabelScan): number {
+  const e = s.extras
+  return [s.seed.name, s.seed.sowMonths.length, e.recolteMois.length, e.profondeurCm, e.espacementCm, e.leveeJours, e.soleil, e.hauteurCm, e.contenu, e.prixEur, s.label.form, s.species].filter((v) => v !== undefined && v !== 0 && v !== '').length
+}
+
+/**
+ * Deux lectures de la même photo (deux contrastes) : on garde celle qui a lu le plus de champs, et on complète ses trous avec l'autre.
+ * Un champ lu dans les deux avec des valeurs différentes : la lecture principale l'emporte ; jamais de moyenne, jamais d'invention.
+ */
+export function mergeLabelScans(a: LabelScan, b: LabelScan | undefined): LabelScan {
+  if (!b) return a
+  const [p, q] = filled(b) > filled(a) ? [b, a] : [a, b]
+  const extras: LabelExtras = { ...q.extras, ...Object.fromEntries(Object.entries(p.extras).filter(([, v]) => v !== undefined)) } as LabelExtras
+  if (!p.extras.recolteMois.length) extras.recolteMois = q.extras.recolteMois
+  const seed = { ...p.seed, name: p.seed.name ?? q.seed.name, speciesId: p.seed.speciesId ?? q.seed.speciesId, sowMonths: p.seed.sowMonths.length ? p.seed.sowMonths : q.seed.sowMonths, dates: p.seed.dates.length ? p.seed.dates : q.seed.dates }
+  const label = { ...q.label, ...Object.fromEntries(Object.entries(p.label).filter(([, v]) => v !== undefined && !(Array.isArray(v) && v.length === 0))) } as LabelScan['label']
+  const species = p.species ?? q.species
+  return { kind: p.kind === 'autre' ? q.kind : p.kind, seed, label, extras, species }
+}
