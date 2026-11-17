@@ -118,7 +118,7 @@ export default defineConfig({
         description: 'Cartographier son jardin, choisir quoi planter où et savoir quand entretenir.',
         lang: 'fr',
         dir: 'ltr',
-        theme_color: '#ffffff',
+        theme_color: '#14231a',
         background_color: '#fbfcf9',
         display: 'standalone',
         display_override: ['standalone'],

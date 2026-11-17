@@ -629,3 +629,37 @@ html[data-big-taps] .home-tile {
     padding-bottom: 6px;
   }
 }
+
+/* ---------- Téléphone : l'appli prend tout l'écran, y compris sous l'heure et la batterie ---------- */
+.app.has-pb {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.app.has-pb .pb-top {
+  height: calc(230px + env(safe-area-inset-top, 0px));
+}
+
+/* ---------- « Mon jardin » (carte, plantes, photos) : le haut de page est un fond flou, sans photo nette ---------- */
+.app.has-pb[data-tab='carte'] .pb-sharp,
+.app.has-pb[data-tab='plantes'] .pb-sharp {
+  display: none;
+}
+.app.has-pb[data-tab='carte'] .pb-top,
+.app.has-pb[data-tab='plantes'] .pb-top {
+  height: calc(130px + env(safe-area-inset-top, 0px));
+  background: linear-gradient(to bottom, rgb(10 34 22 / 55%), rgb(10 34 22 / 0%));
+}
+.app.has-pb[data-tab='carte'] .pb-veil,
+.app.has-pb[data-tab='plantes'] .pb-veil {
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--bg) 38%, transparent) 0%, color-mix(in srgb, var(--bg) 66%, transparent) 40%, color-mix(in srgb, var(--bg) 74%, transparent) 100%);
+}
+
+/* ---------- Zones blanches : bords en fondu vers la photo floue (plus de rectangle net posé sur le fond) ---------- */
+.app.has-pb .main .card {
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  border-color: transparent;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow:
+    0 0 14px 6px color-mix(in srgb, var(--surface) 80%, transparent),
+    0 0 34px 18px color-mix(in srgb, var(--surface) 45%, transparent);
+}
