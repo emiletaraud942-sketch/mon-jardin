@@ -3,7 +3,8 @@ import { Icon } from '../../components/Icon'
 import { Modal } from '../../components/Modal'
 import { SPECIES, SPECIES_BY_ID } from '../../data/species'
 import { parseLabelScan, type LabelKind, type Sun } from '../../lib/labelFacts'
-import { OcrUnavailableError, readLabelText, type OcrStage } from '../../lib/labelOcr'
+import { OcrUnavailableError, readLabelData, type OcrStage } from '../../lib/labelOcr'
+import type { GridMonths } from '../../lib/monthGrid'
 import { seedProposal } from '../../lib/seedParse'
 import { addSeed, MAX_SEEDS, readSeeds, type SeedInfo } from '../../lib/seeds'
 import { showToast } from '../../lib/toast'
@@ -44,9 +45,14 @@ function MonthPicker({ label, value, onChange }: { label: string; value: number[
  */
 export function ScanLabelDialog({ onClose }: { onClose: () => void }) {
   const [texts, setTexts] = useState<string[]>([])
+  const [grids, setGrids] = useState<GridMonths[]>([])
   const [busy, setBusy] = useState<{ stage?: OcrStage; ratio?: number } | null>(null)
   const [error, setError] = useState<string>()
-  const scan = useMemo(() => (texts.length ? parseLabelScan(texts.join('\n')) : undefined), [texts])
+  const scan = useMemo(() => {
+    if (!texts.length) return undefined
+    const grid: GridMonths | undefined = grids.length ? { semis: [...new Set(grids.flatMap((g) => g.semis))].sort((a, b) => a - b), recolte: [...new Set(grids.flatMap((g) => g.recolte))].sort((a, b) => a - b) } : undefined
+    return parseLabelScan(texts.join('\n'), new Date(), undefined, grid)
+  }, [texts, grids])
   // Formulaire (rempli par la lecture, modifiable).
   const [kind, setKind] = useState<LabelKind>('autre')
   const [name, setName] = useState('')
@@ -90,8 +96,9 @@ export function ScanLabelDialog({ onClose }: { onClose: () => void }) {
     setError(undefined)
     setBusy({})
     try {
-      const t = await readLabelText(file, (stage, ratio) => setBusy({ stage, ratio }))
-      setTexts((prev) => [...prev, t])
+      const r = await readLabelData(file, (stage, ratio) => setBusy({ stage, ratio }))
+      setTexts((prev) => [...prev, r.text])
+      if (r.grid) setGrids((prev) => [...prev, r.grid!])
     } catch (e) {
       setError(e instanceof OcrUnavailableError ? e.message : 'La photo n’a pas pu être lue. Essayez une photo plus nette, bien éclairée, bien cadrée.')
     } finally {
@@ -210,6 +217,11 @@ export function ScanLabelDialog({ onClose }: { onClose: () => void }) {
                 ))}
               </select>
             </label>
+            {scan.extras.fromGrid && (
+              <p className="small muted" role="status" style={{ margin: 0 }}>
+                Mois lus dans le calendrier en grille du sachet (cases cochées ou colorées) : vérifiez-les.
+              </p>
+            )}
             <MonthPicker label="Mois de semis" value={semis} onChange={setSemis} />
             <MonthPicker label="Mois de récolte" value={recolte} onChange={setRecolte} />
             <div className="scan-grid">
@@ -271,6 +283,7 @@ export function ScanLabelDialog({ onClose }: { onClose: () => void }) {
                 className="btn ghost"
                 onClick={() => {
                   setTexts([])
+                  setGrids([])
                   setError(undefined)
                 }}
               >

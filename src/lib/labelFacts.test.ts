@@ -96,3 +96,34 @@ describe('formulations de sachets et de prix (trouvées par le banc d’essai)',
     expect(parseLabelScan('Thym\nPot 9 cm\n3,50 EUR').extras.prixEur).toBe(3.5)
   })
 })
+
+describe('sachets et étiquettes en anglais', () => {
+  it('lit un sachet anglais : mois, profondeur, espacement, germination, soleil, plante', () => {
+    const t = 'BASIL\nGenovese\nSow indoors March to May\nHarvest June - September\nSeed depth 0.25 inch\nSpacing 10 inches apart\nGermination 5-10 days\nFull sun\nNet wt. 1 g'
+    const r = parseLabelScan(t)
+    expect(r.kind).toBe('sachet')
+    expect(r.species?.id).toBe('basilic')
+    expect(r.seed.sowMonths).toEqual([3, 4, 5])
+    expect(r.extras.recolteMois).toEqual([6, 7, 8, 9])
+    expect(r.extras.profondeurCm).toBe(0.6)
+    expect(r.extras.espacementCm).toBe(25)
+    expect(r.extras.leveeJours).toBe(8)
+    expect(r.extras.soleil).toBe('soleil')
+    expect(r.extras.hauteurCm).toBeUndefined()
+    expect(r.extras.contenu).toBe('1 g')
+  })
+  it('lit « sow 1 cm deep », « thin to 30 cm », « partial shade »', () => {
+    const t = 'CARROT\nSow Feb-Jul\nSow 1 cm deep\nThin to 5 cm\nPartial shade'
+    expect(parseDepthCm(t)).toBe(1)
+    expect(parseSpacingCm(t)).toBe(5)
+    expect(parseSun(t)).toBe('mi-ombre')
+    expect(parseLabelScan(t).seed.sowMonths).toEqual([2, 3, 4, 5, 6, 7])
+  })
+  it('étiquette de plante en anglais : forme et hauteur', () => {
+    const r = parseLabelScan('LAVENDER\nLavandula angustifolia\nPotted 1 L\nHeight: 60 cm\nFull sun')
+    expect(r.kind).toBe('plante')
+    expect(r.extras.hauteurCm).toBe(60)
+    expect(r.label.form).toBe('godet')
+    expect(r.species?.id).toBe('lavande')
+  })
+})

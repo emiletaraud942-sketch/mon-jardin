@@ -1,6 +1,7 @@
 import { SPECIES } from '../data/species'
 import { normalizeSearch, searchRank } from '../data/species/search'
 import type { Species } from '../types'
+import { englishNamesOf } from './englishNames'
 
 // Texte lu sur un sachet de graines (OCR) -> ce qu'on peut en proposer : un nom, une date, les mois de semis.
 // Pur et testé. Un OCR se trompe : tout est proposé, rien n'est ajouté sans que la personne le voie et le corrige.
@@ -32,7 +33,12 @@ export interface SeedFacts {
 }
 
 const MONTHS = ['janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin', 'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre']
-const MONTH_ALIASES: Record<string, number> = { janv: 1, fevr: 2, sept: 9, oct: 10, nov: 11, dec: 12, avr: 4, juil: 7 }
+const MONTH_ALIASES: Record<string, number> = {
+  janv: 1, fevr: 2, sept: 9, oct: 10, nov: 11, dec: 12, avr: 4, juil: 7,
+  // Anglais (sachets importés) : noms entiers et abréviations
+  january: 1, february: 2, march: 3, april: 4, may: 5, june: 6, july: 7, august: 8, september: 9, october: 10, november: 11, december: 12,
+  jan: 1, feb: 2, mar: 3, apr: 4, jun: 6, jul: 7, aug: 8, sep: 9,
+}
 const MONTH_LABEL = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre']
 const MONTH_RE = `(?:${[...MONTHS, ...Object.keys(MONTH_ALIASES)].sort((a, b) => b.length - a.length).join('|')})`
 
@@ -223,7 +229,7 @@ function monthsAfter(rawText: string, word: RegExp, cutWords: string): number[] 
     // Un mois lu doit venir avant tout chiffre : « semis mars à mai 60 cm » s'arrête à « 60 ».
     const num = seg.search(/\d/)
     if (num >= 0) seg = seg.slice(0, num)
-    const tokens = [...seg.matchAll(new RegExp(`\\b(${MONTH_RE})\\b\\.?|\\s(?:a|au|à)\\s|[\\-–—/]`, 'g'))]
+    const tokens = [...seg.matchAll(new RegExp(`\\b(${MONTH_RE})\\b\\.?|\\s(?:a|au|à|to|through|thru|until)\\s|[\\-–—/]`, 'g'))]
     let prev: number | undefined
     let range = false
     for (const tk of tokens) {
@@ -241,15 +247,15 @@ function monthsAfter(rawText: string, word: RegExp, cutWords: string): number[] 
 
 /** Mois de semis écrits après « semis » ou « semer ». */
 export function parseSowMonths(rawText: string): number[] {
-  return monthsAfter(rawText, /\bsem(?:er|is|ez|ons|ailles?)\b/, 'recolt|floraison|hauteur|distance|exposition|plantation|profondeur|germination')
+  return monthsAfter(rawText, /\b(?:sem(?:er|is|ez|ons|ailles?)|sow(?:ing)?)\b/, 'recolt|harvest|floraison|flowering|hauteur|height|distance|spacing|exposition|plantation|transplant|profondeur|depth|germination|sun|thin')
 }
 
 /** Mois de récolte écrits après « récolte » (ou « récolter »). */
 export function parseHarvestMonths(rawText: string): number[] {
-  return monthsAfter(rawText, /\brecolt\w*/, 'sem|floraison|hauteur|distance|exposition|plantation|profondeur|germination')
+  return monthsAfter(rawText, /\b(?:recolt\w*|harvest\w*)/, 'sem|sow|floraison|flowering|hauteur|height|distance|spacing|exposition|plantation|transplant|profondeur|depth|germination|sun|thin')
 }
 
-const NOISE_LINE = /\b(?:semer|semis|semez|recolt\w*|sachet|poids|net|graines?|g|gr|bio|ab|www|http\w*|com|fr|avant|lot|date|conseils?|culture|exposition|profondeur|distance|arroser|eclaircir|germination|floraison|hauteur|origine|france|variete|cm|mm|approx\w*|contenu|environ|seeds?|samen|semillas|certifie|emball\w*|conditionn\w*|utiliser|preference|valable|mois|annee|ecocert|agriculture|biologique)\b|\d{3,}|[@/\\]/
+const NOISE_LINE = /\b(?:sow|sowing|harvest|depth|spacing|net|wt|weight|seed|sun|shade|days|germination|height|organic|packet|season|plant|planting|semer|semis|semez|recolt\w*|sachet|poids|net|graines?|g|gr|bio|ab|www|http\w*|com|fr|avant|lot|date|conseils?|culture|exposition|profondeur|distance|arroser|eclaircir|germination|floraison|hauteur|origine|france|variete|cm|mm|approx\w*|contenu|environ|seeds?|samen|semillas|certifie|emball\w*|conditionn\w*|utiliser|preference|valable|mois|annee|ecocert|agriculture|biologique)\b|\d{3,}|[@/\\]/
 
 const titleCase = (s: string) => {
   const t = s.toLowerCase()
@@ -267,7 +273,7 @@ export function findSeedSpecies(lines: string[], species: readonly Species[] = S
     if (n.length < 3 || n.length > 60) return
     const padded = ` ${n} `
     for (const s of species) {
-      const names = [s.nomCommun, ...(s.alias ?? [])].map(normalizeSearch)
+      const names = [...[s.nomCommun, ...(s.alias ?? [])].map(normalizeSearch), ...englishNamesOf(s.id)]
       let score = 0
       const exact = searchRank(s, line) <= 1 && n.length <= 40
       if (exact) score = 200 + n.length

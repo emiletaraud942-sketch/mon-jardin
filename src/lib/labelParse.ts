@@ -1,6 +1,7 @@
 import { SPECIES } from '../data/species'
 import { normalizeSearch } from '../data/species/search'
 import type { PurchaseForm, Species } from '../types'
+import { englishNamesOf } from './englishNames'
 
 // Texte lu sur une étiquette de pépinière → ce qu'on sait en tirer (forme, hauteur, prix, plante). Pur et testé.
 // Rien n'est enregistré sans que la personne ait vu et corrigé le résultat : un OCR se trompe.
@@ -26,7 +27,7 @@ export function parseHeightCm(text: string): number | undefined {
     const b = Number(range[2])
     if (a > 0 && b >= a && b <= 1000) return Math.round((a + b) / 2)
   }
-  const cm = /(?:\bh\.?\s*|hauteur\s*:?\s*)(\d{2,3})\s*(?:cm)?\b/i.exec(t) ?? /\b(\d{2,3})\s*cm\b/i.exec(t)
+  const cm = /(?:\bh\.?\s*|(?:hauteur|height|tall)\s*:?\s*)(\d{2,3})\s*(?:cm)?\b/i.exec(t) ?? /\b(\d{2,3})\s*cm\b/i.exec(t)
   if (cm) {
     const n = Number(cm[1])
     if (n >= 5 && n <= 1000) return n
@@ -61,9 +62,9 @@ export function parseForm(text: string): PurchaseForm | undefined {
   if (/haute[- ]?tige|\bh\.?t\.?\b/.test(t)) return 'haute-tige'
   if (/\bscions?\b/.test(t)) return 'scion'
   if (/\bbaliveaux?\b/.test(t)) return 'baliveau'
-  if (/\bracines? nues?\b|\br\.?n\.?\b(?! ?\d)/.test(t)) return 'racines-nues'
+  if (/\bracines? nues?\b|\bbare[- ]?roots?\b|\br\.?n\.?\b(?! ?\d)/.test(t)) return 'racines-nues'
   if (/\bmotte\b|en motte/.test(t)) return 'motte'
-  if (/\bgodet\b|\bpot\b|conteneur|\bc ?\d{1,2}\b|\bcontainer\b/.test(t)) return 'godet'
+  if (/\bgodet\b|\bpot\b|\bpotted\b|conteneur|\bc ?\d{1,2}\b|\bcontainer\b/.test(t)) return 'godet'
   if (/\bgraines?\b|\bsachet\b/.test(t)) return 'graine'
   return undefined
 }
@@ -74,7 +75,7 @@ export function findSpeciesInText(text: string, species: readonly Species[] = SP
   let best: { s: Species; score: number } | undefined
   let tie = false
   for (const s of species) {
-    const names = [s.nomLatin, s.nomCommun, ...(s.alias ?? [])].map(normalizeSearch).filter((n) => n.length >= 5)
+    const names = [...[s.nomLatin, s.nomCommun, ...(s.alias ?? [])].map(normalizeSearch), ...englishNamesOf(s.id)].filter((n) => n.length >= 4)
     let score = 0
     for (const n of names) if (t.includes(` ${n} `) || t.includes(` ${n}s `)) score = Math.max(score, n.length + (n === normalizeSearch(s.nomLatin) ? 20 : 0))
     if (!score) continue

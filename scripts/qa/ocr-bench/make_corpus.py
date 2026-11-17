@@ -81,5 +81,54 @@ for (sid,title,sp,lines,truth) in PLANTES:
     for k in range(2):
         fn = fonts[i%len(fonts)]; b = bgs[(i+1)%len(bgs)]; m = modes[(i+2)%len(modes)]
         add(f'{sid}-{k}','plante',title,sp,lines,truth,fn,b,(20,20,20),52,'plain',m); i+=1
+# ---- Anglais ----
+ME = ['January','February','March','April','May','June','July','August','September','October','November','December']
+EN = [
+ ('basil-en','BASIL','basilic',['Genovese','Sow indoors March to May','Harvest June - September','Seed depth 0.25 inch','Spacing 10 inches apart','Germination 5-10 days','Full sun','Net wt. 1 g'], dict(semis=[3,4,5],recolte=[6,7,8,9],prof=0.6,esp=25,levee=10,soleil='soleil')),
+ ('carrot-en','CARROT','carotte',['Nantes 2','Sow February to July','Harvest May to October','Sow 1 cm deep','Thin to 5 cm','Germination 10-15 days','Sun or partial shade','Net weight 5 g'], dict(semis=[2,3,4,5,6,7],recolte=[5,6,7,8,9,10],prof=1,esp=5,levee=15,soleil='mi-ombre')),
+ ('tomato-en','TOMATO','tomate',['Moneymaker','Sow indoors February - April','Harvest July to October','Seed depth 0.5 cm','Spacing 50 cm','Germinates in 7-14 days','Full sun','100 seeds'], dict(semis=[2,3,4],recolte=[7,8,9,10],prof=0.5,esp=50,levee=14,soleil='soleil')),
+]
+for k,(sid,title,sp,lines,truth) in enumerate(EN):
+    for v in range(2):
+        fn = fonts[(i+3)%len(fonts)]; b = bgs[(i+2)%len(bgs)]; m = modes[(i+1)%len(modes)]
+        add(f'{sid}-{v}','sachet',title,sp,lines,truth,fn,b,(20,20,20),48,'bandeau' if v else 'plain',m); i+=1
+# ---- Grilles J F M A M J J A S O N D ----
+def grid_card(cid, title, sp, labs, header, style, semis, recolte, fontn, bgk, mode):
+    W,H = 1000,900
+    im = bg(bgk,W,H); d = ImageDraw.Draw(im)
+    d.text((60,40),title,font=font(fontn,90,True),fill=(20,20,20))
+    d.text((60,170),'Variété courante',font=font(fontn,40),fill=(20,20,20))
+    x0=340; cw=50; fh=font(fontn,32,True)
+    if header=='lettres':
+        for k,l in enumerate('JFMAMJJASOND'): d.text((x0+k*cw+14,260),l,font=fh,fill=(20,20,20))
+    else:
+        for k,l in enumerate(['JAN','FÉV','MAR','AVR','MAI','JUIN','JUIL','AOÛT','SEPT','OCT','NOV','DÉC']): d.text((x0+k*cw+2,262),l,font=font(fontn,16,True),fill=(20,20,20))
+    rows=[(labs[0],semis),(labs[1],recolte),('Floraison' if labs[0]=='Semis' else 'Flowering',[6,7,8])]
+    for r,(name,ms) in enumerate(rows):
+        y=330+r*80
+        d.text((60,y+6),name,font=font(fontn,38),fill=(20,20,20))
+        for k in range(12):
+            box=[x0+k*cw+2,y,x0+k*cw+cw-2,y+50]
+            if style=='plein':
+                d.rectangle(box,outline=(150,150,150),fill=(60,130,60) if k+1 in ms else None)
+            elif style=='pale':
+                d.rectangle(box,fill=(250,215,120) if k+1 in ms else (240,240,236))
+            elif style=='croix':
+                d.rectangle(box,outline=(170,170,170))
+                if k+1 in ms: d.text((box[0]+12,y+4),'x',font=font(fontn,40,True),fill=(20,20,20))
+            elif style=='barre':
+                if k+1 in ms: d.rectangle([box[0]-2,y+8,box[2]+2,y+42],fill=(200,80,60))
+    im = degrade(im, mode)
+    fnm=f'{cid}.jpg'; im.convert('RGB').save(os.path.join(OUT,fnm), quality=88)
+    cases.append(dict(file=fnm,id=cid,kind='sachet',species=sp,truth=dict(semis=semis,recolte=recolte),font=fontn,bg=bgk,defect='grille-'+mode))
+G=[('grille-fr-plein','TOMATE','tomate',('Semis','Récolte'),'lettres','plein',[2,3,4],[7,8,9,10],'dejavu','blanc','net'),
+   ('grille-fr-pale','LAITUE','laitue',('Semis','Récolte'),'lettres','pale',[3,4,5,6,7,8],[5,6,7,8,9,10],'carlito','vert','net'),
+   ('grille-fr-croix','COURGETTE','courgette',('Semis','Récolte'),'lettres','croix',[4,5],[7,8,9,10],'free-sans','jaune','net'),
+   ('grille-fr-barre','CAROTTE','carotte',('Semis','Récolte'),'mots','barre',[3,4,5,6,7],[6,7,8,9,10],'dejavu-serif','blanc','net'),
+   ('grille-fr-penche','POIREAU','poireau',('Semis','Récolte'),'lettres','plein',[3,4,5],[9,10,11,12],'free-serif','blanc','penche'),
+   ('grille-en-plein','BEANS','haricot-nain',('Sow','Harvest'),'lettres','plein',[5,6,7],[7,8,9],'dejavu','blanc','net'),
+   ('grille-en-pale','SPINACH','epinard',('Sow','Harvest'),'mots','pale',[3,4,8,9],[5,6,10,11],'carlito','ciel','net'),
+   ('grille-fr-flou','RADIS','radis',('Semis','Récolte'),'lettres','plein',[3,4,5,6,7,8,9],[4,5,6,7,8,9,10],'dejavu','blanc','flou')]
+for g in G: grid_card(*g)
 json.dump(cases, open(os.path.join(OUT,'corpus.json'),'w'), ensure_ascii=False, indent=1)
 print(len(cases),'images dans',OUT)
