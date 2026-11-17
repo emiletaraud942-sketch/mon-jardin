@@ -2,11 +2,14 @@ import { SpeciesPicker } from '../../components/SpeciesPicker'
 import { Modal } from '../../components/Modal'
 import { UNKNOWN_SPECIES_ID } from '../../lib/customName'
 import { applyToPlant, plantsFor } from '../../lib/features'
-import { addPicker, identifyOpen, plantChoice, shoppingOpen, type PlantAsk } from '../../lib/overlays'
+import { addPicker, identifyOpen, plantChoice, scanLabelOpen, shoppingOpen, type PlantAsk } from '../../lib/overlays'
 import { reveal } from '../../lib/reveal'
 import { useActiveGarden, useGardenPlants } from '../../lib/store'
 import { startPlacing } from '../../lib/ui'
+import { lazy, Suspense } from 'react'
 import { IdentifyDialog } from '../plants/IdentifyDialog'
+
+const ScanLabelDialog = lazy(() => import('../planting/ScanLabelDialog').then((m) => ({ default: m.ScanLabelDialog })))
 import { plantName } from '../plants/PlantPanel'
 import { ShoppingListDialog } from '../plants/ShoppingListDialog'
 import { openScan } from '../scan/scanUi'
@@ -25,6 +28,7 @@ const ASK_TITLE: Record<PlantAsk, string> = {
 export function FeatureHost() {
   const picker = addPicker.use()
   const identify = identifyOpen.use()
+  const scanLabel = scanLabelOpen.use()
   const shopping = shoppingOpen.use()
   const ask = plantChoice.use()
   const garden = useActiveGarden()
@@ -54,6 +58,11 @@ export function FeatureHost() {
         />
       )}
       {identify && <IdentifyDialog onClose={() => identifyOpen.set(false)} />}
+      {scanLabel && (
+        <Suspense fallback={null}>
+          <ScanLabelDialog onClose={() => scanLabelOpen.set(false)} />
+        </Suspense>
+      )}
       {shopping && <ShoppingListDialog garden={garden} plants={plants} onClose={() => shoppingOpen.set(false)} />}
       {ask && (
         <Modal title={ASK_TITLE[ask]} feat="choisir-plante" onClose={() => plantChoice.set(undefined)}>

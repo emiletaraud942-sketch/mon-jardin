@@ -3,9 +3,25 @@ import { Icon } from '../../components/Icon'
 import { SPECIES } from '../../data/species'
 import { OcrUnavailableError, readLabelText, type OcrStage } from '../../lib/labelOcr'
 import { monthsText, parseSeedText, seedProposal } from '../../lib/seedParse'
-import { addSeed, MAX_SEEDS, readSeeds, removeSeed, restoreSeeds, seedsShareText, subscribeSeeds, toggleGive } from '../../lib/seeds'
+import { scanLabelOpen } from '../../lib/overlays'
+import { addSeed, MAX_SEEDS, readSeeds, removeSeed, restoreSeeds, seedsShareText, subscribeSeeds, toggleGive, type SeedInfo } from '../../lib/seeds'
 import { canShareText, copyText, shareOrCopy } from '../../lib/shareText'
 import { showToast } from '../../lib/toast'
+
+/** Une ligne qui résume ce qui a été lu sur le sachet : « Semis mars, avril et mai · 1 cm · levée 10 jours ». */
+function infoLine(i?: SeedInfo): string {
+  if (!i) return ''
+  const bits: string[] = []
+  if (i.semis?.length) bits.push(`Semis ${monthsText(i.semis)}`)
+  if (i.recolte?.length) bits.push(`récolte ${monthsText(i.recolte)}`)
+  if (i.profondeurCm) bits.push(`profondeur ${String(i.profondeurCm).replace('.', ',')} cm`)
+  if (i.espacementCm) bits.push(`${i.espacementCm} cm entre plants`)
+  if (i.leveeJours) bits.push(`levée ${i.leveeJours} jours`)
+  if (i.soleil) bits.push(i.soleil === 'soleil' ? 'plein soleil' : i.soleil)
+  if (i.contenu) bits.push(i.contenu)
+  const t = bits.join(' · ')
+  return t.charAt(0).toUpperCase() + t.slice(1)
+}
 
 const MONTH_FORMAT = (at: string) => new Date(`${at}T00:00:00`).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
 
@@ -84,6 +100,11 @@ export function SeedsCard() {
     <div className="card" data-feat="mes-graines">
       <h2>Mes graines</h2>
       <p className="small muted">Notez vos sachets, et ceux que vous voulez donner ou échanger. Cette liste reste sur cet appareil : elle n’est pas envoyée en ligne.</p>
+      <div className="row" style={{ marginBottom: 8 }}>
+        <button type="button" className="btn primary" onClick={() => scanLabelOpen.set(true)}>
+          <Icon name="scan" size={18} /> Scanner un sachet complet
+        </button>
+      </div>
       <div className="stack" style={{ gap: 6, marginBottom: 10 }} data-feat="lire-sachet">
         <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
           <label className={'btn file-btn' + (ocr.busy ? ' disabled' : '')}>
@@ -166,6 +187,7 @@ export function SeedsCard() {
                   <strong>{s.name}</strong>
                   {s.at && <span className="small muted"> · {MONTH_FORMAT(s.at)}</span>}
                   {s.toGive && <span className="badge" style={{ marginLeft: 6 }}>À donner</span>}
+                  {infoLine(s.info) && <span className="small muted" style={{ display: 'block' }}>{infoLine(s.info)}</span>}
                 </span>
                 <span className="row" style={{ gap: 4 }}>
                   <button type="button" className="btn small" aria-pressed={s.toGive} aria-label={`${s.toGive ? 'Ne plus donner' : 'À donner'} : ${s.name}`} onClick={() => toggleGive(s.id)}>

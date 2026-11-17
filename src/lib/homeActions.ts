@@ -25,6 +25,7 @@ export const HOME_ACTIONS: HomeAction[] = [
   { id: 'partage', mot: 'Jardin partagé', phrase: 'Jardiner à plusieurs, avec un code.', icon: 'users', featureId: 'jardin-partage' },
   { id: 'apprendre', mot: 'Apprendre à jardiner', phrase: `${LECON_OUTLINE.length} leçons courtes et un petit quiz.`, icon: 'book', featureId: 'apprendre-jardiner', featured: true },
   { id: 'conseils', mot: 'Compost et économie d’eau', phrase: 'Faire son compost, arroser moins.', icon: 'drop', featureId: 'conseils-compost-eau', featured: true },
+  { id: 'etiquette', mot: 'Scanner un sachet', phrase: 'Photo d’un sachet ou d’une fiche.', icon: 'scan', featureId: 'scanner-etiquette' },
   { id: 'carte', mot: 'Voir mon jardin', phrase: 'Votre terrain, vu du ciel.', icon: 'map', featureId: 'carte' },
   { id: 'visite', mot: 'Visiter mon jardin en photos', phrase: 'Vos points de vue, un par un.', icon: 'pin', featureId: 'visite-photos' },
   { id: 'photos', mot: 'Photos du jardin', phrase: 'Prendre ou revoir vos photos.', icon: 'camera', featureId: 'photos-jardin' },

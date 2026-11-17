@@ -2,7 +2,7 @@ import { neighborsEnabled } from './neighbors/enabled'
 import { speechSupported } from './speech'
 import { getState } from './store'
 import { inMetropole } from './territoire'
-import { addPicker, conseilsOpen, ennuisOpen, guideOpen, identifyOpen, leconsOpen, plantChoice, postIntent, rotationOpen, shoppingOpen, territoireOpen, collectifOpen, tourOpen, type PlantAsk } from './overlays'
+import { addPicker, conseilsOpen, ennuisOpen, guideOpen, identifyOpen, leconsOpen, plantChoice, postIntent, rotationOpen, scanLabelOpen, shoppingOpen, territoireOpen, collectifOpen, tourOpen, type PlantAsk } from './overlays'
 import { reveal } from './reveal'
 import { redoWithToast, undoWithToast } from './history'
 import { showToast } from './toast'
@@ -154,6 +154,7 @@ export const FEATURES: Feature[] = [
   F('recoltee', 'Marquer une plante comme récoltée', 'plantes', 'Pour une annuelle arrachée : elle ne génère plus de tâches.', ['récoltée', 'fin de saison', 'arracher', 'annuelle'], 'recoltee', () => askPlant('recoltee')),
   F('supprimer-plante', 'Supprimer une plante', 'plantes', 'Retire la plante du jardin. Vous pouvez annuler pendant 30 secondes.', ['supprimer', 'enlever', 'effacer', 'retirer', 'morte'], 'supprimer', () => askPlant('supprimer')),
   F('liste-courses', 'Liste de courses et de semis', 'plantes', 'Les plantes prévues, avec la bonne période pour les semer ou les acheter.', ['courses', 'acheter', 'semis', 'liste', 'prévues', 'partager'], 'shopping', () => shoppingOpen.set(true)),
+  F('scanner-etiquette', 'Scanner un sachet ou une étiquette', 'plantes', 'Photographiez un sachet, une étiquette ou une fiche : l’appli remplit les informations à votre place.', ['scanner', 'sachet', 'étiquette', 'fiche', 'graines', 'photo', 'lire', 'remplir', 'saisie', 'pépinière', 'ocr'], 'scanner-etiquette', () => scanLabelOpen.set(true)),
   F('identifier', 'Identifier une plante par photo', 'plantes', 'Photographiez une feuille ou une fleur : l’appli propose un nom.', ['identifier', 'reconnaître', 'nom', 'photo', 'plantnet', 'quelle plante'], 'identify', () => identifyOpen.set(true)),
   F('catalogue', 'Catalogue de plantes', 'plantes', 'Les fiches des plantes : soleil, eau, sol, voisines, calendrier.', ['catalogue', 'fiches', 'espèces', 'chercher une plante', 'tailler', 'semer', 'récolter'], 'catalogue', go('catalogue', { path: ['catalogue'] })),
   F('filtres-catalogue', 'Filtrer le catalogue', 'plantes', 'Triez par comestible, mellifère, ombre, facile ou ce mois-ci.', ['filtres', 'comestible', 'ombre', 'facile', 'mellifère', 'exposition', 'trier'], 'catalogue-filtres', go('catalogue', { path: ['catalogue-filtres'] })),

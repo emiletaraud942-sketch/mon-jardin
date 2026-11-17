@@ -195,16 +195,17 @@ export function parseSeedDates(rawText: string, now: Date = new Date()): SeedDat
   return found.sort((a, b) => KIND_PRIORITY[a.kind] - KIND_PRIORITY[b.kind] || (b.precision === 'jour' ? 1 : 0) - (a.precision === 'jour' ? 1 : 0))
 }
 
-/** Mois de semis écrits après « semis » ou « semer » (liste « avril, mai » ou plage « mars à juin »). Les dates « avant » sont écartées. */
-export function parseSowMonths(rawText: string): number[] {
+/** Mois écrits après un mot-clé (liste « avril, mai » ou plage « mars à juin »). Les dates « avant » sont écartées ; un chiffre ou un mot de la liste `cut` arrête la lecture. */
+function monthsAfter(rawText: string, word: RegExp, cutWords: string): number[] {
   let t = ` ${normalizeSearch(rawText.replace(/\r?\n/g, ' \n '))} `
   // « à semer avant fin mars 2027 » n'est pas une période de semis.
   t = t.replace(new RegExp(`\\bavant\\b[^\\n]{0,40}?(?:\\d{4}|\\d{1,2}[/.]\\d{2,4})`, 'g'), ' ')
   const months = new Set<number>()
-  const re = /\bsem(?:er|is|ez|ons|ailles?)\b/g
+  const re = new RegExp(word.source, 'g')
+  const cutRe = new RegExp(`\\n\\s*\\n|\\b(?:${cutWords})\\w*`)
   for (let m = re.exec(t); m; m = re.exec(t)) {
     let seg = t.slice(m.index + m[0].length, m.index + m[0].length + 90)
-    const cut = seg.search(/\n\s*\n|\b(?:recolt|floraison|hauteur|distance|exposition|plantation|profondeur|germination)\w*/)
+    const cut = seg.search(cutRe)
     if (cut >= 0) seg = seg.slice(0, cut)
     // Un mois lu doit venir avant tout chiffre : « semis mars à mai 60 cm » s'arrête à « 60 ».
     const num = seg.search(/\d/)
@@ -223,6 +224,16 @@ export function parseSowMonths(rawText: string): number[] {
     }
   }
   return [...months].sort((a, b) => a - b)
+}
+
+/** Mois de semis écrits après « semis » ou « semer ». */
+export function parseSowMonths(rawText: string): number[] {
+  return monthsAfter(rawText, /\bsem(?:er|is|ez|ons|ailles?)\b/, 'recolt|floraison|hauteur|distance|exposition|plantation|profondeur|germination')
+}
+
+/** Mois de récolte écrits après « récolte » (ou « récolter »). */
+export function parseHarvestMonths(rawText: string): number[] {
+  return monthsAfter(rawText, /\brecolt\w*/, 'sem|floraison|hauteur|distance|exposition|plantation|profondeur|germination')
 }
 
 const NOISE_LINE = /\b(?:semer|semis|semez|recolt\w*|sachet|poids|net|graines?|g|gr|bio|ab|www|http\w*|com|fr|avant|lot|date|conseils?|culture|exposition|profondeur|distance|arroser|eclaircir|germination|floraison|hauteur|origine|france|variete|cm|mm|approx\w*|contenu|environ|seeds?|samen|semillas|certifie|emball\w*|conditionn\w*|utiliser|preference|valable|mois|annee|ecocert|agriculture|biologique)\b|\d{3,}|[@/\\]/

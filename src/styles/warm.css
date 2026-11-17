@@ -723,3 +723,25 @@ html:has(.app.has-pb),
 body:has(.app.has-pb) {
   background: #14231a;
 }
+
+/* ---------- Scanner un sachet ou une étiquette ---------- */
+.scan-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+}
+.scan-months {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.scan-months .chip-filter {
+  min-height: 36px;
+  padding-inline: 10px;
+}
+.chip-filter.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-btn-green);
+}

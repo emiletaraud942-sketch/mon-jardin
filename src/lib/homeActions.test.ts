@@ -14,6 +14,7 @@ describe('gros boutons de l’accueil', () => {
       'Jardin partagé',
       'Apprendre à jardiner',
       'Compost et économie d’eau',
+      'Scanner un sachet',
       'Voir mon jardin',
       'Visiter mon jardin en photos',
       'Photos du jardin',

@@ -19,6 +19,56 @@ export interface Seed {
   /** À donner ou échanger. */
   toGive: boolean
   note?: string
+  /** Ce qui a été lu sur le sachet (photo) ou saisi : tout est facultatif. */
+  info?: SeedInfo
+}
+
+/** Informations d'un sachet. Mois de 1 à 12 ; durées et tailles en cm ou en jours. */
+export interface SeedInfo {
+  /** Espèce du catalogue reconnue. */
+  speciesId?: string
+  semis?: number[]
+  recolte?: number[]
+  profondeurCm?: number
+  espacementCm?: number
+  leveeJours?: number
+  soleil?: 'soleil' | 'mi-ombre' | 'ombre'
+  hauteurCm?: number
+  /** « 2 g », « 100 graines ». */
+  contenu?: string
+}
+
+const monthsOf = (v: unknown): number[] | undefined => {
+  if (!Array.isArray(v)) return undefined
+  const out = [...new Set(v.filter((m): m is number => Number.isInteger(m) && m >= 1 && m <= 12))].sort((a, b) => a - b)
+  return out.length ? out : undefined
+}
+const numIn = (v: unknown, max: number): number | undefined => (typeof v === 'number' && Number.isFinite(v) && v > 0 && v <= max ? Math.round(v * 10) / 10 : undefined)
+
+/** Valide les informations d'un sachet : formes inconnues et valeurs aberrantes retirées. */
+export function sanitizeSeedInfo(raw: unknown): SeedInfo | undefined {
+  if (!raw || typeof raw !== 'object') return undefined
+  const r = raw as Record<string, unknown>
+  const info: SeedInfo = {}
+  if (typeof r.speciesId === 'string' && /^[a-z0-9-]{1,40}$/.test(r.speciesId)) info.speciesId = r.speciesId
+  const semis = monthsOf(r.semis)
+  if (semis) info.semis = semis
+  const recolte = monthsOf(r.recolte)
+  if (recolte) info.recolte = recolte
+  const prof = numIn(r.profondeurCm, 40)
+  if (prof !== undefined) info.profondeurCm = prof
+  const esp = numIn(r.espacementCm, 500)
+  if (esp !== undefined) info.espacementCm = esp
+  const levee = numIn(r.leveeJours, 365)
+  if (levee !== undefined) info.leveeJours = Math.round(levee)
+  if (r.soleil === 'soleil' || r.soleil === 'mi-ombre' || r.soleil === 'ombre') info.soleil = r.soleil
+  const haut = numIn(r.hauteurCm, 1000)
+  if (haut !== undefined) info.hauteurCm = Math.round(haut)
+  if (typeof r.contenu === 'string') {
+    const c = cleanLine(r.contenu, 20)
+    if (c) info.contenu = c
+  }
+  return Object.keys(info).length ? info : undefined
 }
 
 const realDate = (s: unknown): s is string => {
@@ -43,6 +93,8 @@ export function sanitizeSeeds(raw: unknown): Seed[] {
     if (realDate(r.at)) seed.at = r.at
     const note = typeof r.note === 'string' ? cleanLine(r.note, MAX_NOTE) : ''
     if (note) seed.note = note
+    const info = sanitizeSeedInfo(r.info)
+    if (info) seed.info = info
     out.push(seed)
     if (out.length >= MAX_SEEDS) break
   }
@@ -113,10 +165,10 @@ let counter = 0
 const newId = () => `s${Date.now().toString(36)}${(counter++).toString(36)}`
 
 /** Ajoute un sachet. Renvoie `undefined` si le nom est vide ou si la liste est pleine. */
-export function addSeed(input: { name: string; at?: string; toGive?: boolean; note?: string }): Seed | undefined {
+export function addSeed(input: { name: string; at?: string; toGive?: boolean; note?: string; info?: SeedInfo }): Seed | undefined {
   const list = readSeeds()
   if (list.length >= MAX_SEEDS) return undefined
-  const [seed] = sanitizeSeeds([{ id: newId(), name: input.name, at: input.at, toGive: input.toGive, note: input.note }])
+  const [seed] = sanitizeSeeds([{ id: newId(), name: input.name, at: input.at, toGive: input.toGive, note: input.note, info: input.info }])
   if (!seed) return undefined
   write([seed, ...list])
   return seed

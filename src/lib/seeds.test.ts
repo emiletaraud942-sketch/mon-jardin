@@ -65,3 +65,18 @@ describe('mes graines : stockage et partage', () => {
     expect(seedsShareText([list[1]], new Date(2026, 10, 13))).toContain('Mes graines')
   })
 })
+
+describe('informations lues sur un sachet', () => {
+  it('sanitizeSeedInfo garde le valide et retire le reste', async () => {
+    const { sanitizeSeedInfo } = await import('./seeds')
+    expect(sanitizeSeedInfo({ semis: [5, 3, 3, 13, 'x'], profondeurCm: 1.26, leveeJours: 10.4, soleil: 'soleil', contenu: ' 2 g ', speciesId: 'tomate', hauteurCm: -3 })).toEqual({ semis: [3, 5], profondeurCm: 1.3, leveeJours: 10, soleil: 'soleil', contenu: '2 g', speciesId: 'tomate' })
+    expect(sanitizeSeedInfo({ soleil: 'lune', profondeurCm: 999 })).toBeUndefined()
+    expect(sanitizeSeedInfo('x')).toBeUndefined()
+    expect(sanitizeSeedInfo({ speciesId: '../x' })).toBeUndefined()
+  })
+  it('un sachet garde ses informations', async () => {
+    const { sanitizeSeeds } = await import('./seeds')
+    const [s] = sanitizeSeeds([{ id: 'a', name: 'Tomate', toGive: false, info: { semis: [3, 4], espacementCm: 50 } }])
+    expect(s.info).toEqual({ semis: [3, 4], espacementCm: 50 })
+  })
+})

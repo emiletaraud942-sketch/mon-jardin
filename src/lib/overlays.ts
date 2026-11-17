@@ -36,6 +36,8 @@ export const tourOpen = createValue(false)
 /** Choix d'une plante à ajouter, ouvert depuis le registre. `then` : éléments à montrer une fois la plante choisie (aides au placement). */
 export const addPicker = createValue<{ then?: string[] } | undefined>(undefined)
 export const identifyOpen = createValue(false)
+/** « Scanner un sachet ou une étiquette » ouvert. */
+export const scanLabelOpen = createValue(false)
 export const shoppingOpen = createValue(false)
 /** Guide « bestioles et maladies » ouvert ; `id` : la fiche à montrer d'emblée (depuis la fiche d'une plante). */
 export const ennuisOpen = createValue<{ id?: string } | undefined>(undefined)
