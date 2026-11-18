@@ -781,3 +781,11 @@ body:has(.app.has-pb) {
 .tf-overlay :is(.terr-event, .coll-list li, .coll-plots li) {
   background: color-mix(in srgb, var(--surface) 78%, transparent);
 }
+/* Fiche plante plein écran : la feuille du bas laisse voir le fond flou (plus de grand rectangle blanc). */
+.app.has-pb .fiche-sheet,
+.fiche-overlay .fiche-sheet {
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  border-top-color: color-mix(in srgb, var(--surface) 80%, transparent);
+}
