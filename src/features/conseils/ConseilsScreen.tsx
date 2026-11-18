@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { OverlayBackdrop } from '../../components/PageBackdrop'
 import { Icon } from '../../components/Icon'
 import { CONSEIL_THEMES, CONSEILS, getConseil, type Conseil, type ConseilTheme } from '../../data/conseils'
 import { SPECIES_BY_ID } from '../../data/species'
@@ -124,6 +125,7 @@ export default function ConseilsScreen({ initialId }: { initialId?: string }) {
 
   return (
     <div ref={ref} className="tf-overlay ennuis conseils" role="dialog" aria-modal="true" aria-label={current ? current.titre : CONSEILS_TITLE} data-feat="conseils" tabIndex={-1}>
+      <OverlayBackdrop tab="planter" />
       <Layer key={openId ?? 'liste'} onBack={() => backRef.current()} />
       <header className="tf-head">
         <button className="btn tf-top" onClick={back}>

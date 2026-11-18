@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { OverlayBackdrop } from '../../components/PageBackdrop'
 import { Icon } from '../../components/Icon'
 import { markTourSeen, TOUR_SLIDES } from '../../lib/featureTour'
 import { useInertBehind } from '../../lib/inert'
@@ -26,6 +27,7 @@ export function Visite() {
   }, [])
   return (
     <div className="tf-overlay tour" role="dialog" aria-modal="true" aria-label="Visite des fonctions" data-feat="visite-fonctions" tabIndex={-1}>
+      <OverlayBackdrop tab="accueil" />
       <div className="tour-card" ref={ref} tabIndex={-1}>
         <p className="tour-count" role="status">
           Écran {i + 1} sur {TOUR_SLIDES.length}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { OverlayBackdrop } from '../../components/PageBackdrop'
 import { Icon } from '../../components/Icon'
 import { goHome } from '../../lib/goHome'
 import { downloadBlob } from '../../lib/backup'
@@ -90,6 +91,7 @@ export default function TerritoireScreen() {
 
   return (
     <div ref={ref} className="tf-overlay ennuis territoire" role="dialog" aria-modal="true" aria-label={TERRITOIRE_TITLE} data-feat="territoire" tabIndex={-1}>
+      <OverlayBackdrop tab="voisins" />
       <Layer onBack={() => backRef.current()} />
       <header className="tf-head">
         <button className="btn tf-top" onClick={close}>

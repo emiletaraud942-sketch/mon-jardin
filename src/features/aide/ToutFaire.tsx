@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { OverlayBackdrop } from '../../components/PageBackdrop'
 import { Icon } from '../../components/Icon'
 import { RUBRIQUES, searchFeatures, visibleFeatures, type Feature } from '../../lib/features'
 import { goHome } from '../../lib/goHome'
@@ -96,6 +97,7 @@ export function ToutFaire() {
   }, [])
   return (
     <div ref={ref} className="tf-overlay" role="dialog" aria-modal="true" aria-label="Tout ce que je peux faire" tabIndex={-1}>
+      <OverlayBackdrop tab="accueil" />
       <header className="tf-head">
         <button className="btn tf-top" onClick={() => toutFaire.set(false)}>
           <Icon name="back" size={18} /> Retour

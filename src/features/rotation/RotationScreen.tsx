@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
+import { OverlayBackdrop } from '../../components/PageBackdrop'
 import { Icon } from '../../components/Icon'
 import { SPECIES_BY_ID } from '../../data/species'
 import { CYCLE_SENTENCE, FAMILY_EXPLAIN, ROTATION_CAUTION, rotationAdvice, type RotationZone } from '../../engine/rotation'
@@ -112,6 +113,7 @@ export default function RotationScreen() {
 
   return (
     <div ref={ref} className="tf-overlay rotation" role="dialog" aria-modal="true" aria-label={ROTATION_TITLE} data-feat="rotation" tabIndex={-1}>
+      <OverlayBackdrop tab="planter" />
       <Layer onBack={close} />
       <header className="tf-head">
         <button className="btn tf-top" onClick={close}>

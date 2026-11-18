@@ -745,3 +745,39 @@ body:has(.app.has-pb) {
   border-color: var(--accent);
   color: var(--on-btn-green);
 }
+
+/* ---------- Écrans plein écran (leçons, guides, Jardinons !, fiches) : fond photo flou, cartes en verre, plus de page blanche ---------- */
+.tf-overlay > .page-backdrop,
+.fiche-overlay > .page-backdrop {
+  position: fixed;
+  z-index: -1;
+}
+.tf-overlay .pb-sharp,
+.tf-overlay .pb-top,
+.fiche-overlay .pb-sharp,
+.fiche-overlay .pb-top {
+  display: none;
+}
+.tf-overlay .pb-veil,
+.fiche-overlay .pb-veil {
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+}
+.tf-overlay .pb-blur,
+.fiche-overlay .pb-blur {
+  filter: blur(22px) saturate(1.15);
+}
+.tf-overlay,
+.fiche-overlay {
+  isolation: isolate;
+}
+.tf-overlay :is(.tf-rub, .tf-item, .tf-search, .conseil-tile, .ennui-row, .ennui-none, .guide-btn, .lecon-quiz, .lecon-choice, .rot-zone, .rot-empty, .soil-test, .tour-card, .tour-demo, .coll-section, .terr-section, .terr-event, .coll-list li, .coll-plots li),
+.fiche-overlay :is(.card, .tf-rub, .tf-item) {
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border-color: color-mix(in srgb, var(--surface) 70%, transparent);
+}
+/* Cartes dans cartes (un événement dans « Rendez-vous ») : un peu plus claires pour rester lisibles. */
+.tf-overlay :is(.terr-event, .coll-list li, .coll-plots li) {
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+}

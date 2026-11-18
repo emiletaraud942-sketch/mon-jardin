@@ -58,3 +58,9 @@ export function PageBackdrop({ photo }: { photo: string }) {
     </div>
   )
 }
+
+/** Fond des écrans plein écran (leçons, guides, Jardinons !, fiches) : la même photo floue et voilée, sans la plante nette. */
+export function OverlayBackdrop({ tab }: { tab: Tab }) {
+  const photo = backdropPhoto(tab)
+  return photo ? <PageBackdrop photo={photo} /> : null
+}

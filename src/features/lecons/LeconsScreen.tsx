@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { OverlayBackdrop } from '../../components/PageBackdrop'
 import { Icon } from '../../components/Icon'
 import { getLecon, LECONS, NIVEAUX, leconsDuNiveau, type Lecon } from '../../data/lecons'
 import { SPECIES_BY_ID } from '../../data/species'
@@ -278,6 +279,7 @@ export default function LeconsScreen({ initialId }: { initialId?: string }) {
 
   return (
     <div ref={ref} className="tf-overlay ennuis lecons" role="dialog" aria-modal="true" aria-label={current ? current.titre : LECONS_TITLE} data-feat="lecons" tabIndex={-1}>
+      <OverlayBackdrop tab="entretien" />
       <Layer key={openId ?? 'liste'} onBack={() => backRef.current()} />
       <header className="tf-head">
         <button className="btn tf-top" onClick={back}>

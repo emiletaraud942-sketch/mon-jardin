@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { OverlayBackdrop } from '../../components/PageBackdrop'
 import { Icon } from '../../components/Icon'
 import { FEATURES, visibleFeatures, type Feature } from '../../lib/features'
 import { goHome } from '../../lib/goHome'
@@ -47,6 +48,7 @@ export function Guide() {
   const leaves = branch ? branch.answers.filter((a) => leafFeature(a)) : []
   return (
     <div ref={ref} className="tf-overlay guide" role="dialog" aria-modal="true" aria-label={GUIDE_TITLE} data-feat="guide" tabIndex={-1}>
+      <OverlayBackdrop tab="accueil" />
       <GuideLayer key={branchId ?? 'depart'} onBack={() => backRef.current()} />
       <header className="tf-head">
         <button className="btn tf-top" onClick={back}>

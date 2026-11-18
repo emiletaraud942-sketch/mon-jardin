@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { OverlayBackdrop } from '../../components/PageBackdrop'
 import { Icon } from '../../components/Icon'
 import { bilanAnnuel, bilanYears, compostStatus, GESTE_LABEL, GESTE_ORDER, GESTE_UNIT, HABITATS, plotAt } from '../../engine/collectif'
 import { downloadBlob } from '../../lib/backup'
@@ -419,6 +420,7 @@ export default function CollectifScreen({ section }: { section?: SectionId }) {
   }, [])
   return (
     <div ref={ref} className="tf-overlay ennuis collectif" role="dialog" aria-modal="true" aria-label={COLLECTIF_TITLE} data-feat="jardin-collectif" tabIndex={-1}>
+      <OverlayBackdrop tab="voisins" />
       <Layer onBack={() => backRef.current()} />
       <header className="tf-head">
         <button className="btn tf-top" onClick={close}>

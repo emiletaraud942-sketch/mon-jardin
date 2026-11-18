@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { OverlayBackdrop } from '../../components/PageBackdrop'
 import { Icon } from '../../components/Icon'
 import { ENNUIS, getEnnui } from '../../data/ravageurs'
 import type { Ennui } from '../../data/ravageurs/types'
@@ -139,6 +140,7 @@ export default function EnnuisScreen({ initialId }: { initialId?: string }) {
 
   return (
     <div ref={ref} className="tf-overlay ennuis" role="dialog" aria-modal="true" aria-label={current ? current.nom : ENNUIS_TITLE} data-feat="guide-ennuis" tabIndex={-1}>
+      <OverlayBackdrop tab="entretien" />
       <Layer key={openId ?? 'liste'} onBack={() => backRef.current()} />
       <header className="tf-head">
         <button className="btn tf-top" onClick={back}>

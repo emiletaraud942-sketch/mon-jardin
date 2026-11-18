@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { OverlayBackdrop } from '../../components/PageBackdrop'
 import { SpeciesThumb } from '../../components/SpeciesThumb'
 import { createPortal } from 'react-dom'
 import { SPECIES_BY_ID } from '../../data/species'
@@ -38,6 +39,7 @@ function FicheOverlay({ label, children }: { label: string; children: ReactNode 
   useEffect(() => ref.current?.focus({ preventScroll: true }), [])
   return (
     <div ref={ref} className="fiche-overlay" role="dialog" aria-modal="true" aria-label={`Fiche : ${label}`} tabIndex={-1}>
+      <OverlayBackdrop tab="plantes" />
       {children}
     </div>
   )
