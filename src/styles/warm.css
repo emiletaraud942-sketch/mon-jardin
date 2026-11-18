@@ -540,7 +540,14 @@ html[data-big-taps] .home-tile {
   .app.has-pb .pagehead h1,
   .app.has-pb .pagehead-kicker {
     color: #fff !important;
-    text-shadow: 0 1px 14px rgb(0 0 0 / 40%);
+    text-shadow: 0 1px 3px rgb(0 0 0 / 65%), 0 0 16px rgb(0 0 0 / 55%);
+  }
+  /* « Semaine du… » : petit texte sur photo vive, plus appuyé et plus sombre derrière. */
+  .app.has-pb .pagehead-kicker {
+    font-weight: var(--fw-key);
+  }
+  .app.has-pb[data-tab='entretien'] .pb-top {
+    height: calc(330px + env(safe-area-inset-top, 0px));
   }
 }
 
