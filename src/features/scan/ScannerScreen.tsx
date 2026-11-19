@@ -27,6 +27,8 @@ import {
 } from './queue'
 import { dropPhotoOf, getQueue, loadQueue, processQueue, startRetryLoop, updateQueue, useScanQueue } from './queueStore'
 import { VideoScanSection } from './VideoScan'
+import { CloseUps } from './CloseUps'
+import { isLeafOffSeason } from './winter'
 
 export function ScannerScreen({ garden }: { garden: Garden }) {
   const all = useScanQueue()
@@ -330,6 +332,8 @@ function ItemRow({
 }) {
   const waiting = i.status === 'en-attente'
   const chosen = i.speciesId
+  const [closeUps, setCloseUps] = useState(false)
+  const offerCloseUps = i.status === 'a-valider' && (!!i.uncertain || isLeafOffSeason()) && !chosen
   return (
     <div className={'scan-item' + (open ? ' open' : '')}>
       <button className="scan-item-head" aria-expanded={open} onClick={onSelect}>
@@ -339,7 +343,7 @@ function ItemRow({
         <PhotoThumb id={i.photoId} />
         <span className="scan-item-text">
           <strong>{itemName(i)}</strong>
-          <span className="small muted">{waiting ? waitingText(i, now) : i.suggestions[0] && chosen === (i.suggestions[0].speciesId ?? UNKNOWN_SPECIES_ID) ? confidenceLabel(i.suggestions[0].score) : 'À valider'}</span>
+          <span className="small muted">{waiting ? waitingText(i, now) : i.uncertain && !chosen ? `Je ne suis pas sûr${i.hint ? ` · ${i.hint}` : ''}` : i.suggestions[0] && chosen === (i.suggestions[0].speciesId ?? UNKNOWN_SPECIES_ID) ? confidenceLabel(i.suggestions[0].score) : 'À valider'}</span>
         </span>
       </button>
       {open && (
@@ -362,8 +366,13 @@ function ItemRow({
               )}
             </div>
           )}
+          {i.uncertain && !chosen && (
+            <p className="small" style={{ margin: 0 }} role="status">
+              <strong>Je ne suis pas sûr.</strong> {i.hint ? `${i.hint}. ` : ''}Choisissez dans la liste ci-dessous, ou précisez avec des gros plans.
+            </p>
+          )}
           {i.suggestions.length > 0 && (
-            <div role="group" aria-label="Autres noms possibles" className="row scan-alts">
+            <div role="group" aria-label={i.uncertain && !chosen ? 'Noms possibles, sans certitude' : 'Autres noms possibles'} className="row scan-alts">
               {i.suggestions.map((s) => {
                 const c = choiceOf(s)
                 const on = c.speciesId === i.speciesId && (c.customName ?? '') === (i.customName ?? '')
@@ -375,9 +384,15 @@ function ItemRow({
               })}
             </div>
           )}
+          {offerCloseUps && (
+            <button className="btn" onClick={() => setCloseUps(true)}>
+              <Icon name="camera" /> Préciser avec 2 gros plans
+            </button>
+          )}
           <button className="btn" onClick={onPick}>
             Changer de plante
           </button>
+          {closeUps && <CloseUps item={i} onClose={() => setCloseUps(false)} />}
           <div role="group" aria-label="État de la plante" className="row">
             <button className={'btn small' + (i.plantStatus === 'en-place' ? ' primary' : '')} aria-pressed={i.plantStatus === 'en-place'} onClick={() => updateQueue((q) => setPlantStatus(q, i.id, 'en-place'))}>
               Déjà plantée

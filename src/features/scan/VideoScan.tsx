@@ -21,6 +21,7 @@ import { openScan } from './scanUi'
 import { useHeading } from './useHeading'
 import { DEFAULT_DISTANCE_M, positionForFrame } from './videoLog'
 import { parseMeters } from './trilat'
+import { isLeafOffSeason, WINTER_NOTE } from './winter'
 
 /** Une image gardée, avec l'instant où elle a été prise (flux direct) ou sa place dans la vidéo. */
 interface Kept {
@@ -286,6 +287,11 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
                 </li>
               </ol>
               <p className="small muted" style={{ margin: 0 }}>La vidéo reste sur votre téléphone. Seules les images gardées partent à Pl@ntNet, avec votre accord.</p>
+              {isLeafOffSeason() && (
+                <div className="alert info small" role="note">
+                  <span>{WINTER_NOTE}</span>
+                </div>
+              )}
               {!garden.calibration && (
                 <div className="alert info small">
                   <span>La carte n’est pas ajustée à votre position. Ajustez-la d’abord : les plantes seront mieux placées.</span>

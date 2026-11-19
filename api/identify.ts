@@ -9,6 +9,25 @@ import type { VercelRequest, VercelResponse } from './_vercel-types'
 export const config = { maxDuration: 30 }
 
 const ORGANS = new Set(['auto', 'leaf', 'flower', 'fruit', 'bark'])
+/** Flore interrogée : l'Europe de l'Ouest écarte les exotiques qui polluaient les résultats (flore mondiale = « all »). Réglable par PLANTNET_PROJECT. */
+export const DEFAULT_PROJECT = 'weurope'
+/** Résultats demandés à Pl@ntNet : le client reclasse ensuite avec le catalogue et le jardin. */
+export const NB_RESULTS = 10
+
+/** Nom de flore sûr (lettres, chiffres, tirets) ; tout autre valeur retombe sur le défaut. */
+export function safeProject(v: string | undefined): string {
+  return v && /^[a-z0-9][a-z0-9-]{0,39}$/i.test(v) ? v : DEFAULT_PROJECT
+}
+
+/** Adresse de l'appel Pl@ntNet (la clé n'y est jamais journalisée : voir scrubError). */
+export function identifyUrl(project: string, key: string): string {
+  return `https://my-api.plantnet.org/v2/identify/${safeProject(project)}?api-key=${encodeURIComponent(key)}&lang=fr&nb-results=${NB_RESULTS}&include-related-images=false`
+}
+
+/** Vrai si Pl@ntNet dit que la FLORE demandée n'existe pas (et non « aucune espèce trouvée ») : on retombe alors sur « all ». */
+export function isUnknownProject(status: number, text: string): boolean {
+  return (status === 404 || status === 400) && /project|flora|flore/i.test(text) && !/species not found/i.test(text)
+}
 /** Taille maximale du corps (JSON + base64). Vercel coupe à 4,5 Mo avec une erreur non JSON : on répond avant. */
 export const MAX_BODY_BYTES = 4_200_000
 const UPSTREAM_TIMEOUT_MS = 25_000
@@ -292,9 +311,14 @@ async function handle(req: VercelRequest, res: VercelResponse) {
   } catch {
     return res.status(400).json({ error: 'Requête illisible.' })
   }
-  const { images, organ = 'auto' } = (body && typeof body === 'object' && !Array.isArray(body) ? body : {}) as { images?: unknown; organ?: unknown }
+  const { images, organ = 'auto', organs } = (body && typeof body === 'object' && !Array.isArray(body) ? body : {}) as { images?: unknown; organ?: unknown; organs?: unknown }
   if (!Array.isArray(images) || images.length === 0 || images.length > 5) return res.status(400).json({ error: 'Envoyez 1 à 5 photos.' })
   if (typeof organ !== 'string' || !ORGANS.has(organ)) return res.status(400).json({ error: 'Organe inconnu.' })
+  // Un organe par image (écorce, feuille…) : mieux que « auto » pour toutes. Absent : l'organe unique s'applique à toutes.
+  if (organs !== undefined && (!Array.isArray(organs) || organs.length !== images.length || organs.some((o) => typeof o !== 'string' || !ORGANS.has(o)))) {
+    return res.status(400).json({ error: 'Organes inconnus.' })
+  }
+  const organOf = (i: number): string => (Array.isArray(organs) ? (organs[i] as string) : organ)
   let total = 0
   for (const b64 of images) {
     if (typeof b64 !== 'string' || b64.length === 0) return res.status(400).json({ error: 'Photo illisible.' })
@@ -314,7 +338,7 @@ async function handle(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Photo trop grande en dimensions (8 000 pixels maximum par côté). Réduisez-la.' })
     }
     form.append('images', new Blob([new Uint8Array(bytes)], { type: mime }), `photo-${i}.${mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg'}`)
-    form.append('organs', organ)
+    form.append('organs', organOf(i))
   }
 
   // Plafond global : compté seulement pour une requête valide qui va réellement consommer le quota Pl@ntNet.
@@ -324,12 +348,17 @@ async function handle(req: VercelRequest, res: VercelResponse) {
     return res.status(429).json({ error: 'Trop de demandes, réessayez dans quelques minutes.' })
   }
 
-  const url = `https://my-api.plantnet.org/v2/identify/all?api-key=${encodeURIComponent(key)}&lang=fr&nb-results=5&include-related-images=false`
+  const project = safeProject(process.env.PLANTNET_PROJECT)
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), UPSTREAM_TIMEOUT_MS)
   try {
-    const r = await fetch(url, { method: 'POST', body: form, signal: ctrl.signal, redirect: 'error' })
-    const text = await r.text()
+    let r = await fetch(identifyUrl(project, key), { method: 'POST', body: form, signal: ctrl.signal, redirect: 'error' })
+    let text = await r.text()
+    // Nom de flore refusé : une seule reprise sur la flore mondiale, pour ne jamais casser l'identification.
+    if (project !== 'all' && isUnknownProject(r.status, text.slice(0, 2000))) {
+      r = await fetch(identifyUrl('all', key), { method: 'POST', body: form, signal: ctrl.signal, redirect: 'error' })
+      text = await r.text()
+    }
     if (text.length > MAX_UPSTREAM_CHARS) return res.status(502).json({ error: 'Pl@ntNet a renvoyé une réponse illisible. Réessayez plus tard.' })
     const out = interpretPlantnet(r.status, text)
     return res.status(out.status).json(out.body)

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { UNKNOWN_SPECIES_ID } from '../../lib/customName'
 import {
-  applyResults, BACKOFF_MS, canValidate, chooseSpecies, dueItems, enqueue, finish, forGarden, itemName, markFailed, markIgnored, markNeedsConsent, markUnvalidated, markValidated, MAX_ATTEMPTS, newItem,
+  applyGroupResults, applyResults, BACKOFF_MS, groupCompanions, GROUP_MAX, GROUP_RADIUS_M, canValidate, chooseSpecies, dueItems, enqueue, finish, forGarden, itemName, markFailed, markIgnored, markNeedsConsent, markUnvalidated, markValidated, MAX_ATTEMPTS, newItem,
   resetRetry, sanitizeQueue, summary, summaryText, waitingText, type Queue,
 } from './queue'
 
@@ -106,5 +106,77 @@ describe('lecture depuis IndexedDB', () => {
   it('accepte autre chose qu’un tableau sans planter', () => {
     expect(sanitizeQueue(undefined)).toEqual([])
     expect(sanitizeQueue({})).toEqual([])
+  })
+})
+
+describe('plante incertaine (A)', () => {
+  it('incertain : « à valider » sans nom choisi d’office, avec la phrase de genre', () => {
+    let q: Queue = enqueue([], mk('a'))
+    q = applyResults(q, 'a', sug, { uncertain: true, hint: 'Probablement du genre Acer' })
+    expect(q[0].status).toBe('a-valider')
+    expect(q[0].speciesId).toBeUndefined()
+    expect(q[0].uncertain).toBe(true)
+    expect(q[0].hint).toBe('Probablement du genre Acer')
+    expect(canValidate(q[0])).toBe(false)
+    expect(itemName(q[0])).toBe('Plante à nommer')
+    expect(q[0].suggestions).toHaveLength(2)
+  })
+  it('un choix fait à la main reste, même incertain', () => {
+    let q = enqueue([], mk('a'))
+    q = chooseSpecies(q, 'a', { speciesId: UNKNOWN_SPECIES_ID, customName: 'Mon cerisier' })
+    q = applyResults(q, 'a', sug, { uncertain: true })
+    expect(itemName(q[0])).toBe('Mon cerisier')
+    expect(canValidate(q[0])).toBe(true)
+  })
+  it('une nouvelle lecture sûre efface l’incertitude et choisit le meilleur nom', () => {
+    let q = enqueue([], mk('a'))
+    q = applyResults(q, 'a', sug, { uncertain: true, hint: 'x' })
+    q = applyResults(q, 'a', sug)
+    expect(q[0].uncertain).toBeUndefined()
+    expect(q[0].hint).toBeUndefined()
+    expect(q[0].speciesId).toBe('pommier')
+  })
+  it('lecture sûre depuis IndexedDB : incertain et phrase gardés, valeurs douteuses écartées', () => {
+    const raw = [{ ...mk('a'), uncertain: true, hint: 'Probablement du genre Acer' }, { ...mk('b'), uncertain: 'oui', hint: 42 }]
+    const q = sanitizeQueue(raw)
+    expect(q[0]).toMatchObject({ uncertain: true, hint: 'Probablement du genre Acer' })
+    expect(q[1].uncertain).toBeUndefined()
+    expect(q[1].hint).toBeUndefined()
+  })
+})
+
+describe('images regroupées pour une plante (B)', () => {
+  const at = (id: string, x: number, y: number, extra: Partial<ReturnType<typeof mk>> = {}) => ({ ...mk(id), position: { x, y }, accuracyM: 3, from: 'video' as const, ...extra })
+  const q0: Queue = [at('a', 0, 0), at('b', 1, 0), at('c', 0, 2), at('d', 10, 10), at('e', 0.5, 0.5, { gardenId: 'g2' }), at('f', 1, 1, { status: 'a-valider' })]
+  it('prend les images proches, du même jardin, en attente, les plus proches d’abord', () => {
+    const c = groupCompanions(q0, q0[0], { now: 0 })
+    expect(c.map((i) => i.id)).toEqual(['b', 'c'])
+  })
+  it('jamais plus de 5 images au total', () => {
+    const many: Queue = [at('p', 0, 0), ...Array.from({ length: 9 }, (_, k) => at('n' + k, 0.1 * k, 0))]
+    expect(groupCompanions(many, many[0], { now: 0 })).toHaveLength(GROUP_MAX - 1)
+  })
+  it('respecte le rayon', () => {
+    const q: Queue = [at('p', 0, 0), at('in', GROUP_RADIUS_M, 0), at('out', GROUP_RADIUS_M + 0.1, 0)]
+    expect(groupCompanions(q, q[0], { now: 0 }).map((i) => i.id)).toEqual(['in'])
+  })
+  it('sans position connue ou pas issue d’une vidéo : jamais regroupé', () => {
+    const q: Queue = [at('p', 0, 0, { accuracyM: 99 }), at('n', 0, 0)]
+    expect(groupCompanions(q, q[0], { now: 0 })).toEqual([])
+    const photo: Queue = [{ ...at('p', 0, 0), from: undefined }, at('n', 0, 0)]
+    expect(groupCompanions(photo, photo[0], { now: 0 })).toEqual([])
+    const unknownNeighbour: Queue = [at('p', 0, 0), at('n', 0, 0, { accuracyM: 99 })]
+    expect(groupCompanions(unknownNeighbour, unknownNeighbour[0], { now: 0 })).toEqual([])
+  })
+  it('laisse de côté les images pas encore prêtes (délai, accord manquant, trop d’essais)', () => {
+    const q: Queue = [at('p', 0, 0), at('wait', 1, 0, { nextTryAt: 5000 }), at('consent', 1, 0, { why: 'consentement' }), at('tired', 1, 0, { attempts: MAX_ATTEMPTS }), at('ok', 1, 0)]
+    expect(groupCompanions(q, q[0], { now: 1000 }).map((i) => i.id)).toEqual(['ok'])
+  })
+  it('après l’envoi : la première reçoit les noms, les autres sont ignorées et renvoient vers elle', () => {
+    const q = applyGroupResults(q0, 'a', ['b', 'c'], sug)
+    expect(q.find((i) => i.id === 'a')).toMatchObject({ status: 'a-valider', speciesId: 'pommier' })
+    expect(q.find((i) => i.id === 'b')).toMatchObject({ status: 'ignoree', mergedInto: 'a' })
+    expect(q.find((i) => i.id === 'c')).toMatchObject({ status: 'ignoree', mergedInto: 'a' })
+    expect(q.find((i) => i.id === 'd')?.status).toBe('en-attente')
   })
 })

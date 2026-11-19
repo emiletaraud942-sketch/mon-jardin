@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { VercelRequest, VercelResponse } from '../_vercel-types'
-import handler, { clientIp, createRateLimiter, decodeBase64Image, detectImageMime, imageSize, interpretPlantnet, hasBrowserOrigin, isAllowedOrigin, MAX_BODY_BYTES, rateKey, scrubError } from '../identify'
+import handler, { clientIp, createRateLimiter, DEFAULT_PROJECT, identifyUrl, isUnknownProject, NB_RESULTS, safeProject, decodeBase64Image, detectImageMime, imageSize, interpretPlantnet, hasBrowserOrigin, isAllowedOrigin, MAX_BODY_BYTES, rateKey, scrubError } from '../identify'
 
 /** JPEG minimal avec un segment SOF0 (dimensions déclarées). */
 const jpeg = (w = 640, h = 480) => Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 4, 0x4a, 0x46, 0xff, 0xc0, 0, 17, 8, h >> 8, h & 255, w >> 8, w & 255, 3, 1, 0x22, 0, 2, 0x11, 1, 3, 0x11, 1, 0xff, 0xd9])
@@ -444,5 +444,84 @@ describe('handler', () => {
     expect((await call({ headers: { origin: 'https://evil.example' } })).status).toBe(403)
     expect((await call({ headers: { 'content-type': 'text/plain' } })).status).toBe(415)
     expect((await call({ body: { images: [b64(JPEG)] } })).status).toBe(503)
+  })
+})
+
+describe('flore interrogée (A)', () => {
+  it('par défaut : l’Europe de l’Ouest, 10 résultats, la clé encodée', () => {
+    const u = identifyUrl(DEFAULT_PROJECT, 'a b&c')
+    expect(u).toContain('/v2/identify/weurope?')
+    expect(u).toContain(`nb-results=${NB_RESULTS}`)
+    expect(u).toContain('api-key=a%20b%26c')
+    expect(NB_RESULTS).toBe(10)
+  })
+  it('un nom de flore douteux retombe sur le défaut (jamais dans l’adresse tel quel)', () => {
+    expect(safeProject(undefined)).toBe('weurope')
+    expect(safeProject('all')).toBe('all')
+    expect(safeProject('../evil?x=1')).toBe('weurope')
+    expect(safeProject('')).toBe('weurope')
+    expect(identifyUrl('a/../b', 'k')).toContain('/v2/identify/weurope?')
+  })
+  it('distingue « flore inconnue » de « aucune espèce trouvée »', () => {
+    expect(isUnknownProject(404, '{"message":"Project weurope not found"}')).toBe(true)
+    expect(isUnknownProject(404, '{"statusCode":404,"error":"Not Found","message":"Species not found"}')).toBe(false)
+    expect(isUnknownProject(404, '<html>Not found</html>')).toBe(false)
+    expect(isUnknownProject(200, 'project')).toBe(false)
+  })
+})
+
+describe('handler : flore et organes par image (A, C)', () => {
+  const origKey = process.env.PLANTNET_API_KEY
+  beforeEach(() => {
+    process.env.PLANTNET_API_KEY = 'SECRET123'
+  })
+  afterEach(() => {
+    process.env.PLANTNET_API_KEY = origKey
+    vi.unstubAllGlobals()
+  })
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64').toString('base64')
+  const post = async (body: unknown) => {
+    let status = 0
+    let json: unknown
+    const res = { setHeader() {}, status(n: number) { status = n; return this }, json(b: unknown) { json = b; return this } } as unknown as VercelResponse
+    const req = { method: 'POST', headers: { 'content-type': 'application/json', origin: 'https://x.app', host: 'x.app', 'sec-fetch-site': 'same-origin', 'x-real-ip': '1.2.3.' + Math.floor(Math.random() * 200) }, body, socket: {} } as unknown as VercelRequest
+    await handler(req, res)
+    return { status, json: json as { error?: string } }
+  }
+
+  it('interroge weurope, avec un organe par image', async () => {
+    const calls: { url: string; organs: string[] }[] = []
+    vi.stubGlobal('fetch', vi.fn(async (u: string, init: { body: FormData }) => {
+      calls.push({ url: u, organs: init.body.getAll('organs') as string[] })
+      return new Response(JSON.stringify({ results: [] }), { status: 200 })
+    }))
+    const r = await post({ images: [png, png, png], organs: ['bark', 'auto', 'leaf'] })
+    expect(r.status).toBe(200)
+    expect(calls).toHaveLength(1)
+    expect(calls[0].url).toContain('/identify/weurope?')
+    expect(calls[0].organs).toEqual(['bark', 'auto', 'leaf'])
+  })
+  it('refuse des organes inconnus ou en nombre différent des images', async () => {
+    expect((await post({ images: [png], organs: ['racine'] })).status).toBe(400)
+    expect((await post({ images: [png, png], organs: ['bark'] })).status).toBe(400)
+    expect((await post({ images: [png], organs: 'bark' })).status).toBe(400)
+  })
+  it('un nom de flore refusé : une seule reprise sur « all »', async () => {
+    const urls: string[] = []
+    vi.stubGlobal('fetch', vi.fn(async (u: string) => {
+      urls.push(u)
+      return urls.length === 1 ? new Response('{"message":"Project weurope not found"}', { status: 404 }) : new Response(JSON.stringify({ results: [{ score: 0.4, species: { scientificNameWithoutAuthor: 'Malus domestica' } }] }), { status: 200 })
+    }))
+    const r = await post({ images: [png] })
+    expect(r.status).toBe(200)
+    expect(urls).toHaveLength(2)
+    expect(urls[1]).toContain('/identify/all?')
+  })
+  it('« aucune espèce trouvée » ne déclenche pas de seconde requête', async () => {
+    const f = vi.fn(async () => new Response('{"message":"Species not found"}', { status: 404 }))
+    vi.stubGlobal('fetch', f)
+    const r = await post({ images: [png] })
+    expect(r.status).toBe(200)
+    expect(f).toHaveBeenCalledTimes(1)
   })
 })

@@ -76,9 +76,16 @@ function parseResults(data: unknown): Omit<Identification, 'species' | 'approx'>
   return out
 }
 
-/** Identification par photo via notre fonction serveur /api/identify (clé Pl@ntNet côté serveur). */
-export async function identifyPlant(images: Blob[], organ: 'auto' | 'leaf' | 'flower' | 'fruit' | 'bark' = 'auto'): Promise<Identification[]> {
-  const body = { organ, images: await prepareImages(images) }
+export type Organ = 'auto' | 'leaf' | 'flower' | 'fruit' | 'bark'
+
+/**
+ * Identification par photo via notre fonction serveur /api/identify (clé Pl@ntNet côté serveur).
+ * `organ` : un organe pour toutes les photos, ou un organe par photo (écorce + branche + vue d'ensemble).
+ */
+export async function identifyPlant(images: Blob[], organ: Organ | Organ[] = 'auto'): Promise<Identification[]> {
+  const prepared = await prepareImages(images)
+  if (Array.isArray(organ) && organ.length !== images.length) throw new Error('Un organe par photo est attendu.')
+  const body = Array.isArray(organ) ? { organs: organ, images: prepared } : { organ, images: prepared }
   // Délai de 30 s (comme la fonction serveur). On lit le corps nous-mêmes pour garder les messages en français du serveur (quota, photo illisible…).
   const r = await fetchWithTimeout('/api/identify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), timeoutMs: 30000 })
   const text = await r.text()

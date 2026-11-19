@@ -16,6 +16,7 @@ Guide pas à pas, gratuit (offre Hobby de Vercel + offre gratuite de Supabase). 
    | Nom | Valeur | Rôle |
    | --- | --- | --- |
    | `PLANTNET_API_KEY` | clé gratuite de https://my.plantnet.org | Identification par photo (serveur uniquement). Cochez **Production seulement** (pas Preview ni Development) et *Sensitive* |
+   | `PLANTNET_PROJECT` | facultatif : `weurope` (défaut) ou `all` | Flore Pl@ntNet interrogée. `all` = flore mondiale (retour en arrière si `weurope` pose problème) |
    | `VITE_SUPABASE_URL` | `https://xxxx.supabase.co` | Synchronisation entre appareils |
    | `VITE_SUPABASE_ANON_KEY` | clé « anon public » du projet Supabase | Idem (clé publique, jamais `service_role`) |
 

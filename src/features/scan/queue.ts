@@ -42,6 +42,10 @@ export interface ScanItem {
   from?: 'photo' | 'video'
   /** Doublon regroupé avec cet autre élément (scan en filmant). */
   mergedInto?: string
+  /** Pl@ntNet n'est pas sûr : aucun nom n'est choisi d'office, la personne tranche (ou précise avec des gros plans). */
+  uncertain?: boolean
+  /** Phrase courte quand l'incertitude est au niveau du genre (« Probablement du genre Prunus »). */
+  hint?: string
 }
 
 export const MAX_ATTEMPTS = 5
@@ -76,12 +80,37 @@ export const forGarden = (q: Queue, gardenId: string): Queue => q.filter((i) => 
 export const enqueue = (q: Queue, item: ScanItem): Queue => [...q, item]
 
 /** Résultat d'identification reçu : l'élément passe « à valider ». La meilleure suggestion est choisie d'office. */
-export function applyResults(q: Queue, id: string, suggestions: Suggestion[]): Queue {
+export function applyResults(q: Queue, id: string, suggestions: Suggestion[], opts: { uncertain?: boolean; hint?: string } = {}): Queue {
   return update(q, id, (i) => {
     const best = suggestions[0]
-    const choice = i.speciesId ? { speciesId: i.speciesId, customName: i.customName } : best ? choiceOf(best) : {}
-    return { ...i, status: 'a-valider', why: undefined, nextTryAt: undefined, suggestions, ...choice }
+    // Incertain : on ne choisit rien à la place de la personne (un choix déjà fait à la main reste).
+    const choice = i.speciesId ? { speciesId: i.speciesId, customName: i.customName } : best && !opts.uncertain ? choiceOf(best) : {}
+    return { ...i, status: 'a-valider', why: undefined, nextTryAt: undefined, suggestions, uncertain: opts.uncertain ? true : undefined, hint: opts.uncertain ? opts.hint : undefined, ...choice }
   })
+}
+
+/** Images regroupées sous un seul envoi : la première reçoit les noms, les autres sont « ignorées » et renvoient vers elle. */
+export function applyGroupResults(q: Queue, primaryId: string, companionIds: string[], suggestions: Suggestion[], opts: { uncertain?: boolean; hint?: string } = {}): Queue {
+  const merged = new Set(companionIds)
+  return applyResults(q, primaryId, suggestions, opts).map((i) => (merged.has(i.id) ? { ...i, status: 'ignoree' as const, why: undefined, nextTryAt: undefined, mergedInto: primaryId } : i))
+}
+
+/** Rayon (m) dans lequel des images de vidéo sont prises pour la même plante. */
+export const GROUP_RADIUS_M = 2.5
+/** Images envoyées ensemble pour une plante (maximum accepté par Pl@ntNet). */
+export const GROUP_MAX = 5
+
+/**
+ * Images de vidéo à envoyer AVEC `primary` : mêmes jardin, position connue, à moins de `GROUP_RADIUS_M`, prêtes à partir.
+ * Les plus proches d'abord, au plus `GROUP_MAX - 1`. Une image sans position (vidéo importée) n'est jamais regroupée.
+ */
+export function groupCompanions(q: Queue, primary: ScanItem, o: { now: number }): ScanItem[] {
+  if (primary.from !== 'video' || primary.accuracyM >= 99) return []
+  const d = (i: ScanItem) => Math.hypot(i.position.x - primary.position.x, i.position.y - primary.position.y)
+  return q
+    .filter((i) => i.id !== primary.id && i.from === 'video' && i.gardenId === primary.gardenId && i.status === 'en-attente' && i.why !== 'consentement' && i.attempts < MAX_ATTEMPTS && (i.nextTryAt ?? 0) <= o.now && i.accuracyM < 99 && d(i) <= GROUP_RADIUS_M)
+    .sort((a, b) => d(a) - d(b))
+    .slice(0, GROUP_MAX - 1)
 }
 
 /** Espèce et nom à retenir pour une suggestion. */
@@ -170,6 +199,7 @@ export function waitingText(i: ScanItem, now: number): string {
 export function itemName(i: ScanItem): string {
   if (i.speciesId === UNKNOWN_SPECIES_ID && i.customName) return i.customName
   if (i.speciesId && SPECIES_BY_ID[i.speciesId]) return SPECIES_BY_ID[i.speciesId].nomCommun
+  if (i.uncertain) return 'Plante à nommer'
   return i.suggestions[0]?.name ?? 'Plante à nommer'
 }
 
@@ -217,6 +247,8 @@ export function sanitizeQueue(raw: unknown): Queue {
       plantId: typeof r.plantId === 'string' ? r.plantId : undefined,
       from: r.from === 'video' ? 'video' : undefined,
       mergedInto: typeof r.mergedInto === 'string' ? r.mergedInto : undefined,
+      uncertain: r.uncertain === true ? true : undefined,
+      hint: typeof r.hint === 'string' && r.hint ? r.hint.slice(0, 80) : undefined,
     })
   }
   return out
