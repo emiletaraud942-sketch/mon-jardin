@@ -7,7 +7,8 @@ import { ErrorNote } from '../../components/ErrorNote'
 import { hasConsent } from '../../lib/consent'
 import { uid } from '../../lib/geo'
 import { savePhoto } from '../../lib/photos'
-import { removePlant, useGardenPlants } from '../../lib/store'
+import { removePlant, updatePlant, useGardenPlants } from '../../lib/store'
+import { isoDate } from '../../lib/dates'
 import { showToast } from '../../lib/toast'
 import { UNKNOWN_SPECIES_ID } from '../../lib/customName'
 import { ConsentDialog } from '../legal/ConsentDialog'
@@ -28,6 +29,7 @@ import {
 import { dropPhotoOf, getQueue, loadQueue, processQueue, startRetryLoop, updateQueue, useScanQueue } from './queueStore'
 import { VideoScanSection } from './VideoScan'
 import { CloseUps } from './CloseUps'
+import { distanceText, twinOf, type Twin } from './rescan'
 import { isLeafOffSeason } from './winter'
 
 export function ScannerScreen({ garden }: { garden: Garden }) {
@@ -132,6 +134,22 @@ export function ScannerScreen({ garden }: { garden: Garden }) {
       actionLabel: 'Annuler',
       onAction: () => {
         removePlant(plantId, { keepPhotos: true })
+        updateQueue((q) => markUnvalidated(q, i.id))
+      },
+    })
+  }
+
+  /** Même plante déjà posée à cet endroit : on lui ajoute la photo au lieu d'en créer une deuxième. */
+  function attach(i: ScanItem, twin: Twin) {
+    const before = { photos: twin.plant.photos, photoMeta: twin.plant.photoMeta }
+    updatePlant(twin.plant.id, { photos: [...twin.plant.photos, i.photoId], photoMeta: { ...(twin.plant.photoMeta ?? {}), [i.photoId]: { at: isoDate() } } })
+    updateQueue((q) => markValidated(q, i.id, twin.plant.id))
+    setSelectedId(undefined)
+    showToast({
+      message: `Photo ajoutée à « ${itemName(i)} » qui était déjà là.`,
+      actionLabel: 'Annuler',
+      onAction: () => {
+        updatePlant(twin.plant.id, before)
         updateQueue((q) => markUnvalidated(q, i.id))
       },
     })
@@ -269,6 +287,8 @@ export function ScannerScreen({ garden }: { garden: Garden }) {
                   open={i.id === selectedId}
                   now={now}
                   onSelect={() => (i.id === selectedId ? setSelectedId(undefined) : select(i.id))}
+                  twin={twinOf(plants, i)}
+                  onAttach={(t) => attach(i, t)}
                   onValidate={() => validate(i)}
                   onIgnore={() => {
                     updateQueue((q) => markIgnored(q, i.id))
@@ -319,12 +339,14 @@ export function ScannerScreen({ garden }: { garden: Garden }) {
 }
 
 function ItemRow({
-  item: i, n, open, now, onSelect, onValidate, onIgnore, onPick,
+  item: i, n, open, now, twin, onAttach, onSelect, onValidate, onIgnore, onPick,
 }: {
   item: ScanItem
   n: number
   open: boolean
   now: number
+  twin?: Twin
+  onAttach: (t: Twin) => void
   onSelect: () => void
   onValidate: () => void
   onIgnore: () => void
@@ -401,9 +423,21 @@ function ItemRow({
               Prévue
             </button>
           </div>
+          {twin && canValidate(i) && (
+            <div className="alert info small" role="note">
+              <span>
+                <strong>Déjà dans votre jardin :</strong> « {itemName(i)} » est posée {distanceText(twin.distanceM)}. Valider en créerait une deuxième.
+              </span>
+              {twin.canAttach && (
+                <button className="btn small primary" style={{ marginTop: 6 }} onClick={() => onAttach(twin)}>
+                  Ajouter la photo à la plante existante
+                </button>
+              )}
+            </div>
+          )}
           <div className="row">
-            <button className="btn primary" disabled={!canValidate(i)} onClick={onValidate}>
-              <Icon name="check" /> Valider
+            <button className={'btn' + (twin ? '' : ' primary')} disabled={!canValidate(i)} onClick={onValidate}>
+              <Icon name="check" /> {twin ? 'Valider quand même' : 'Valider'}
             </button>
             <button className="btn" onClick={onIgnore}>
               Ignorer

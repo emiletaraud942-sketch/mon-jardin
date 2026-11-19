@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { UNKNOWN_SPECIES_ID } from '../../lib/customName'
 import {
-  applyGroupResults, applyResults, BACKOFF_MS, groupCompanions, GROUP_MAX, GROUP_RADIUS_M, canValidate, chooseSpecies, dueItems, enqueue, finish, forGarden, itemName, markFailed, markIgnored, markNeedsConsent, markUnvalidated, markValidated, MAX_ATTEMPTS, newItem,
+  applyGroupResults, applyResults, BACKOFF_MS, groupCompanions, groupPlan, GROUP_MAX, GROUP_RADIUS_M, MERGE_RADIUS_M, canValidate, chooseSpecies, dueItems, enqueue, finish, forGarden, itemName, markFailed, markIgnored, markNeedsConsent, markUnvalidated, markValidated, MAX_ATTEMPTS, newItem,
   resetRetry, sanitizeQueue, summary, summaryText, waitingText, type Queue,
 } from './queue'
 
@@ -178,5 +178,32 @@ describe('images regroupées pour une plante (B)', () => {
     expect(q.find((i) => i.id === 'b')).toMatchObject({ status: 'ignoree', mergedInto: 'a' })
     expect(q.find((i) => i.id === 'c')).toMatchObject({ status: 'ignoree', mergedInto: 'a' })
     expect(q.find((i) => i.id === 'd')?.status).toBe('en-attente')
+  })
+})
+
+describe('meilleures images d’une même plante (netteté)', () => {
+  const at = (id: string, x: number, y: number, sharp?: number) => ({ ...mk(id), position: { x, y }, accuracyM: 3, from: 'video' as const, sharp })
+  it('envoie les 4 plus nettes avec la première, pas les 4 premières', () => {
+    const q: Queue = [at('p', 0, 0, 100), at('a', 0.1, 0, 500), at('b', 0.2, 0, 90), at('c', 0.3, 0, 400), at('d', 0.4, 0, 80), at('e', 0.5, 0, 300), at('f', 0.6, 0, 200)]
+    const { send } = groupPlan(q, q[0], { now: 0 })
+    expect(send.map((i) => i.id)).toEqual(['a', 'c', 'e', 'f'])
+    expect(send).toHaveLength(GROUP_MAX - 1)
+  })
+  it('les images en trop très proches sont fusionnées sans partir ; les plus éloignées restent pour leur propre envoi', () => {
+    const q: Queue = [at('p', 0, 0, 100), at('a', 0.1, 0, 500), at('b', 0.2, 0, 400), at('c', 0.3, 0, 300), at('d', 0.4, 0, 200), at('close', 0.5, 0, 50), at('far', GROUP_RADIUS_M - 0.1, 0, 40)]
+    const { send, merge } = groupPlan(q, q[0], { now: 0 })
+    expect(send.map((i) => i.id)).toEqual(['a', 'b', 'c', 'd'])
+    expect(merge.map((i) => i.id)).toEqual(['close'])
+    expect(MERGE_RADIUS_M).toBeLessThan(GROUP_RADIUS_M)
+  })
+  it('netteté inconnue : passe après les images dont on connaît la netteté', () => {
+    const q: Queue = [at('p', 0, 0), at('u', 0.1, 0), at('k', 0.2, 0, 70)]
+    expect(groupPlan(q, q[0], { now: 0 }).send.map((i) => i.id)).toEqual(['k', 'u'])
+  })
+  it('la netteté est gardée par newItem et validée à la lecture', () => {
+    expect(newItem({ id: 'x', gardenId: 'g', photoId: 'photo:abcx', position: { x: 0, y: 0 }, accuracyM: 3, sharp: 123.7 }).sharp).toBe(124)
+    expect(newItem({ id: 'x', gardenId: 'g', photoId: 'photo:abcx', position: { x: 0, y: 0 }, accuracyM: 3, sharp: Number.NaN }).sharp).toBeUndefined()
+    const q = sanitizeQueue([{ ...mk('a'), sharp: 88 }, { ...mk('b'), sharp: 'x' }, { ...mk('c'), sharp: -5 }])
+    expect(q.map((i) => i.sharp)).toEqual([88, undefined, undefined])
   })
 })

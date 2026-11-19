@@ -7,12 +7,13 @@ import { reveal } from '../../lib/reveal'
 import { useActiveGarden, useGardenPlants } from '../../lib/store'
 import { startPlacing } from '../../lib/ui'
 import { lazy, Suspense } from 'react'
-import { IdentifyDialog } from '../plants/IdentifyDialog'
 
-const ScanLabelDialog = lazy(() => import('../planting/ScanLabelDialog').then((m) => ({ default: m.ScanLabelDialog })))
 import { plantName } from '../plants/PlantPanel'
 import { ShoppingListDialog } from '../plants/ShoppingListDialog'
 import { openScan } from '../scan/scanUi'
+
+const IdentifyDialog = lazy(() => import('../plants/IdentifyDialog').then((m) => ({ default: m.IdentifyDialog })))
+const ScanLabelDialog = lazy(() => import('../planting/ScanLabelDialog').then((m) => ({ default: m.ScanLabelDialog })))
 
 const ASK_TITLE: Record<PlantAsk, string> = {
   fiche: 'Quelle plante voulez-vous ouvrir ?',
@@ -57,7 +58,11 @@ export function FeatureHost() {
           }}
         />
       )}
-      {identify && <IdentifyDialog onClose={() => identifyOpen.set(false)} />}
+      {identify && (
+        <Suspense fallback={null}>
+          <IdentifyDialog onClose={() => identifyOpen.set(false)} />
+        </Suspense>
+      )}
       {scanLabel && (
         <Suspense fallback={null}>
           <ScanLabelDialog onClose={() => scanLabelOpen.set(false)} />

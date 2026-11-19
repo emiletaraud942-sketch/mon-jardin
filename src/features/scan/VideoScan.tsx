@@ -27,6 +27,8 @@ import { isLeafOffSeason, WINTER_NOTE } from './winter'
 interface Kept {
   t: number
   blob: Blob
+  /** Netteté de l'image (pour choisir les meilleures d'une même plante). */
+  sharp?: number
 }
 
 const LIVE_EVERY_MS = 2000
@@ -168,7 +170,7 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
           setSkipped(skippedRef.current)
         })
         if (c) {
-          frames.current.push({ t: c.t, blob: c.blob })
+          frames.current.push({ t: c.t, blob: c.blob, sharp: c.sharpness })
           setKept(frames.current.length)
         }
       } finally {
@@ -209,7 +211,7 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
         setStep('fin')
         return
       }
-      await store(r.frames.map((f) => ({ t: f.t, blob: f.blob })), () => undefined)
+      await store(r.frames.map((f) => ({ t: f.t, blob: f.blob, sharp: f.sharpness })), () => undefined)
     } catch (e) {
       setError(e)
       setProgress(undefined)
@@ -234,7 +236,7 @@ function VideoScanDialog({ garden, onClose }: { garden: Garden; onClose: (firstI
         const position = p?.position ?? { x: (n % 5) * 1.5 - 3, y: -Math.floor(n / 5) * 1.5 }
         const id = uid()
         ids.push(id)
-        updateQueue((q) => enqueue(q, newItem({ id, gardenId: garden.id, photoId, position, accuracyM: p?.accuracyM ?? 99, from: 'video' })))
+        updateQueue((q) => enqueue(q, newItem({ id, gardenId: garden.id, photoId, position, accuracyM: p?.accuracyM ?? 99, from: 'video', sharp: chosen[n].sharp })))
       } catch (e) {
         failed++
         if (isFullError(e)) {

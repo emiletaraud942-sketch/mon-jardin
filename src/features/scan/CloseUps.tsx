@@ -8,7 +8,8 @@ import { identifyPlant, type Organ } from '../../lib/plantnet'
 import { rerank } from '../../lib/identifyRank'
 import { ConsentDialog } from '../legal/ConsentDialog'
 import { applyResults, type ScanItem } from './queue'
-import { rankContext, toSuggestions, updateQueue, verdictOf } from './queueStore'
+import { rankContext, verdictOf } from '../../lib/rankContext'
+import { toSuggestions, updateQueue } from './queueStore'
 import { cropCenter } from './crop'
 import { CLOSE_UPS } from './winter'
 
@@ -48,7 +49,7 @@ export function CloseUps({ item, onClose }: { item: ScanItem; onClose: () => voi
         blobs.push(item.from === 'video' ? await cropCenter(own) : own)
         organs.push('auto')
       }
-      const ctx = rankContext(item.gardenId)
+      const ctx = rankContext(item.gardenId, item.accuracyM < 99 ? item.position : undefined)
       const results = rerank(await identifyPlant(blobs, organs), ctx)
       const verdict = verdictOf(results, ctx)
       updateQueue((q) => applyResults(q, item.id, toSuggestions(results), verdict))

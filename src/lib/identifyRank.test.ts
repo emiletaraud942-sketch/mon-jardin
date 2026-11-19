@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { SPECIES } from '../data/species'
 import type { Identification } from './plantnet'
-import { CONFIDENT_IN_GARDEN, CONFIDENT_SCORE, genusHint, isConfident, rankScore, rerank } from './identifyRank'
+import { CONFIDENT_IN_GARDEN, CONFIDENT_NEARBY, CONFIDENT_SCORE, genusHint, isConfident, rankScore, rerank } from './identifyRank'
 
 const sp = (id: string) => SPECIES.find((s) => s.id === id)!
 const exotic = (latin: string, score: number): Identification => ({ latin, score, commonNames: [], approx: false })
@@ -53,4 +53,21 @@ describe('genusHint', () => {
   it('une seule espèce du genre : rien', () => expect(genusHint([exotic('Acer palmatum', 0.6)])).toBeUndefined())
   it('genre trop dispersé : rien', () => expect(genusHint([exotic('Acer a', 0.1), exotic('Acer b', 0.1), exotic('Prunus c', 0.1)])).toBeUndefined())
   it('liste vide : rien', () => expect(genusHint([])).toBeUndefined())
+})
+
+describe('plantes déjà posées à côté (nouveau passage)', () => {
+  it('l’espèce plantée à 2 m passe devant, même un peu moins bien notée', () => {
+    const out = rerank([known('poirier', 0.16), known('pommier', 0.12)], { gardenSpeciesIds: new Set(['pommier', 'poirier']), nearSpeciesIds: new Set(['pommier']) })
+    expect(out[0].species?.id).toBe('pommier')
+  })
+  it('ne compte pas pour une espèce voisine seulement par le genre', () => {
+    const near = { nearSpeciesIds: new Set(['pommier']) }
+    expect(rankScore(known('pommier', 0.1, true), near)).toBe(rankScore(known('pommier', 0.1, true)))
+  })
+  it('seuil de confiance plus bas pour une plante déjà posée à côté', () => {
+    const ctx = { nearSpeciesIds: new Set(['pommier']) }
+    expect(isConfident([known('pommier', CONFIDENT_NEARBY)], ctx)).toBe(true)
+    expect(isConfident([known('pommier', CONFIDENT_NEARBY - 0.03)], ctx)).toBe(false)
+    expect(isConfident([known('pommier', CONFIDENT_NEARBY)])).toBe(false)
+  })
 })

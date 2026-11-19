@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode, lazy, Suspense } from 'react'
 import { Icon } from '../../components/Icon'
 import { InstallButton } from '../../components/InstallButton'
 import { Segmented } from '../../components/Segmented'
@@ -13,7 +13,7 @@ import { updateGarden, useGardenPlants, useStore } from '../../lib/store'
 import { setTextSize, TEXT_SIZE_LABEL, TEXT_SIZES, useTextSize } from '../../lib/textSize'
 import { closeLayer, closeParcours, noteStep, noteWelcomed, openLayer, setUi, startPlacing, useUi } from '../../lib/ui'
 import type { Garden } from '../../types'
-import { IdentifyDialog } from '../plants/IdentifyDialog'
+const IdentifyDialog = lazy(() => import('../plants/IdentifyDialog').then((m) => ({ default: m.IdentifyDialog })))
 import { openScan } from '../scan/scanUi'
 import { AddressSearch } from '../settings/AddressSearch'
 import { FAIL_HELP, INITIAL_STEPS, missingSources, type Step } from '../settings/createGarden'
@@ -274,7 +274,11 @@ function PlantesStep({ garden, next, skip }: StepProps) {
           }}
         />
       )}
-      {identifying && <IdentifyDialog onClose={() => setIdentifying(false)} />}
+      {identifying && (
+        <Suspense fallback={null}>
+          <IdentifyDialog onClose={() => setIdentifying(false)} />
+        </Suspense>
+      )}
     </>
   )
 }

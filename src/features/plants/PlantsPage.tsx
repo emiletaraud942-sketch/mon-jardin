@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
 import { SPECIES_BY_ID } from '../../data/species'
 import { CATEGORY_LABEL, STATUS_LABEL, formatDate } from '../../data/labels'
 import { Icon } from '../../components/Icon'
@@ -10,7 +10,7 @@ import { UNKNOWN_SPECIES_ID } from '../../lib/customName'
 import { closePlantSheet, setUi, startPlacing, useUi } from '../../lib/ui'
 import type { Garden, PlantStatus } from '../../types'
 import { PlantPanel, plantName } from './PlantPanel'
-import { IdentifyDialog } from './IdentifyDialog'
+const IdentifyDialog = lazy(() => import('./IdentifyDialog').then((m) => ({ default: m.IdentifyDialog })))
 import { ShoppingListDialog } from './ShoppingListDialog'
 import { openScan } from '../scan/scanUi'
 import { PlantScene } from '../../components/illustrations'
@@ -184,7 +184,11 @@ export function PlantsPage({ garden }: { garden: Garden }) {
           }}
         />
       )}
-      {identifying && <IdentifyDialog onClose={() => setIdentifying(false)} />}
+      {identifying && (
+        <Suspense fallback={null}>
+          <IdentifyDialog onClose={() => setIdentifying(false)} />
+        </Suspense>
+      )}
     </div>
   )
 }

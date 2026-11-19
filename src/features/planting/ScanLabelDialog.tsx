@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '../../components/Icon'
 import { Modal } from '../../components/Modal'
 import { SPECIES, SPECIES_BY_ID } from '../../data/species'
@@ -47,6 +47,8 @@ export function ScanLabelDialog({ onClose }: { onClose: () => void }) {
   const [texts, setTexts] = useState<string[]>([])
   const [alts, setAlts] = useState<string[]>([])
   const [grids, setGrids] = useState<GridMonths[]>([])
+  // Adresses locales des photos lues, pour les REVOIR à côté du formulaire. Rien n'est gardé : elles sont libérées à la fermeture.
+  const [previews, setPreviews] = useState<string[]>([])
   const [busy, setBusy] = useState<{ stage?: OcrStage; ratio?: number } | null>(null)
   const [error, setError] = useState<string>()
   const scan = useMemo(() => {
@@ -71,6 +73,9 @@ export function ScanLabelDialog({ onClose }: { onClose: () => void }) {
   const [give, setGive] = useState(false)
   const [speciesId, setSpeciesId] = useState<string | undefined>()
   const names = useMemo(() => SPECIES.map((s) => s.nomCommun), [])
+  const previewsRef = useRef<string[]>([])
+  previewsRef.current = previews
+  useEffect(() => () => previewsRef.current.forEach((u) => URL.revokeObjectURL(u)), [])
 
   useEffect(() => {
     if (!scan) return
@@ -99,6 +104,11 @@ export function ScanLabelDialog({ onClose }: { onClose: () => void }) {
     setBusy({})
     try {
       const r = await readLabelData(file, (stage, ratio) => setBusy({ stage, ratio }))
+      try {
+        setPreviews((prev) => [...prev, URL.createObjectURL(file)])
+      } catch {
+        /* pas d'aperçu : la lecture reste valable */
+      }
       setTexts((prev) => [...prev, r.text])
       setAlts((prev) => (r.alt !== undefined ? [...prev, r.alt] : prev))
       if (r.grid) setGrids((prev) => [...prev, r.grid!])
@@ -288,12 +298,26 @@ export function ScanLabelDialog({ onClose }: { onClose: () => void }) {
                   setTexts([])
                   setAlts([])
                   setGrids([])
+                  setPreviews((prev) => {
+                    prev.forEach((u) => URL.revokeObjectURL(u))
+                    return []
+                  })
                   setError(undefined)
                 }}
               >
                 Recommencer
               </button>
             </div>
+            {previews.length > 0 && (
+              <details open>
+                <summary>Revoir la photo pour vérifier</summary>
+                <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+                  {previews.map((u, k) => (
+                    <img key={u} src={u} alt={`Photo ${k + 1} lue, pour comparer avec le formulaire`} style={{ maxWidth: '100%', maxHeight: 260, borderRadius: 12, objectFit: 'contain' }} />
+                  ))}
+                </div>
+              </details>
+            )}
             <details>
               <summary>Texte lu sur la photo</summary>
               <pre className="small" style={{ whiteSpace: 'pre-wrap' }}>{texts.join('\n— — —\n')}</pre>

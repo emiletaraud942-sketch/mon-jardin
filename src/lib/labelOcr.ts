@@ -2,6 +2,7 @@
 // téléchargés UNE fois, à la première lecture : cette étape demande donc internet la première fois ; le reste de l'appli n'en dépend jamais.
 // La photo n'est ni enregistrée ni envoyée : elle est réduite, lue dans l'appareil, puis oubliée.
 
+import { pickRotation, readability, ROTATION_TRIGGER, type Quarter, type ScoredWord } from './labelRotation'
 import { readMonthGrid, type GridMonths, type OcrWord } from './monthGrid'
 
 export class OcrUnavailableError extends Error {
@@ -186,6 +187,28 @@ export function variantCanvas(color: ImageData): HTMLCanvasElement {
   return out
 }
 
+/** Image tournée d'un quart de tour (90, 180 ou 270 degrés, sens horaire). */
+function rotateCanvasQuarter(src: HTMLCanvasElement, q: 90 | 180 | 270): HTMLCanvasElement {
+  const out = document.createElement('canvas')
+  const swap = q !== 180
+  out.width = swap ? src.height : src.width
+  out.height = swap ? src.width : src.height
+  const c = out.getContext('2d', { willReadFrequently: true })!
+  c.translate(out.width / 2, out.height / 2)
+  c.rotate((q * Math.PI) / 180)
+  c.drawImage(src, -src.width / 2, -src.height / 2)
+  return out
+}
+
+function rotateColor(color: ImageData, q: 90 | 180 | 270): ImageData {
+  const c = document.createElement('canvas')
+  c.width = color.width
+  c.height = color.height
+  c.getContext('2d')!.putImageData(color, 0, 0)
+  const r = rotateCanvasQuarter(c, q)
+  return r.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, r.width, r.height)
+}
+
 /** Texte lu et, s'il y en a un, calendrier en grille (J F M A M J J A S O N D) : mois de semis et de récolte cochés. */
 export interface LabelRead {
   text: string
@@ -212,17 +235,42 @@ export async function readLabelData(file: Blob, onProgress?: (stage: OcrStage, r
     },
   })
   try {
-    const { data } = await worker.recognize(canvas, {}, { text: true, blocks: true })
+    const recognize = async (c: HTMLCanvasElement) => (await worker.recognize(c, {}, { text: true, blocks: true })).data
+    const wordsOf = (d: Awaited<ReturnType<typeof recognize>>): (OcrWord & ScoredWord)[] =>
+      (d.blocks ?? []).flatMap((b) => b.paragraphs.flatMap((p) => p.lines.flatMap((l) => l.words.map((w) => ({ text: w.text, confidence: w.confidence, x0: w.bbox.x0, y0: w.bbox.y0, x1: w.bbox.x1, y1: w.bbox.y1 })))))
+    let data = await recognize(canvas)
+    let usedColor = color
+    // Étiquette tenue de côté ou à l'envers : peu de mots lisibles. On retente à 90°, 270° (puis 180°) et on garde le meilleur sens.
+    const scores: Partial<Record<Quarter, number>> = { 0: readability(wordsOf(data)) }
+    if ((scores[0] ?? 0) < ROTATION_TRIGGER) {
+      const tried: Partial<Record<Quarter, { data: typeof data; color: ImageData }>> = {}
+      const attempt = async (q: 90 | 180 | 270) => {
+        try {
+          const d = await recognize(rotateCanvasQuarter(canvas, q))
+          tried[q] = { data: d, color: rotateColor(color, q) }
+          scores[q] = readability(wordsOf(d))
+        } catch {
+          /* un sens qui échoue est simplement ignoré */
+        }
+      }
+      await attempt(90)
+      await attempt(270)
+      if (pickRotation(scores) === 0 && Math.max(scores[90] ?? 0, scores[270] ?? 0) < ROTATION_TRIGGER) await attempt(180)
+      const pick = pickRotation(scores)
+      if (pick !== 0 && tried[pick]) {
+        data = tried[pick]!.data
+        usedColor = tried[pick]!.color
+      }
+    }
     let grid: GridMonths | undefined
     try {
-      const words: OcrWord[] = (data.blocks ?? []).flatMap((b) => b.paragraphs.flatMap((p) => p.lines.flatMap((l) => l.words.map((w) => ({ text: w.text, x0: w.bbox.x0, y0: w.bbox.y0, x1: w.bbox.x1, y1: w.bbox.y1 })))))
-      grid = readMonthGrid(words, color)
+      grid = readMonthGrid(wordsOf(data), usedColor)
     } catch {
       grid = undefined // la grille est un plus : le texte seul suffit
     }
     let alt: string | undefined
     try {
-      alt = (await worker.recognize(variantCanvas(color))).data.text
+      alt = (await worker.recognize(variantCanvas(usedColor))).data.text
     } catch {
       alt = undefined // la seconde lecture est un plus
     }

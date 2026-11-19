@@ -42,6 +42,8 @@ export interface ScanItem {
   from?: 'photo' | 'video'
   /** Doublon regroupé avec cet autre élément (scan en filmant). */
   mergedInto?: string
+  /** Netteté de l'image (variance du laplacien, plus grand = plus net) : sert à choisir les meilleures images d'une même plante. */
+  sharp?: number
   /** Pl@ntNet n'est pas sûr : aucun nom n'est choisi d'office, la personne tranche (ou précise avec des gros plans). */
   uncertain?: boolean
   /** Phrase courte quand l'incertitude est au niveau du genre (« Probablement du genre Prunus »). */
@@ -56,7 +58,7 @@ export const MAX_ITEMS = 60
 
 export type Queue = ScanItem[]
 
-export function newItem(p: { id: string; gardenId: string; photoId: string; position: XY; accuracyM: number; now?: Date; plantStatus?: 'en-place' | 'projet'; from?: 'photo' | 'video' }): ScanItem {
+export function newItem(p: { id: string; gardenId: string; photoId: string; position: XY; accuracyM: number; now?: Date; plantStatus?: 'en-place' | 'projet'; from?: 'photo' | 'video'; sharp?: number }): ScanItem {
   return {
     id: p.id,
     gardenId: p.gardenId,
@@ -70,6 +72,7 @@ export function newItem(p: { id: string; gardenId: string; photoId: string; posi
     suggestions: [],
     plantStatus: p.plantStatus ?? 'en-place',
     from: p.from,
+    ...(typeof p.sharp === 'number' && Number.isFinite(p.sharp) ? { sharp: Math.round(p.sharp) } : {}),
   }
 }
 
@@ -95,23 +98,34 @@ export function applyGroupResults(q: Queue, primaryId: string, companionIds: str
   return applyResults(q, primaryId, suggestions, opts).map((i) => (merged.has(i.id) ? { ...i, status: 'ignoree' as const, why: undefined, nextTryAt: undefined, mergedInto: primaryId } : i))
 }
 
-/** Rayon (m) dans lequel des images de vidéo sont prises pour la même plante. */
+/** Rayon (m) dans lequel des images de vidéo sont prises pour la même plante (envoyées ensemble). */
 export const GROUP_RADIUS_M = 2.5
+/** Rayon plus serré (m) pour fusionner sans envoyer : deux plantes voisines ne doivent pas être confondues. */
+export const MERGE_RADIUS_M = 1.5
 /** Images envoyées ensemble pour une plante (maximum accepté par Pl@ntNet). */
 export const GROUP_MAX = 5
 
+const ready = (i: ScanItem, now: number) => i.status === 'en-attente' && i.why !== 'consentement' && i.attempts < MAX_ATTEMPTS && (i.nextTryAt ?? 0) <= now
+
 /**
- * Images de vidéo à envoyer AVEC `primary` : mêmes jardin, position connue, à moins de `GROUP_RADIUS_M`, prêtes à partir.
- * Les plus proches d'abord, au plus `GROUP_MAX - 1`. Une image sans position (vidéo importée) n'est jamais regroupée.
+ * Images de vidéo prises au même endroit que `primary` (même jardin, position connue, prêtes à partir) :
+ * - `send` : les `GROUP_MAX - 1` plus nettes à moins de `GROUP_RADIUS_M`, envoyées AVEC `primary` en un seul appel ;
+ * - `merge` : les autres images à moins de `MERGE_RADIUS_M`, qui ne partent pas (même plante, déjà bien couverte).
+ * Une image sans position (vidéo importée) ou prise à la main n'est jamais regroupée.
  */
-export function groupCompanions(q: Queue, primary: ScanItem, o: { now: number }): ScanItem[] {
-  if (primary.from !== 'video' || primary.accuracyM >= 99) return []
+export function groupPlan(q: Queue, primary: ScanItem, o: { now: number }): { send: ScanItem[]; merge: ScanItem[] } {
+  if (primary.from !== 'video' || primary.accuracyM >= 99) return { send: [], merge: [] }
   const d = (i: ScanItem) => Math.hypot(i.position.x - primary.position.x, i.position.y - primary.position.y)
-  return q
-    .filter((i) => i.id !== primary.id && i.from === 'video' && i.gardenId === primary.gardenId && i.status === 'en-attente' && i.why !== 'consentement' && i.attempts < MAX_ATTEMPTS && (i.nextTryAt ?? 0) <= o.now && i.accuracyM < 99 && d(i) <= GROUP_RADIUS_M)
-    .sort((a, b) => d(a) - d(b))
-    .slice(0, GROUP_MAX - 1)
+  const near = q.filter((i) => i.id !== primary.id && i.from === 'video' && i.gardenId === primary.gardenId && i.accuracyM < 99 && ready(i, o.now) && d(i) <= GROUP_RADIUS_M)
+  // Les plus nettes d'abord (netteté inconnue : après), puis les plus proches.
+  const best = [...near].sort((a, b) => (b.sharp ?? -1) - (a.sharp ?? -1) || d(a) - d(b))
+  const send = best.slice(0, GROUP_MAX - 1)
+  const merge = best.slice(GROUP_MAX - 1).filter((i) => d(i) <= MERGE_RADIUS_M)
+  return { send, merge }
 }
+
+/** Compatibilité : les images envoyées avec `primary`. */
+export const groupCompanions = (q: Queue, primary: ScanItem, o: { now: number }): ScanItem[] => groupPlan(q, primary, o).send
 
 /** Espèce et nom à retenir pour une suggestion. */
 export function choiceOf(s: Suggestion): { speciesId: string; customName?: string } {
@@ -247,6 +261,7 @@ export function sanitizeQueue(raw: unknown): Queue {
       plantId: typeof r.plantId === 'string' ? r.plantId : undefined,
       from: r.from === 'video' ? 'video' : undefined,
       mergedInto: typeof r.mergedInto === 'string' ? r.mergedInto : undefined,
+      sharp: typeof r.sharp === 'number' && Number.isFinite(r.sharp) && r.sharp >= 0 ? r.sharp : undefined,
       uncertain: r.uncertain === true ? true : undefined,
       hint: typeof r.hint === 'string' && r.hint ? r.hint.slice(0, 80) : undefined,
     })

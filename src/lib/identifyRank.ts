@@ -9,20 +9,26 @@ export const CONFIDENT_SCORE = 0.3
 /** Seuil plus bas quand l'espèce est déjà dans le jardin (la probabilité a priori est forte). */
 export const CONFIDENT_IN_GARDEN = 0.2
 
-const BOOST = { catalogue: 1.6, genre: 1.25, jardin: 1.5 } as const
+const BOOST = { catalogue: 1.6, genre: 1.25, jardin: 1.5, voisine: 1.6 } as const
+/** Seuil pour une espèce déjà plantée à moins de 2 m : on la revoit probablement. */
+export const CONFIDENT_NEARBY = 0.12
 
 export interface RankContext {
   /** Identifiants des espèces déjà plantées dans le jardin. */
   gardenSpeciesIds?: ReadonlySet<string>
+  /** Espèces plantées à quelques mètres de l'endroit scanné (nouveau passage dans un jardin déjà cartographié). */
+  nearSpeciesIds?: ReadonlySet<string>
 }
 
 const inGarden = (r: Identification, ctx: RankContext) => !!r.species && !r.approx && !!ctx.gardenSpeciesIds?.has(r.species.id)
+const nearby = (r: Identification, ctx: RankContext) => !!r.species && !r.approx && !!ctx.nearSpeciesIds?.has(r.species.id)
 
 /** Score pour le tri seulement (jamais montré). */
 export function rankScore(r: Identification, ctx: RankContext = {}): number {
   let boost = 1
   if (r.species) boost *= r.approx ? BOOST.genre : BOOST.catalogue
   if (inGarden(r, ctx)) boost *= BOOST.jardin
+  if (nearby(r, ctx)) boost *= BOOST.voisine
   return r.score * boost
 }
 
@@ -35,7 +41,7 @@ export function rerank(list: Identification[], ctx: RankContext = {}): Identific
 export function isConfident(list: Identification[], ctx: RankContext = {}): boolean {
   const top = list[0]
   if (!top) return false
-  return top.score >= CONFIDENT_SCORE || (inGarden(top, ctx) && top.score >= CONFIDENT_IN_GARDEN)
+  return top.score >= CONFIDENT_SCORE || (inGarden(top, ctx) && top.score >= CONFIDENT_IN_GARDEN) || (nearby(top, ctx) && top.score >= CONFIDENT_NEARBY)
 }
 
 const genusOf = (latin: string) => latin.trim().split(/\s+/)[0] ?? ''

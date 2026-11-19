@@ -63,6 +63,9 @@ def degrade(im, mode):
             x,y = random.randrange(w),random.randrange(h); v=random.randrange(-60,60); r,g,b = px[x,y]; px[x,y]=(max(0,min(255,r+v)),max(0,min(255,g+v)),max(0,min(255,b+v)))
         return im
     if mode=='petit': return im.resize((560,784)).resize((1000,1400)) if False else im.resize((560,784))
+    if mode=='pivote90': return im.rotate(90, expand=True)
+    if mode=='pivote270': return im.rotate(270, expand=True)
+    if mode=='envers': return im.rotate(180, expand=True)
     if mode=='jpeg': return im
     return im
 cases = []
@@ -130,5 +133,9 @@ G=[('grille-fr-plein','TOMATE','tomate',('Semis','Récolte'),'lettres','plein',[
    ('grille-en-pale','SPINACH','epinard',('Sow','Harvest'),'mots','pale',[3,4,8,9],[5,6,10,11],'carlito','ciel','net'),
    ('grille-fr-flou','RADIS','radis',('Semis','Récolte'),'lettres','plein',[3,4,5,6,7,8,9],[4,5,6,7,8,9,10],'dejavu','blanc','flou')]
 for g in G: grid_card(*g)
+# ---- Étiquettes tenues de côté ou à l'envers (photo prise en paysage, sachet retourné) ----
+for (sid,title,sp,lines,truth),mode in zip(SACHETS[:3]+SACHETS[3:6]+PLANTES[:2], ['pivote90','pivote270','envers','pivote90','pivote270','envers','pivote90','pivote270']):
+    kind = 'plante' if (sid,title,sp,lines,truth) in PLANTES else 'sachet'
+    add(f'{sid}-{mode}',kind,title,sp,lines,truth,fonts[i%len(fonts)],bgs[i%len(bgs)],(20,20,20),48,'plain',mode); i+=1
 json.dump(cases, open(os.path.join(OUT,'corpus.json'),'w'), ensure_ascii=False, indent=1)
 print(len(cases),'images dans',OUT)

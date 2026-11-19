@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { Modal } from '../../components/Modal'
 import { Icon } from '../../components/Icon'
 import { identifyPlant, type Identification } from '../../lib/plantnet'
+import { rerank } from '../../lib/identifyRank'
+import { rankContext, verdictOf } from '../../lib/rankContext'
+import { getState } from '../../lib/store'
 import { deletePhoto, getPhoto, isFullError, MESSAGE_FULL, savePhoto } from '../../lib/photos'
 import { PhotoThumb } from '../../components/PhotoThumb'
 import { startPlacing } from '../../lib/ui'
@@ -22,6 +25,7 @@ export function IdentifyDialog({ onClose }: { onClose: () => void }) {
   const [photos, setPhotos] = useState<string[]>([])
   const [organ, setOrgan] = useState<(typeof ORGANS)[number][0]>('auto')
   const [results, setResults] = useState<Identification[]>()
+  const [verdict, setVerdict] = useState<{ uncertain?: boolean; hint?: string }>({})
   const [error, setError] = useState<unknown>()
   const [busy, setBusy] = useState(false)
   const [asking, setAsking] = useState(false)
@@ -63,7 +67,10 @@ export function IdentifyDialog({ onClose }: { onClose: () => void }) {
     try {
       const blobs = (await Promise.all(photos.map(getPhoto))).filter((b): b is Blob => !!b)
       if (blobs.length === 0) throw new Error('Les photos ne sont plus là. Reprenez-les.')
-      setResults(await identifyPlant(blobs, organ))
+      const ctx = rankContext(getState().activeGardenId)
+      const found = rerank(await identifyPlant(blobs, organ), ctx)
+      setVerdict(verdictOf(found, ctx))
+      setResults(found)
     } catch (e) {
       setError(e)
     } finally {
@@ -117,6 +124,11 @@ export function IdentifyDialog({ onClose }: { onClose: () => void }) {
       </div>
       {error !== undefined && <ErrorNote error={error} />}
       {results && results.length === 0 && <div className="alert small">Aucune plante reconnue. Essayez une photo plus nette d’une feuille ou d’une fleur.</div>}
+      {results && results.length > 0 && verdict.uncertain && (
+        <div className="alert small" role="status">
+          <strong>Je ne suis pas sûr.</strong> {verdict.hint ? `${verdict.hint}. ` : ''}Comparez avec votre plante, ou ajoutez une photo de l’écorce, de la feuille ou du fruit pour affiner.
+        </div>
+      )}
       {results && results.length > 0 && (
         <ul className="list">
           {results.map((r) => (
