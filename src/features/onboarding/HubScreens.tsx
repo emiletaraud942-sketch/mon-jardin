@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Icon } from '../../components/Icon'
+import { PageHead } from '../../components/PageHead'
 import { SPECIES_BY_ID } from '../../data/species'
 import { PHOTO_IDS } from '../../data/species/photoIds'
 import { FEATURES, visibleFeatures } from '../../lib/features'
@@ -51,13 +52,10 @@ const ZONES: { id: HubId; t: number; h: number }[] = [
 ]
 
 /** L'accueil : une vraie feuille de chêne (photo) découpée en trois parties à toucher. */
-export function LeafHome({ who, alertText, onAlert }: { who?: string; alertText?: string; onAlert: () => void }) {
+export function LeafHome({ who, alertText, onAlert, onHelp }: { who?: string; alertText?: string; onAlert: () => void; onHelp: () => void }) {
   return (
     <section className="leafhome" aria-label="Que voulez-vous faire ?">
-      <header className="leafhome-head">
-        <p className="leafhome-kicker">{who ? `Bonjour ${who}` : 'Bonjour'}</p>
-        <h1 className="leafhome-title">Que voulez-vous faire ?</h1>
-      </header>
+      <PageHead compact title={who ? `Bonjour ${who}` : 'Bonjour'} onHelp={onHelp} />
       {alertText && (
         <button className="leafhome-alert" onClick={onAlert}>
           <Icon name="alert" size={20} />
@@ -86,7 +84,7 @@ export function LeafHome({ who, alertText, onAlert }: { who?: string; alertText?
           )
         })}
       </div>
-      <p className="leafhome-hint">Touchez une partie de la feuille</p>
+      <p className="leafhome-hint">Que voulez-vous faire ? Touchez une partie de la feuille.</p>
       <button className="leafhome-more" data-home-more onClick={() => homeHub.set('plus')}>
         Plus de choses
       </button>
