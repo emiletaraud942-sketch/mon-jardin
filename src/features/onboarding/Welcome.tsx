@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react'
-import { Blob, HouseGarden, LeafSprig, PlantPot } from '../../components/illustrations'
+import { useState } from 'react'
+import { Blob, PlantPot } from '../../components/illustrations'
 import { noteWelcomed, setUi } from '../../lib/ui'
 import { INITIAL_STEPS, type Step } from '../settings/createGarden'
 import { StepList } from '../settings/GardenCreator'
@@ -9,53 +9,23 @@ import { TextSizeButton } from '../../components/TextSizeButton'
 
 const syncConfigured = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY
 
-const SLIDES = [
-  { title: 'PermaJardin', kicker: 'Votre jardin, pas à pas', text: 'Voyez votre jardin, placez vos plantes et sachez quoi faire chaque semaine.' },
-  { title: 'Vos plantes, au mètre près', kicker: 'Une carte à vous', text: 'Touchez la carte ou scannez le jardin. Voyez aussi l’ombre dans « Où planter ? ».' },
-  { title: 'Un rappel chaque semaine', kicker: 'Tailler, arroser, récolter', text: 'L’appli suit la météo et la saison. Elle vous dit quoi faire.' },
-]
+const WELCOME = { title: 'PermaJardin', kicker: 'Votre jardin, pas à pas', text: 'Voyez votre jardin, placez vos plantes et sachez quoi faire chaque semaine.' }
 
-/** Décor de bienvenue : grande forme sauge et plantes en pot (change à chaque écran). Boîte de 390 × 300 px, comme la maquette. */
-function Art({ i }: { i: number }) {
+/** Décor de bienvenue : grande forme sauge et plantes en pot. Boîte de 390 × 300 px, comme la maquette. */
+function Art() {
   return (
     <div className="welcome-art" aria-hidden="true">
-      {i === 1 ? (
-        <>
-          <Blob size={280} height={240} className="wa-blob" />
-          <HouseGarden size={280} className="wa-house" />
-        </>
-      ) : i === 2 ? (
-        <>
-          <Blob size={280} height={240} className="wa-blob" />
-          <PlantPot size={200} tilts={[-44, -20, 0, 20, 44]} className="wa-p3" />
-          <LeafSprig size={56} className="wa-leaf" />
-        </>
-      ) : (
-        <>
-          <Blob size={280} height={240} className="wa-blob" />
-          <PlantPot size={240} className="wa-p1" />
-          <PlantPot size={170} tilts={[-30, -8, 12, 34]} className="wa-p2" />
-        </>
-      )}
+      <Blob size={280} height={240} className="wa-blob" />
+      <PlantPot size={240} className="wa-p1" />
+      <PlantPot size={170} tilts={[-30, -8, 12, 34]} className="wa-p2" />
     </div>
   )
 }
 
-/** Trois écrans de bienvenue, puis « Commencer » (étape 1) ou « Visiter un jardin d'exemple ». */
+/** Un seul écran de bienvenue : « Commencer » (étape 1) en grand ; « Visiter un jardin d'exemple » et « J'ai déjà un compte » plus discrets. */
 export function Welcome({ onStart }: { onStart: () => void }) {
-  const [i, setI] = useState(0)
   const [steps, setSteps] = useState<Step[]>()
   const [restoring, setRestoring] = useState(false)
-  const slide = SLIDES[i]
-  const touchX = useRef<number>()
-  // Glissement horizontal : écran suivant ou précédent.
-  const swipe = (x: number) => {
-    const from = touchX.current
-    touchX.current = undefined
-    if (from === undefined || Math.abs(x - from) < 40) return
-    setI((k) => Math.max(0, Math.min(SLIDES.length - 1, k + (x < from ? 1 : -1))))
-  }
-
   async function demo() {
     setSteps(INITIAL_STEPS.map((s) => ({ ...s })))
     try {
@@ -82,29 +52,22 @@ export function Welcome({ onStart }: { onStart: () => void }) {
 
   return (
     <div className="parcours welcome">
-      <div className="parcours-body welcome-body" onTouchStart={(e) => (touchX.current = e.touches[0].clientX)} onTouchEnd={(e) => swipe(e.changedTouches[0].clientX)}>
+      <div className="parcours-body welcome-body">
         <TextSizeButton />
-        <h1 tabIndex={-1}>{slide.title}</h1>
-        <p className="welcome-kicker">{slide.kicker}</p>
-        <Art i={i} />
-        <p className="welcome-text">{slide.text}</p>
-        <div className="welcome-dots" role="group" aria-label="Écrans de bienvenue">
-          {SLIDES.map((s, k) => (
-            <button key={s.title} className="dot-btn" aria-label={`Écran ${k + 1} sur ${SLIDES.length}`} aria-current={k === i ? 'step' : undefined} onClick={() => setI(k)}>
-              <i />
-            </button>
-          ))}
-        </div>
+        <h1 tabIndex={-1}>{WELCOME.title}</h1>
+        <p className="welcome-kicker">{WELCOME.kicker}</p>
+        <Art />
+        <p className="welcome-text">{WELCOME.text}</p>
       </div>
       <div className="parcours-foot">
         <button className="btn primary big" onClick={onStart}>
           Commencer
         </button>
-        <button className="btn ghost big" onClick={() => void demo()}>
+        <button className="btn ghost" onClick={() => void demo()}>
           Visiter un jardin d’exemple
         </button>
         {syncConfigured && (
-          <button className="btn ghost big" onClick={() => setRestoring(true)}>
+          <button className="btn ghost" onClick={() => setRestoring(true)}>
             J’ai déjà un compte
           </button>
         )}
