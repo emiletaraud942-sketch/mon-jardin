@@ -1295,6 +1295,9 @@ function MapViewInner({ garden }: { garden: Garden }) {
                 <span className="map-opt-label">Saison du jardin</span>
                 <SeasonPicker value={season} onChange={(c) => setUi({ season: c })} />
               </div>
+              <details className="np-details map-more">
+                <summary>Plus d’options</summary>
+                <div className="stack" style={{ gap: 6, marginTop: 8 }}>
               <button className={'btn small' + (adult ? ' on' : '')} aria-pressed={adult} onClick={() => setAdult((a) => !a)}>
                 {adult ? '✓ ' : ''}Taille adulte
               </button>
@@ -1315,6 +1318,8 @@ function MapViewInner({ garden }: { garden: Garden }) {
               <button className="btn small" aria-haspopup="dialog" onClick={openHelp}>
                 Aide sur cet écran
               </button>
+                </div>
+              </details>
             </div>
           )}
           {season && season !== 'aujourdhui' && !placingNow && (
