@@ -33,24 +33,29 @@ export default function ScanHost() {
         <button className="btn more-item" onClick={() => openScan('scanner')}>
           <Icon name="camera" /> Placer une plante en la photographiant
         </button>
-        <button className="btn more-item" onClick={() => openScan('mesures', { kind: 'new' })}>
-          <Icon name="move" /> Placer avec un mètre
-        </button>
-        <p className="small muted" style={{ margin: 0 }}>
-          {PHOTOS_HINT}
-        </p>
-        <h3 style={{ margin: '8px 0 0' }}>Plus de précision (facultatif)</h3>
-        <button className="btn more-item" onClick={() => openScan('recaler')}>
-          <Icon name="pin" /> Ajuster la carte à ma position
-        </button>
-        <p className="small muted" style={{ margin: '-4px 0 0' }}>
-          {c ? `Carte ajustée. Précision : ${precisionText(Math.max(c.rmsM, 0.3))}.` : 'Pas encore fait. C’est facultatif.'}
-        </p>
-        {c && (
-          <button className="btn" onClick={() => clearCalibration(garden)}>
-            Effacer l’ajustement de la carte
-          </button>
-        )}
+        <details className="np-details scan-more">
+          <summary>Plus d’options</summary>
+          <div className="stack" style={{ marginTop: 8 }}>
+            <button className="btn more-item" onClick={() => openScan('mesures', { kind: 'new' })}>
+              <Icon name="move" /> Placer avec un mètre
+            </button>
+            <p className="small muted" style={{ margin: 0 }}>
+              {PHOTOS_HINT}
+            </p>
+            <h3 style={{ margin: '8px 0 0' }}>Plus de précision (facultatif)</h3>
+            <button className="btn more-item" onClick={() => openScan('recaler')}>
+              <Icon name="pin" /> Ajuster la carte à ma position
+            </button>
+            <p className="small muted" style={{ margin: '-4px 0 0' }}>
+              {c ? `Carte ajustée. Précision : ${precisionText(Math.max(c.rmsM, 0.3))}.` : 'Pas encore fait. C’est facultatif.'}
+            </p>
+            {c && (
+              <button className="btn" onClick={() => clearCalibration(garden)}>
+                Effacer l’ajustement de la carte
+              </button>
+            )}
+          </div>
+        </details>
       </div>
     </Modal>
   )
