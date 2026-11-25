@@ -1,10 +1,18 @@
-/* Page « Jardinons ! et la Métropole » : sections en cartes, liens sortants, rendez-vous. */
-.territoire .terr-intro { margin: 0 0 12px; font-weight: var(--fw-strong); }
-.territoire .terr-section { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin: 0 0 12px; display: flex; flex-direction: column; gap: 10px; }
-.territoire .terr-section h2 { margin: 0; font-size: 1.1rem; }
-.territoire .terr-section p { margin: 0; }
-.territoire .terr-events { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.territoire .terr-event { display: flex; flex-direction: column; gap: 4px; padding: 10px; border: 1px solid var(--border); border-radius: 12px; }
-.territoire .terr-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+/* Page « Jardinons ! et la Métropole » : fond uni clair, sections séparées par de fins filets, texte fin et aéré (même esprit que « Où planter ? »). */
+.territoire .tf-body { gap: 8px; }
+.territoire .terr-intro { margin: 0 0 12px; font-weight: var(--fw-text); color: var(--muted); line-height: 1.65; }
+.territoire .terr-section { background: transparent; border: 0; border-top: 1px solid var(--border); border-radius: 0; box-shadow: none; padding: 22px 0 14px; margin: 0; display: flex; flex-direction: column; gap: 14px; }
+.territoire .terr-intro + .terr-section { border-top: 0; padding-top: 6px; }
+.territoire .terr-section h2 { margin: 0; font-size: 1.4rem; font-weight: var(--fw-text); color: var(--title); letter-spacing: -0.005em; }
+.territoire .terr-section p { margin: 0; line-height: 1.65; color: var(--muted); font-weight: var(--fw-text); }
+.territoire .terr-section strong { font-weight: var(--fw-text); color: var(--text); }
+.territoire .terr-events { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0; }
+.territoire .terr-event { display: flex; flex-direction: column; gap: 8px; padding: 18px 0; border: 0; border-top: 1px solid var(--border); border-radius: 0; background: transparent; line-height: 1.6; }
+.territoire .terr-event:first-child { border-top: 0; padding-top: 4px; }
+.territoire .terr-event > strong { font-family: var(--font-title); font-size: 1.25rem; line-height: 1.25; font-weight: var(--fw-text); color: var(--title); }
+.territoire .terr-event > span { color: var(--muted); font-weight: var(--fw-text); }
+.territoire .terr-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.territoire .btn { font-weight: var(--fw-text); border-width: 1px; }
 .territoire .terr-link { text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
-.territoire .terr-hours { margin: 0; padding-left: 1.1em; }
+.territoire .terr-hours { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; color: var(--muted); line-height: 1.6; }
+.territoire .terr-hours li strong { font-weight: var(--fw-text); color: var(--text); }

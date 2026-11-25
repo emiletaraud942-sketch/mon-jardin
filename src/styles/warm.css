@@ -828,7 +828,7 @@ body:has(.app.has-pb) {
 .fiche-overlay {
   isolation: isolate;
 }
-.tf-overlay :is(.tf-rub, .tf-item, .tf-search, .conseil-tile, .ennui-row, .ennui-none, .guide-btn, .lecon-quiz, .lecon-choice, .rot-zone, .rot-empty, .soil-test, .tour-card, .tour-demo, .coll-section, .terr-section, .terr-event, .coll-list li, .coll-plots li),
+.tf-overlay :is(.tf-rub, .tf-item, .tf-search, .conseil-tile, .ennui-row, .ennui-none, .guide-btn, .lecon-quiz, .lecon-choice, .rot-zone, .rot-empty, .soil-test, .tour-card, .tour-demo, .coll-section, .coll-list li, .coll-plots li),
 .fiche-overlay :is(.card, .tf-rub, .tf-item) {
   background: color-mix(in srgb, var(--surface) 62%, transparent);
   -webkit-backdrop-filter: blur(14px);
@@ -836,7 +836,7 @@ body:has(.app.has-pb) {
   border-color: color-mix(in srgb, var(--surface) 70%, transparent);
 }
 /* Cartes dans cartes (un événement dans « Rendez-vous ») : un peu plus claires pour rester lisibles. */
-.tf-overlay :is(.terr-event, .coll-list li, .coll-plots li) {
+.tf-overlay :is(.coll-list li, .coll-plots li) {
   background: color-mix(in srgb, var(--surface) 78%, transparent);
 }
 /* Fiche plante plein écran : la feuille du bas laisse voir le fond flou (plus de grand rectangle blanc). */
@@ -893,12 +893,14 @@ body:has(.app.has-pb) {
 @media (max-width: 760px) {
   .app.has-pb[data-tab='carte'] .main,
   .app.has-pb[data-tab='plantes'] .main,
+  .app.has-pb[data-tab='voisins'] .main,
   .app.has-pb[data-tab='planter'] .main {
     -webkit-mask-image: none;
     mask-image: none;
   }
   .app.has-pb[data-tab='carte']::before,
   .app.has-pb[data-tab='plantes']::before,
+  .app.has-pb[data-tab='voisins']::before,
   .app.has-pb[data-tab='planter']::before {
     display: none;
   }
@@ -906,6 +908,7 @@ body:has(.app.has-pb) {
     display: none;
   }
   .app.has-pb[data-tab='planter'] .pb-top,
+  .app.has-pb[data-tab='voisins'] .pb-top,
   .app.has-pb[data-tab='plantes'] .pb-top {
     height: calc(70px + env(safe-area-inset-top, 0px));
   }
