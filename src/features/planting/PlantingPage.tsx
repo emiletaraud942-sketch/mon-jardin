@@ -316,6 +316,7 @@ function BestForSpot({ garden }: { garden: Garden }) {
           </li>
         </ol>
       )}
+      <div className="np-split">
       <div className={'spot-stick' + (mobile && spot ? ' on' : '')} ref={pinRef}>
         <Suspense fallback={<div className="spot-map empty"><span className="spinner" /> Chargement de la carte…</div>}>
           <SpotPicker garden={garden} plants={plants} spot={spot} onPick={setSpot} />
@@ -330,8 +331,9 @@ function BestForSpot({ garden }: { garden: Garden }) {
           {results}
         </div>
       ) : (
-        <div style={{ marginTop: 12 }}>{results}</div>
+        <div className="np-results" style={{ marginTop: 12 }}>{results}</div>
       ))}
+      </div>
     </div>
   )
 }
