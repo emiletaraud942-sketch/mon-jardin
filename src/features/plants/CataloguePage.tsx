@@ -92,43 +92,46 @@ export function CataloguePage({ garden }: { garden: Garden }) {
     <div className="page np-page plants-ui" data-feat="catalogue">
       <h1>Catalogue des plantes ({list.length})</h1>
       <MetroNote garden={garden} />
-      <div className="row" style={{ margin: '8px 0 16px' }}>
+      <div className="row" style={{ margin: '8px 0 12px' }}>
         <input
           className="input"
           type="search"
-          style={{ flex: '2 1 220px' }}
+          style={{ flex: '1 1 220px' }}
           aria-label="Rechercher une plante"
           placeholder="Pommier, Malus, tomate…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
-        <select className="input" style={{ flex: '1 1 160px' }} value={cat} onChange={(e) => setCat(e.target.value as Category | '')} aria-label="Catégorie">
-          <option value="">Toutes les catégories</option>
-          {Object.entries(CATEGORY_LABEL).map(([k, v]) => (
-            <option key={k} value={k}>
-              {v}
-            </option>
+      </div>
+      <details className="np-details catalogue-fold" open={filters.length > 0 || !!cat || !!sun}>
+        <summary>Filtrer la liste</summary>
+        <div className="row catalogue-filters" role="group" aria-label="Filtres" style={{ margin: '8px 0', alignItems: 'center' }}>
+          <select className="input" style={{ flex: '1 1 160px' }} value={cat} onChange={(e) => setCat(e.target.value as Category | '')} aria-label="Catégorie">
+            <option value="">Toutes les catégories</option>
+            {Object.entries(CATEGORY_LABEL).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
+          </select>
+          <select className="input" style={{ flex: '1 1 160px' }} value={sun} onChange={(e) => setSun(e.target.value as Sun | '')} aria-label="Exposition">
+            <option value="">Toutes les expositions</option>
+            {Object.entries(SUN_LABEL).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="row chip-filters" role="group" aria-label="Filtres du catalogue" data-feat="catalogue-filtres">
+          {FILTERS.map((f) => (
+            <button key={f.id} className={'btn chip-filter' + (filters.includes(f.id) ? ' primary' : '')} aria-pressed={filters.includes(f.id)} title={f.help} onClick={() => toggle(f.id)}>
+              {filters.includes(f.id) && <Icon name="check" size={16} />}
+              {f.label}
+            </button>
           ))}
-        </select>
-      </div>
-      <div className="row catalogue-filters" role="group" aria-label="Filtres" style={{ margin: '-8px 0 16px', alignItems: 'center' }}>
-        <select className="input" style={{ flex: '1 1 160px' }} value={sun} onChange={(e) => setSun(e.target.value as Sun | '')} aria-label="Exposition">
-          <option value="">Toutes les expositions</option>
-          {Object.entries(SUN_LABEL).map(([k, v]) => (
-            <option key={k} value={k}>
-              {v}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="row chip-filters" role="group" aria-label="Filtres du catalogue" data-feat="catalogue-filtres">
-        {FILTERS.map((f) => (
-          <button key={f.id} className={'btn chip-filter' + (filters.includes(f.id) ? ' primary' : '')} aria-pressed={filters.includes(f.id)} title={f.help} onClick={() => toggle(f.id)}>
-            {filters.includes(f.id) && <Icon name="check" size={16} />}
-            {f.label}
-          </button>
-        ))}
-      </div>
+        </div>
+      </details>
       <p className={filters.length > 0 ? 'small muted' : 'sr-only'} role="status" aria-live="polite" style={filters.length > 0 ? { margin: '0 0 8px' } : undefined}>
         {list.length} plante{list.length > 1 ? 's' : ''}
         {filters.length > 0 ? ' avec ces filtres.' : ''}

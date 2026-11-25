@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
+import { Fold } from "../../components/Fold";
 import { Icon } from "../../components/Icon";
 import { PageHead } from "../../components/PageHead";
 import { SPECIES_BY_ID } from "../../data/species";
@@ -449,6 +450,8 @@ export function TasksPage({ garden }: { garden: Garden }) {
     dropFlash(id);
   }
 
+  /** Semaine : tout le secondaire dans un seul repli « Plus d’options » ; calendrier : le bouton de retour reste visible. */
+  const extraWrap = (kids: ReactNode) => (view === "semaine" ? <Fold title="Plus d’options">{kids}</Fold> : kids);
   return (
     <div className="page afaire">
       <PageHead
@@ -588,6 +591,8 @@ export function TasksPage({ garden }: { garden: Garden }) {
         )}
       </div>
       <div className="afaire-extra">
+        {extraWrap(
+          <>
         {view === "semaine" && finished.length > 0 && (
           <div className="card season-over">
             <h3>Ces plantes ont fini leur saison</h3>
@@ -670,6 +675,8 @@ export function TasksPage({ garden }: { garden: Garden }) {
               </button>
             )}
           </div>
+        )}
+          </>,
         )}
       </div>
     </div>

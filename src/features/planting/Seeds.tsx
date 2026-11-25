@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { Fold } from '../../components/Fold'
 import { Icon } from '../../components/Icon'
 import { SPECIES } from '../../data/species'
 import { OcrUnavailableError, readLabelText, type OcrStage } from '../../lib/labelOcr'
@@ -97,8 +98,7 @@ export function SeedsCard() {
   }
 
   return (
-    <div className="card" data-feat="mes-graines">
-      <h2>Mes graines</h2>
+    <Fold title="Mes graines" feat="mes-graines">
       <p className="small muted">Notez vos sachets, et ceux que vous voulez donner ou échanger. Cette liste reste sur cet appareil : elle n’est pas envoyée en ligne.</p>
       <div className="row" style={{ marginBottom: 8 }}>
         <button type="button" className="btn primary" onClick={() => scanLabelOpen.set(true)}>
@@ -208,6 +208,6 @@ export function SeedsCard() {
           {manual && <textarea ref={field} className="input" readOnly rows={6} value={text} aria-label="Liste de graines à copier" onFocus={(e) => e.currentTarget.select()} />}
         </>
       )}
-    </div>
+    </Fold>
   )
 }

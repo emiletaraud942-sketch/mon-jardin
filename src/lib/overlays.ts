@@ -26,7 +26,16 @@ export function createValue<T>(initial: T) {
 }
 
 /** Page de l'accueil ouverte depuis la feuille : une des trois parties, ou `plus` (tout le reste). Rien : la feuille. */
-export const homeHub = createValue<'cultiver' | 'entretenir' | 'consommer' | 'plus' | undefined>(undefined)
+export type HomeHub = 'cultiver' | 'entretenir' | 'consommer' | 'plus' | undefined
+/** Où l'accueil s'ouvre : la feuille, ou (clé de session `pj.homePlus` à « 1 », posée par les scripts de recette) l'ancien accueil à tous les boutons. */
+export function homeHubStart(): HomeHub {
+  try {
+    return typeof sessionStorage !== 'undefined' && sessionStorage.getItem('pj.homePlus') === '1' ? 'plus' : undefined
+  } catch {
+    return undefined
+  }
+}
+export const homeHub = createValue<HomeHub>(homeHubStart())
 
 /** Page « Tout ce que je peux faire » ouverte. */
 export const toutFaire = createValue(false)

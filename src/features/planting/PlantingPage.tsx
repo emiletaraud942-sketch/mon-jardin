@@ -1,3 +1,4 @@
+import { Fold } from '../../components/Fold'
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { BottomSheet, type SheetSnap } from '../../components/BottomSheet'
@@ -134,9 +135,9 @@ function SowNow({ garden }: { garden: Garden }) {
   const setMonth = (m: Month) => setUi({ sowMonth: m })
   const now = useMemo(() => whatToSowNow(SPECIES, garden, month), [garden, month])
   return (
-    <div className="card" data-feat="semer-ce-mois">
+    <Fold title="Que semer ce mois-ci" feat="semer-ce-mois">
       <div className="row" style={{ justifyContent: 'space-between' }}>
-        <h2>Que semer et planter en</h2>
+        <span>Choisir le mois</span>
         <select className="input" style={{ width: 'auto' }} value={month} onChange={(e) => setMonth(Number(e.target.value) as Month)} aria-label="Mois">
           {MONTH_NAMES.map((m, i) => (
             <option key={m} value={i + 1}>
@@ -166,7 +167,7 @@ function SowNow({ garden }: { garden: Garden }) {
       <SpeciesChips list={now.plantation} />
       <h3 style={{ marginTop: 12 }}>Récolter</h3>
       <SpeciesChips list={now.recolte} />
-    </div>
+    </Fold>
   )
 }
 
