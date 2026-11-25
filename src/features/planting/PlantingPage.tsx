@@ -325,22 +325,20 @@ function ModelHint({ garden }: { garden: Garden }) {
   const noPlants = plants.length === 0
   if (!noParcel && !noPlants) return null
   return (
-    <div className="card empty-hint">
-      <p style={{ marginTop: 0 }}>
+    <details className="np-details empty-hint-fold">
+      <summary>Rendre le conseil plus précis</summary>
+      <p style={{ marginTop: 8 }}>
         <strong>Plus votre jardin est décrit, plus le conseil est précis.</strong>
       </p>
-      <details className="np-details">
-        <summary>Pourquoi décrire le jardin ?</summary>
-        <p className="small" style={{ margin: 0 }}>
-          {noParcel ? 'Sans le contour du terrain, les distances aux voisins ne sont pas vérifiées. ' : ''}
-          {noPlants ? 'Sans plantes placées, le soleil ignore l’ombre de vos arbres. ' : ''}
-          C’est facultatif : vous pouvez commencer maintenant.
-        </p>
-      </details>
+      <p className="small" style={{ margin: '0 0 8px' }}>
+        {noParcel ? 'Sans le contour du terrain, les distances aux voisins ne sont pas vérifiées. ' : ''}
+        {noPlants ? 'Sans plantes placées, le soleil ignore l’ombre de vos arbres. ' : ''}
+        C’est facultatif : vous pouvez commencer maintenant.
+      </p>
       <div className="row">
         <PlaceAction>Ajouter une plante</PlaceAction>
       </div>
-    </div>
+    </details>
   )
 }
 

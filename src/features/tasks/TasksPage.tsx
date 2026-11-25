@@ -60,8 +60,14 @@ const TASKS_SHOWN = 3;
 function WeatherDays({ weather }: { weather: WeatherBundle }) {
   const days = weather.forecast.slice(0, 7);
   const firstFrost = days.findIndex((d) => d.tMin <= 0);
+  const first = days[0] ? dayTemps(days[0]) : undefined;
   return (
-    <ul className="wx-days" aria-label="Météo des 7 prochains jours" data-feat="meteo">
+    <details className="np-details wx-fold" data-feat="meteo" open={firstFrost >= 0}>
+      <summary>
+        Météo des 7 jours
+        {first ? ` : aujourd’hui ${TEMP_WORD.jour.toLowerCase()} ${first.jour}, ${TEMP_WORD.nuit.toLowerCase()} ${first.nuit}` : ""}
+      </summary>
+    <ul className="wx-days" aria-label="Météo des 7 prochains jours">
       {days.map((d, i) => {
         const t = dayTemps(d);
         const label = new Date(d.date)
@@ -90,6 +96,7 @@ function WeatherDays({ weather }: { weather: WeatherBundle }) {
         );
       })}
     </ul>
+    </details>
   );
 }
 

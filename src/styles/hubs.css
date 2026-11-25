@@ -350,3 +350,14 @@
     margin-inline: auto;
   }
 }
+
+/* Carte sur téléphone : hors placement, seuls les avis d'images absentes restent ; la mention de la photo et « Il manque… » se lisent dans « Options ». */
+@media (max-width: 760px) {
+  .app:not(.is-placing) .map-chips > :not(.map-notice) {
+    display: none;
+  }
+}
+/* Météo repliée : une ligne d'abord, les 7 jours à la demande. */
+.wx-fold {
+  margin: 4px 0 8px;
+}
