@@ -26,3 +26,7 @@ supabase/.branches
 coverage
 playwright-report
 test-results
+video/out/
+video/permajardin/audio/*.wav
+video/node_modules/
+video/_scripts/
