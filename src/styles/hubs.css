@@ -384,3 +384,11 @@
     display: none;
   }
 }
+
+/* La feuille fixe du bas (Où planter ?) ne doit pas s'effacer dans le fondu du bas de page : son titre resterait invisible une fois repliée. */
+@media (max-width: 760px) {
+  .app.has-pb:has(.bsheet.fixed) .main:not(.full) {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
