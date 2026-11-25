@@ -96,13 +96,20 @@ export function PostDetail({ post, online, onBack, onChat }: { post: Post; onlin
             <button className={'btn' + (isRequest && post.status === 'open' ? '' : ' primary')} onClick={() => void chat()} disabled={chatBusy || !online}>
               {chatBusy && !isRequest && <span className="spinner" />} Écrire en privé
             </button>
-            <button className="btn" onClick={() => setDialog({ k: 'report-post' })}>
-              Signaler
-            </button>
-            <button className="btn danger" onClick={() => setDialog({ k: 'block', id: post.authorId, pseudo: post.authorPseudo })}>
-              Ne plus voir cette personne
-            </button>
           </div>
+        ) : null}
+        {!post.mine ? (
+          <details className="np-details nb-more">
+            <summary>Plus</summary>
+            <div className="row" style={{ marginTop: 8 }}>
+              <button className="btn" onClick={() => setDialog({ k: 'report-post' })}>
+                Signaler
+              </button>
+              <button className="btn danger" onClick={() => setDialog({ k: 'block', id: post.authorId, pseudo: post.authorPseudo })}>
+                Ne plus voir cette personne
+              </button>
+            </div>
+          </details>
         ) : (
           <p className="small muted" style={{ margin: 0 }}>
             C’est votre annonce. Terminez-la ou supprimez-la dans l’onglet « Mes annonces ».

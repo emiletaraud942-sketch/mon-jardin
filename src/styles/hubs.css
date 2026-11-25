@@ -361,3 +361,19 @@
 .wx-fold {
   margin: 4px 0 8px;
 }
+
+/* Visionneur de photos : saison et actions rares repliées. */
+.pano-season-fold > summary,
+.pano-more-fold > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.pano-season-fold > summary::-webkit-details-marker,
+.pano-more-fold > summary::-webkit-details-marker {
+  display: none;
+}
+.pano-more-fold[open] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

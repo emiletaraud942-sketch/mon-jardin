@@ -1,3 +1,4 @@
+import { Fold } from '../../components/Fold'
 import { useMemo, useState } from 'react'
 import { deleteMyAccount, listBlocks, signOut, unblockUser } from '../../lib/neighbors/api'
 import { CONDUCT_RULES, cellSizeLabel, neighborhoodText } from '../../lib/neighbors/logic'
@@ -88,8 +89,8 @@ export function ProfileTab({ profile, email, garden, online, onSaved }: { profil
         </div>
       </section>
 
-      <section className="card stack" aria-label="Personnes que vous ne voyez plus">
-        <h3 style={{ margin: 0 }}>Personnes que vous ne voyez plus</h3>
+      <Fold title="Personnes que vous ne voyez plus">
+        <div className="stack">
         {blocks.error && <ErrorBox message={blocks.error} onRetry={blocks.reload} />}
         {unblockError && <ErrorBox message={unblockError} />}
         {blocks.loading && !blocks.data && <Spinner label="Chargement…" />}
@@ -116,10 +117,11 @@ export function ProfileTab({ profile, email, garden, online, onSaved }: { profil
             </li>
           ))}
         </ul>
-      </section>
+        </div>
+      </Fold>
 
-      <section className="card stack" aria-label="Règles de conduite">
-        <h3 style={{ margin: 0 }}>Règles de conduite</h3>
+      <Fold title="Règles de conduite">
+        <div className="stack">
         <ul className="nb-rules">
           {CONDUCT_RULES.map((r) => (
             <li key={r}>{r}</li>
@@ -128,17 +130,19 @@ export function ProfileTab({ profile, email, garden, online, onSaved }: { profil
         <p className="small muted" style={{ margin: 0 }}>
           Pour retirer votre autorisation : Réglages, Vie privée.
         </p>
-      </section>
+        </div>
+      </Fold>
 
-      <section className="card stack" aria-label="Supprimer mon compte">
-        <h3 style={{ margin: 0 }}>Supprimer mon compte</h3>
+      <Fold title="Supprimer mon compte">
+        <div className="stack">
         <p style={{ margin: 0 }}>Efface votre profil, vos annonces, vos photos et vos messages. Votre jardin sur cet appareil ne change pas.</p>
         <div className="row">
           <button className="btn danger" onClick={() => setDeleting(true)} disabled={!online}>
             Supprimer mon compte
           </button>
         </div>
-      </section>
+        </div>
+      </Fold>
 
       {deleting && (
         <Confirm
