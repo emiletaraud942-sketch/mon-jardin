@@ -78,27 +78,32 @@ export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
       <button className="btn primary" onClick={() => setPicking(true)}>
         <Icon name="plus" /> Ajouter une plante au jardin
       </button>
-      <button className="btn" data-feat="carte-ou-planter" onClick={() => goRayon('planter')}>
-        <Icon name="leaf" /> Où planter ? Les conseils de lieu
-      </button>
-      <button className="btn" aria-haspopup="dialog" onClick={() => openPanorama('home')}>
-        <Icon name="camera" /> Photos du jardin{(garden.panoramas?.length ?? 0) > 0 ? ` (${garden.panoramas!.length})` : ''}
-      </button>
-      <details className="np-details">
-        <summary>Scanner, identifier par photo</summary>
-        <div className="stack" style={{ gap: 8 }}>
-          <button className="btn" onClick={() => openScan('menu')}>
-            <Icon name="camera" /> Scanner mon jardin
+      <details className="np-details gs-more">
+        <summary>Plus d’actions</summary>
+        <div className="stack" style={{ gap: 8, marginTop: 8 }}>
+          <button className="btn" data-feat="carte-ou-planter" onClick={() => goRayon('planter')}>
+            <Icon name="leaf" /> Où planter ? Les conseils de lieu
           </button>
-          <button className="btn" aria-haspopup="dialog" onClick={() => identifyOpen.set(true)}>
-            <Icon name="camera" /> Identifier une plante par photo
+          <button className="btn" aria-haspopup="dialog" onClick={() => openPanorama('home')}>
+            <Icon name="camera" /> Photos du jardin{(garden.panoramas?.length ?? 0) > 0 ? ` (${garden.panoramas!.length})` : ''}
+          </button>
+          <details className="np-details">
+            <summary>Scanner, identifier par photo</summary>
+            <div className="stack" style={{ gap: 8 }}>
+              <button className="btn" onClick={() => openScan('menu')}>
+                <Icon name="camera" /> Scanner mon jardin
+              </button>
+              <button className="btn" aria-haspopup="dialog" onClick={() => identifyOpen.set(true)}>
+                <Icon name="camera" /> Identifier une plante par photo
+              </button>
+            </div>
+          </details>
+          <p className="muted small">{hint}</p>
+          <button className="btn ghost small" aria-haspopup="dialog" onClick={openHelp}>
+            Aide sur cet écran
           </button>
         </div>
       </details>
-      <p className="muted small">{hint}</p>
-      <button className="btn ghost small" aria-haspopup="dialog" onClick={openHelp}>
-        Aide sur cet écran
-      </button>
       {plants.length > 0 && (
         <ul className="list small">
           {plants.slice(0, MAX_LISTED).map((p) => {

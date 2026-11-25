@@ -406,8 +406,6 @@ function Backup() {
     <div className="card" data-feat="sauvegarde">
       <h2>Sauvegarde de mes données</h2>
       <p role="status" className={writeError ? 'warn-text' : 'small'}>{storageLine}</p>
-      <p className="small">{STORAGE_WHERE}</p>
-      <p>La sauvegarde est un fichier, rangé dans les « Téléchargements » de cet appareil.</p>
       <p className={overdue ? 'warn-text' : 'muted'}>
         {last ? `Dernière sauvegarde : ${formatDay(last, { year: true })}${lastName ? `, fichier « ${lastName} »` : ''}.` : 'Vous n’avez pas encore fait de sauvegarde.'}
         {overdue && ' Pensez à en faire une.'}
@@ -417,21 +415,11 @@ function Backup() {
         <button className="btn primary" onClick={() => void exportJson()} disabled={busy}>
           <Icon name="download" /> Faire une sauvegarde
         </button>
-        <button className="btn" data-feat="sauvegarde-complete" aria-describedby={est?.photos === 0 ? 'sauvegarde-photos-aide' : undefined} onClick={() => void exportFull()} disabled={busy || est?.photos === 0}>
-          <Icon name="download" /> Sauvegarde avec photos{est && est.photos > 0 ? ` (${formatMo(est.bytes)})` : ''}
-        </button>
         <label className="btn file-btn" data-feat="reprise">
           <Icon name="upload" /> Reprendre une sauvegarde
           <input className="sr-only" type="file" accept={`application/json,.json,${FULL_EXTENSION}`} onChange={(e) => void importJson(e.target)} />
         </label>
       </div>
-      {est?.photos === 0 && (
-        <p id="sauvegarde-photos-aide" className="small muted">
-          Aucune photo dans l’appli : la sauvegarde simple suffit.
-        </p>
-      )}
-      {est?.tooHeavy && <p className="alert small">{MESSAGE_TOO_HEAVY(Math.round(est.bytes / (1024 * 1024)))}</p>}
-      {est && !est.tooHeavy && est.bytes > HEAVY_BACKUP_BYTES && <p className="small muted">Le fichier avec photos est lourd ({formatMo(est.bytes)}) : faites-le avec du Wi-Fi et de la place libre sur le téléphone.</p>}
       {msg?.error && <ErrorNote error={msg.error} />}
       {msg?.text && (
         <p role="status" style={{ marginTop: 8 }}>
@@ -458,7 +446,21 @@ function Backup() {
         </div>
       )}
       <details className="np-details">
-        <summary>Copie de sécurité et conseils</summary>
+        <summary>Plus de sauvegardes et conseils</summary>
+        <p className="small">{STORAGE_WHERE}</p>
+        <p>La sauvegarde est un fichier, rangé dans les « Téléchargements » de cet appareil.</p>
+        <div className="row" style={{ margin: '8px 0' }}>
+          <button className="btn" data-feat="sauvegarde-complete" aria-describedby={est?.photos === 0 ? 'sauvegarde-photos-aide' : undefined} onClick={() => void exportFull()} disabled={busy || est?.photos === 0}>
+            <Icon name="download" /> Sauvegarde avec photos{est && est.photos > 0 ? ` (${formatMo(est.bytes)})` : ''}
+          </button>
+        </div>
+        {est?.photos === 0 && (
+          <p id="sauvegarde-photos-aide" className="small muted">
+            Aucune photo dans l’appli : la sauvegarde simple suffit.
+          </p>
+        )}
+        {est?.tooHeavy && <p className="alert small">{MESSAGE_TOO_HEAVY(Math.round(est.bytes / (1024 * 1024)))}</p>}
+        {est && !est.tooHeavy && est.bytes > HEAVY_BACKUP_BYTES && <p className="small muted">Le fichier avec photos est lourd ({formatMo(est.bytes)}) : faites-le avec du Wi-Fi et de la place libre sur le téléphone.</p>}
         <p className="small muted">Gardez-le en lieu sûr : ordinateur, clé USB, ou e-mail à vous-même.</p>
         <p className="small muted">La sauvegarde simple n’a pas les images des photos : elles restent sur cet appareil. Elle garde leurs dates et leurs notes. « Sauvegarde avec photos » les met dans le fichier, qui est plus lourd. « Reprendre une sauvegarde » lit les deux.</p>
         {persistent === false && <p className="small muted">Si l’espace manque, cet appareil peut effacer vos données. Une sauvegarde les protège.</p>}
