@@ -25,6 +25,9 @@ export function createValue<T>(initial: T) {
   }
 }
 
+/** Page de l'accueil ouverte depuis la feuille : une des trois parties, ou `plus` (tout le reste). Rien : la feuille. */
+export const homeHub = createValue<'cultiver' | 'entretenir' | 'consommer' | 'plus' | undefined>(undefined)
+
 /** Page « Tout ce que je peux faire » ouverte. */
 export const toutFaire = createValue(false)
 /** Feuille « Je suis perdu » ouverte. */

@@ -14,7 +14,9 @@ import { useGardenPlants } from '../../lib/store'
 import { hideOnboardingRoute, openHelp, openParcours, setGuide, setUi, useUi } from '../../lib/ui'
 import { FEATURES, visibleFeatures } from '../../lib/features'
 import { HOME_ACTIONS, HOME_HELPERS, type HomeAction } from '../../lib/homeActions'
-import { guideOpen, lostSheet, openLecon, toutFaire } from '../../lib/overlays'
+import { guideOpen, homeHub, lostSheet, openLecon, toutFaire } from '../../lib/overlays'
+import { hubById } from '../../lib/hubs'
+import { HubPage, LeafHome } from './HubScreens'
 import { countDone, doneSentence, nextLesson, totalLessons } from '../lecons/progress'
 import { useLessonsDone } from '../lecons/useDone'
 import type { Garden } from '../../types'
@@ -295,8 +297,23 @@ export function Accueil({ garden, openTasks, newsCount, alerts = [] }: { garden:
   const feature = byId('apprendre')
   const rest = actions.filter((a) => !TILE_IDS.includes(a.id) && a.id !== 'partage' && a.id !== 'apprendre')
 
+  const hub = homeHub.use()
+  if (hub === 'cultiver' || hub === 'entretenir' || hub === 'consommer') return <HubPage hub={hubById(hub)} garden={garden} />
+  if (hub !== 'plus') {
+    return (
+      <div className="page accueil accueil-leaf">
+        <LeafHome who={who} alertText={alertText} onAlert={() => setUi({ tab: 'entretien' })} />
+        {route && <RouteCard garden={garden} />}
+        {!route && <SyncNudge garden={garden} />}
+      </div>
+    )
+  }
+
   return (
     <div className="page accueil">
+      <button className="hub-back" onClick={() => homeHub.set(undefined)}>
+        ← Accueil
+      </button>
       {route && <RouteCard garden={garden} />}
       <PageHead compact kicker={who ? `Bonjour ${who}` : 'Bonjour'} title="Que voulez-vous faire ?" onHelp={openHelp} />
       <button className={'chez' + (climate ? ' has-climate' : '')} onClick={() => setUi({ tab: 'carte' })}>

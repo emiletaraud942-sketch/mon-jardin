@@ -1,0 +1,352 @@
+/* Accueil en feuille de chêne (photo) et pages des trois parties. Couleurs par variables ; les teintes de la feuille ont leurs jetons. */
+:root {
+  --leaf-consommer: #a8481f; /* terre cuite : blanc dessus 5,6:1 */
+  --leaf-entretenir: #2d6a47;
+  --leaf-cultiver: #14402a;
+  --on-leaf: #ffffff;
+}
+:root[data-theme='dark'] {
+  --leaf-consommer: #8e3b17;
+  --leaf-entretenir: #245a3b;
+  --leaf-cultiver: #0f3322;
+}
+
+.leafhome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px 18px;
+}
+.leafhome-head {
+  width: 100%;
+  text-align: left;
+}
+.leafhome-kicker {
+  color: var(--muted);
+  font-size: calc(16 * var(--px));
+}
+.leafhome-head {
+  padding: 10px 14px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+}
+.leafhome-title {
+  font-family: var(--font-title);
+  font-weight: var(--fw-key);
+  font-size: calc(32 * var(--px));
+  line-height: 1.1;
+  color: var(--title);
+  margin: 2px 0 0;
+}
+.leafhome-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--tap, 48px);
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+}
+
+/* La feuille : la photo, puis trois bandes à toucher teintées dans la forme de la feuille. */
+.leaf {
+  position: relative;
+  width: min(86%, 340px);
+  aspect-ratio: 466 / 612;
+  filter: drop-shadow(0 10px 18px rgb(0 0 0 / 0.28));
+}
+.leaf-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+.leaf-zone {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--t) * 100%);
+  height: calc(var(--h) * 100%);
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--on-leaf);
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.leaf-tint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--t) / var(--h) * -100%);
+  height: calc(100% / var(--h));
+  background: var(--tint);
+  opacity: 0.5;
+  -webkit-mask: url('/accueil/feuille-chene.webp') center / 100% 100% no-repeat;
+  mask: url('/accueil/feuille-chene.webp') center / 100% 100% no-repeat;
+  transition: opacity 0.15s;
+}
+.leaf-consommer {
+  --tint: var(--leaf-consommer);
+}
+.leaf-entretenir {
+  --tint: var(--leaf-entretenir);
+}
+.leaf-cultiver {
+  --tint: var(--leaf-cultiver);
+}
+.leaf-zone:hover .leaf-tint,
+.leaf-zone:active .leaf-tint {
+  opacity: 0.8;
+}
+.leaf-zone:focus-visible {
+  outline: 4px solid var(--focus);
+  outline-offset: -4px;
+}
+.leaf-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  text-align: center;
+  text-shadow:
+    0 1px 2px rgb(0 0 0 / 0.75),
+    0 0 14px rgb(0 0 0 / 0.55);
+}
+.leaf-word {
+  font-family: var(--font-title);
+  font-weight: var(--fw-key);
+  font-size: calc(32 * var(--px));
+  line-height: 1;
+}
+.leaf-sub {
+  font-size: calc(15 * var(--px));
+}
+/* Les bandes ne se rejoignent pas : un fin trait clair entre elles. */
+.leaf-entretenir,
+.leaf-cultiver {
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.85);
+}
+.leafhome-hint {
+  color: var(--muted);
+  font-size: calc(16 * var(--px));
+  margin: 0;
+}
+.leafhome-more {
+  min-height: var(--tap, 48px);
+  padding: 8px 18px;
+  border: 0;
+  border-radius: 99px;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-weight: var(--fw-key);
+  text-decoration: underline;
+}
+
+/* Pages des trois parties. */
+.hub {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 24px;
+}
+.hub-back {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: var(--tap, 48px);
+  padding: 4px 8px 4px 0;
+  padding-inline: 14px;
+  border: 0;
+  border-radius: 99px;
+  background: var(--surface);
+  box-shadow: 0 1px 8px rgb(20 35 26 / 0.18);
+  color: var(--text);
+  font: inherit;
+  font-size: calc(17 * var(--px));
+}
+.hub-banner {
+  position: relative;
+  height: 170px;
+  border-radius: 22px;
+  overflow: hidden;
+  color: var(--on-leaf);
+}
+.hub-banner img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.hub-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgb(0 0 0 / 0.68), rgb(0 0 0 / 0.08) 70%);
+}
+.hub-banner-text {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 14px;
+  z-index: 1;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.7);
+}
+.hub-banner-tag {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 99px;
+  font-size: calc(14 * var(--px));
+  background: var(--tag);
+  text-shadow: none;
+}
+.hub-banner-consommer {
+  --tag: var(--leaf-consommer);
+}
+.hub-banner-entretenir {
+  --tag: var(--leaf-entretenir);
+}
+.hub-banner-cultiver {
+  --tag: var(--leaf-cultiver);
+}
+.hub .hub-banner h1 {
+  color: var(--on-leaf);
+  font-family: var(--font-title);
+  font-weight: var(--fw-key);
+  font-size: calc(30 * var(--px));
+  line-height: 1.1;
+  margin: 6px 0 0;
+}
+.hub-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.hub-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  min-height: 92px;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 22px;
+  background: var(--surface);
+  box-shadow: 0 2px 14px rgb(20 35 26 / 0.12);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.hub-card:active {
+  background: var(--surface-2);
+}
+.hub-card:focus-visible,
+.hub-more:focus-visible,
+.hub-back:focus-visible,
+.leafhome-more:focus-visible,
+.leafhome-alert:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.hub-card-photo,
+.hub-card-icon {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.hub-card-icon {
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent-2);
+}
+.hub-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.hub-card-text strong {
+  font-size: calc(19 * var(--px));
+  font-weight: var(--fw-key);
+}
+.hub-card-text span {
+  color: var(--muted);
+  font-size: calc(15 * var(--px));
+}
+.hub-card-chev {
+  color: var(--tab-off);
+}
+.hub-more {
+  min-height: var(--tap, 48px);
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: calc(17 * var(--px));
+  font-weight: var(--fw-key);
+  text-align: center;
+}
+.hub-cards-more .hub-card {
+  min-height: 76px;
+}
+.hub-harvest {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 22px;
+  background: var(--accent-soft);
+}
+.hub-harvest-photo {
+  flex: none;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.hub-harvest h2 {
+  font-family: var(--font-title);
+  font-weight: var(--fw-key);
+  font-size: calc(24 * var(--px));
+  margin: 0 0 4px;
+  color: var(--title);
+}
+.hub-harvest ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text);
+  font-size: calc(17 * var(--px));
+}
+.hub-harvest p {
+  margin: 0;
+  color: var(--muted-2);
+  font-size: calc(16 * var(--px));
+}
+@media (min-width: 761px) {
+  .hub,
+  .leafhome {
+    max-width: 560px;
+    margin-inline: auto;
+  }
+}

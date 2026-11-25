@@ -30,6 +30,7 @@ import { useBanner } from './lib/banners'
 import { deriveOnboarding } from './lib/onboarding'
 import { Parcours } from './features/onboarding/Parcours'
 import { Accueil } from './features/onboarding/Accueil'
+import { goHome } from './lib/goHome'
 import { useOnboarding } from './features/onboarding/useOnboarding'
 import { shouldShowRoute } from './lib/onboarding'
 import { isDemoGarden } from './features/settings/demo'
@@ -286,7 +287,7 @@ function AppShell() {
         Aller au contenu
       </a>
       <header className="topbar">
-        <button className="brand brand-btn" aria-label="Accueil : que voulez-vous faire ?" aria-current={tab === 'accueil' ? 'page' : undefined} onClick={() => setUi({ tab: 'accueil' })}>
+        <button className="brand brand-btn" aria-label="Accueil : que voulez-vous faire ?" aria-current={tab === 'accueil' ? 'page' : undefined} onClick={goHome}>
           <img src="/icon.svg" alt="" />
           <span>PermaJardin</span>
         </button>
@@ -333,7 +334,7 @@ function AppShell() {
         )}
       </div>
       <nav className="sidenav" aria-label="Navigation principale">
-        <button className="navbtn" aria-current={tab === 'accueil' ? 'page' : undefined} onClick={() => setUi({ tab: 'accueil' })}>
+        <button className="navbtn" aria-current={tab === 'accueil' ? 'page' : undefined} onClick={goHome}>
           <Icon name="home" />
           Accueil
         </button>
