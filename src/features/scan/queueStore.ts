@@ -3,12 +3,12 @@ import { rerank } from '../../lib/identifyRank'
 import { rankContext, verdictOf } from '../../lib/rankContext'
 import { cropCenter } from './crop'
 import { hasConsent } from '../../lib/consent'
-import { getQueue, loadQueue, replaceQueue, updateQueue, useScanQueue } from './queueState'
+import { getQueue, loadQueue, mergeRemoteQueue, updateQueue, useScanQueue } from './queueState'
 import { deletePhoto, getPhoto } from '../../lib/photos'
 import { dedupeQueue } from './dedupe'
 import { applyGroupResults, dueItems, groupPlan, markFailed, markNeedsConsent, type Suggestion } from './queue'
 
-export { getQueue, loadQueue, replaceQueue, updateQueue, useScanQueue }
+export { getQueue, loadQueue, mergeRemoteQueue, updateQueue, useScanQueue }
 
 // File d'attente partagée entre l'écran de scan et la carte. Local-first : tout reste dans IndexedDB.
 // Seule la photo part (vers /api/identify), jamais la position.

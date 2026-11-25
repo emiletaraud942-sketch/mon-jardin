@@ -803,3 +803,35 @@ html[data-offline] .page {
 .app:has(.free-spot-card) .map-foot {
   display: none;
 }
+
+/* « Où planter ? » sur téléphone : la carte reste visible en haut, la liste des plantes conseillées défile dessous
+   (avant : une feuille fixe cachait la carte, et on ne pouvait pas choisir l'endroit en voyant les conseils). */
+.spot-stick {
+  width: 100%;
+  align-self: stretch;
+  /* Même valeur que le « top » collant ci-dessous : la carte arrive pile à sa place, sans recouvrir la ligne suivante. */
+  scroll-margin-top: 26px;
+}
+@media (max-width: 760px) {
+  .spot-stick.on {
+    position: sticky;
+    top: 26px;
+    z-index: 6;
+    padding: 6px 0 8px;
+    /* Opaque : la liste qui défile dessous ne doit jamais transparaître à travers la carte. */
+    background: var(--bg);
+    border-radius: 18px;
+  }
+  .spot-stick.on .spot-map {
+    height: clamp(180px, 30dvh, 260px);
+  }
+  .reco-flow {
+    margin-top: 6px;
+  }
+  .reco-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+}

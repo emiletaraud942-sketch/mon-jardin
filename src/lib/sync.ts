@@ -413,16 +413,15 @@ export async function pullSnapshot(): Promise<boolean> {
     throw new Error('Impossible de garder une copie de sécurité de vos données avant de les remplacer (stockage plein ou bloqué). Rien n’a été modifié : faites une sauvegarde puis réessayez.')
   }
   replaceData(migrated.data, { keepPhotos: true })
-  // File du scan : la copie en ligne fait foi, comme pour les plantes (seulement si elle contient ce champ).
+  writeLastSynced(user.id, row.updated_at)
+  // Plantes scannées à valider : reprises aussi (jamais d'écrasement : on ajoute ce qui manque).
   const remoteQueue = (row.data as { scanQueue?: unknown } | null)?.scanQueue
   if (Array.isArray(remoteQueue)) {
     try {
-      const { replaceQueue } = await import('../features/scan/queueState')
-      await replaceQueue(remoteQueue)
+      await import('../features/scan/queueState').then((m) => m.mergeRemoteQueue(remoteQueue))
     } catch (e) {
-      console.warn('Plantes à valider non reprises', e)
+      console.warn('File du scan non reprise', e)
     }
   }
-  writeLastSynced(user.id, row.updated_at)
   return true
 }

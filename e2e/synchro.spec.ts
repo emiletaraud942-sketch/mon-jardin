@@ -153,6 +153,7 @@ async function semer(page: Page) {
     await new Promise<void>((res, rej) => {
       const tx = db.transaction('keyval', 'readwrite')
       tx.objectStore('keyval').put(blob, 'photo:e2esyncA')
+      tx.objectStore('keyval').put(blob, 'photo:e2esyncQ')
       tx.oncomplete = () => res()
       tx.onerror = () => rej(tx.error)
     })
@@ -160,6 +161,13 @@ async function semer(page: Page) {
     const s = JSON.parse(localStorage.getItem(key)!)
     const gid = s.data.gardens[0].id as string
     const plante = (id: string, x: number, photos: string[]) => ({ id, gardenId: gid, speciesId: 'abricotier', position: { x, y: 2 }, plantedAt: '2026-03-01', status: 'en-place', photos })
+    // Une plante scannée en attente de revue, avec sa photo : elle doit voyager aussi.
+    await new Promise<void>((res, rej) => {
+      const tx = db.transaction('keyval', 'readwrite')
+      tx.objectStore('keyval').put([{ id: 'e2e-scan-1', gardenId: gid, photoId: 'photo:e2esyncQ', createdAt: new Date().toISOString(), position: { x: 4, y: 4 }, accuracyM: 4, status: 'a-valider', attempts: 0, suggestions: [], plantStatus: 'en-place', from: 'video' }], 'permajardin:scan-queue')
+      tx.oncomplete = () => res()
+      tx.onerror = () => rej(tx.error)
+    })
     s.data.plants = [...s.data.plants, plante('e2e-abricot-1', 3, ['photo:e2esyncA']), plante('e2e-abricot-2', 6, [])]
     s.savedAt = Date.now() + 60_000
     localStorage.setItem(key, JSON.stringify(s))
@@ -182,7 +190,17 @@ async function etatLocal(page: Page) {
       rq.onsuccess = () => res(rq.result)
       rq.onerror = () => res(undefined)
     })
-    return { abricotiers, photo: photo instanceof Blob ? photo.size : 0 }
+    const file: unknown = await new Promise((res) => {
+      const rq = db.transaction('keyval').objectStore('keyval').get('permajardin:scan-queue')
+      rq.onsuccess = () => res(rq.result)
+      rq.onerror = () => res(undefined)
+    })
+    const photoQ: unknown = await new Promise((res) => {
+      const rq = db.transaction('keyval').objectStore('keyval').get('photo:e2esyncQ')
+      rq.onsuccess = () => res(rq.result)
+      rq.onerror = () => res(undefined)
+    })
+    return { abricotiers, photo: photo instanceof Blob ? photo.size : 0, scans: Array.isArray(file) ? file.length : 0, photoScan: photoQ instanceof Blob ? photoQ.size : 0 }
   })
 }
 
@@ -232,7 +250,8 @@ test('synchro : deux appareils, plantes et photo envoyées puis reprises', async
 
   // La copie en ligne a les deux abricotiers et la photo.
   await expect.poll(() => srv.ligne?.data.plants?.filter((p) => p.speciesId === 'abricotier').length, { timeout: 15_000 }).toBe(2)
-  await expect.poll(() => [...srv.fichiers.keys()], { timeout: 20_000 }).toEqual([`${USER_ID}/e2esyncA.jpg`])
+  await expect.poll(() => [...srv.fichiers.keys()].sort(), { timeout: 20_000 }).toEqual([`${USER_ID}/e2esyncA.jpg`, `${USER_ID}/e2esyncQ.jpg`])
+  expect((srv.ligne?.data as { scanQueue?: unknown[] }).scanQueue?.length, 'la plante scannée à valider part avec la copie').toBe(1)
   expect(srv.fichiers.get(`${USER_ID}/e2esyncA.jpg`)![0], 'le fichier envoyé est bien un JPEG').toBe(0xff)
 
   // ---- Appareil B : un téléphone neuf, « J'ai déjà un compte » ----
@@ -250,6 +269,10 @@ test('synchro : deux appareils, plantes et photo envoyées puis reprises', async
   await expect.poll(async () => (await etatLocal(b)).abricotiers, { timeout: 20_000 }).toBe(2)
   // La photo arrive ensuite, à part.
   await expect.poll(async () => (await etatLocal(b)).photo, { timeout: 30_000, message: 'la photo doit arriver sur le second appareil' }).toBeGreaterThan(0)
+
+  // La plante scannée à valider et sa photo arrivent aussi sur le second appareil.
+  await expect.poll(async () => (await etatLocal(b)).scans, { timeout: 20_000 }).toBe(1)
+  await expect.poll(async () => (await etatLocal(b)).photoScan, { timeout: 30_000 }).toBeGreaterThan(0)
 
   for (const [nom, page] of [['A', a], ['B', b]] as const) {
     expect(Math.max(0, await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)), `débordement horizontal (${nom})`).toBe(0)

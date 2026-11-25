@@ -1313,6 +1313,11 @@ function MapViewInner({ garden }: { garden: Garden }) {
                 Les images de la carte ne s’affichent pas. Elles reviendront dès que la connexion reviendra.
               </div>
             )}
+            {liveScan.length > 0 && !placingNow && (
+              <button className="btn small scan-todo" data-feat="scan-a-valider" onClick={() => openScan('scanner')}>
+                {liveScan.length === 1 ? '1 plante scannée à valider' : `${liveScan.length} plantes scannées à valider`} · Revoir
+              </button>
+            )}
             {noteInColumn && !(mobileMap && emptyCard) && photoNote}
             <GardenDataBanner garden={garden} compact />
           </div>
