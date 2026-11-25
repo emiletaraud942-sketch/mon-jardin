@@ -168,7 +168,7 @@ export interface Garden {
   rainMmPerYear?: number
   /** Recalage GPS (similitude 2D en mètres locaux), appliqué aux positions mesurées. */
   calibration?: Calibration
-  /** Points de vue en photos (façon Street View). Métadonnées seulement : les photos sont dans IndexedDB (src/lib/photos.ts), jamais synchronisées ; exportées seulement dans la sauvegarde complète (src/lib/backupFull.ts), fichier que la personne garde. */
+  /** Points de vue en photos (façon Street View). Métadonnées seulement : les photos sont dans IndexedDB (src/lib/photos.ts), synchronisées seulement si la copie en ligne est active (src/lib/photoSync.ts) ; exportées seulement dans la sauvegarde complète (src/lib/backupFull.ts), fichier que la personne garde. */
   panoramas?: Panorama[]
   /** Jardin partagé : identifiant du jardin en ligne et rôle de cette personne. Absent : jardin personnel. Les plantes se synchronisent avec les autres membres (src/lib/shared). */
   shared?: SharedLink

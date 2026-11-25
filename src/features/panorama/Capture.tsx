@@ -283,7 +283,7 @@ export function Capture({ garden, spot, redoId }: { garden: Garden; spot: XY; re
             <li>Tournez lentement. L’appli prend les photos suivantes toute seule.</li>
             <li>Environ 8 à 12 photos font le tour complet.</li>
           </ol>
-          <p className="small muted">L’appli va demander la caméra, puis la boussole. Les photos restent sur ce téléphone.</p>
+          <p className="small muted">L’appli va demander la caméra, puis la boussole. Les photos restent sur ce téléphone, et suivent votre compte si la copie en ligne est active.</p>
           <button className="btn primary big" onClick={() => void begin()}>
             <Icon name="camera" /> Ouvrir la caméra
           </button>
@@ -304,7 +304,7 @@ export function Capture({ garden, spot, redoId }: { garden: Garden; spot: XY; re
         </div>
         <div className="pano-scroll stack">
           <p className="pano-lead">
-            {shots.length} photos, {sizeLabel(total)}. Elles restent sur ce téléphone.
+            {shots.length} photos, {sizeLabel(total)}. Elles restent sur ce téléphone, et suivent votre compte si la copie en ligne est active.
           </p>
           <ul className="pano-thumbs" aria-label="Photos du tour">
             {shots.map((s, i) => (

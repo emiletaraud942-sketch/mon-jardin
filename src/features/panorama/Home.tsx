@@ -16,6 +16,42 @@ interface Info {
 /** Ce que font (et ne font pas) ces photos, pour ne pas les confondre avec « Scanner mon jardin ». */
 const NOT_A_SCAN = 'Ces photos ne reconnaissent pas les plantes toutes seules. Pour trouver le nom d’une plante, utilisez « Identifier une plante par photo », ou « Scanner mon jardin » puis « Filmer en marchant ».'
 
+/**
+ * Points dont aucune photo n'est sur CE téléphone (données arrivées par la copie en ligne, photos pas encore reçues ou jamais envoyées).
+ * Propose de les récupérer et dit pourquoi si ce n'est pas possible.
+ */
+function MissingPhotos({ count }: { count: number }) {
+  const [state, setState] = useState<{ busy: boolean; text?: string }>({ busy: false })
+  async function fetchThem() {
+    setState({ busy: true })
+    try {
+      const sync = await import('../../lib/sync')
+      if (!sync.syncAvailable()) return setState({ busy: false, text: 'La copie en ligne n’est pas disponible dans cette version de l’appli.' })
+      if (!(await sync.currentUser())) return setState({ busy: false, text: 'Connectez-vous d’abord (Réglages > « Retrouver mes jardins sur un autre appareil »).' })
+      const r = await sync.syncPhotos()
+      const parts: string[] = []
+      if (r.downloaded > 0) parts.push(`${r.downloaded} photo${r.downloaded > 1 ? 's reçues' : ' reçue'}.`)
+      if (r.failed > 0) parts.push(`${r.failed} n’ont pas pu être reçues : réessayez avec une bonne connexion.`)
+      if (r.skipped > 0) parts.push(`${r.skipped} sont restées sur l’autre téléphone (trop lourdes ou plus de place en ligne).`)
+      if (parts.length === 0) parts.push('Rien à recevoir : ces photos n’ont jamais été envoyées en ligne. Ouvrez l’appli sur le téléphone qui les a prises, connecté à la copie en ligne : elles partiront toutes seules.')
+      setState({ busy: false, text: parts.join(' ') })
+    } catch (e) {
+      setState({ busy: false, text: `Impossible pour le moment (${e instanceof Error ? e.message.replace(/\.$/, '') : 'erreur inconnue'}).` })
+    }
+  }
+  return (
+    <div className="alert warn small" role="status" data-feat="photos-manquantes">
+      <p style={{ margin: 0 }}>
+        {count === 1 ? 'Les photos d’un point de vue ne sont pas sur ce téléphone.' : `Les photos de ${count} points de vue ne sont pas sur ce téléphone.`} Les photos voyagent par la copie en ligne, seulement si elle est activée sur les deux téléphones.
+      </p>
+      <button className="btn small" disabled={state.busy} onClick={() => void fetchThem()} style={{ marginTop: 8 }}>
+        {state.busy ? 'Recherche…' : 'Récupérer mes photos'}
+      </button>
+      {state.text && <p style={{ margin: '8px 0 0' }}>{state.text}</p>}
+    </div>
+  )
+}
+
 /** Liste des points de vue du jardin, ou explication quand il n'y en a pas encore. */
 export function Home({ garden }: { garden: Garden }) {
   const points = panoramasOf(garden)
@@ -106,6 +142,9 @@ export function Home({ garden }: { garden: Garden }) {
           </ul>
         )}
 
+        {points.length > 0 && Object.keys(info).length > 0 && points.some((p) => info[p.id] && !info[p.id].url) && (
+          <MissingPhotos count={points.filter((p) => info[p.id] && !info[p.id].url).length} />
+        )}
         {refusal && (
           <p className="alert warn small" role="alert">
             {refusal}
@@ -134,7 +173,7 @@ export function Home({ garden }: { garden: Garden }) {
                   <br />
                 </>
               )}
-              Ces photos restent sur ce téléphone et ne sont jamais envoyées en ligne. Elles ne sont pas dans la sauvegarde simple ; la « Sauvegarde avec photos » (Réglages) les contient.
+              Ces photos restent sur ce téléphone, sauf si vous activez la copie en ligne : elles partent alors avec vos jardins (80 Mo au plus). Elles ne sont pas dans la sauvegarde simple ; la « Sauvegarde avec photos » (Réglages) les contient.
             </p>
           </div>
         </details>
