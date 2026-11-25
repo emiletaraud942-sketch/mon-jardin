@@ -57,7 +57,8 @@ function MissingPhotos({ count }: { count: number }) {
 export function Home({ garden }: { garden: Garden }) {
   const points = panoramasOf(garden)
   // Des points de vue peuvent exister dans UN AUTRE jardin de ce téléphone (la liste n'affiche que le jardin ouvert).
-  const others = useStore((st) => st.gardens.filter((g) => g.id !== garden.id && (g.panoramas?.length ?? 0) > 0))
+  const allGardens = useStore((st) => st.gardens)
+  const others = useMemo(() => allGardens.filter((g) => g.id !== garden.id && (g.panoramas?.length ?? 0) > 0), [allGardens, garden.id])
   const [info, setInfo] = useState<Record<string, Info>>({})
   const [refusal, setRefusal] = useState('')
   const key = points.map((p) => p.id + p.shots.map((s) => s.photoId).join('')).join('|')
