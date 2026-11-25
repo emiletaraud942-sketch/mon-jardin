@@ -35,6 +35,20 @@ export function loupeCenter(finger: XY, view: { w: number; h: number }, size = L
   return { x: clampX(side), y: Math.max(half + topMargin, finger.y - half) }
 }
 
+/** Hauteur (px) dont le repère est relevé au-dessus du doigt quand on le fait glisser : le doigt ne le cache pas. */
+export const PIN_LIFT_PX = 56
+/** Le repère monte de 4 px par pixel parcouru par le doigt, jusqu'à PIN_LIFT_PX : un simple toucher ne le déplace pas. */
+const PIN_LIFT_SLOPE = 4
+
+/**
+ * Où va le repère pendant qu'on le fait glisser (pixels de la carte). `grab` : où le doigt a saisi le repère, par rapport à son centre ;
+ * `travel` : distance parcourue par le doigt depuis la saisie. Sans mouvement, le repère reste où il est ; en bougeant, il se place au-dessus du doigt.
+ */
+export function dragTarget(finger: XY, grab: XY, travel: number, lift = PIN_LIFT_PX): XY {
+  const up = Math.min(lift, Math.max(0, travel) * PIN_LIFT_SLOPE)
+  return { x: finger.x - grab.x, y: finger.y - grab.y - up }
+}
+
 /** Carré de la carte (pixels de l'écran réel) à copier dans la loupe : centré sur le point visé. */
 export function loupeSource(target: XY, size = LOUPE_SIZE, zoom = LOUPE_ZOOM, ratio = 1): { sx: number; sy: number; sw: number } {
   const sw = (size / zoom) * ratio

@@ -1,3 +1,4 @@
+import { Fold } from '../../components/Fold'
 import { useMemo, useState } from 'react'
 import { listEvents, toggleInterest } from '../../lib/neighbors/api'
 import { RADII, capacityText, emptyEventsText, eventEnded, eventStatusInfo, formatEventDate, interestCountText } from '../../lib/neighbors/logic'
@@ -171,18 +172,21 @@ export function EventsTab({
       <section className="card stack" aria-label="Événements près de chez vous" data-feat="evenements">
         <h2>Événements près de chez vous</h2>
         <p style={{ margin: 0 }}>Ateliers, troc de plantes, visites de jardins. Ils sont publiés par des organisateurs vérifiés.</p>
-        <div className="row nb-toolbar-row">
-          <label className="row small" style={{ gap: 6 }}>
-            <span>Distance</span>
-            <select className="input nb-radius" value={radius} onChange={(e) => onRadius(Number(e.target.value))} aria-label="Distance de recherche">
-              {RADII.map((r) => (
-                <option key={r} value={r}>
-                  jusqu’à {r} km
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+        <details className="np-details nb-filtres">
+          <summary>Changer la distance</summary>
+          <div className="row nb-toolbar-row" style={{ marginTop: 8 }}>
+            <label className="row small" style={{ gap: 6 }}>
+              <span>Distance</span>
+              <select className="input nb-radius" value={radius} onChange={(e) => onRadius(Number(e.target.value))} aria-label="Distance de recherche">
+                {RADII.map((r) => (
+                  <option key={r} value={r}>
+                    jusqu’à {r} km
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </details>
       </section>
 
       {error && <ErrorBox message={error} onRetry={reload} />}
@@ -199,8 +203,8 @@ export function EventsTab({
       {data && events.length === 0 && !error && <EventsEmpty radius={radius} org={org} onRadius={onRadius} onOrganizer={onOrganizer} />}
       {!online && <p className="small muted">Pas de réseau : la liste peut être dépassée.</p>}
 
-      <section className="card stack" aria-label="Organiser un événement">
-        <h2>Vous organisez un événement ?</h2>
+      <Fold title="Vous organisez un événement ?">
+        <div className="stack" aria-label="Organiser un événement">
         {organizer.error && <ErrorBox message={organizer.error} onRetry={organizer.reload} />}
         {!organizer.error && organizer.loading && !org && <Spinner label="Chargement…" />}
         {!organizer.error && organizer.data === null && (
@@ -240,7 +244,8 @@ export function EventsTab({
             </div>
           </>
         )}
-      </section>
+        </div>
+      </Fold>
     </div>
   )
 }

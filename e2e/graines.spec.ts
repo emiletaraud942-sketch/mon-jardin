@@ -23,6 +23,7 @@ test('graines et liste des semis', async ({ page, baseURL }) => {
   // 1. La liste du mois s'imprime et se partage.
   const semer = page.locator('[data-feat=semer-ce-mois]')
   await expect(semer).toBeVisible()
+  await semer.locator('summary').first().click() // repli fermé d'emblée
   await expect(semer.locator('[data-feat=imprimer-semis]')).toBeVisible()
   await expect(semer.locator('[data-feat=partager-semis]')).toBeVisible()
 
@@ -40,6 +41,7 @@ test('graines et liste des semis', async ({ page, baseURL }) => {
 
   // 2. Mes graines : ajouter, marquer « à donner », retirer, annuler.
   const graines = page.locator('[data-feat=mes-graines]')
+  await graines.locator('summary').first().click() // repli fermé d'emblée
   await graines.scrollIntoViewIfNeeded()
   await expect(graines.getByText('Aucun sachet pour l’instant.')).toBeVisible()
   await graines.getByLabel('Nom du sachet').fill('Haricot de ma grand-mère')
@@ -79,6 +81,7 @@ test('lire un sachet en photo : champs proposés, rien d’ajouté tout seul', a
   await expect(page.locator('[data-home=planter]')).toBeVisible({ timeout: 60_000 })
   await page.locator('[data-home=planter]').click()
   const graines = page.locator('[data-feat=mes-graines]')
+  await graines.locator('summary').first().click() // repli fermé d'emblée
   await graines.scrollIntoViewIfNeeded()
   await expect(graines.getByText('La photo n’est pas gardée et ne quitte pas l’appareil.')).toBeVisible()
 

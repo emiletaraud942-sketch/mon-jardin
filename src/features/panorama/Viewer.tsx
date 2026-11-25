@@ -549,7 +549,8 @@ export function Viewer({ garden, pointId }: { garden: Garden; pointId: string })
           <span>{photoDateLabel(point.takenAt)}</span>
         </div>
       </div>
-      <div className="pano-season" data-feat="saison-photo">
+      <details className="pano-season pano-season-fold" data-feat="saison-photo">
+        <summary className="btn pano-pill">Saison des plantes</summary>
         <div className="season-picker" role="group" aria-label="Saison des plantes">
           {takenSeason && (
             <button type="button" className={'btn pano-pill pano-season-date' + (atPhotoDate ? ' primary' : '')} aria-pressed={atPhotoDate} onClick={() => setUi({ season: undefined })}>
@@ -573,7 +574,7 @@ export function Viewer({ garden, pointId }: { garden: Garden; pointId: string })
             {takenSeason ? `Les plantes sont décrites ${SEASONS.find((x) => x.id === describedSeason)!.phrase}, pas à la date de la photo.` : SEASON_PHOTO_NOTE}
           </span>
         ) : null}
-      </div>
+      </details>
 
       <div
         ref={wrap}
@@ -699,12 +700,15 @@ export function Viewer({ garden, pointId }: { garden: Garden; pointId: string })
               <Icon name="forward" size={18} /> Visite
             </button>
           )}
-          <button className="btn" onClick={redo}>
-            <Icon name="camera" size={18} /> Refaire ce point
-          </button>
-          <button className="btn" onClick={() => setConfirmDelete(true)}>
-            <Icon name="trash" size={18} /> Supprimer
-          </button>
+          <details className="pano-more-fold">
+            <summary className="btn">Plus</summary>
+            <button className="btn" onClick={redo}>
+              <Icon name="camera" size={18} /> Refaire ce point
+            </button>
+            <button className="btn" onClick={() => setConfirmDelete(true)}>
+              <Icon name="trash" size={18} /> Supprimer
+            </button>
+          </details>
         </div>
       </div>
 

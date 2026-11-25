@@ -94,6 +94,7 @@ test('visite en photos : départ, rotation, pause, suivant, arrêt, légendes', 
   await expect(stage).not.toHaveAttribute('data-loading', 'true', { timeout: 20_000 })
 
   // La vue tourne toute seule (16° par seconde, après une courte pause à l'arrivée).
+  await expect(stage).toHaveAttribute('data-yaw', /^-?\d/, { timeout: 20_000 }) // l'attribut n'existe qu'une fois la vue prête : sans cette attente, `a` pouvait valoir NaN
   const a = (await etat()).yaw
   await expect
     .poll(async () => (((await etat()).yaw - a + 360) % 360), { message: 'la vue doit tourner toute seule', timeout: 20_000, intervals: [500] })
@@ -115,6 +116,7 @@ test('visite en photos : départ, rotation, pause, suivant, arrêt, légendes', 
 
   // Saison : par défaut, l'état décrit est celui de la date de prise (1er novembre 2026 = automne) ; on peut voir comme en hiver, puis revenir.
   await expect(page.locator('.pano-season-note')).toHaveText('Photo prise le 1er novembre 2026 (automne) : les plantes sont décrites à cette date.')
+  await page.getByText('Saison des plantes', { exact: true }).click() // repli fermé d'emblée
   await expect(page.getByRole('button', { name: 'À la date de la photo' })).toHaveAttribute('aria-pressed', 'true')
   await page.getByRole('button', { name: 'Voir comme en hiver' }).click()
   await expect(page.locator('.pano-season-note')).toContainText('décrites en hiver, pas à la date de la photo')

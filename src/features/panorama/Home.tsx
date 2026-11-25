@@ -119,20 +119,25 @@ export function Home({ garden }: { garden: Garden }) {
         <button className={'btn big' + (tourOrder(points).length >= 2 ? '' : ' primary')} onClick={() => start('guide')}>
           <Icon name="camera" /> Prendre un point de vue
         </button>
-        <button className="btn" onClick={() => start('import')}>
-          <Icon name="upload" /> Importer un panorama
-        </button>
+        <details className="np-details pano-more">
+          <summary>Plus d’options et d’infos</summary>
+          <div className="stack" style={{ marginTop: 8 }}>
+            <button className="btn" onClick={() => start('import')}>
+              <Icon name="upload" /> Importer un panorama
+            </button>
 
-        <p className="small pano-note">{NOT_A_SCAN}</p>
-        <p className="small muted pano-foot">
-          {points.length > 0 && (
-            <>
-              {points.length} point{points.length > 1 ? 's' : ''} sur {MAX_POINTS} · {sizeLabel(total)} sur {sizeLabel(MAX_BYTES)}.
-              <br />
-            </>
-          )}
-          Ces photos restent sur ce téléphone et ne sont jamais envoyées en ligne. Elles ne sont pas dans la sauvegarde simple ; la « Sauvegarde avec photos » (Réglages) les contient.
-        </p>
+            <p className="small pano-note">{NOT_A_SCAN}</p>
+            <p className="small muted pano-foot">
+              {points.length > 0 && (
+                <>
+                  {points.length} point{points.length > 1 ? 's' : ''} sur {MAX_POINTS} · {sizeLabel(total)} sur {sizeLabel(MAX_BYTES)}.
+                  <br />
+                </>
+              )}
+              Ces photos restent sur ce téléphone et ne sont jamais envoyées en ligne. Elles ne sont pas dans la sauvegarde simple ; la « Sauvegarde avec photos » (Réglages) les contient.
+            </p>
+          </div>
+        </details>
       </div>
     </div>
   )

@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
+import { Fold } from "../../components/Fold";
 import { Icon } from "../../components/Icon";
 import { PageHead } from "../../components/PageHead";
 import { SPECIES_BY_ID } from "../../data/species";
@@ -59,8 +60,14 @@ const TASKS_SHOWN = 3;
 function WeatherDays({ weather }: { weather: WeatherBundle }) {
   const days = weather.forecast.slice(0, 7);
   const firstFrost = days.findIndex((d) => d.tMin <= 0);
+  const first = days[0] ? dayTemps(days[0]) : undefined;
   return (
-    <ul className="wx-days" aria-label="Météo des 7 prochains jours" data-feat="meteo">
+    <details className="np-details wx-fold" data-feat="meteo" open={firstFrost >= 0}>
+      <summary>
+        Météo des 7 jours
+        {first ? ` : aujourd’hui ${TEMP_WORD.jour.toLowerCase()} ${first.jour}, ${TEMP_WORD.nuit.toLowerCase()} ${first.nuit}` : ""}
+      </summary>
+    <ul className="wx-days" aria-label="Météo des 7 prochains jours">
       {days.map((d, i) => {
         const t = dayTemps(d);
         const label = new Date(d.date)
@@ -89,6 +96,7 @@ function WeatherDays({ weather }: { weather: WeatherBundle }) {
         );
       })}
     </ul>
+    </details>
   );
 }
 
@@ -449,6 +457,8 @@ export function TasksPage({ garden }: { garden: Garden }) {
     dropFlash(id);
   }
 
+  /** Semaine : tout le secondaire dans un seul repli « Plus d’options » ; calendrier : le bouton de retour reste visible. */
+  const extraWrap = (kids: ReactNode) => (view === "semaine" ? <Fold title="Plus d’options">{kids}</Fold> : kids);
   return (
     <div className="page afaire">
       <PageHead
@@ -588,6 +598,8 @@ export function TasksPage({ garden }: { garden: Garden }) {
         )}
       </div>
       <div className="afaire-extra">
+        {extraWrap(
+          <>
         {view === "semaine" && finished.length > 0 && (
           <div className="card season-over">
             <h3>Ces plantes ont fini leur saison</h3>
@@ -670,6 +682,8 @@ export function TasksPage({ garden }: { garden: Garden }) {
               </button>
             )}
           </div>
+        )}
+          </>,
         )}
       </div>
     </div>

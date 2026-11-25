@@ -81,6 +81,14 @@ test('plante choisie : infos sur la carte, glisser, fiche sur demande', async ({
   // 6. « Que planter ici ? » ouvre « Où planter ? » avec cet endroit déjà choisi (soleil, pente, humidité estimée, idées de plantes).
   await spot.getByRole('button', { name: 'Que planter ici ?' }).click()
   await expect(page.getByRole('heading', { name: 'Quelle plante pour cet endroit ?' })).toBeVisible()
+  // Téléphone : la carte reste visible en haut ET la liste des plantes conseillées est dessous : on voit les deux en même temps.
+  const conseils = page.locator('.reco-flow')
+  if (await conseils.count()) {
+    await expect(conseils.locator('.reco-head')).toContainText('Plantes conseillées', { timeout: 15_000 })
+    await expect(conseils.locator('.reco-head .small')).toContainText(/\S/) // les meilleures plantes sont nommées
+    await expect(page.locator('.spot-stick.on .spot-map')).toBeInViewport()
+    await expect(conseils).toBeInViewport()
+  }
   await expect(page.getByText(/estimation/).first()).toBeVisible({ timeout: 15_000 })
   await expect(spot).toHaveCount(0)
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0)

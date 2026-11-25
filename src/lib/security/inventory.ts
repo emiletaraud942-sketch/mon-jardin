@@ -323,6 +323,7 @@ export const LOCAL_STORAGE_KEYS: readonly StorageKeyInfo[] = [
 
 /** Clés sessionStorage (effacées à la fermeture de l'onglet ; « Effacer toutes mes données » les retire aussi). */
 export const SESSION_STORAGE_KEYS: readonly StorageKeyInfo[] = [
+  { cle: 'pj.homePlus', contenu: 'Accueil complet au lieu de la feuille : posée à la main par un script de recette, jamais par l’appli' },
   { cle: 'pj.debug', contenu: 'Outils de mesure des recettes (accès à la carte) : posée à la main par un script de test, jamais par l’appli' },
   { cle: 'pj.errors', contenu: 'Les 20 dernières erreurs de l’appli (texte nettoyé), pour le diagnostic ; jamais envoyées' },
 ]

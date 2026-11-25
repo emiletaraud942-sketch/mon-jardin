@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { gpsCircleRadiusM, loupeCenter, loupeSource, rulerSummary } from './placeAids'
+import { PIN_LIFT_PX, dragTarget, gpsCircleRadiusM, loupeCenter, loupeSource, rulerSummary } from './placeAids'
 
 describe('rulerSummary', () => {
   it('liste limite, maison et plante voisine en français', () => {
@@ -55,5 +55,19 @@ describe('gpsCircleRadiusM', () => {
     expect(gpsCircleRadiusM(4.2)).toBe(4.2)
     expect(gpsCircleRadiusM(0.1)).toBe(0.5)
     expect(gpsCircleRadiusM(NaN)).toBe(5)
+  })
+})
+
+describe('dragTarget', () => {
+  const grab = { x: 4, y: 6 }
+  it('sans mouvement, le repère ne bouge pas', () => {
+    expect(dragTarget({ x: 100, y: 200 }, grab, 0)).toEqual({ x: 96, y: 194 })
+  })
+  it('en bougeant, il monte au-dessus du doigt, jusqu’à la hauteur maximale', () => {
+    expect(dragTarget({ x: 100, y: 200 }, grab, 5).y).toBe(194 - 20)
+    expect(dragTarget({ x: 100, y: 200 }, grab, 40)).toEqual({ x: 96, y: 194 - PIN_LIFT_PX })
+  })
+  it('un parcours négatif ou nul ne relève rien', () => {
+    expect(dragTarget({ x: 10, y: 10 }, { x: 0, y: 0 }, -3)).toEqual({ x: 10, y: 10 })
   })
 })

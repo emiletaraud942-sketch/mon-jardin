@@ -77,37 +77,38 @@ export function PlantsPage({ garden }: { garden: Garden }) {
       <div className="plants-head">
         <h1>Mes plantes ({plants.length})</h1>
         <div className="plants-actions">
-          <button className="btn" aria-label="Scanner mon jardin" onClick={() => openScan('menu')}>
-            <span>
-              Scanner<span className="hide-mobile"> mon jardin</span>
-            </span>
-          </button>
           <button className="btn primary" onClick={() => setPicking(true)}>
             Ajouter une plante
           </button>
         </div>
       </div>
-      {planned > 0 && (
-        <button className="btn shop-open" aria-haspopup="dialog" onClick={() => setShopping(true)}>
-          <Icon name="leaf" /> Liste de courses et de semis ({planned})
-        </button>
-      )}
-      <div className="row plants-more" style={{ marginBottom: 8 }}>
-        <button className="btn" aria-haspopup="dialog" onClick={() => setIdentifying(true)}>
-          <Icon name="camera" /> Identifier une plante par photo
-        </button>
+      <div className="row" style={{ margin: '8px 0 12px' }}>
+        <input className="input" style={{ flex: '1 1 200px' }} type="search" aria-label="Rechercher une plante" placeholder="Rechercher une plante" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
-      <div className="row" style={{ margin: '8px 0 16px' }}>
-        <input className="input" style={{ flex: '2 1 200px' }} type="search" aria-label="Rechercher une plante" placeholder="Rechercher une plante" value={q} onChange={(e) => setQ(e.target.value)} />
-        <select className="input" style={{ flex: '1 1 180px' }} value={status} onChange={(e) => setStatus(e.target.value as PlantStatus | '')} aria-label="Où en sont-elles ?">
-          <option value="">Toutes les plantes</option>
-          {Object.entries(STATUS_LABEL).map(([k, v]) => (
-            <option key={k} value={k}>
-              {v}
-            </option>
-          ))}
-        </select>
-      </div>
+      <details className="np-details plants-fold">
+        <summary>Plus d’actions</summary>
+        <div className="stack" style={{ gap: 8, margin: '8px 0 12px' }}>
+          <button className="btn" aria-label="Scanner mon jardin" onClick={() => openScan('menu')}>
+            <Icon name="scan" /> Scanner mon jardin
+          </button>
+          <button className="btn" aria-haspopup="dialog" onClick={() => setIdentifying(true)}>
+            <Icon name="camera" /> Identifier une plante par photo
+          </button>
+          {planned > 0 && (
+            <button className="btn shop-open" aria-haspopup="dialog" onClick={() => setShopping(true)}>
+              <Icon name="leaf" /> Liste de courses et de semis ({planned})
+            </button>
+          )}
+          <select className="input" value={status} onChange={(e) => setStatus(e.target.value as PlantStatus | '')} aria-label="Où en sont-elles ?">
+            <option value="">Toutes les plantes</option>
+            {Object.entries(STATUS_LABEL).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
+          </select>
+        </div>
+      </details>
       <div className="grid cols-2" style={{ alignItems: 'start' }}>
         <div className="card">
           {plants.length === 0 && (

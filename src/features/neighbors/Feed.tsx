@@ -57,24 +57,30 @@ export function Feed({
   return (
     <div className="stack nb-feed">
       <div className="nb-toolbar">
-        <div className="nb-chips" role="group" aria-label="Type d’annonce">
-          {KIND_FILTERS.map((f) => (
-            <button key={f.id} className={'btn small tall' + (kind === f.id ? ' on' : '')} aria-pressed={kind === f.id} onClick={() => onKind(f.id)}>
-              {f.label}
-            </button>
-          ))}
-        </div>
-        <label className="row small nb-cat-row" style={{ gap: 6 }}>
-          <span>Catégorie</span>
-          <select className="input nb-cat" value={category} onChange={(e) => onCategory(parseCategoryFilter(e.target.value))} aria-label="Catégorie d’annonce">
-            {CATEGORY_FILTERS.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </label>
         <div className="row nb-toolbar-row">
+          <button className="btn primary" onClick={() => onNew(kind === 'cherche' ? 'cherche' : undefined)}>
+            {kind === 'cherche' ? 'Je cherche quelque chose' : 'Publier une annonce'}
+          </button>
+        </div>
+        <details className="np-details nb-filtres" open={kind !== 'all' || category !== 'all'}>
+          <summary>Filtrer les annonces</summary>
+          <div className="nb-chips" role="group" aria-label="Type d’annonce" style={{ marginTop: 8 }}>
+            {KIND_FILTERS.map((f) => (
+              <button key={f.id} className={'btn small tall' + (kind === f.id ? ' on' : '')} aria-pressed={kind === f.id} onClick={() => onKind(f.id)}>
+                {f.label}
+              </button>
+            ))}
+          </div>
+          <label className="row small nb-cat-row" style={{ gap: 6 }}>
+            <span>Catégorie</span>
+            <select className="input nb-cat" value={category} onChange={(e) => onCategory(parseCategoryFilter(e.target.value))} aria-label="Catégorie d’annonce">
+              {CATEGORY_FILTERS.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="row small" style={{ gap: 6 }}>
             <span>Distance</span>
             <select className="input nb-radius" value={radius} onChange={(e) => onRadius(Number(e.target.value))} aria-label="Distance de recherche">
@@ -85,11 +91,7 @@ export function Feed({
               ))}
             </select>
           </label>
-          <span className="spacer" />
-          <button className="btn primary" onClick={() => onNew(kind === 'cherche' ? 'cherche' : undefined)}>
-            {kind === 'cherche' ? 'Je cherche quelque chose' : 'Publier une annonce'}
-          </button>
-        </div>
+        </details>
       </div>
 
       {error && <ErrorBox message={error} onRetry={reload} />}

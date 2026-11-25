@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 import type { SyncConflictError } from '../../lib/sync'
 import { ConfirmModal } from '../../components/ConfirmModal'
@@ -406,8 +406,6 @@ function Backup() {
     <div className="card" data-feat="sauvegarde">
       <h2>Sauvegarde de mes données</h2>
       <p role="status" className={writeError ? 'warn-text' : 'small'}>{storageLine}</p>
-      <p className="small">{STORAGE_WHERE}</p>
-      <p>La sauvegarde est un fichier, rangé dans les « Téléchargements » de cet appareil.</p>
       <p className={overdue ? 'warn-text' : 'muted'}>
         {last ? `Dernière sauvegarde : ${formatDay(last, { year: true })}${lastName ? `, fichier « ${lastName} »` : ''}.` : 'Vous n’avez pas encore fait de sauvegarde.'}
         {overdue && ' Pensez à en faire une.'}
@@ -417,21 +415,11 @@ function Backup() {
         <button className="btn primary" onClick={() => void exportJson()} disabled={busy}>
           <Icon name="download" /> Faire une sauvegarde
         </button>
-        <button className="btn" data-feat="sauvegarde-complete" aria-describedby={est?.photos === 0 ? 'sauvegarde-photos-aide' : undefined} onClick={() => void exportFull()} disabled={busy || est?.photos === 0}>
-          <Icon name="download" /> Sauvegarde avec photos{est && est.photos > 0 ? ` (${formatMo(est.bytes)})` : ''}
-        </button>
         <label className="btn file-btn" data-feat="reprise">
           <Icon name="upload" /> Reprendre une sauvegarde
           <input className="sr-only" type="file" accept={`application/json,.json,${FULL_EXTENSION}`} onChange={(e) => void importJson(e.target)} />
         </label>
       </div>
-      {est?.photos === 0 && (
-        <p id="sauvegarde-photos-aide" className="small muted">
-          Aucune photo dans l’appli : la sauvegarde simple suffit.
-        </p>
-      )}
-      {est?.tooHeavy && <p className="alert small">{MESSAGE_TOO_HEAVY(Math.round(est.bytes / (1024 * 1024)))}</p>}
-      {est && !est.tooHeavy && est.bytes > HEAVY_BACKUP_BYTES && <p className="small muted">Le fichier avec photos est lourd ({formatMo(est.bytes)}) : faites-le avec du Wi-Fi et de la place libre sur le téléphone.</p>}
       {msg?.error && <ErrorNote error={msg.error} />}
       {msg?.text && (
         <p role="status" style={{ marginTop: 8 }}>
@@ -458,7 +446,21 @@ function Backup() {
         </div>
       )}
       <details className="np-details">
-        <summary>Copie de sécurité et conseils</summary>
+        <summary>Plus de sauvegardes et conseils</summary>
+        <p className="small">{STORAGE_WHERE}</p>
+        <p>La sauvegarde est un fichier, rangé dans les « Téléchargements » de cet appareil.</p>
+        <div className="row" style={{ margin: '8px 0' }}>
+          <button className="btn" data-feat="sauvegarde-complete" aria-describedby={est?.photos === 0 ? 'sauvegarde-photos-aide' : undefined} onClick={() => void exportFull()} disabled={busy || est?.photos === 0}>
+            <Icon name="download" /> Sauvegarde avec photos{est && est.photos > 0 ? ` (${formatMo(est.bytes)})` : ''}
+          </button>
+        </div>
+        {est?.photos === 0 && (
+          <p id="sauvegarde-photos-aide" className="small muted">
+            Aucune photo dans l’appli : la sauvegarde simple suffit.
+          </p>
+        )}
+        {est?.tooHeavy && <p className="alert small">{MESSAGE_TOO_HEAVY(Math.round(est.bytes / (1024 * 1024)))}</p>}
+        {est && !est.tooHeavy && est.bytes > HEAVY_BACKUP_BYTES && <p className="small muted">Le fichier avec photos est lourd ({formatMo(est.bytes)}) : faites-le avec du Wi-Fi et de la place libre sur le téléphone.</p>}
         <p className="small muted">Gardez-le en lieu sûr : ordinateur, clé USB, ou e-mail à vous-même.</p>
         <p className="small muted">La sauvegarde simple n’a pas les images des photos : elles restent sur cet appareil. Elle garde leurs dates et leurs notes. « Sauvegarde avec photos » les met dans le fichier, qui est plus lourd. « Reprendre une sauvegarde » lit les deux.</p>
         {persistent === false && <p className="small muted">Si l’espace manque, cet appareil peut effacer vos données. Une sauvegarde les protège.</p>}
@@ -892,6 +894,18 @@ function TourCard() {
   )
 }
 
+/** Un groupe de réglages replié : le titre d'abord, le détail à la demande (reveal() ouvre le repli qui contient une fonction cherchée). */
+function SettingsGroup({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <details className="np-details settings-group">
+      <summary>{title}</summary>
+      <div className="stack" style={{ gap: 12, marginTop: 12 }}>
+        {children}
+      </div>
+    </details>
+  )
+}
+
 export function SettingsPage({ garden }: { garden: Garden }) {
   const { newGarden } = useUi()
   const [adding, setAdding] = useState(!!newGarden)
@@ -915,24 +929,21 @@ export function SettingsPage({ garden }: { garden: Garden }) {
         <div className="stack" style={{ gap: 12 }}>
           <GardensCard garden={garden} adding={adding} setAdding={setAdding} addRef={addRef} />
           <Backup />
-          <GardenInfo garden={garden} />
-          <LidarCard garden={garden} />
-          <OfflineZoneCard garden={garden} />
-          <ScanCard garden={garden} />
+          <SettingsGroup title="Mon terrain et la carte">
+            <GardenInfo garden={garden} />
+            <LidarCard garden={garden} />
+            <OfflineZoneCard garden={garden} />
+            <ScanCard garden={garden} />
+          </SettingsGroup>
         </div>
         <div className="stack" style={{ gap: 12 }}>
-          <AdviceCard garden={garden} />
-          <ReadingCard />
-          <TourCard />
-          <InstallCard />
-          <Sync />
-          {syncConfigured && (
-            <Suspense fallback={null}>
-              <SharedGardensCard />
-            </Suspense>
-          )}
-          <PrivacyCard />
-          <Fold title="Sources et licences">
+          <SettingsGroup title="Texte, aide et confidentialité">
+            <ReadingCard />
+            <AdviceCard garden={garden} />
+            <TourCard />
+            <InstallCard />
+            <PrivacyCard />
+            <Fold title="Sources et licences">
               <ul className="list small">
                 <li>Photo aérienne, plan, cadastre, maisons voisines et relief : © IGN – Géoplateforme, Licence Ouverte 2.0. Arbres des environs : © IGN – LiDAR HD, Licence Ouverte 2.0.</li>
                 <li>Météo et historique du climat : Open-Meteo (CC BY 4.0, usage non commercial).</li>
@@ -940,7 +951,16 @@ export function SettingsPage({ garden }: { garden: Garden }) {
                 <li>Fiches des plantes, calendriers et voisinages : base PermaJardin. Ces conseils restent indicatifs.</li>
                 <li>Distances de plantation : article 671 du Code civil. Des règles locales peuvent s’appliquer.</li>
               </ul>
-          </Fold>
+            </Fold>
+          </SettingsGroup>
+          <SettingsGroup title="Copie en ligne et jardin partagé">
+            <Sync />
+            {syncConfigured && (
+              <Suspense fallback={null}>
+                <SharedGardensCard />
+              </Suspense>
+            )}
+          </SettingsGroup>
         </div>
       </div>
       <footer className="legal-footer">

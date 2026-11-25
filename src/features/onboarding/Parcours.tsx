@@ -150,7 +150,6 @@ function AdresseStep({ garden, next, skip }: StepProps) {
     >
       <TextSizeButton />
       <AddressSearch onSelect={setPlace} onClear={() => setPlace(undefined)} />
-      {!place && <p className="small muted" style={{ margin: 0 }}>Choisissez votre adresse dans la liste pour continuer.</p>}
       {!garden && (
         <p className="muted small legal-accept">
           Gratuit, sans compte. En continuant, vous acceptez les <LegalLink id="cgu" label="conditions d’utilisation" /> et la <LegalLink id="confidentialite" label="politique de confidentialité" />.

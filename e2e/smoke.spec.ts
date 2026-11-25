@@ -53,7 +53,9 @@ test('parcours de base', async ({ page, baseURL }) => {
   const carte = page.locator('.maplibregl-map').first()
   await expect(carte).toBeVisible({ timeout: 30_000 })
   await noOverflow('carte en placement')
-  await page.getByRole('button', { name: /^Viser/ }).click()
+  // Sur téléphone la croix de visée est déjà active ; sur ordinateur on l'active.
+  const viser = page.getByRole('button', { name: /^Viser/ })
+  if ((await viser.getAttribute('aria-pressed')) !== 'true') await viser.click()
   await page.getByRole('button', { name: /^Valider/ }).click()
   // Question d'achat facultative (« Comment l'avez-vous achetée ? ») : on la ferme.
   const achat = page.getByRole('dialog', { name: /Comment l’avez-vous achetée/ })

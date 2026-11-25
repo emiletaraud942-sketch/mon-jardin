@@ -267,6 +267,7 @@ test('jardin partagé : Alice partage, Bob rejoint avec un code et modifie, Alic
   // ---- Bob note « qui s'en occupe » sur un abricotier : Alice le reprend ----
   await b.goto('/#plantes')
   await b.getByRole('button', { name: /Abricotier/ }).first().click()
+  await b.locator('[data-feat=plus-plante]').getByText('Plus d’actions', { exact: true }).click()
   await b.getByText('Date et notes', { exact: true }).first().click()
   await b.getByLabel(/Qui s’en occupe/).fill('Bob')
   await expect.poll(() => [...srv.plantes.values()].some((r) => r.data.keeper === 'Bob'), { timeout: 20_000 }).toBe(true)

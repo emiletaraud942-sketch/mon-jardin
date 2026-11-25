@@ -113,6 +113,14 @@ function ext(route: Route, wx: WeatherMock) {
 export async function mockNetwork(page: Page, baseURL: string, wx: WeatherMock = {}): Promise<string[]> {
   const external: string[] = []
   const origin = new URL(baseURL).origin
+  // Les recettes existantes visent l'accueil complet (tous les boutons) ; la feuille a son propre test (feuille.spec.ts).
+  await page.addInitScript(() => {
+    try {
+      sessionStorage.setItem('pj.homePlus', '1')
+    } catch {
+      /* stockage indisponible */
+    }
+  })
   // Une seule règle, évaluée pour chaque requête : notre origine passe (proxys /ext/* et /api/* simulés), Supabase répond « vide ».
   await page.route('**/*', (route) => {
     const url = route.request().url()

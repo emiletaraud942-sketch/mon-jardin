@@ -39,7 +39,7 @@ import { SidePanel } from './SidePanel'
 import { movePlant, moveWithUndo, placePlant } from './placing'
 import { confirmBeforePlacing, registerAim, registerNudge, setPlacingInfo, setPlacingPoint, usePlacingInfo } from './aimBridge'
 import { PHOTO_MAP_MAXZOOM, PHOTO_NOTE_ZOOM, cadastreOpacityExpression, gridStepM, mapMaxZoomFor } from './photoZoom'
-import { LOUPE_HOLD_MS, LOUPE_SIZE, LOUPE_SLOP_PX, LOUPE_ZOOM, gpsCircleRadiusM, loupeCenter, loupeSource, rulerSummary } from './placeAids'
+import { LOUPE_HOLD_MS, LOUPE_SIZE, LOUPE_SLOP_PX, LOUPE_ZOOM, dragTarget, gpsCircleRadiusM, loupeCenter, loupeSource, rulerSummary } from './placeAids'
 import { useGps } from '../scan/useGps'
 import { gpsMessage } from '../scan/gps'
 import { proposePosition } from '../scan/capture'
@@ -355,13 +355,18 @@ function MapViewInner({ garden }: { garden: Garden }) {
     let active = false
     let target: XY | undefined
     let result: SnapResult | undefined
+    // Saisie du repère orange : `grab` = où le doigt l'a pris, `grabStart` = où le doigt s'est posé ; null = appui long ordinaire (loupe).
+    let grab: XY | null = null
+    let grabStart: XY | undefined
     const view = () => ({ w: cont.clientWidth, h: cont.clientHeight })
     const rel = (e: PointerEvent): XY => {
       const r = cont.getBoundingClientRect()
       return { x: e.clientX - r.left, y: e.clientY - r.top }
     }
     const eligible = () => !!(placingRef.current || movingRef.current) && !aimRef.current
-    const aimAt = (finger: XY) => {
+    const aimAt = (raw: XY) => {
+      // Repère saisi : il se place au-dessus du doigt (le doigt ne le cache pas) ; appui long : le point visé est sous le doigt.
+      const finger = grab && grabStart ? dragTarget(raw, grab, Math.hypot(raw.x - grabStart.x, raw.y - grabStart.y)) : raw
       const ll = m.unproject([finger.x, finger.y])
       const a = aidRef.current!
       const r = a.snapAt(toLocal(gardenRef.current.center, { lon: ll.lng, lat: ll.lat }), movingRef.current)
@@ -370,6 +375,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
       const px = m.project([sp.lon, sp.lat])
       target = { x: px.x, y: px.y }
       result = r
+      if (grab) spotMarker.current?.setLngLat([sp.lon, sp.lat]) // le repère suit le doigt
       const c = loupeCenter(finger, view())
       box.style.transform = `translate(${c.x - LOUPE_SIZE / 2}px, ${c.y - LOUPE_SIZE / 2}px)`
       m.triggerRepaint()
@@ -389,6 +395,9 @@ function MapViewInner({ garden }: { garden: Garden }) {
       down = undefined
       if (!active) return
       active = false
+      grab = null
+      grabStart = undefined
+      spotMarker.current?.getElement().classList.remove('dragging')
       box.classList.remove('on')
       m.dragPan.enable()
       m.touchZoomRotate.enable()
@@ -405,6 +414,21 @@ function MapViewInner({ garden }: { garden: Garden }) {
       if (!e.isPrimary) return stop(false)
       if (e.pointerType === 'mouse' || !eligible()) return
       if ((e.target as HTMLElement | null)?.closest('.marker-hit, .maplibregl-ctrl')) return
+      // Le repère orange posé d'un toucher est une poignée : on l'attrape et il suit le doigt tout de suite (sans appui long).
+      const pin = (e.target as HTMLElement | null)?.closest('.spot-pin')
+      if (pin) {
+        const pr = pin.getBoundingClientRect()
+        const cr = cont.getBoundingClientRect()
+        grab = { x: e.clientX - (pr.left + pr.width / 2), y: e.clientY - (pr.top + pr.height / 2) }
+        grabStart = { x: e.clientX - cr.left, y: e.clientY - cr.top }
+        active = true
+        m.dragPan.disable()
+        m.touchZoomRotate.disable()
+        pin.classList.add('dragging')
+        box.classList.add('on')
+        aimAt(grabStart)
+        return
+      }
       down = rel(e)
       const start = down
       timer = window.setTimeout(() => {
@@ -1036,6 +1060,16 @@ function MapViewInner({ garden }: { garden: Garden }) {
     aidRef.current?.refreshAim()
   }, [placingNow, aim, ready]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Téléphone, pendant un placement : on retire ce qui encombre (cadastre en image avec ses numéros, disques et pointillés des autres plantes).
+  // Restent le contour du terrain, les maisons, les plantes en points et les distances.
+  useEffect(() => {
+    const m = map.current
+    if (!m || !ready) return
+    const calm = placingNow && mobileMap
+    m.setLayoutProperty('cadastre', 'visibility', calm ? 'none' : cadastre && !schema ? 'visible' : 'none')
+    for (const id of ['canopy', 'canopy-line', 'adult-line']) m.setLayoutProperty(id, 'visibility', calm ? 'none' : 'visible')
+  }, [placingNow, mobileMap, cadastre, schema, ready])
+
   // Placement : les plantes en place à leur taille adulte (trait pointillé), pour juger des distances sans voir la photo.
   useEffect(() => {
     const m = map.current
@@ -1227,10 +1261,6 @@ function MapViewInner({ garden }: { garden: Garden }) {
                   <Icon name={aim ? 'check' : 'pin'} size={16} />
                   Viser
                 </button>
-                <button className={'btn small' + (loupeOn ? ' primary' : '')} data-feat="loupe" aria-pressed={loupeOn} disabled={!!aim} onClick={() => setLoupeOn((v) => !v)}>
-                  <Icon name={loupeOn ? 'check' : 'loupe'} size={16} />
-                  Loupe
-                </button>
                 <button className={'btn small' + (aidsOpen ? ' on' : '')} data-feat="aides-toggle" aria-label="Aides au placement" aria-expanded={aidsOpen} aria-controls="map-aids" onClick={() => setAidsOpen((o) => !o)}>
                   <span className="lbl-long">Aides au placement</span>
                   <span className="lbl-short" aria-hidden>
@@ -1250,6 +1280,10 @@ function MapViewInner({ garden }: { garden: Garden }) {
               {aidsOpen && (
                 <div id="map-aids" className="map-aid-more">
                   <div className="map-aid-row">
+                    <button className={'btn small' + (loupeOn ? ' primary' : '')} data-feat="loupe" aria-pressed={loupeOn} disabled={!!aim} onClick={() => setLoupeOn((v) => !v)}>
+                      <Icon name={loupeOn ? 'check' : 'loupe'} size={16} />
+                      Loupe
+                    </button>
                     <button className="btn small" onClick={() => openScan('mesures', movingPlantId ? { kind: 'plant', plantId: movingPlantId } : { kind: 'new' })}>
                       Placer au mètre
                     </button>
@@ -1295,6 +1329,9 @@ function MapViewInner({ garden }: { garden: Garden }) {
                 <span className="map-opt-label">Saison du jardin</span>
                 <SeasonPicker value={season} onChange={(c) => setUi({ season: c })} />
               </div>
+              <details className="np-details map-more">
+                <summary>Plus d’options</summary>
+                <div className="stack" style={{ gap: 6, marginTop: 8 }}>
               <button className={'btn small' + (adult ? ' on' : '')} aria-pressed={adult} onClick={() => setAdult((a) => !a)}>
                 {adult ? '✓ ' : ''}Taille adulte
               </button>
@@ -1315,6 +1352,8 @@ function MapViewInner({ garden }: { garden: Garden }) {
               <button className="btn small" aria-haspopup="dialog" onClick={openHelp}>
                 Aide sur cet écran
               </button>
+                </div>
+              </details>
             </div>
           )}
           {season && season !== 'aujourdhui' && !placingNow && (

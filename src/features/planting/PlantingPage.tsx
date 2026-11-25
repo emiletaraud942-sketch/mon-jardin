@@ -1,3 +1,5 @@
+import { Fold } from '../../components/Fold'
+import { topNames } from '../../lib/topNames'
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useIsMobile } from '../../components/useMedia'
@@ -133,9 +135,9 @@ function SowNow({ garden }: { garden: Garden }) {
   const setMonth = (m: Month) => setUi({ sowMonth: m })
   const now = useMemo(() => whatToSowNow(SPECIES, garden, month), [garden, month])
   return (
-    <div className="card" data-feat="semer-ce-mois">
+    <Fold title="Que semer ce mois-ci" feat="semer-ce-mois">
       <div className="row" style={{ justifyContent: 'space-between' }}>
-        <h2>Que semer et planter en</h2>
+        <span>Choisir le mois</span>
         <select className="input" style={{ width: 'auto' }} value={month} onChange={(e) => setMonth(Number(e.target.value) as Month)} aria-label="Mois">
           {MONTH_NAMES.map((m, i) => (
             <option key={m} value={i + 1}>
@@ -165,7 +167,7 @@ function SowNow({ garden }: { garden: Garden }) {
       <SpeciesChips list={now.plantation} />
       <h3 style={{ marginTop: 12 }}>Récolter</h3>
       <SpeciesChips list={now.recolte} />
-    </div>
+    </Fold>
   )
 }
 
@@ -176,7 +178,9 @@ function BestForSpot({ garden }: { garden: Garden }) {
   const mine = planting?.gardenId === garden.id ? planting : undefined
   const spot: XY | undefined = mine?.spot
   const cat: Category | '' = mine?.cat ?? ''
-  const setSpot = (p: XY) => setUi({ planting: { gardenId: garden.id, spot: p, cat } })
+  const setSpot = (p: XY) => {
+    setUi({ planting: { gardenId: garden.id, spot: p, cat } })
+  }
   const mobile = useIsMobile()
   // Téléphone : la carte reste collée en haut de l'écran et la liste défile dessous, pour voir les deux en même temps.
   const pinRef = useRef<HTMLDivElement>(null)
@@ -295,17 +299,23 @@ function BestForSpot({ garden }: { garden: Garden }) {
   )
 
   return (
-    <div className="card" data-feat="ou-planter">
+    <div className="card" data-feat="ou-planter" data-spot={spot ? '1' : undefined}>
       <h2>Quelle plante pour cet endroit ?</h2>
-      <ol className="np-steps" style={{ marginBottom: 8 }}>
-        <li>
-          <span className="np-num" aria-hidden>1</span>
-          <span>
-            <strong>Touchez un endroit sur la carte.</strong>
-            <span className="small muted" style={{ display: 'block' }}>L’appli calcule le soleil, la pente et les voisins.</span>
-          </span>
-        </li>
-      </ol>
+      {spot ? (
+        <p className="small muted np-chosen" style={{ margin: '0 0 8px' }}>
+          Endroit choisi. Touchez ailleurs sur la carte pour en changer.
+        </p>
+      ) : (
+        <ol className="np-steps" style={{ marginBottom: 8 }}>
+          <li>
+            <span className="np-num" aria-hidden>1</span>
+            <span>
+              <strong>Touchez un endroit sur la carte.</strong>
+              <span className="small muted" style={{ display: 'block' }}>L’appli calcule le soleil, la pente et les voisins.</span>
+            </span>
+          </li>
+        </ol>
+      )}
       <div className={'spot-stick' + (mobile && spot ? ' on' : '')} ref={pinRef}>
         <Suspense fallback={<div className="spot-map empty"><span className="spinner" /> Chargement de la carte…</div>}>
           <SpotPicker garden={garden} plants={plants} spot={spot} onPick={setSpot} />
@@ -315,7 +325,7 @@ function BestForSpot({ garden }: { garden: Garden }) {
         <div className="reco-flow">
           <div className="reco-head">
             <strong>Plantes conseillées</strong>
-            <span className="muted small">{analysis.recos.length} idée{analysis.recos.length > 1 ? 's' : ''}</span>
+            <span className="muted small">{topNames(analysis.recos.map((r) => r.species.nomCommun))}</span>
           </div>
           {results}
         </div>
@@ -333,22 +343,20 @@ function ModelHint({ garden }: { garden: Garden }) {
   const noPlants = plants.length === 0
   if (!noParcel && !noPlants) return null
   return (
-    <div className="card empty-hint">
-      <p style={{ marginTop: 0 }}>
+    <details className="np-details empty-hint-fold">
+      <summary>Rendre le conseil plus précis</summary>
+      <p style={{ marginTop: 8 }}>
         <strong>Plus votre jardin est décrit, plus le conseil est précis.</strong>
       </p>
-      <details className="np-details">
-        <summary>Pourquoi décrire le jardin ?</summary>
-        <p className="small" style={{ margin: 0 }}>
-          {noParcel ? 'Sans le contour du terrain, les distances aux voisins ne sont pas vérifiées. ' : ''}
-          {noPlants ? 'Sans plantes placées, le soleil ignore l’ombre de vos arbres. ' : ''}
-          C’est facultatif : vous pouvez commencer maintenant.
-        </p>
-      </details>
+      <p className="small" style={{ margin: '0 0 8px' }}>
+        {noParcel ? 'Sans le contour du terrain, les distances aux voisins ne sont pas vérifiées. ' : ''}
+        {noPlants ? 'Sans plantes placées, le soleil ignore l’ombre de vos arbres. ' : ''}
+        C’est facultatif : vous pouvez commencer maintenant.
+      </p>
       <div className="row">
         <PlaceAction>Ajouter une plante</PlaceAction>
       </div>
-    </div>
+    </details>
   )
 }
 

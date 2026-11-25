@@ -56,6 +56,9 @@ const SECTIONS: { id: Section; label: string }[] = [
   { id: 'profil', label: 'Profil' },
 ]
 
+/** Les trois parties toujours visibles ; les autres derrière « Plus ». */
+const PRIMARY_SECTIONS: Section[] = ['accueil', 'fil', 'messages']
+
 const EXAMPLES: { kind: PostKind; title: string; who: string }[] = [
   { kind: 'don', title: 'Boutures de menthe à donner', who: 'Marie · dans votre quartier' },
   { kind: 'pret', title: 'Je prête mon sécateur et ma bêche', who: 'Paul · à environ 2 km' },
@@ -318,7 +321,21 @@ function Main({ userId, profile, email, garden, online, onProfile }: { userId: s
       {view.k === 'thread' && <ThreadView thread={view.thread} postTitle={view.postTitle} draft={view.draft} online={online} onBack={toTabs} />}
       {view.k === 'tabs' && (
         <>
-          <Tabs tabs={sections} value={section} onChange={setSection} label="Parties de l’entraide" idPrefix="nb" />
+          <Tabs tabs={sections.filter((x) => PRIMARY_SECTIONS.includes(x.id) || x.id === section)} value={section} onChange={setSection} label="Parties de l’entraide" idPrefix="nb" />
+          {sections.some((x) => !PRIMARY_SECTIONS.includes(x.id) && x.id !== section) && (
+            <details className="np-details nb-more">
+              <summary>Plus : jardins, événements, mes annonces, profil</summary>
+              <div className="row" style={{ gap: 8, margin: '8px 0' }}>
+                {sections
+                  .filter((x) => !PRIMARY_SECTIONS.includes(x.id) && x.id !== section)
+                  .map((x) => (
+                    <button key={x.id} className="btn" onClick={() => setSection(x.id)}>
+                      {x.label}
+                    </button>
+                  ))}
+              </div>
+            </details>
+          )}
           <TabPanel idPrefix="nb" active={section}>
             {section === 'accueil' && <Nouveautes news={news} onGo={go} onNew={() => setView({ k: 'new' })} />}
             {section === 'fil' && (

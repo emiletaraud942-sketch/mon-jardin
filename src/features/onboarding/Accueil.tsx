@@ -1,20 +1,20 @@
 import { Icon } from '../../components/Icon'
 import { ALERT_ICON, alertHomeSentence, type AlertKind } from '../../engine/alerts'
-import { climateSummary } from '../../engine/climate'
-import { PageHead } from '../../components/PageHead'
 import { PlantPot } from '../../components/illustrations'
 import { PlaceAction } from '../../components/PlaceAction'
 import { useProgress } from '../../components/useProgress'
 import { nextStep, type NextStep } from '../../lib/progress'
-import { demoHomeTitle, isDemoGarden } from '../settings/demo'
+import { isDemoGarden } from '../settings/demo'
 import { useRefreshGarden } from '../settings/useRefreshGarden'
 import { badgeAria, badgeLabel } from '../../lib/neighbors/news'
-import { activeSteps, chezTitle, currentStep, settledCount, shouldShowRoute, stepStatus, STEP_HINT, STEP_TITLE, type OnboardingStepId } from '../../lib/onboarding'
+import { activeSteps, currentStep, settledCount, shouldShowRoute, stepStatus, STEP_HINT, STEP_TITLE, type OnboardingStepId } from '../../lib/onboarding'
 import { useGardenPlants } from '../../lib/store'
-import { hideOnboardingRoute, openHelp, openParcours, setGuide, setUi, useUi } from '../../lib/ui'
+import { hideOnboardingRoute, openParcours, setGuide, setUi, useUi } from '../../lib/ui'
 import { FEATURES, visibleFeatures } from '../../lib/features'
 import { HOME_ACTIONS, HOME_HELPERS, type HomeAction } from '../../lib/homeActions'
-import { guideOpen, lostSheet, openLecon, toutFaire } from '../../lib/overlays'
+import { guideOpen, homeHub, homeHubStart, lostSheet, openLecon, toutFaire } from '../../lib/overlays'
+import { hubById } from '../../lib/hubs'
+import { HubPage, LeafHome } from './HubScreens'
 import { countDone, doneSentence, nextLesson, totalLessons } from '../lecons/progress'
 import { useLessonsDone } from '../lecons/useDone'
 import type { Garden } from '../../types'
@@ -280,13 +280,10 @@ function HomeButton({ a, badge, phrase }: { a: HomeAction; badge?: number; phras
 /** Écran « Que voulez-vous faire ? » : le résumé du jardin, la prochaine étape, puis de gros boutons étiquetés, dans un ordre fixe. */
 export function Accueil({ garden, openTasks, newsCount, alerts = [] }: { garden: Garden; openTasks: number; newsCount: number; alerts?: AlertKind[] }) {
   const { state, neighbors } = useOnboarding()
-  const plants = useGardenPlants(garden.id)
   const route = shouldShowRoute(state, neighbors)
   const who = firstName(garden.name)
-  const tasksText = openTasks === 0 ? 'rien à faire' : `${openTasks} chose${openTasks > 1 ? 's' : ''} à faire`
   const shown = new Set(visibleFeatures().map((f) => f.id))
   const actions = HOME_ACTIONS.filter((a) => !a.featureId || shown.has(a.featureId))
-  const climate = climateSummary(garden, { short: true })
   const alertText = alertHomeSentence(alerts)
   const lessonsDone = useLessonsDone()
   const byId = (id: string) => actions.find((a) => a.id === id)
@@ -295,21 +292,34 @@ export function Accueil({ garden, openTasks, newsCount, alerts = [] }: { garden:
   const feature = byId('apprendre')
   const rest = actions.filter((a) => !TILE_IDS.includes(a.id) && a.id !== 'partage' && a.id !== 'apprendre')
 
+  const hub = homeHub.use()
+  if (hub === 'cultiver' || hub === 'entretenir' || hub === 'consommer') return <HubPage hub={hubById(hub)} garden={garden} />
+  if (hub !== 'plus') {
+    return (
+      <div className="page accueil accueil-leaf">
+        <LeafHome who={who} alertText={alertText} onAlert={() => setUi({ tab: 'entretien' })} />
+        {route && <RouteCard garden={garden} />}
+        {!route && <SyncNudge garden={garden} />}
+        {!route && <NextStepCard garden={garden} openTasks={openTasks} />}
+      </div>
+    )
+  }
+
+  // « Plus de choses » : trois gros choix, puis toutes les actions derrière « Toutes les actions » (ouvert pour les recettes : `pj.homePlus`).
+  const more = [
+    { id: 'compte', mot: 'Mon compte et réglages', phrase: 'Texte, sauvegardes, jardins, vie privée.', icon: 'user', run: () => setUi({ tab: 'reglages' }) },
+    { id: 'guide', mot: 'Je ne sais pas par où commencer', phrase: 'Quelques questions, une à la fois.', icon: 'help', run: () => guideOpen.set(true) },
+    { id: 'tout', mot: 'Tout ce que je peux faire', phrase: 'Chaque fonction, avec recherche.', icon: 'list', run: () => toutFaire.set(true) },
+  ]
   return (
-    <div className="page accueil">
-      {route && <RouteCard garden={garden} />}
-      <PageHead compact kicker={who ? `Bonjour ${who}` : 'Bonjour'} title="Que voulez-vous faire ?" onHelp={openHelp} />
-      <button className={'chez' + (climate ? ' has-climate' : '')} onClick={() => setUi({ tab: 'carte' })}>
-        <span className="chez-kicker">Votre jardin</span>
-        <span className="chez-title">{demoHomeTitle(garden, chezTitle(garden.name))}</span>
-        <span className="chez-sum">
-          {plants.length} plante{plants.length > 1 ? 's' : ''}
-          {'\u00a0· '}
-          {tasksText}
+    <div className="page accueil accueil-plus">
+      <button className="hub-back" onClick={() => homeHub.set(undefined)}>
+        <span style={{ display: 'inline-flex', transform: 'rotate(90deg)' }}>
+          <Icon name="chevron" size={20} />
         </span>
-        {climate && <span className="chez-climate">{climate}</span>}
-        <PlantPot size={64} className="chez-art" />
+        Accueil
       </button>
+      <h1 className="leafhome-title">Plus de choses</h1>
       {alertText && (
         <button className="home-alert" data-home-alert onClick={() => setUi({ tab: 'entretien' })}>
           <Icon name={alerts.length > 1 ? 'alert' : ALERT_ICON[alerts[0]]} size={20} />
@@ -317,28 +327,41 @@ export function Accueil({ garden, openTasks, newsCount, alerts = [] }: { garden:
           <Icon name="forward" size={18} />
         </button>
       )}
-      {!route && <SyncNudge garden={garden} />}
-      {!route && <NextStepCard garden={garden} openTasks={openTasks} />}
-      <div className="home-tiles" role="group" aria-label="Les actions du quotidien">
-        {tiles.map((a) => (
-          <HomeTile key={a.id} a={a} />
+      <div className="hub-cards">
+        {more.map((m) => (
+          <button key={m.id} className="hub-card" data-more-card={m.id} onClick={m.run}>
+            <span className="hub-card-icon" aria-hidden>
+              <Icon name={m.icon} size={26} />
+            </span>
+            <span className="hub-card-text">
+              <strong>{m.mot}</strong>
+              <span>{m.phrase}</span>
+            </span>
+          </button>
         ))}
       </div>
-      {partage && (
-        <div className="home-grid home-grid-solo">
-          <HomeButton a={partage} />
+      <details className="np-details home-all" open={homeHubStart() === 'plus'}>
+        <summary>Toutes les actions</summary>
+        <div className="home-tiles" role="group" aria-label="Les actions du quotidien">
+          {tiles.map((a) => (
+            <HomeTile key={a.id} a={a} />
+          ))}
         </div>
-      )}
-      {feature && <HomeFeature a={feature} phrase={lessonsPhrase(lessonsDone)} />}
-      <h2 className="home-label">Et aussi</h2>
-      <div className="home-grid" role="group" aria-label="Que voulez-vous faire ?">
-        {rest.map((a) => (
-          <HomeButton key={a.id} a={a} badge={a.id === 'voisins' ? newsCount : undefined} />
-        ))}
-        {HOME_HELPERS.map((a) => (
-          <HomeButton key={a.id} a={a} />
-        ))}
-      </div>
+        {partage && (
+          <div className="home-grid home-grid-solo">
+            <HomeButton a={partage} />
+          </div>
+        )}
+        {feature && <HomeFeature a={feature} phrase={lessonsPhrase(lessonsDone)} />}
+        <div className="home-grid" role="group" aria-label="Que voulez-vous faire ?">
+          {rest.map((a) => (
+            <HomeButton key={a.id} a={a} badge={a.id === 'voisins' ? newsCount : undefined} />
+          ))}
+          {HOME_HELPERS.map((a) => (
+            <HomeButton key={a.id} a={a} />
+          ))}
+        </div>
+      </details>
     </div>
   )
 }
