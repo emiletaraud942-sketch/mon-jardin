@@ -1,7 +1,7 @@
 # Mentions légales
 
 > **BROUILLON À FAIRE VALIDER PAR UN PROFESSIONNEL.** Texte provisoire, à faire valider par un professionnel avant publication. Il ne constitue pas un avis juridique.
-> Version 1.14 · Dernière mise à jour : 16 novembre 2026.
+> Version 1.15 · Dernière mise à jour : 25 novembre 2026.
 
 ## Éditeur du service
 

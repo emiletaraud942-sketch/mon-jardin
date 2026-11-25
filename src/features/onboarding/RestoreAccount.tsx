@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { Modal } from '../../components/Modal'
 import { autoSyncReconcile } from '../../lib/autoSync'
 import { hasConsent } from '../../lib/consent'
@@ -7,6 +7,7 @@ import { CODE_HINT, CODE_SENT, NOTHING_ONLINE, RESTORED } from '../../lib/loginT
 import { getState, subscribeStore } from '../../lib/store'
 import { noteWelcomed, setUi } from '../../lib/ui'
 import { ConsentDialog } from '../legal/ConsentDialog'
+const PasswordLogin = lazy(() => import('../settings/PasswordLogin').then((m) => ({ default: m.PasswordLogin })))
 
 /** Attend que les jardins repris de la copie en ligne arrivent (ou renonce après `ms`). */
 function waitForGardens(ms: number): Promise<boolean> {
@@ -56,17 +57,21 @@ export function RestoreAccount({ onClose }: { onClose: () => void }) {
       setCode('')
     })
   const withConsent = (action: () => void) => (hasConsent('sync') ? action() : setAsking(() => action))
+  /** Une fois connecté (code ou mot de passe) : reprise de la copie en ligne. */
+  const afterLogin = async () => {
+    autoSyncReconcile()
+    const got = await waitForGardens(10_000)
+    if (got) {
+      noteWelcomed()
+      setUi({ tab: 'accueil' })
+      setDone(RESTORED)
+    } else setDone(NOTHING_ONLINE)
+  }
   const verify = () =>
     run(async () => {
       const m = await import('../../lib/sync')
       await m.verifyLoginCode(codeFor!, code)
-      autoSyncReconcile()
-      const got = await waitForGardens(10_000)
-      if (got) {
-        noteWelcomed()
-        setUi({ tab: 'accueil' })
-        setDone(RESTORED)
-      } else setDone(NOTHING_ONLINE)
+      await afterLogin()
     })
 
   return (
@@ -113,6 +118,9 @@ export function RestoreAccount({ onClose }: { onClose: () => void }) {
             <button className="btn primary" disabled={busy || !email.includes('@')} onClick={() => withConsent(() => void send(email))}>
               {busy && <span className="spinner" />} Recevoir un code par e-mail
             </button>
+            <Suspense fallback={null}>
+              <PasswordLogin initialEmail={email} onSignedIn={afterLogin} />
+            </Suspense>
           </>
         )}
         {error && <p className="alert error small" role="alert" style={{ margin: 0 }}>{error}</p>}

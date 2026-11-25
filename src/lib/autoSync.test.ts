@@ -65,6 +65,27 @@ afterEach(() => vi.useRealTimers())
 const T1 = '2026-10-01T10:00:00.000Z'
 const T2 = '2026-10-02T10:00:00.000Z'
 
+describe('synchronisation automatique : changement hors de l’état (file du scan)', () => {
+  it('touch marque « à envoyer » et envoie après le délai', async () => {
+    const f = fake({ remote: { signedIn: true, remote: T1, last: T1 } })
+    const a = createAutoSync(f.deps)
+    await a.reconcile()
+    expect(getAutoSyncState().status).toBe('ok')
+    a.touch()
+    expect(f.dirty).toBe(true)
+    expect(f.push).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(5001)
+    expect(f.push).toHaveBeenCalledTimes(1)
+  })
+  it('sans accord, touch n’envoie rien', async () => {
+    const f = fake({ consent: false })
+    const a = createAutoSync(f.deps)
+    a.touch()
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(f.push).not.toHaveBeenCalled()
+  })
+})
+
 describe('synchronisation automatique : au démarrage', () => {
   it('rien en ligne et des données ici : envoie', async () => {
     const f = fake()

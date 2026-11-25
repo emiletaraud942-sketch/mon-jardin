@@ -116,8 +116,9 @@ export function createAutoSync(deps: AutoSyncDeps) {
     photosBusy = true
     try {
       setCurrent({ photoNote: photoNoteOf(await deps.photos()) })
-    } catch {
-      /* hors ligne ou service lent : rien à signaler, on réessaiera */
+    } catch (e) {
+      // Hors ligne : rien à signaler, on réessaiera. En ligne : on le dit (avant, l'échec était muet et les photos ne partaient jamais).
+      if (deps.online()) setCurrent({ photoNote: `Les photos n’ont pas pu être mises à jour (${e instanceof Error ? e.message.replace(/\.$/, '') : 'erreur inconnue'}). Nouvel essai à la prochaine synchronisation.` })
     } finally {
       photosBusy = false
     }
@@ -207,6 +208,18 @@ export function createAutoSync(deps: AutoSyncDeps) {
     }, deps.delayMs)
   })
 
+  /** Un changement hors de l'état principal (plantes à valider du scan) : il faut aussi mettre la copie en ligne à jour. */
+  function touch() {
+    if (applyingRemote) return
+    deps.writeDirty(true)
+    if (!deps.hasConsent() || current.status === 'conflit' || current.status === 'inactif') return
+    clearTimeout(timer)
+    timer = setTimeout(() => {
+      timer = undefined
+      void pushNow()
+    }, deps.delayMs)
+  }
+
   /** À appeler quand l'appli passe en arrière-plan : un envoi en attente part tout de suite, sans attendre la fin du délai. */
   async function flush() {
     if (timer === undefined) return
@@ -219,6 +232,7 @@ export function createAutoSync(deps: AutoSyncDeps) {
   return {
     reconcile,
     flush,
+    touch,
     /** L'utilisateur a choisi de garder cet appareil ou la copie en ligne : on repart sur de bonnes bases. */
     resolved() {
       setCurrent({ status: 'ok', lastAt: deps.now() })
@@ -280,6 +294,8 @@ export async function startAutoSync(): Promise<() => void> {
     })
   await waitLoaded()
   void auto.reconcile()
+  // La file du scan voyage avec la copie en ligne : un changement (image ajoutée, plante validée) la met à jour.
+  if (typeof window !== 'undefined') window.addEventListener('pj:scan-queue', () => auto.touch())
   let lastReconcile = Date.now()
   const onVisible = () => {
     if (document.visibilityState === 'visible' && Date.now() - lastReconcile > 60_000) {

@@ -6,6 +6,7 @@ import { FEATURES, visibleFeatures } from '../../lib/features'
 import { HUBS, hubById, readyToHarvest, type Hub, type HubId, type HubItem } from '../../lib/hubs'
 import { homeHub } from '../../lib/overlays'
 import { useBackLayer } from '../../lib/ui'
+import { PendingScanButton } from '../scan/PendingScanButton'
 import { useGardenPlants } from '../../lib/store'
 import type { Garden } from '../../types'
 import '../../styles/hubs.css'
@@ -157,6 +158,7 @@ export function HubPage({ hub, garden }: { hub: Hub; garden: Garden }) {
         </div>
       </header>
       {hub.id === 'consommer' && <HarvestNow garden={garden} />}
+      {hub.id === 'cultiver' && <PendingScanButton gardenId={garden.id} className="btn primary big" />}
       <div className="hub-cards">
         {main.map((i) => (
           <ItemCard key={i.featureId} item={i} />

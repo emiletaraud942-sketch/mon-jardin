@@ -488,6 +488,9 @@ type SyncModule = typeof import('../../lib/sync')
 
 const syncConfigured = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY
 // « Jardin partagé » se charge à la demande : l'écran Réglages et le chunk d'entrée restent légers.
+// Connexion par mot de passe : chargée à la demande (chunk d'entrée).
+const PasswordLogin = lazy(() => import('./PasswordLogin').then((m) => ({ default: m.PasswordLogin })))
+const SetPassword = lazy(() => import('./PasswordLogin').then((m) => ({ default: m.SetPassword })))
 const SharedGardensCard = lazy(() => import('../shared/SharedGardens').then((m) => ({ default: m.SharedGardensCard })))
 
 function Sync() {
@@ -595,6 +598,9 @@ function Sync() {
           <p>Connecté : {user.email}</p>
           <p className="small muted" style={{ margin: 0 }}>{STAY_LOGGED}</p>
           <p className="small" role="status">{autoSyncMessage(auto)}</p>
+          <Suspense fallback={null}>
+            <SetPassword email={user.email} />
+          </Suspense>
           <div className="row">
             <button className="btn" disabled={busy} onClick={() => withConsent(() => void push())}>
               Mettre ma copie en ligne
@@ -682,6 +688,16 @@ function Sync() {
             </button>
             {!email.includes('@') && <p className="small muted" style={{ margin: 0 }}>Écrivez votre adresse e-mail pour continuer.</p>}
           </div>
+          <Suspense fallback={null}>
+            <PasswordLogin
+              initialEmail={email}
+              onSignedIn={(u) => {
+                setUser(u)
+                autoSyncReconcile()
+                setMsg({ text: LOGGED_IN })
+              }}
+            />
+          </Suspense>
         </>
       )}
       {msg?.error && <ErrorNote error={msg.error} />}

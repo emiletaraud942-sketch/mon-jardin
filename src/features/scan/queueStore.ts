@@ -1,73 +1,21 @@
-import { useSyncExternalStore } from 'react'
-import { get, set } from 'idb-keyval'
 import { identifyPlant } from '../../lib/plantnet'
 import { rerank } from '../../lib/identifyRank'
 import { rankContext, verdictOf } from '../../lib/rankContext'
 import { cropCenter } from './crop'
 import { hasConsent } from '../../lib/consent'
-import { SCAN_QUEUE_KEY } from '../../lib/store'
+import { getQueue, loadQueue, replaceQueue, updateQueue, useScanQueue } from './queueState'
 import { deletePhoto, getPhoto } from '../../lib/photos'
 import { dedupeQueue } from './dedupe'
-import { applyGroupResults, dueItems, groupPlan, markFailed, markNeedsConsent, sanitizeQueue, type Queue, type Suggestion } from './queue'
+import { applyGroupResults, dueItems, groupPlan, markFailed, markNeedsConsent, type Suggestion } from './queue'
+
+export { getQueue, loadQueue, replaceQueue, updateQueue, useScanQueue }
 
 // File d'attente partagée entre l'écran de scan et la carte. Local-first : tout reste dans IndexedDB.
 // Seule la photo part (vers /api/identify), jamais la position.
 
-let queue: Queue = []
-let loading: Promise<void> | undefined
-let version = 0
-const listeners = new Set<() => void>()
 let running = false
 /** Pause entre deux identifications d'images de vidéo (ms). */
 export const VIDEO_PAUSE_MS = 1500
-
-function emit() {
-  version++
-  listeners.forEach((l) => l())
-}
-
-async function persist() {
-  try {
-    await set(SCAN_QUEUE_KEY, queue)
-  } catch (e) {
-    console.warn('File d’attente du scan non enregistrée', e)
-  }
-}
-
-/** Charge la file depuis IndexedDB (une seule fois). */
-export function loadQueue(): Promise<void> {
-  loading ??= get(SCAN_QUEUE_KEY)
-    .then((raw) => {
-      // Ce qui a été ajouté pendant la lecture reste.
-      const fresh = sanitizeQueue(raw).filter((i) => !queue.some((q) => q.id === i.id))
-      queue = [...fresh, ...queue]
-    })
-    .catch((e) => console.warn('File d’attente du scan illisible', e))
-    .finally(() => {
-      emit()
-    })
-  return loading
-}
-
-export const getQueue = () => queue
-
-/** Applique un changement à la file, l'enregistre et prévient l'interface. */
-export function updateQueue(f: (q: Queue) => Queue) {
-  queue = f(queue)
-  emit()
-  void persist()
-}
-
-export function useScanQueue(): Queue {
-  useSyncExternalStore(
-    (l) => {
-      listeners.add(l)
-      return () => listeners.delete(l)
-    },
-    () => version,
-  )
-  return queue
-}
 
 export const isOnline = () => typeof navigator === 'undefined' || navigator.onLine !== false
 
@@ -93,14 +41,14 @@ export async function processQueue(): Promise<void> {
     for (;;) {
       const consent = hasConsent('plantnet')
       if (!consent) {
-        for (const i of queue) if (i.status === 'en-attente' && i.why !== 'consentement') updateQueue((q) => markNeedsConsent(q, i.id))
+        for (const i of getQueue()) if (i.status === 'en-attente' && i.why !== 'consentement') updateQueue((q) => markNeedsConsent(q, i.id))
         return
       }
-      const next = dueItems(queue, { now: Date.now(), online: isOnline(), consent })[0]
+      const next = dueItems(getQueue(), { now: Date.now(), online: isOnline(), consent })[0]
       if (!next) return
       try {
         // Images d'une vidéo prises au même endroit : un seul envoi (jusqu'à 5 images, recadrées au centre), plus sûr et moins de quota.
-        const plan = groupPlan(queue, next, { now: Date.now() })
+        const plan = groupPlan(getQueue(), next, { now: Date.now() })
         const companions = plan.send
         const blobs: Blob[] = []
         const used: string[] = []
