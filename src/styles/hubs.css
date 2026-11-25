@@ -84,34 +84,41 @@
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.leaf-tint {
+/* Une seule couche de teinte, découpée par UN masque à la forme de la feuille : trois paliers durs, un fin trait clair entre eux. */
+.leaf-tint-all {
   position: absolute;
-  left: 0;
-  right: 0;
-  top: calc(var(--t) / var(--h) * -100%);
-  height: calc(100% / var(--h));
-  background: var(--tint);
-  opacity: 0.5;
-  -webkit-mask: url('/accueil/feuille-chene.webp') center / 100% 100% no-repeat;
-  mask: url('/accueil/feuille-chene.webp') center / 100% 100% no-repeat;
-  transition: opacity 0.15s;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.55;
+  background: linear-gradient(
+    to bottom,
+    var(--leaf-consommer) 0,
+    var(--leaf-consommer) calc(34% - 1px),
+    #fff calc(34% - 1px),
+    #fff calc(34% + 1px),
+    var(--leaf-entretenir) calc(34% + 1px),
+    var(--leaf-entretenir) calc(67% - 1px),
+    #fff calc(67% - 1px),
+    #fff calc(67% + 1px),
+    var(--leaf-cultiver) calc(67% + 1px),
+    var(--leaf-cultiver) 100%
+  );
+  -webkit-mask-image: url('/accueil/feuille-chene.webp');
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-image: url('/accueil/feuille-chene.webp');
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  mask-position: center;
 }
-.leaf-consommer {
-  --tint: var(--leaf-consommer);
-}
-.leaf-entretenir {
-  --tint: var(--leaf-entretenir);
-}
-.leaf-cultiver {
-  --tint: var(--leaf-cultiver);
-}
-.leaf-zone:hover .leaf-tint,
-.leaf-zone:active .leaf-tint {
+.leaf-zone:active .leaf-text {
   opacity: 0.8;
 }
 .leaf-zone:focus-visible {
-  outline: 4px solid var(--focus);
-  outline-offset: -4px;
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+  border-radius: 24px;
 }
 .leaf-text {
   position: absolute;
@@ -134,11 +141,6 @@
 }
 .leaf-sub {
   font-size: calc(15 * var(--px));
-}
-/* Les bandes ne se rejoignent pas : un fin trait clair entre elles. */
-.leaf-entretenir,
-.leaf-cultiver {
-  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.85);
 }
 .leafhome-hint {
   color: var(--muted);

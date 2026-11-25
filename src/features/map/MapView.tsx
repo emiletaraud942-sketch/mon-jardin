@@ -5,7 +5,6 @@ import { MAP_LOCALE_FR } from './mapLocale'
 import { hiddenLabelIds, type LabelBox } from './labelLayout'
 import { sameIds, selectMarkerIds } from './markerBudget'
 import '../../lib/mapWorker'
-import { HistoryButtons } from '../../components/HistoryButtons'
 import { webgl2Supported } from '../../lib/webgl'
 import { MapUnsupported } from '../../components/MapUnsupported'
 import type { GeoJSONSource, Map as MLMap } from 'maplibre-gl'
@@ -20,12 +19,12 @@ import { frMeters } from '../../lib/format'
 import { legalDistance } from '../../engine/planting'
 import { PlaceAction } from '../../components/PlaceAction'
 import { updatePlant, useGardenPlants } from '../../lib/store'
-import { getUi, openHelp, setUi, useUi } from '../../lib/ui'
+import { getUi, setUi, useUi } from '../../lib/ui'
 import { useIntent } from '../../lib/overlays'
 import { useBanner } from '../../lib/banners'
 import { plantSizeAt } from '../../engine/growth'
-import { canopyLook, seasonDate, seasonSummary, stateAtSeason, type SeasonChoice } from '../../engine/season'
-import { SeasonPicker } from '../../components/SeasonPicker'
+import { canopyLook, seasonDate, stateAtSeason, type SeasonChoice } from '../../engine/season'
+import { FEATURES } from '../../lib/features'
 import { useIsMobile } from '../../components/useMedia'
 import type { Garden, LonLat, Plant, XY } from '../../types'
 import { GardenDataBanner } from '../settings/GardenDataBanner'
@@ -50,7 +49,6 @@ import { forGarden } from '../scan/queue'
 import { openScan } from '../scan/scanUi'
 import { PlantScene } from '../../components/illustrations'
 import { usePanoramaMarkers } from '../panorama/markers'
-import { openPanorama } from '../panorama/panoUi'
 
 type Feature = GeoJSON.Feature<GeoJSON.Polygon, Record<string, unknown>>
 
@@ -154,7 +152,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
   const { selectedPlantId, placingSpeciesId, movingPlantId, aim, placingSpot, season, freeSpot } = useUi()
   const head = useSheetHead(garden)
   const placingInfo = usePlacingInfo()
-  const [base, setBase] = useState<'ortho' | 'plan'>('ortho')
+  const [base] = useState<'ortho' | 'plan'>('ortho')
   const [schema, setSchema] = useState(false)
   const [gridOn, setGridOn] = useState(readGrid)
   const gridRef = useRef(gridOn)
@@ -164,8 +162,8 @@ function MapViewInner({ garden }: { garden: Garden }) {
   const loupeEl = useRef<HTMLDivElement>(null)
   const loupeCanvas = useRef<HTMLCanvasElement>(null)
   const gps = useGps(garden.center)
-  const [cadastre, setCadastre] = useState(true)
-  const [adult, setAdult] = useState(false)
+  const [cadastre] = useState(true)
+  const [adult] = useState(false)
   const [ready, setReady] = useState(false)
   const [tileProblem, setTileProblem] = useState(false)
   // Repère de l'endroit libre touché (anneau), sous la carte d'infos « Cet endroit ».
@@ -183,16 +181,14 @@ function MapViewInner({ garden }: { garden: Garden }) {
   }, [freeSpot, ready, garden.id, garden.center])
   const tileNoticeTurn = useBanner('carte', tileProblem)
   const [legendOpen, setLegendOpen] = useState(false)
-  const [optionsOpen, setOptionsOpen] = useState(false)
   // « Tout ce que je peux faire » demande d'ouvrir le panneau d'options ou la légende.
-  useIntent('carte:options', () => setOptionsOpen(true))
   useIntent('carte:legende', () => setLegendOpen(true))
   const [aidsOpen, setAidsOpen] = useState(false)
   // Bouton « Loupe » : la loupe s'ouvre dès que le doigt se pose (au lieu d'attendre l'appui long).
   const [loupeOn, setLoupeOn] = useState(false)
   const loupeQuick = useRef(false)
   loupeQuick.current = loupeOn
-  const [names, setNames] = useState(() => readNames(plants.length))
+  const [names] = useState(() => readNames(plants.length))
   const namesRef = useRef(names)
   namesRef.current = names
   const gardenRef = useRef(garden)
@@ -1179,18 +1175,9 @@ function MapViewInner({ garden }: { garden: Garden }) {
     m.easeTo({ center: [ll.lon, ll.lat], zoom: Math.max(m.getZoom(), 20.3), offset: [0, -110], duration: 400 })
   }, [pendingSel]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const setNamesPref = (on: boolean) => {
-    setNames(on)
-    try {
-      localStorage.setItem(NAMES_KEY, on ? '1' : '0')
-    } catch {
-      /* mémoire indisponible */
-    }
-  }
-
   // Ordinateur : la mention reste en haut avec les autres avis quand le jardin est vide (l'invite est haute) ou quand les Options ou la légende sont ouvertes (la colonne descend jusqu'en bas) ;
   // sinon elle est en bas de la carte. Elle ne se superpose ainsi à rien.
-  const noteInColumn = mobileMap || plants.length === 0 || optionsOpen || legendOpen
+  const noteInColumn = mobileMap || plants.length === 0 || legendOpen
   // Mention sur la photo et invite du jardin vide : en bas de la carte sur ordinateur (`map-foot`), dans la colonne du haut sur téléphone
   // (la feuille du bas et « Ajouter une plante » les recouvraient ; dans la colonne, rien ne peut se superposer).
   // La mention disparaît seule après quelques secondes (elle restait collée sur la carte et recouvrait les boutons + et −).
@@ -1212,7 +1199,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
     ) : null
   // L'invite se cache tant que les Options ou la légende sont ouvertes : elle les recouvrait (ordinateur). « Ajouter une plante » reste dans le panneau de droite.
   const emptyCard =
-    plants.length === 0 && !placingSpeciesId && !movingPlantId && !optionsOpen && !legendOpen ? (
+    plants.length === 0 && !placingSpeciesId && !movingPlantId && !legendOpen ? (
       <div className="floating map-empty">
         <PlantScene size={72} className="map-empty-art" />
         <p>
@@ -1230,29 +1217,14 @@ function MapViewInner({ garden }: { garden: Garden }) {
         {/* Les boutons de la carte viennent AVANT la carte (et ses repères de plantes) dans le DOM : au clavier, on les atteint sans passer tous les repères. Le z-index les garde au-dessus. */}
         <div className="map-top">
           {!placingNow && (
-          <div className="floating row map-toolbar" role="toolbar" aria-label="Réglages de la carte" data-feat="fond-carte">
-            {/* Colonne étroite ou texte grand : les mots courts (voir `.lbl-short` dans app.css) tiennent la barre sur deux rangées au plus. Le nom accessible reste le long. */}
-            <button className={'btn small' + (base === 'ortho' ? ' primary' : '')} aria-pressed={base === 'ortho'} aria-label="Vue photo" onClick={() => setBase('ortho')}>
-              <span className="lbl-long">Vue photo</span>
-              <span className="lbl-short" aria-hidden>
-                Photo
-              </span>
-            </button>
-            <button className={'btn small' + (base === 'plan' ? ' primary' : '')} aria-pressed={base === 'plan'} aria-label="Vue plan" onClick={() => setBase('plan')}>
-              <span className="lbl-long">Vue plan</span>
-              <span className="lbl-short" aria-hidden>
-                Plan
-              </span>
-            </button>
-            <button className={'btn small' + (optionsOpen ? ' on' : '')} aria-expanded={optionsOpen} aria-controls="map-options" aria-label="Options de la carte" onClick={() => setOptionsOpen((o) => !o)}>
-              <span className="lbl-long">Options de la carte</span>
-              <span className="lbl-short" aria-hidden>
-                Options
-              </span>{' '}
-              <span aria-hidden>{optionsOpen ? '▴' : '▾'}</span>
-            </button>
-            <HistoryButtons />
-          </div>
+            <div className="floating row map-toolbar" role="toolbar" aria-label="La carte" data-feat="carte-photos">
+              <button className="btn small" data-feat="recentrer" onClick={() => fit()}>
+                <Icon name="pin" size={16} /> Recentrer
+              </button>
+              <button className="btn small primary" data-feat="visite-carte" aria-label="Visiter mon jardin en photos" onClick={() => FEATURES.find((f) => f.id === 'visite-photos')?.run()}>
+                <Icon name="camera" size={16} /> Visiter en photos
+              </button>
+            </div>
           )}
           {placingNow && (
             <div className="floating map-aid" role="toolbar" aria-label="Aides au placement">
@@ -1268,9 +1240,6 @@ function MapViewInner({ garden }: { garden: Garden }) {
                   </span>{' '}
                   <span aria-hidden>{aidsOpen ? '▴' : '▾'}</span>
                 </button>
-              </div>
-              <div className="map-aid-row">
-                <HistoryButtons />
               </div>
               {loupeOn && !aim && (
                 <p className="small map-aid-hint" role="note">
@@ -1321,54 +1290,6 @@ function MapViewInner({ garden }: { garden: Garden }) {
             {noteInColumn && !(mobileMap && emptyCard) && photoNote}
             <GardenDataBanner garden={garden} compact />
           </div>
-          {optionsOpen && !placingNow && (
-            <div id="map-options" className="floating stack map-options" data-feat="map-options">
-              <p className="small muted map-opt-intro">Recentrer, limites du terrain, saison, taille adulte, noms, légende.</p>
-              <button className="btn small" data-feat="recentrer" onClick={() => fit()}>
-                <Icon name="pin" size={16} /> Recentrer sur mon terrain
-              </button>
-              <button className={'btn small' + (cadastre ? ' on' : '')} aria-pressed={cadastre} onClick={() => setCadastre((c) => !c)}>
-                {cadastre ? '✓ ' : ''}Limites du terrain
-              </button>
-              <div data-feat="saison">
-                <span className="map-opt-label">Saison du jardin</span>
-                <SeasonPicker value={season} onChange={(c) => setUi({ season: c })} />
-              </div>
-              <details className="np-details map-more">
-                <summary>Plus d’options</summary>
-                <div className="stack" style={{ gap: 6, marginTop: 8 }}>
-              <button className={'btn small' + (adult ? ' on' : '')} aria-pressed={adult} onClick={() => setAdult((a) => !a)}>
-                {adult ? '✓ ' : ''}Taille adulte
-              </button>
-              <button className={'btn small' + (names ? ' on' : '')} aria-pressed={names} onClick={() => setNamesPref(!names)}>
-                {names ? '✓ ' : ''}Afficher les noms
-              </button>
-              {garden.calibration && (
-                <button className="btn small" onClick={() => openScan('recaler')}>
-                  Ajouter un repère pour améliorer la précision
-                </button>
-              )}
-              <button className="btn small" aria-haspopup="dialog" onClick={() => openPanorama('home')}>
-                <Icon name="camera" size={16} /> Photos du jardin
-              </button>
-              <button className={'btn small' + (legendOpen ? ' on' : '')} aria-pressed={legendOpen} onClick={() => setLegendOpen((o) => !o)}>
-                {legendOpen ? '✓ ' : ''}Légende
-              </button>
-              <button className="btn small" aria-haspopup="dialog" onClick={openHelp}>
-                Aide sur cet écran
-              </button>
-                </div>
-              </details>
-            </div>
-          )}
-          {season && season !== 'aujourdhui' && !placingNow && (
-            <div className="floating season-note small" role="status">
-              <span>{seasonSummary(plants, SPECIES_BY_ID, season, new Date())}</span>
-              <button className="btn small" onClick={() => setUi({ season: 'aujourdhui' })}>
-                Revenir à aujourd’hui
-              </button>
-            </div>
-          )}
           {legendOpen && !placingNow && (
             <ul id="map-legend" className="floating legend small" aria-label="Légende de la carte" data-feat="legende">
               <li>

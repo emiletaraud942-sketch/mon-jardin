@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { backdropPhoto, PageBackdrop } from './components/PageBackdrop'
 import { notifyDailyTasks } from './lib/notify'
 import { Icon } from './components/Icon'
@@ -12,7 +12,7 @@ import { LostButton, LostSheet } from './features/aide/Perdu'
 import { Guide } from './features/aide/Guide'
 import { Visite } from './features/aide/Visite'
 import { tourSeen } from './lib/featureTour'
-import { conseilsOpen, ennuisOpen, guideOpen, leconsOpen, lostSheet, rotationOpen, territoireOpen, collectifOpen, toutFaire, tourOpen } from './lib/overlays'
+import { homeHub, conseilsOpen, ennuisOpen, guideOpen, leconsOpen, lostSheet, rotationOpen, territoireOpen, collectifOpen, toutFaire, tourOpen } from './lib/overlays'
 import { SubTabs, type SubTabExtra } from './components/SubTabs'
 import { FEATURES } from './lib/features'
 import { StorageBanner } from './components/StorageBanner'
@@ -219,6 +219,12 @@ function AppShell() {
     mainRef.current?.focus({ preventScroll: true })
     // Seul le changement d'écran compte.
   }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Chaque changement d'écran ou de page de partie (accueil) repart en haut de la page.
+  const hub = homeHub.use()
+  useLayoutEffect(() => {
+    mainRef.current?.scrollTo?.(0, 0)
+  }, [tab, hub])
 
   // Visite des fonctions : une seule fois, sur l'accueil, une fois le jardin créé (jamais pendant le parcours de départ).
   useEffect(() => {

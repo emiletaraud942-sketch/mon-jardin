@@ -9,9 +9,8 @@ const css = (f: string) => read(f).replace(/\/\*[\s\S]*?\*\//g, '')
 describe('carte d’invite du jardin vide et panneau Options', () => {
   const view = read('../features/map/MapView.tsx')
 
-  it('l’invite n’est montée ni avec les Options ouvertes ni avec la légende ouverte', () => {
+  it('l’invite n’est pas montée avec la légende ouverte', () => {
     const cond = view.match(/const emptyCard =\s*plants\.length === 0 &&([^\n]*)\? \(\s*<div className="floating map-empty">/)?.[1] ?? ''
-    expect(cond).toContain('!optionsOpen')
     expect(cond).toContain('!legendOpen')
   })
   it('« Ajouter une plante au jardin » reste dans le panneau de droite', () => {

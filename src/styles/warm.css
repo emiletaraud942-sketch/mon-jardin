@@ -436,7 +436,17 @@ html[data-big-taps] .home-tile {
 /* ---------- Fiche d'une plante : grande photo en tête, feuille blanche à filet ---------- */
 .fiche-hero.has-photo {
   height: 300px;
-  background: var(--accent-soft);
+  background: var(--surface-2);
+}
+/* Sans photo : pas de bloc d'illustration, seulement la place des boutons Retour et Accueil, puis le nom. */
+.fiche-hero:not(.has-photo) {
+  height: calc(max(54px, env(safe-area-inset-top)) + 56px);
+  background: transparent;
+}
+.fiche-hero:not(.has-photo) + .fiche-sheet {
+  margin-top: 0;
+  border-radius: 0;
+  border-top: 0;
 }
 .fiche-hero .fh-photo {
   position: absolute;
@@ -444,6 +454,11 @@ html[data-big-taps] .home-tile {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.fiche-hero .fh-photo.loaded {
+  opacity: 1;
 }
 .fiche-hero .fh-credit {
   position: absolute;
@@ -663,7 +678,7 @@ html[data-big-taps] .home-tile {
   }
   /* Où planter ? : une fois l'endroit choisi, la carte rétrécit pour laisser voir les conseils. */
   [data-feat='ou-planter'][data-spot] .spot-map {
-    height: min(240px, 32dvh);
+    height: clamp(140px, 22dvh, 190px);
   }
 }
 
@@ -872,4 +887,86 @@ body:has(.app.has-pb) {
   border-color: var(--cta);
   color: var(--text);
   box-shadow: 0 1px 6px rgb(0 0 0 / 25%);
+}
+
+/* Mon jardin (carte, plantes) et Où planter ? sur téléphone : plus de fondu en haut ni en bas, plus de barre grise, la place est pour le contenu. */
+@media (max-width: 760px) {
+  .app.has-pb[data-tab='carte'] .main,
+  .app.has-pb[data-tab='plantes'] .main,
+  .app.has-pb[data-tab='planter'] .main {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .app.has-pb[data-tab='carte']::before,
+  .app.has-pb[data-tab='plantes']::before,
+  .app.has-pb[data-tab='planter']::before {
+    display: none;
+  }
+  .app.has-pb[data-tab='carte'] .pb-top {
+    display: none;
+  }
+  .app.has-pb[data-tab='planter'] .pb-top,
+  .app.has-pb[data-tab='plantes'] .pb-top {
+    height: calc(70px + env(safe-area-inset-top, 0px));
+  }
+  /* Où planter ? : une fois l'endroit choisi, le titre de la carte disparaît et la carte se colle sous les onglets. */
+  [data-feat='ou-planter'][data-spot] > h2 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* Ajouter une plante : une grosse barre de recherche, la liste n'apparaît qu'à la saisie. */
+.species-search-wrap {
+  margin-bottom: 12px;
+}
+.plants-ui .input.species-search {
+  width: 100%;
+  min-height: 68px;
+  padding: 12px 20px 12px 54px;
+  font-size: 1.25rem;
+  border-radius: 999px;
+  background: var(--surface) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2355645a' stroke-width='1.6' stroke-linecap='round'><circle cx='11' cy='11' r='7'/><path d='M20 20l-3.5-3.5'/></svg>") no-repeat 18px center;
+}
+.species-search-hint {
+  margin: 6px 4px 0;
+}
+.species-cat {
+  margin-top: 6px;
+}
+.species-cat select {
+  width: 100%;
+  margin-top: 6px;
+}
+.species-sugg-title {
+  margin: 4px 4px 2px;
+}
+
+/* « Photos » dans Mon jardin : un bouton bien visible (icône + mot), pas un onglet. */
+.seg button.subtab-extra {
+  color: var(--accent);
+  font-weight: var(--fw-key);
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+}
+
+/* Mon jardin et Où planter ? sur téléphone : la rangée « Je suis perdu » (bande grise au-dessus de la barre du bas) laisse la place au contenu ; l'aide reste dans « Tout » et « Aide ». */
+@media (max-width: 760px) {
+  .app[data-tab='carte'] .lost-fab,
+  .app[data-tab='plantes'] .lost-fab,
+  .app[data-tab='planter'] .lost-fab {
+    display: none;
+  }
+  .map-toolbar {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+  .map-toolbar .btn {
+    white-space: nowrap;
+  }
 }
