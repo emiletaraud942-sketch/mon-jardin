@@ -177,10 +177,13 @@ export default function ConseilsScreen({ initialId }: { initialId?: string }) {
             onChange={(e) => set({ query: e.target.value })}
           />
         </div>
-        <label className="check-row">
-          <input type="checkbox" checked={f.thisMonth} onChange={(e) => set({ thisMonth: e.target.checked })} />
-          <span>Seulement ce qui concerne ce mois-ci ({MONTH_NAMES[month - 1]})</span>
-        </label>
+        <details className="np-details ennui-filtres" open={f.thisMonth}>
+          <summary>Filtrer les fiches</summary>
+          <label className="check-row">
+            <input type="checkbox" checked={f.thisMonth} onChange={(e) => set({ thisMonth: e.target.checked })} />
+            <span>Seulement ce qui concerne ce mois-ci ({MONTH_NAMES[month - 1]})</span>
+          </label>
+        </details>
         <p className="small muted ennui-count" role="status" aria-live="polite">
           {list.length === 0 ? '' : `${list.length} fiche${list.length > 1 ? 's' : ''}.`}
         </p>

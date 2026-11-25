@@ -170,22 +170,25 @@ export default function EnnuisScreen({ initialId }: { initialId?: string }) {
             onChange={(e) => set({ query: e.target.value })}
           />
         </div>
-        <div className="row chip-filters" role="group" aria-label="Type d’ennui">
-          {GROUPS.map((g) => (
-            <button key={g.id} className={'btn chip-filter' + (f.groups.includes(g.id) ? ' primary' : '')} aria-pressed={f.groups.includes(g.id)} onClick={() => toggleGroup(g.id)}>
-              {f.groups.includes(g.id) && <Icon name="check" size={16} />}
-              {g.label}
-            </button>
-          ))}
-        </div>
-        <label className="check-row">
-          <input type="checkbox" checked={f.thisMonth} onChange={(e) => set({ thisMonth: e.target.checked })} />
-          <span>Seulement ce que je peux voir ce mois-ci ({MONTH_NAMES[month - 1]})</span>
-        </label>
-        <label className="check-row">
-          <input type="checkbox" checked={f.mine && mine.size > 0} disabled={mine.size === 0} onChange={(e) => set({ mine: e.target.checked })} />
-          <span>Seulement pour mes plantes{mine.size === 0 ? ' (ajoutez d’abord une plante)' : ''}</span>
-        </label>
+        <details className="np-details ennui-filtres" open={filtered}>
+          <summary>Filtrer les fiches</summary>
+          <div className="row chip-filters" role="group" aria-label="Type d’ennui">
+            {GROUPS.map((g) => (
+              <button key={g.id} className={'btn chip-filter' + (f.groups.includes(g.id) ? ' primary' : '')} aria-pressed={f.groups.includes(g.id)} onClick={() => toggleGroup(g.id)}>
+                {f.groups.includes(g.id) && <Icon name="check" size={16} />}
+                {g.label}
+              </button>
+            ))}
+          </div>
+          <label className="check-row">
+            <input type="checkbox" checked={f.thisMonth} onChange={(e) => set({ thisMonth: e.target.checked })} />
+            <span>Seulement ce que je peux voir ce mois-ci ({MONTH_NAMES[month - 1]})</span>
+          </label>
+          <label className="check-row">
+            <input type="checkbox" checked={f.mine && mine.size > 0} disabled={mine.size === 0} onChange={(e) => set({ mine: e.target.checked })} />
+            <span>Seulement pour mes plantes{mine.size === 0 ? ' (ajoutez d’abord une plante)' : ''}</span>
+          </label>
+        </details>
         <p className="small muted ennui-count" role="status" aria-live="polite">
           {list.length === 0 ? '' : `${list.length} fiche${list.length > 1 ? 's' : ''}.`}
         </p>

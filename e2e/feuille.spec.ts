@@ -42,5 +42,8 @@ test('feuille : trois parties, pages épurées, retour', async ({ page, baseURL 
   await expect(page.locator('[data-hub=cultiver]')).toBeVisible()
   // « Plus de choses » : l'accueil complet.
   await page.locator('[data-home-more]').click()
+  await expect(page.locator('[data-more-card=tout]')).toBeVisible()
+  await expect(page.locator('[data-home=ajouter]')).toBeHidden() // les autres actions sont repliées
+  await page.getByText('Toutes les actions', { exact: true }).click()
   await expect(page.locator('[data-home=ajouter]')).toBeVisible()
 })
