@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Icon } from '../../components/Icon'
 import { PlantScene } from '../../components/illustrations'
 import { getPhoto } from '../../lib/photos'
+import { setActiveGarden, useStore } from '../../lib/store'
 import type { Garden } from '../../types'
 import { canAddPoint, MAX_BYTES, MAX_POINTS, photoDateLabel, pointName, refusalMessage, sizeLabel } from './geometry'
 import { metaBytes, noteBytes, panoramasOf, pointBytes } from './panoData'
@@ -55,6 +56,8 @@ function MissingPhotos({ count }: { count: number }) {
 /** Liste des points de vue du jardin, ou explication quand il n'y en a pas encore. */
 export function Home({ garden }: { garden: Garden }) {
   const points = panoramasOf(garden)
+  // Des points de vue peuvent exister dans UN AUTRE jardin de ce téléphone (la liste n'affiche que le jardin ouvert).
+  const others = useStore((st) => st.gardens.filter((g) => g.id !== garden.id && (g.panoramas?.length ?? 0) > 0))
   const [info, setInfo] = useState<Record<string, Info>>({})
   const [refusal, setRefusal] = useState('')
   const key = points.map((p) => p.id + p.shots.map((s) => s.photoId).join('')).join('|')
@@ -112,6 +115,16 @@ export function Home({ garden }: { garden: Garden }) {
         <h2 className="pano-h">Photos du jardin</h2>
       </div>
       <div className="pano-scroll stack">
+        {points.length === 0 && others.length > 0 && (
+          <div className="alert warn small" role="status" data-feat="photos-autre-jardin">
+            <p style={{ margin: 0 }}>Vos points de vue en photos sont dans un autre jardin de ce téléphone :</p>
+            {others.map((g) => (
+              <button key={g.id} className="btn small" style={{ marginTop: 8, marginRight: 8 }} onClick={() => setActiveGarden(g.id)}>
+                Ouvrir « {g.name} » ({g.panoramas!.length} point{g.panoramas!.length > 1 ? 's' : ''})
+              </button>
+            ))}
+          </div>
+        )}
         {points.length === 0 ? (
           <div className="pano-empty">
             <PlantScene size={96} variant="house" />
@@ -121,6 +134,7 @@ export function Home({ garden }: { garden: Garden }) {
               <li>Tournez sur vous-même : l’appli prend 8 à 12 photos.</li>
               <li>Retrouvez-les ici et sur la carte. Les noms de vos plantes s’affichent dessus.</li>
             </ol>
+            <p className="small muted">Vous aviez déjà pris des photos et la liste est vide ? Elles ont pu être effacées par une reprise de la copie en ligne : la copie de sécurité (Réglages, Sauvegarde, « Récupérer la copie de sécurité ») les contient.</p>
           </div>
         ) : (
           <ul className="pano-list" aria-label="Points de vue">
