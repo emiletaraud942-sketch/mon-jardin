@@ -85,6 +85,9 @@ const PHOTOS_EXTRA: SubTabExtra = {
   onClick: () => FEATURES.find((f) => f.id === 'visite-photos')?.run(),
 }
 
+/** Voisins : fond clair uni (plus de photo floue), pour que le texte se lise. */
+const pageBackdrop = (tab: Tab) => (tab === 'voisins' ? undefined : backdropPhoto(tab))
+
 const PHEAD_TABS: Tab[] = ['carte', 'plantes', 'planter', 'catalogue', 'voisins', 'reglages']
 
 const RAYON_ICON: Record<Rayon, string> = { jardin: 'map', afaire: 'check', planter: 'leaf', voisins: 'users' }
@@ -280,8 +283,8 @@ function AppShell() {
   const placing = !!(placingSpeciesId || movingPlantId)
 
   return (
-    <div data-tab={tab} className={'app' + (backdropPhoto(tab) ? ' has-pb' : '') + (tab === 'accueil' || tab === 'entretien' || phead ? ' has-pagehead' : '') + (phead ? ' has-phead' : '') + (placing ? ' is-placing' : '') + (tab === 'accueil' && shouldShowRoute(onboarding.state, onboarding.neighbors) ? ' route-open' : '')}>
-      {backdropPhoto(tab) && <PageBackdrop photo={backdropPhoto(tab)!} />}
+    <div data-tab={tab} className={'app' + (pageBackdrop(tab) ? ' has-pb' : '') + (tab === 'accueil' || tab === 'entretien' || phead ? ' has-pagehead' : '') + (phead ? ' has-phead' : '') + (placing ? ' is-placing' : '') + (tab === 'accueil' && shouldShowRoute(onboarding.state, onboarding.neighbors) ? ' route-open' : '')}>
+      {pageBackdrop(tab) && <PageBackdrop photo={pageBackdrop(tab)!} />}
       <a
         className="skip-link"
         href="#main-panel"

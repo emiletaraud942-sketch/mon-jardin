@@ -90,7 +90,7 @@ export function NeighborsPage({ garden }: { garden: Garden }) {
       <header className="nb-head">
         <h1>Entraide entre voisins</h1>
         <p className="muted" style={{ margin: 0 }}>
-          Donnez, prêtez ou posez une question à des jardiniers près de chez vous. C’est gratuit.
+          Donnez, prêtez, demandez conseil à vos voisins. C’est gratuit.
         </p>
       </header>
       <JardinonsNote garden={garden} />

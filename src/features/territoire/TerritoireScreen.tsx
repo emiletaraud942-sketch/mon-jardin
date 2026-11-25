@@ -33,6 +33,19 @@ function Out({ href, children }: { href: string; children: React.ReactNode }) {
   )
 }
 
+/** Une rubrique repliée : un titre léger, le détail seulement si on le demande. */
+function TerrFold({ id, title, feat, children }: { id: string; title: string; feat?: string; children: React.ReactNode }) {
+  return (
+    <details className="terr-fold" data-feat={feat}>
+      <summary id={id}>
+        <span>{title}</span>
+        <Icon name="chevron" size={18} />
+      </summary>
+      <div className="terr-fold-body">{children}</div>
+    </details>
+  )
+}
+
 export function introText(inside: boolean | undefined): string {
   if (inside === true) return 'Votre jardin est dans la Métropole Rouen Normandie : tout ceci vous concerne.'
   if (inside === false) return 'Votre jardin n’est pas dans la Métropole Rouen Normandie. Ces pages servent surtout à ses habitants.'
@@ -124,64 +137,61 @@ export default function TerritoireScreen() {
               ))}
             </ul>
           )}
-          <p className="small muted">Source : {AGENDA_SOURCE}. Les places sont limitées : inscrivez-vous sur la page du rendez-vous.</p>
+          <p className="small muted">Source : {AGENDA_SOURCE}.</p>
         </section>
 
         <section aria-labelledby="terr-join" className="terr-section">
           <h2 id="terr-join">Rejoindre Jardinons !</h2>
-          <p>Jardinons ! est la communauté des jardiniers de la Métropole : ateliers, dons de plants et de graines, prêts d’outils. L’inscription est gratuite pour les habitants de la Métropole.</p>
+          <p>La communauté des jardiniers de la Métropole : ateliers, dons de plants, prêts d’outils. Gratuit pour les habitants.</p>
           <Out href={JARDINONS_URL}>Voir la page de la Métropole</Out>
         </section>
 
-        <section aria-labelledby="terr-aides" className="terr-section">
-          <h2 id="terr-aides">Aides pour le compost et le broyage</h2>
-          <p>La Métropole rembourse une partie d’un composteur et d’un broyeur de végétaux, sous conditions. Les montants et les règles peuvent changer : lisez le dépliant à jour.</p>
-          <Out href={AIDES_COMPOST_URL}>Lire le dépliant des aides</Out>
-        </section>
+        <div className="terr-folds">
+          <TerrFold id="terr-aides" title="Aides compost et broyage">
+            <p>La Métropole rembourse une partie d’un composteur et d’un broyeur, sous conditions. Lisez le dépliant à jour.</p>
+            <Out href={AIDES_COMPOST_URL}>Lire le dépliant des aides</Out>
+          </TerrFold>
 
-        <section aria-labelledby="terr-bruit" className="terr-section" data-feat="horaires-tonte">
-          <h2 id="terr-bruit">Tondre sans gêner les voisins</h2>
-          <p>À Rouen, la tondeuse et les outils bruyants ont des heures d’usage (arrêté préfectoral). Votre commune peut avoir ses propres règles : demandez à la mairie.</p>
-          <ul className="terr-hours">
-            {HORAIRES_OUTILS.map((h) => (
-              <li key={h.jour}>
-                <strong>{h.jour}</strong> : {h.heures}
-              </li>
-            ))}
-          </ul>
-          <Out href={HORAIRES_ROUEN_URL}>Page de la Ville de Rouen</Out>
-        </section>
-
-        {garden && (
-          <section aria-labelledby="terr-dech" className="terr-section" data-feat="dechetterie">
-            <h2 id="terr-dech">Déchetteries les plus proches</h2>
+          <TerrFold id="terr-bruit" title="Tondre sans gêner les voisins" feat="horaires-tonte">
+            <p>À Rouen, la tondeuse a des heures d’usage. Votre commune peut avoir d’autres règles : demandez à la mairie.</p>
             <ul className="terr-hours">
-              {nearestDechetteries(garden.center).map(({ d, km }) => (
-                <li key={d.nom}>
-                  <strong>{d.nom}</strong> : {d.adresse}, à environ {km.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km à vol d’oiseau
+              {HORAIRES_OUTILS.map((h) => (
+                <li key={h.jour}>
+                  <strong>{h.jour}</strong> : {h.heures}
                 </li>
               ))}
             </ul>
-            <p className="small muted">Pour les branchages et les déchets de jardin en trop. Vérifiez les horaires et ce qui est accepté auprès de la Métropole. Source : {DECHETTERIES_SOURCE}.</p>
-          </section>
-        )}
+            <Out href={HORAIRES_ROUEN_URL}>Page de la Ville de Rouen</Out>
+          </TerrFold>
 
-        <section aria-labelledby="terr-coll" className="terr-section">
-          <h2 id="terr-coll">Un jardin partagé ou familial ?</h2>
-          <p>Notez les gestes de compostage, découpez les parcelles et imprimez un dossier avec le plan : utile pour une demande d’aide.</p>
-          <button className="btn" onClick={() => collectifOpen.set({})}>
-            Ouvrir « Jardin collectif »
-          </button>
-        </section>
+          {garden && (
+            <TerrFold id="terr-dech" title="Déchetteries proches" feat="dechetterie">
+              <ul className="terr-hours">
+                {nearestDechetteries(garden.center).map(({ d, km }) => (
+                  <li key={d.nom}>
+                    <strong>{d.nom}</strong> : {d.adresse}, à environ {km.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km à vol d’oiseau
+                  </li>
+                ))}
+              </ul>
+              <p className="small muted">Vérifiez les horaires auprès de la Métropole. Source : {DECHETTERIES_SOURCE}.</p>
+            </TerrFold>
+          )}
 
-        <section aria-labelledby="terr-plus" className="terr-section">
-          <h2 id="terr-plus">Pour aller plus loin</h2>
-          <div className="terr-actions">
-            <Out href={GUIDE_PARCELLE_URL}>Guide : un jardin qui aide la biodiversité</Out>
-            <Out href={GUIDE_EAU_URL}>Guide de l’eau au jardin</Out>
-            <Out href={HERISSON_URL}>La route du hérisson (Rouen)</Out>
-          </div>
-        </section>
+          <TerrFold id="terr-coll" title="Un jardin partagé ou familial ?">
+            <p>Notez le compostage, découpez les parcelles, imprimez un dossier avec le plan.</p>
+            <button className="btn" onClick={() => collectifOpen.set({})}>
+              Ouvrir « Jardin collectif »
+            </button>
+          </TerrFold>
+
+          <TerrFold id="terr-plus" title="Pour aller plus loin">
+            <div className="terr-actions">
+              <Out href={GUIDE_PARCELLE_URL}>Guide : un jardin qui aide la biodiversité</Out>
+              <Out href={GUIDE_EAU_URL}>Guide de l’eau au jardin</Out>
+              <Out href={HERISSON_URL}>La route du hérisson (Rouen)</Out>
+            </div>
+          </TerrFold>
+        </div>
       </div>
     </div>
   )

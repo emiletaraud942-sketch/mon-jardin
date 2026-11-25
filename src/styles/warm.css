@@ -973,3 +973,17 @@ body:has(.app.has-pb) {
     white-space: nowrap;
   }
 }
+
+/* Voisins : fond clair uni, texte fin et gris doux, listes sans puces, beaucoup d'air (même esprit que « Où planter ? »). */
+.nb-page { color: var(--muted); }
+.nb-page .nb-head p { font-weight: var(--fw-text); line-height: 1.6; }
+.nb-page h2 { font-weight: var(--fw-text); color: var(--title); }
+.nb-page strong { font-weight: var(--fw-text); color: var(--text); }
+.nb-page .nb-rules { list-style: none; padding-left: 0; gap: 10px; line-height: 1.6; font-weight: var(--fw-text); }
+.nb-page .card { background: transparent; border-color: transparent; box-shadow: none; padding-inline: 0; }
+@media (max-width: 760px) {
+  .app[data-tab='voisins'] .lost-fab,
+  .app[data-tab='catalogue'] .lost-fab { display: none; }
+  .app[data-tab='voisins'] .pagehead h1,
+  .app[data-tab='voisins'] .phead-title { color: var(--title); text-shadow: none; }
+}

@@ -16,3 +16,13 @@
 .territoire .terr-link { text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
 .territoire .terr-hours { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; color: var(--muted); line-height: 1.6; }
 .territoire .terr-hours li strong { font-weight: var(--fw-text); color: var(--text); }
+/* Rubriques repliées : un titre léger avec un chevron, le détail seulement à la demande. */
+.territoire .terr-folds { border-top: 1px solid var(--border); margin-top: 8px; }
+.territoire .terr-fold { border-bottom: 1px solid var(--border); }
+.territoire .terr-fold > summary { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 14px 0; cursor: pointer; font-family: var(--font-title); font-size: 1.25rem; font-weight: var(--fw-text); color: var(--title); }
+.territoire .terr-fold > summary::-webkit-details-marker { display: none; }
+.territoire .terr-fold > summary svg { color: var(--muted); transition: transform 0.15s; }
+.territoire .terr-fold[open] > summary svg { transform: rotate(180deg); }
+.territoire .terr-fold-body { display: flex; flex-direction: column; gap: 12px; padding: 0 0 20px; align-items: flex-start; }
+.territoire .terr-fold-body p { margin: 0; line-height: 1.65; color: var(--muted); font-weight: var(--fw-text); }
+.territoire .terr-fold-body .terr-actions { flex-direction: column; align-items: flex-start; margin-top: 0; }
