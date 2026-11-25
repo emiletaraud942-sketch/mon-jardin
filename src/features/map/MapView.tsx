@@ -1036,6 +1036,16 @@ function MapViewInner({ garden }: { garden: Garden }) {
     aidRef.current?.refreshAim()
   }, [placingNow, aim, ready]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Téléphone, pendant un placement : on retire ce qui encombre (cadastre en image avec ses numéros, disques et pointillés des autres plantes).
+  // Restent le contour du terrain, les maisons, les plantes en points et les distances.
+  useEffect(() => {
+    const m = map.current
+    if (!m || !ready) return
+    const calm = placingNow && mobileMap
+    m.setLayoutProperty('cadastre', 'visibility', calm ? 'none' : cadastre && !schema ? 'visible' : 'none')
+    for (const id of ['canopy', 'canopy-line', 'adult-line']) m.setLayoutProperty(id, 'visibility', calm ? 'none' : 'visible')
+  }, [placingNow, mobileMap, cadastre, schema, ready])
+
   // Placement : les plantes en place à leur taille adulte (trait pointillé), pour juger des distances sans voir la photo.
   useEffect(() => {
     const m = map.current
@@ -1227,10 +1237,6 @@ function MapViewInner({ garden }: { garden: Garden }) {
                   <Icon name={aim ? 'check' : 'pin'} size={16} />
                   Viser
                 </button>
-                <button className={'btn small' + (loupeOn ? ' primary' : '')} data-feat="loupe" aria-pressed={loupeOn} disabled={!!aim} onClick={() => setLoupeOn((v) => !v)}>
-                  <Icon name={loupeOn ? 'check' : 'loupe'} size={16} />
-                  Loupe
-                </button>
                 <button className={'btn small' + (aidsOpen ? ' on' : '')} data-feat="aides-toggle" aria-label="Aides au placement" aria-expanded={aidsOpen} aria-controls="map-aids" onClick={() => setAidsOpen((o) => !o)}>
                   <span className="lbl-long">Aides au placement</span>
                   <span className="lbl-short" aria-hidden>
@@ -1250,6 +1256,10 @@ function MapViewInner({ garden }: { garden: Garden }) {
               {aidsOpen && (
                 <div id="map-aids" className="map-aid-more">
                   <div className="map-aid-row">
+                    <button className={'btn small' + (loupeOn ? ' primary' : '')} data-feat="loupe" aria-pressed={loupeOn} disabled={!!aim} onClick={() => setLoupeOn((v) => !v)}>
+                      <Icon name={loupeOn ? 'check' : 'loupe'} size={16} />
+                      Loupe
+                    </button>
                     <button className="btn small" onClick={() => openScan('mesures', movingPlantId ? { kind: 'plant', plantId: movingPlantId } : { kind: 'new' })}>
                       Placer au mètre
                     </button>

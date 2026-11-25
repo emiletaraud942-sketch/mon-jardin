@@ -178,9 +178,12 @@ function BestForSpot({ garden }: { garden: Garden }) {
   const mine = planting?.gardenId === garden.id ? planting : undefined
   const spot: XY | undefined = mine?.spot
   const cat: Category | '' = mine?.cat ?? ''
-  const setSpot = (p: XY) => setUi({ planting: { gardenId: garden.id, spot: p, cat } })
+  const setSpot = (p: XY) => {
+    setUi({ planting: { gardenId: garden.id, spot: p, cat } })
+    setSnap('min') // la carte reste visible : les conseils s'ouvrent au toucher
+  }
   const mobile = useIsMobile()
-  const [snap, setSnap] = useState<SheetSnap>('mid')
+  const [snap, setSnap] = useState<SheetSnap>('min')
   const setCat = (c: Category | '') => setUi({ planting: { gardenId: garden.id, spot, cat: c } })
 
   // Arbres des environs (LiDAR HD, s'il est disponible) : leur ombre compte ; sinon comportement habituel.
@@ -307,7 +310,7 @@ function BestForSpot({ garden }: { garden: Garden }) {
       {analysis && spot && (mobile ? (
         <>
           <div style={{ height: 96 }} aria-hidden />
-          <BottomSheet fixed label="Plantes conseillées" title="Plantes conseillées" summary={`${analysis.recos.length} idée${analysis.recos.length > 1 ? 's' : ''}`} snap={snap} onSnap={setSnap}>
+          <BottomSheet fixed label="Plantes conseillées" title="Plantes conseillées" summary={`${analysis.recos.length} idée${analysis.recos.length > 1 ? 's' : ''} : touchez pour voir`} snap={snap} onSnap={setSnap}>
             <div>{results}</div>
           </BottomSheet>
         </>

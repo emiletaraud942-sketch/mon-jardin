@@ -440,6 +440,9 @@ export function openSpecies(speciesId: string) {
 }
 
 /** Lance le placement d'une plante : bascule sur la carte. */
+/** Téléphone (≤ 760 px) : la croix de visée est le geste par défaut du placement (on fait glisser la carte sous la croix, puis « Valider »). */
+const phoneScreen = () => typeof window !== 'undefined' && !!window.matchMedia?.('(max-width: 760px)').matches
+
 export function startPlacing(speciesId: string, extra: { customName?: string; photos?: string[]; series?: boolean } = {}) {
   // Depuis l'étape « Mes plantes » du parcours d'accueil : choisir une façon d'ajouter une plante valide l'étape.
   if (ui.parcours === 'plantes') noteStep('plantes', 'done')
@@ -451,6 +454,7 @@ export function startPlacing(speciesId: string, extra: { customName?: string; ph
     selectedPlantId: undefined,
     movingPlantId: undefined,
     placingSpot: undefined,
+    aim: phoneScreen(),
     tab: 'carte',
     parcours: undefined,
   })
@@ -463,7 +467,7 @@ export function stopPlacing() {
 
 /** « Déplacer cette plante » : un appui sur la carte donne le nouvel emplacement (sans glisser). Toujours sur la carte 2D. */
 export function startMoving(plantId: string) {
-  setUi({ movingPlantId: plantId, placingSpeciesId: undefined, placingCustomName: undefined, pendingPhotos: undefined, placingSeries: undefined, placingSpot: undefined, tab: 'carte' })
+  setUi({ movingPlantId: plantId, placingSpeciesId: undefined, placingCustomName: undefined, pendingPhotos: undefined, placingSeries: undefined, placingSpot: undefined, aim: phoneScreen(), tab: 'carte' })
 }
 
 /** Ouvre la fiche complète de la plante choisie (bouton « Fiche »). */

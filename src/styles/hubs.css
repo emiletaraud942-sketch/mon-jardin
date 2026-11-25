@@ -377,3 +377,10 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+
+/* Placement sur téléphone : seules la limite et la maison gardent une étiquette de distance (les autres plantes sont dans le bandeau). */
+@media (max-width: 760px) {
+  .app.is-placing .dist-label.voisine {
+    display: none;
+  }
+}
