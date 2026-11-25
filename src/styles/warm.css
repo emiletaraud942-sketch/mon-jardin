@@ -637,25 +637,29 @@ html[data-big-taps] .home-tile {
   }
 }
 
-/* Planter, catalogue, plantes, voisins, réglages (téléphone) : pas de bande vide réservée à la plante nette (elle n'y est pas), le contenu remonte. */
+/* Toutes les pages sauf l'accueil (téléphone) : pas de bande vide réservée à la plante nette, onglets plus bas, le contenu remonte.
+   Hors accueil et À faire, plus de plante nette : fond flou comme Mon jardin (le texte reste lisible sur un voile sombre en haut). */
 @media (max-width: 760px) {
-  .app.has-pb[data-tab='planter'] .pagehead,
-  .app.has-pb[data-tab='catalogue'] .pagehead,
-  .app.has-pb[data-tab='plantes'] .pagehead,
-  .app.has-pb[data-tab='voisins'] .pagehead,
-  .app.has-pb[data-tab='reglages'] .pagehead,
-  .app.has-pb[data-tab='planter'] .phead-slot,
-  .app.has-pb[data-tab='catalogue'] .phead-slot,
-  .app.has-pb[data-tab='plantes'] .phead-slot,
-  .app.has-pb[data-tab='voisins'] .phead-slot,
-  .app.has-pb[data-tab='reglages'] .phead-slot {
+  .app.has-pb:not([data-tab='accueil']) .pagehead,
+  .app.has-pb:not([data-tab='accueil']) .phead-slot {
     padding-bottom: 0;
   }
-  .app.has-pb[data-tab='planter'] .modebar,
-  .app.has-pb[data-tab='catalogue'] .modebar,
-  .app.has-pb[data-tab='plantes'] .modebar {
+  .app.has-pb:not([data-tab='accueil']) .modebar {
     padding-top: 0;
-    padding-bottom: 6px;
+    padding-bottom: 4px;
+  }
+  .app.has-phead .seg button {
+    min-height: 40px;
+  }
+  .app.has-pb:not([data-tab='accueil']):not([data-tab='entretien']) .pb-sharp {
+    display: none;
+  }
+  .app.has-pb:not([data-tab='accueil']):not([data-tab='entretien']) .pb-top {
+    height: calc(130px + env(safe-area-inset-top, 0px));
+    background: linear-gradient(to bottom, rgb(10 34 22 / 55%), rgb(10 34 22 / 0%));
+  }
+  .app.has-pb:not([data-tab='accueil']):not([data-tab='entretien']) .pb-veil {
+    background: linear-gradient(to bottom, color-mix(in srgb, var(--bg) 38%, transparent) 0%, color-mix(in srgb, var(--bg) 66%, transparent) 40%, color-mix(in srgb, var(--bg) 74%, transparent) 100%);
   }
   /* Où planter ? : une fois l'endroit choisi, la carte rétrécit pour laisser voir les conseils. */
   [data-feat='ou-planter'][data-spot] .spot-map {

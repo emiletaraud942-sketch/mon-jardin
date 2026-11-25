@@ -392,3 +392,13 @@
     mask-image: none;
   }
 }
+
+/* Résumé de la météo (À faire) posé sur la photo : un fond clair en verre pour qu'il se lise. */
+.wx-fold > summary {
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--text);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
