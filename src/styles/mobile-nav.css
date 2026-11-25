@@ -85,7 +85,20 @@
   border-radius: 50%;
   background: var(--cta);
   box-shadow: 0 0 0 2px var(--cta), var(--shadow-float);
-  pointer-events: none;
+  /* Poignée : on la saisit et on la fait glisser (zone de 58 px autour du rond). */
+  pointer-events: auto;
+  touch-action: none;
+  cursor: grab;
+}
+.spot-pin::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+}
+.spot-pin.dragging {
+  scale: 1.18; /* pas `transform` : MapLibre s'en sert pour placer le marqueur */
+  box-shadow: 0 0 0 2px var(--cta), 0 6px 14px rgba(0, 0, 0, 0.45);
 }
 
 /* ---------- « Ajouter une plante » : toujours visible au-dessus de la feuille du jardin ---------- */

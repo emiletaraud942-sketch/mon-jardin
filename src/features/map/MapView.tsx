@@ -39,7 +39,7 @@ import { SidePanel } from './SidePanel'
 import { movePlant, moveWithUndo, placePlant } from './placing'
 import { confirmBeforePlacing, registerAim, registerNudge, setPlacingInfo, setPlacingPoint, usePlacingInfo } from './aimBridge'
 import { PHOTO_MAP_MAXZOOM, PHOTO_NOTE_ZOOM, cadastreOpacityExpression, gridStepM, mapMaxZoomFor } from './photoZoom'
-import { LOUPE_HOLD_MS, LOUPE_SIZE, LOUPE_SLOP_PX, LOUPE_ZOOM, gpsCircleRadiusM, loupeCenter, loupeSource, rulerSummary } from './placeAids'
+import { LOUPE_HOLD_MS, LOUPE_SIZE, LOUPE_SLOP_PX, LOUPE_ZOOM, dragTarget, gpsCircleRadiusM, loupeCenter, loupeSource, rulerSummary } from './placeAids'
 import { useGps } from '../scan/useGps'
 import { gpsMessage } from '../scan/gps'
 import { proposePosition } from '../scan/capture'
@@ -355,13 +355,18 @@ function MapViewInner({ garden }: { garden: Garden }) {
     let active = false
     let target: XY | undefined
     let result: SnapResult | undefined
+    // Saisie du repère orange : `grab` = où le doigt l'a pris, `grabStart` = où le doigt s'est posé ; null = appui long ordinaire (loupe).
+    let grab: XY | null = null
+    let grabStart: XY | undefined
     const view = () => ({ w: cont.clientWidth, h: cont.clientHeight })
     const rel = (e: PointerEvent): XY => {
       const r = cont.getBoundingClientRect()
       return { x: e.clientX - r.left, y: e.clientY - r.top }
     }
     const eligible = () => !!(placingRef.current || movingRef.current) && !aimRef.current
-    const aimAt = (finger: XY) => {
+    const aimAt = (raw: XY) => {
+      // Repère saisi : il se place au-dessus du doigt (le doigt ne le cache pas) ; appui long : le point visé est sous le doigt.
+      const finger = grab && grabStart ? dragTarget(raw, grab, Math.hypot(raw.x - grabStart.x, raw.y - grabStart.y)) : raw
       const ll = m.unproject([finger.x, finger.y])
       const a = aidRef.current!
       const r = a.snapAt(toLocal(gardenRef.current.center, { lon: ll.lng, lat: ll.lat }), movingRef.current)
@@ -370,6 +375,7 @@ function MapViewInner({ garden }: { garden: Garden }) {
       const px = m.project([sp.lon, sp.lat])
       target = { x: px.x, y: px.y }
       result = r
+      if (grab) spotMarker.current?.setLngLat([sp.lon, sp.lat]) // le repère suit le doigt
       const c = loupeCenter(finger, view())
       box.style.transform = `translate(${c.x - LOUPE_SIZE / 2}px, ${c.y - LOUPE_SIZE / 2}px)`
       m.triggerRepaint()
@@ -389,6 +395,9 @@ function MapViewInner({ garden }: { garden: Garden }) {
       down = undefined
       if (!active) return
       active = false
+      grab = null
+      grabStart = undefined
+      spotMarker.current?.getElement().classList.remove('dragging')
       box.classList.remove('on')
       m.dragPan.enable()
       m.touchZoomRotate.enable()
@@ -405,6 +414,21 @@ function MapViewInner({ garden }: { garden: Garden }) {
       if (!e.isPrimary) return stop(false)
       if (e.pointerType === 'mouse' || !eligible()) return
       if ((e.target as HTMLElement | null)?.closest('.marker-hit, .maplibregl-ctrl')) return
+      // Le repère orange posé d'un toucher est une poignée : on l'attrape et il suit le doigt tout de suite (sans appui long).
+      const pin = (e.target as HTMLElement | null)?.closest('.spot-pin')
+      if (pin) {
+        const pr = pin.getBoundingClientRect()
+        const cr = cont.getBoundingClientRect()
+        grab = { x: e.clientX - (pr.left + pr.width / 2), y: e.clientY - (pr.top + pr.height / 2) }
+        grabStart = { x: e.clientX - cr.left, y: e.clientY - cr.top }
+        active = true
+        m.dragPan.disable()
+        m.touchZoomRotate.disable()
+        pin.classList.add('dragging')
+        box.classList.add('on')
+        aimAt(grabStart)
+        return
+      }
       down = rel(e)
       const start = down
       timer = window.setTimeout(() => {

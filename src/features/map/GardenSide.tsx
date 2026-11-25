@@ -166,7 +166,7 @@ export function PlacingBanner() {
   const text = aim
     ? `Mettez la croix sur ${yourPlant(name)}.`
     : ready
-      ? 'C’est bien là ? Touchez Valider, ou un autre endroit.'
+      ? 'Faites glisser le repère pour ajuster, puis Valider.'
       : movingPlantId
         ? `Touchez le nouvel endroit de ${yourPlant(name)}.`
         : `Touchez l’endroit de ${yourPlant(name)}.`
@@ -183,7 +183,7 @@ export function PlacingBanner() {
         {info.summary && <span className="small placing-dist">{info.summary}</span>}
         <SiteNote />
         {info.note && <span className="small placing-note">{info.note}</span>}
-        {confirm && !aim && !ready && !info.note && <span className="small muted placing-hint">Pour viser avec précision : touchez « Loupe » ou « Viser ».</span>}
+        {confirm && !aim && !ready && !info.note && <span className="small muted placing-hint">Un repère apparaît : vous pourrez le faire glisser.</span>}
       </span>
       {ready && confirm && (
         <span className="placing-nudge" role="group" aria-label="Ajuster l’endroit de 10 centimètres" data-feat="ajuster-placement">
