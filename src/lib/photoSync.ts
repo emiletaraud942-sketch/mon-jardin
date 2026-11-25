@@ -107,10 +107,11 @@ export function planPhotoSync(args: {
 }
 
 /** Photos que les données référencent, dans l'ordre d'importance : photos des plantes (journal compris), puis points de vue du jardin. */
-export function wantedPhotoIds(plants: Pick<Plant, 'photos'>[], gardens: Pick<Garden, 'panoramas'>[]): string[] {
+export function wantedPhotoIds(plants: Pick<Plant, 'photos'>[], gardens: Pick<Garden, 'panoramas'>[], extra: readonly string[] = []): string[] {
   const out: string[] = []
   for (const p of plants) out.push(...p.photos)
   for (const g of gardens) for (const pano of g.panoramas ?? []) for (const s of pano.shots) out.push(s.photoId)
+  out.push(...extra) // photos des plantes scannées à valider : après celles du jardin, donc les dernières à passer sous le plafond
   return [...new Set(out.filter(isPhotoId))]
 }
 
@@ -162,9 +163,9 @@ async function isAcceptableImage(blob: Blob): Promise<boolean> {
  * Met les photos à jour dans les deux sens : récupère celles qui manquent ici, envoie celles qui manquent en ligne, efface les anciennes
  * orphelines en ligne. Une photo qui échoue n'empêche pas les autres. Ne lève que si la liste en ligne est illisible.
  */
-export async function runPhotoSync(sb: SupabaseClient, userId: string, state: { gardens: Garden[]; plants: Plant[]; extraPhotoIds?: string[] }): Promise<PhotoSyncResult> {
+export async function runPhotoSync(sb: SupabaseClient, userId: string, state: { gardens: Garden[]; plants: Plant[]; scanPhotoIds?: string[] }): Promise<PhotoSyncResult> {
   const res: PhotoSyncResult = { uploaded: 0, downloaded: 0, skipped: 0, failed: 0, removed: 0 }
-  const wanted = [...new Set([...wantedPhotoIds(state.plants, state.gardens), ...(state.extraPhotoIds ?? []).filter(isPhotoId)])]
+  const wanted = wantedPhotoIds(state.plants, state.gardens, state.scanPhotoIds ?? [])
   const remote = await listRemote(sb, userId)
   const have = new Set(await listPhotoIds())
   const local = new Map<string, number>()

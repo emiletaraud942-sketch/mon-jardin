@@ -9,7 +9,8 @@ import { useRefreshGarden } from '../settings/useRefreshGarden'
 import { badgeAria, badgeLabel } from '../../lib/neighbors/news'
 import { activeSteps, currentStep, settledCount, shouldShowRoute, stepStatus, STEP_HINT, STEP_TITLE, type OnboardingStepId } from '../../lib/onboarding'
 import { useGardenPlants } from '../../lib/store'
-import { hideOnboardingRoute, openParcours, setGuide, setUi, useUi } from '../../lib/ui'
+import { PageHead } from '../../components/PageHead'
+import { hideOnboardingRoute, openHelp, openParcours, setGuide, setUi, useUi } from '../../lib/ui'
 import { FEATURES, visibleFeatures } from '../../lib/features'
 import { HOME_ACTIONS, HOME_HELPERS, type HomeAction } from '../../lib/homeActions'
 import { guideOpen, homeHub, homeHubStart, lostSheet, openLecon, toutFaire } from '../../lib/overlays'
@@ -297,7 +298,7 @@ export function Accueil({ garden, openTasks, newsCount, alerts = [] }: { garden:
   if (hub !== 'plus') {
     return (
       <div className="page accueil accueil-leaf">
-        <LeafHome who={who} alertText={alertText} onAlert={() => setUi({ tab: 'entretien' })} />
+        <LeafHome who={who} alertText={alertText} onAlert={() => setUi({ tab: 'entretien' })} onHelp={openHelp} />
         {route && <RouteCard garden={garden} />}
         {!route && <SyncNudge garden={garden} />}
         {!route && <NextStepCard garden={garden} openTasks={openTasks} />}
@@ -319,7 +320,7 @@ export function Accueil({ garden, openTasks, newsCount, alerts = [] }: { garden:
         </span>
         Accueil
       </button>
-      <h1 className="leafhome-title">Plus de choses</h1>
+      <PageHead compact title="Plus de choses" onHelp={openHelp} />
       {alertText && (
         <button className="home-alert" data-home-alert onClick={() => setUi({ tab: 'entretien' })}>
           <Icon name={alerts.length > 1 ? 'alert' : ALERT_ICON[alerts[0]]} size={20} />

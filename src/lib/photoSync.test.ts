@@ -32,6 +32,13 @@ describe('photos que les données référencent', () => {
   })
 })
 
+describe('photos des plantes scannées à valider', () => {
+  it('viennent en dernier, après les plantes et les points de vue, sans doublon', () => {
+    const ids = wantedPhotoIds([{ photos: ['photo:a'] }], [{ panoramas: [{ shots: [{ photoId: 'photo:c' }] }] }] as never, ['photo:s1', 'photo:a', 'mauvais'])
+    expect(ids).toEqual(['photo:a', 'photo:c', 'photo:s1'])
+  })
+})
+
 describe('plan de synchronisation', () => {
   it('envoie ce qui manque en ligne, récupère ce qui manque ici, ne touche pas au reste', () => {
     const p = planPhotoSync({

@@ -16,6 +16,7 @@ import { PlantPanel, plantName } from '../plants/PlantPanel'
 import { openScan } from '../scan/scanUi'
 import { openPanorama } from '../panorama/panoUi'
 import { useIsMobile } from '../../components/useMedia'
+import { PendingScanButton } from '../scan/PendingScanButton'
 import { confirmBeforePlacing, nudgeAim, placeAtAim, usePlacingInfo } from './aimBridge'
 import { AIM_NUDGE_M } from './nudge'
 import { usePlacingReserve } from './placingReserve'
@@ -75,6 +76,7 @@ export function GardenSide({ garden, hint }: { garden: Garden; hint: string }) {
           {plants.length} plante{plants.length > 1 ? 's' : ''}
         </div>
       </div>
+      <PendingScanButton gardenId={garden.id} />
       <button className="btn primary" onClick={() => setPicking(true)}>
         <Icon name="plus" /> Ajouter une plante au jardin
       </button>

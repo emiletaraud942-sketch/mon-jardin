@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { computeInstallState, createInstallStore, isIos, isStandalone, type InstallEnv } from './install'
+import { computeInstallState, createInstallStore, isFirefoxAndroid, isIos, isStandalone, type InstallEnv } from './install'
 
 const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1'
 const ANDROID = 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36'
@@ -82,5 +82,13 @@ describe('store', () => {
     fire('beforeinstallprompt', fakePrompt())
     fire('appinstalled', new Event('appinstalled'))
     expect(s.getState()).toBe('installed')
+  })
+})
+
+describe('isFirefoxAndroid', () => {
+  it('reconnaît Firefox sur Android, pas Chrome ni Firefox sur ordinateur', () => {
+    expect(isFirefoxAndroid('Mozilla/5.0 (Android 14; Mobile; rv:130.0) Gecko/130.0 Firefox/130.0')).toBe(true)
+    expect(isFirefoxAndroid('Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/126 Mobile Safari/537.36')).toBe(false)
+    expect(isFirefoxAndroid('Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0')).toBe(false)
   })
 })

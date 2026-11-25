@@ -6,8 +6,9 @@
 // Le lien doit être ouvert dans le MÊME navigateur que celui où il a été demandé (le « code verifier » PKCE y est stocké).
 import { removeAllRemotePhotos, runPhotoSync, type PhotoSyncResult } from './photoSync'
 import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js'
+import { get } from 'idb-keyval'
 import { migrateState, serializeState } from './migrate'
-import { getState, getStorageStatus, keepLocalSafetyCopy, replaceData, replaceRefusal } from './store'
+import { SCAN_QUEUE_KEY, getState, getStorageStatus, keepLocalSafetyCopy, replaceData, replaceRefusal } from './store'
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
@@ -160,6 +161,42 @@ export async function verifyLoginCode(email: string, code: string): Promise<User
   return data.user
 }
 
+const PASSWORD_MIN = 8
+const PASSWORD_WRONG = 'Adresse ou mot de passe incorrect. Vous pouvez aussi recevoir un code par e-mail.'
+
+/**
+ * Connexion par mot de passe : un geste de plus pour qui a effacé les données du navigateur (le gestionnaire de mots de passe remplit les champs).
+ * Le mot de passe n'est jamais gardé par l'appli : il part à Supabase et c'est tout.
+ */
+export async function signInWithPassword(email: string, password: string): Promise<User> {
+  const sb = supabase()
+  if (!sb) throw new Error('Synchronisation non configurée')
+  const address = email.trim()
+  if (!isPlausibleEmail(address)) throw new Error('Adresse e-mail invalide.')
+  if (!password) throw new Error('Écrivez votre mot de passe.')
+  const { data, error } = await withTimeout(sb.auth.signInWithPassword({ email: address, password }))
+  if (error) {
+    const low = `${error.message ?? ''} ${(error as { code?: string }).code ?? ''}`.toLowerCase()
+    if (/invalid|credentials|not.*confirmed|email_provider_disabled|disabled/.test(low)) {
+      throw new Error(/disabled/.test(low) ? 'La connexion par mot de passe n’est pas ouverte pour le moment. Utilisez le code par e-mail.' : PASSWORD_WRONG)
+    }
+    throw error
+  }
+  if (!data.session || !data.user) throw new Error(PASSWORD_WRONG)
+  return data.user
+}
+
+/** Choisit (ou change) le mot de passe du compte connecté. Le code par e-mail reste possible. */
+export async function setAccountPassword(password: string): Promise<void> {
+  const { sb } = await requireUser()
+  if (password.length < PASSWORD_MIN) throw new Error(`Le mot de passe doit faire au moins ${PASSWORD_MIN} caractères.`)
+  const { error } = await withTimeout(sb.auth.updateUser({ password }))
+  if (error) {
+    if (/same|different|weak|short|password/i.test(error.message ?? '')) throw new Error('Mot de passe refusé : choisissez-en un autre, plus long ou différent du précédent.')
+    throw error
+  }
+}
+
 export async function signOut() {
   const sb = supabase()
   if (!sb) return
@@ -252,6 +289,22 @@ export const MESSAGE_READ_FAILED = 'Les données de cet appareil n’ont pas pu 
  * Sans `force`, refuse d'écraser des données en ligne plus récentes que notre dernière synchro :
  * lève `SyncConflictError` (l'interface propose alors « Récupérer » ou « Écraser » = `pushSnapshot({ force: true })`).
  */
+
+// ---------- Plantes scannées « à valider » : elles voyagent avec la copie en ligne ----------
+
+/** Éléments de la file du scan encore à revoir (lus dans IndexedDB, rien à charger de plus). Le reste (validés, ignorés) n'a pas à voyager. */
+async function readScanQueueForSync(): Promise<Record<string, unknown>[]> {
+  try {
+    const raw = await get(SCAN_QUEUE_KEY)
+    if (!Array.isArray(raw)) return []
+    return raw.filter((i) => i && typeof i === 'object' && (i.status === 'a-valider' || i.status === 'en-attente')) as Record<string, unknown>[]
+  } catch {
+    return []
+  }
+}
+
+const scanPhotoIdsOf = (items: Record<string, unknown>[]): string[] => items.map((i) => i.photoId).filter((id): id is string => typeof id === 'string')
+
 export async function pushSnapshot(opts: { force?: boolean } = {}) {
   const { sb, user } = await requireUser()
   const refusal = replaceRefusal()
@@ -260,8 +313,8 @@ export async function pushSnapshot(opts: { force?: boolean } = {}) {
     throw new Error(MESSAGE_READ_FAILED)
   }
   const { gardens, plants, tasksDone } = getState()
-  // Plantes scannées en attente de revue : elles voyagent avec la copie (leurs photos partent à part, avec les autres).
-  const scanQueue = (await import('../features/scan/queueStore').then((m) => m.queueForSync()).catch(() => [])).filter((i) => i.status !== 'ignoree' || !!i.mergedInto)
+  const scanQueue = await readScanQueueForSync()
+  // `scanQueue` est un champ en plus : les anciennes versions de l'appli l'ignorent, et une copie sans ce champ ne touche pas la file locale.
   const data = { ...serializeState({ gardens, plants, tasksDone }), scanQueue }
   if (jsonBytes(data) > MAX_JSON_BYTES) throw new Error('Vos données dépassent la taille maximale de synchronisation (5 Mo).')
 
@@ -294,8 +347,8 @@ export async function pushSnapshot(opts: { force?: boolean } = {}) {
 export async function syncPhotos(): Promise<PhotoSyncResult> {
   const { sb, user } = await requireUser()
   const { gardens, plants } = getState()
-  const queue = await import('../features/scan/queueStore').then((m) => m.queueForSync()).catch(() => [])
-  return runPhotoSync(sb, user.id, { gardens, plants, extraPhotoIds: queue.filter((i) => i.status === 'a-valider' || i.status === 'en-attente').map((i) => i.photoId) })
+  const scanPhotoIds = scanPhotoIdsOf(await readScanQueueForSync())
+  return runPhotoSync(sb, user.id, { gardens, plants, scanPhotoIds })
 }
 
 /**
@@ -365,7 +418,7 @@ export async function pullSnapshot(): Promise<boolean> {
   const remoteQueue = (row.data as { scanQueue?: unknown } | null)?.scanQueue
   if (Array.isArray(remoteQueue)) {
     try {
-      await import('../features/scan/queueStore').then((m) => m.mergeRemoteQueue(remoteQueue))
+      await import('../features/scan/queueState').then((m) => m.mergeRemoteQueue(remoteQueue))
     } catch (e) {
       console.warn('File du scan non reprise', e)
     }

@@ -402,3 +402,10 @@
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
+
+/* Accueil en feuille : le titre tient sur une ligne et ne réserve pas de bande de photo, pour que la feuille reste en vue. */
+@media (max-width: 760px) {
+  .app.has-pb .accueil-leaf .pagehead {
+    padding-bottom: 0;
+  }
+}

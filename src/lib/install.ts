@@ -22,6 +22,11 @@ export function isIos(ua: string, platform = '', touchPoints = 0): boolean {
   return platform === 'MacIntel' && touchPoints > 1
 }
 
+/** Firefox sur Android : pas de fenêtre d'installation automatique, mais « Installer » dans son menu (⋮). */
+export function isFirefoxAndroid(ua: string): boolean {
+  return /Android/.test(ua) && /Firefox\//.test(ua) && !/Seamonkey/i.test(ua)
+}
+
 /** L'appli tourne déjà comme une appli (écran d'accueil). */
 export function isStandalone(env: InstallEnv): boolean {
   if (env.navigator?.standalone === true) return true
@@ -97,6 +102,10 @@ const store = typeof window !== 'undefined' ? createInstallStore(window as unkno
 export const promptInstall = () => store?.promptInstall() ?? Promise.resolve('unavailable' as const)
 
 /** État courant, mis à jour quand le navigateur propose l'installation ou qu'elle se termine. */
+export function useIsFirefoxAndroid(): boolean {
+  return typeof navigator !== 'undefined' && isFirefoxAndroid(navigator.userAgent ?? '')
+}
+
 export function useInstallState(): InstallState {
   return useSyncExternalStore(
     (l) => store?.subscribe(l) ?? (() => undefined),

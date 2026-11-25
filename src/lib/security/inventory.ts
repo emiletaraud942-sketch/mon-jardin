@@ -82,7 +82,7 @@ export const DATA_INVENTORY: readonly DataItem[] = [
   },
   {
     id: 'compte',
-    donnee: 'Adresse e-mail du compte, instantané en ligne des jardins (avec les dates et notes des photos) et les images des photos (réduites, sans EXIF ni position GPS, 80 Mo au plus par utilisateur), jeton de session',
+    donnee: 'Adresse e-mail du compte, mot de passe facultatif (gardé par le service d’authentification, jamais par l’appli), instantané en ligne des jardins (avec les dates et notes des photos et la liste des plantes scannées encore à valider : position estimée, nom proposé) et les images des photos, y compris celles des plantes à valider (réduites, sans EXIF ni position GPS, 80 Mo au plus par utilisateur), jeton de session',
     stockage: 'Supabase (table garden_snapshots et espace de fichiers privé « photos », un dossier par utilisateur, protégés par RLS) ; jeton dans le localStorage (clé sb-…-auth-token)',
     destinataires: ['Supabase (sous-traitant : hébergement et authentification)'],
     finalite: 'Sauvegarder et retrouver ses jardins sur un autre appareil. Fonction facultative.',

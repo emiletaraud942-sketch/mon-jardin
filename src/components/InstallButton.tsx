@@ -1,41 +1,10 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { promptInstall, useInstallState } from '../lib/install'
 import { showToast } from '../lib/toast'
 import { Fold } from './Fold'
 import { Icon } from './Icon'
-import { Modal } from './Modal'
-
-/** Aide pour installer à la main (iPhone, iPad ou navigateur sans fenêtre d'installation). */
-function InstallHelp({ ios, onClose }: { ios: boolean; onClose: () => void }) {
-  return (
-    <Modal title="Installer l’appli" sheet onClose={onClose}>
-      <div className="stack help-body">
-        {ios ? (
-          <ol className="help-steps">
-            <li>
-              Touchez <strong>Partager</strong> <span className="install-share"><Icon name="share" size={18} /></span> en bas de l’écran.
-            </li>
-            <li>
-              Touchez <strong>Sur l’écran d’accueil</strong>.
-            </li>
-          </ol>
-        ) : (
-          <ol className="help-steps">
-            <li>
-              Ouvrez le menu du navigateur <strong>(⋮)</strong>.
-            </li>
-            <li>
-              Touchez <strong>Installer l’application</strong> (et non « Ajouter un raccourci »).
-            </li>
-          </ol>
-        )}
-        <button className="btn" onClick={onClose}>
-          J’ai compris
-        </button>
-      </div>
-    </Modal>
-  )
-}
+// L'aide d'installation (étapes iPhone, Firefox, autres) n'est lue qu'au besoin : chargée à la demande.
+const InstallHelp = lazy(() => import('./InstallHelp').then((m) => ({ default: m.InstallHelp })))
 
 /** Bouton « Installer l’appli » : fenêtre du navigateur si elle existe, sinon aide. Rien si l’appli est déjà installée. */
 export function InstallButton({ className = 'btn', label = 'Installer l’appli' }: { className?: string; label?: string }) {
@@ -53,7 +22,11 @@ export function InstallButton({ className = 'btn', label = 'Installer l’appli'
       <button className={className} onClick={() => void go()}>
         <Icon name="download" /> {label}
       </button>
-      {help && <InstallHelp ios={state === 'ios-manual'} onClose={() => setHelp(false)} />}
+      {help && (
+        <Suspense fallback={null}>
+          <InstallHelp ios={state === 'ios-manual'} onClose={() => setHelp(false)} />
+        </Suspense>
+      )}
     </>
   )
 }
