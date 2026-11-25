@@ -84,7 +84,8 @@ test('plante choisie : infos sur la carte, glisser, fiche sur demande', async ({
   // Téléphone : la feuille des conseils est repliée d'emblée (titre et nombre d'idées visibles) ; on l'ouvre d'un toucher.
   const feuille = page.locator('.bsheet .sheet-head')
   if (await feuille.count()) {
-    await expect(feuille).toContainText('touchez pour voir', { timeout: 15_000 })
+    await expect(feuille).toContainText('Plantes conseillées', { timeout: 15_000 }) // titre et meilleures plantes lisibles repliée
+    await expect(feuille.locator('.sheet-title-text .small')).toContainText(/\S/)
     await feuille.click()
   }
   await expect(page.getByText(/estimation/).first()).toBeVisible({ timeout: 15_000 })

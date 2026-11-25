@@ -1,4 +1,5 @@
 import { Fold } from '../../components/Fold'
+import { topNames } from '../../lib/topNames'
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { BottomSheet, type SheetSnap } from '../../components/BottomSheet'
@@ -293,24 +294,30 @@ function BestForSpot({ garden }: { garden: Garden }) {
   )
 
   return (
-    <div className="card" data-feat="ou-planter">
+    <div className="card" data-feat="ou-planter" data-spot={spot ? '1' : undefined}>
       <h2>Quelle plante pour cet endroit ?</h2>
-      <ol className="np-steps" style={{ marginBottom: 8 }}>
-        <li>
-          <span className="np-num" aria-hidden>1</span>
-          <span>
-            <strong>Touchez un endroit sur la carte.</strong>
-            <span className="small muted" style={{ display: 'block' }}>L’appli calcule le soleil, la pente et les voisins.</span>
-          </span>
-        </li>
-      </ol>
+      {spot ? (
+        <p className="small muted np-chosen" style={{ margin: '0 0 8px' }}>
+          Endroit choisi. Touchez ailleurs sur la carte pour en changer.
+        </p>
+      ) : (
+        <ol className="np-steps" style={{ marginBottom: 8 }}>
+          <li>
+            <span className="np-num" aria-hidden>1</span>
+            <span>
+              <strong>Touchez un endroit sur la carte.</strong>
+              <span className="small muted" style={{ display: 'block' }}>L’appli calcule le soleil, la pente et les voisins.</span>
+            </span>
+          </li>
+        </ol>
+      )}
       <Suspense fallback={<div className="spot-map empty"><span className="spinner" /> Chargement de la carte…</div>}>
         <SpotPicker garden={garden} plants={plants} spot={spot} onPick={setSpot} />
       </Suspense>
       {analysis && spot && (mobile ? (
         <>
           <div style={{ height: 96 }} aria-hidden />
-          <BottomSheet fixed label="Plantes conseillées" title="Plantes conseillées" summary={`${analysis.recos.length} idée${analysis.recos.length > 1 ? 's' : ''} : touchez pour voir`} snap={snap} onSnap={setSnap}>
+          <BottomSheet fixed label="Plantes conseillées" title="Plantes conseillées" summary={topNames(analysis.recos.map((r) => r.species.nomCommun))} snap={snap} onSnap={setSnap}>
             <div>{results}</div>
           </BottomSheet>
         </>
