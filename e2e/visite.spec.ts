@@ -94,6 +94,7 @@ test('visite en photos : départ, rotation, pause, suivant, arrêt, légendes', 
   await expect(stage).not.toHaveAttribute('data-loading', 'true', { timeout: 20_000 })
 
   // La vue tourne toute seule (16° par seconde, après une courte pause à l'arrivée).
+  await expect(stage).toHaveAttribute('data-yaw', /^-?\d/, { timeout: 20_000 }) // l'attribut n'existe qu'une fois la vue prête : sans cette attente, `a` pouvait valoir NaN
   const a = (await etat()).yaw
   await expect
     .poll(async () => (((await etat()).yaw - a + 360) % 360), { message: 'la vue doit tourner toute seule', timeout: 20_000, intervals: [500] })
