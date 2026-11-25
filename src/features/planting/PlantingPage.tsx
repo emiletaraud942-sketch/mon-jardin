@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { BottomSheet, type SheetSnap } from '../../components/BottomSheet'
 import { useIsMobile } from '../../components/useMedia'
 import { SPECIES, SPECIES_BY_ID } from '../../data/species'
 import { CATEGORY_LABEL } from '../../data/labels'
@@ -179,7 +178,14 @@ function BestForSpot({ garden }: { garden: Garden }) {
   const cat: Category | '' = mine?.cat ?? ''
   const setSpot = (p: XY) => setUi({ planting: { gardenId: garden.id, spot: p, cat } })
   const mobile = useIsMobile()
-  const [snap, setSnap] = useState<SheetSnap>('mid')
+  // Téléphone : la carte reste collée en haut de l'écran et la liste défile dessous, pour voir les deux en même temps.
+  const pinRef = useRef<HTMLDivElement>(null)
+  const hadSpot = useRef(false)
+  useEffect(() => {
+    const has = !!spot
+    if (mobile && has && !hadSpot.current) pinRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+    hadSpot.current = has
+  }, [mobile, spot])
   const setCat = (c: Category | '') => setUi({ planting: { gardenId: garden.id, spot, cat: c } })
 
   // Arbres des environs (LiDAR HD, s'il est disponible) : leur ombre compte ; sinon comportement habituel.
@@ -300,16 +306,19 @@ function BestForSpot({ garden }: { garden: Garden }) {
           </span>
         </li>
       </ol>
-      <Suspense fallback={<div className="spot-map empty"><span className="spinner" /> Chargement de la carte…</div>}>
-        <SpotPicker garden={garden} plants={plants} spot={spot} onPick={setSpot} />
-      </Suspense>
+      <div className={'spot-stick' + (mobile && spot ? ' on' : '')} ref={pinRef}>
+        <Suspense fallback={<div className="spot-map empty"><span className="spinner" /> Chargement de la carte…</div>}>
+          <SpotPicker garden={garden} plants={plants} spot={spot} onPick={setSpot} />
+        </Suspense>
+      </div>
       {analysis && spot && (mobile ? (
-        <>
-          <div style={{ height: 96 }} aria-hidden />
-          <BottomSheet fixed label="Plantes conseillées" title="Plantes conseillées" summary={`${analysis.recos.length} idée${analysis.recos.length > 1 ? 's' : ''}`} snap={snap} onSnap={setSnap}>
-            <div>{results}</div>
-          </BottomSheet>
-        </>
+        <div className="reco-flow">
+          <div className="reco-head">
+            <strong>Plantes conseillées</strong>
+            <span className="muted small">{analysis.recos.length} idée{analysis.recos.length > 1 ? 's' : ''}</span>
+          </div>
+          {results}
+        </div>
       ) : (
         <div style={{ marginTop: 12 }}>{results}</div>
       ))}
