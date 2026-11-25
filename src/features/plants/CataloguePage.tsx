@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { SpeciesThumb } from '../../components/SpeciesThumb'
-import { SPECIES_BY_ID } from '../../data/species'
+import { SPECIES, SPECIES_BY_ID } from '../../data/species'
 import { CATEGORY_LABEL, SUN_LABEL } from '../../data/labels'
 import { filterSpecies } from '../../components/SpeciesPicker'
 import { RiskBadges } from '../../components/RiskNotes'
@@ -25,6 +25,8 @@ export function CataloguePage({ garden }: { garden: Garden }) {
   const list = useMemo(() => applyFilters(filterSpecies(q, { category: cat, sun }), filters, garden, month), [q, cat, sun, filters, garden, month])
   const toggle = (id: FilterId) => setFilters((f) => (f.includes(id) ? f.filter((x) => x !== id) : [...f, id]))
   const selected = speciesId ? SPECIES_BY_ID[speciesId] : undefined
+  // Liste cachée tant qu'on n'a rien tapé ni filtré : la recherche d'abord.
+  const showList = q.trim().length >= 1 || filters.length > 0 || !!cat || !!sun
 
   // Ordinateur : la fiche s'ouvre à côté de la liste, on la ramène à l'écran.
   useEffect(() => {
@@ -90,15 +92,15 @@ export function CataloguePage({ garden }: { garden: Garden }) {
 
   return (
     <div className="page np-page plants-ui" data-feat="catalogue">
-      <h1>Catalogue des plantes ({list.length})</h1>
+      <h1>Catalogue des plantes</h1>
       <MetroNote garden={garden} />
       <div className="row" style={{ margin: '8px 0 12px' }}>
         <input
-          className="input"
+          className="input species-search"
           type="search"
           style={{ flex: '1 1 220px' }}
           aria-label="Rechercher une plante"
-          placeholder="Pommier, Malus, tomate…"
+          placeholder="Chercher une plante…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
@@ -132,14 +134,17 @@ export function CataloguePage({ garden }: { garden: Garden }) {
           ))}
         </div>
       </details>
+      {!showList && <p className="small muted">Tapez un nom (pommier, tomate, lavande…) pour voir les plantes. {SPECIES.length} fiches dans le catalogue.</p>}
       <p className={filters.length > 0 ? 'small muted' : 'sr-only'} role="status" aria-live="polite" style={filters.length > 0 ? { margin: '0 0 8px' } : undefined}>
         {list.length} plante{list.length > 1 ? 's' : ''}
         {filters.length > 0 ? ' avec ces filtres.' : ''}
       </p>
-      <div className="grid catalogue-grid">
-        {listCard}
-        {!mobile && sheetCard}
-      </div>
+      {(showList || (!mobile && selected)) && (
+        <div className="grid catalogue-grid">
+          {showList && listCard}
+          {!mobile && sheetCard}
+        </div>
+      )}
     </div>
   )
 }

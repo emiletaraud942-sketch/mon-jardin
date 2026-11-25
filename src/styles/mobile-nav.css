@@ -810,12 +810,12 @@ html[data-offline] .page {
   width: 100%;
   align-self: stretch;
   /* Même valeur que le « top » collant ci-dessous : la carte arrive pile à sa place, sans recouvrir la ligne suivante. */
-  scroll-margin-top: 26px;
+  scroll-margin-top: 0;
 }
 @media (max-width: 760px) {
   .spot-stick.on {
     position: sticky;
-    top: 26px;
+    top: 0;
     z-index: 6;
     padding: 6px 0 8px;
     /* Opaque : la liste qui défile dessous ne doit jamais transparaître à travers la carte. */
@@ -823,7 +823,7 @@ html[data-offline] .page {
     border-radius: 18px;
   }
   .spot-stick.on .spot-map {
-    height: clamp(180px, 30dvh, 260px);
+    height: clamp(140px, 22dvh, 190px);
   }
   .reco-flow {
     margin-top: 6px;

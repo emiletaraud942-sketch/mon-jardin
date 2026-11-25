@@ -94,10 +94,9 @@ describe('carte sur ordinateur : rien ne recouvre l’échelle ni l’attributio
     // Une seule rangée d'avis en haut (images absentes, données manquantes) ; la mention est rendue dans `map-foot` sur ordinateur seulement.
     expect(view).toMatch(/\{!mobileMap && \(\(!noteInColumn && photoNote\) \|\| emptyCard\) && \(\s*<div className="map-foot">/)
     expect(view).toContain('{noteInColumn && !(mobileMap && emptyCard) && photoNote}')
-    expect(view).toContain('const noteInColumn = mobileMap || plants.length === 0 || optionsOpen || legendOpen')
+    expect(view).toContain('const noteInColumn = mobileMap || plants.length === 0 || legendOpen')
     // Les avis viennent juste sous la barre d'outils, avant le panneau Options : jamais repoussés dans la partie qui défile.
     expect(view.indexOf('className="map-chips"')).toBeGreaterThan(view.indexOf('className="floating row map-toolbar"'))
-    expect(view.indexOf('className="map-chips"')).toBeLessThan(view.indexOf('id="map-options"'))
     expect(desk).toMatch(/\.map-chips\s*\{[^}]*display:\s*flex/)
     expect(facile).toMatch(/\.map-chips\s*\{[^}]*display:\s*contents/)
   })
@@ -146,14 +145,7 @@ describe('carte sur téléphone : la mention sur la photo reste lisible (360 px)
 
 // Lot 6A : derniers recouvrements de la carte et du parcours (853 × 533, 1024 × 768, 360 px en Grandes touches).
 describe('barre d’outils de la carte : deux rangées au plus (mots courts)', () => {
-  const view = read('../features/map/MapView.tsx')
   const app = css('app.css')
-  it('« Vue photo », « Vue plan » et « Options de la carte » ont un mot court ; le nom accessible reste le long', () => {
-    for (const [long, short] of [['Vue photo', 'Photo'], ['Vue plan', 'Plan'], ['Options de la carte', 'Options']]) {
-      expect(view).toContain(`aria-label="${long}"`)
-      expect(view).toMatch(new RegExp(`<span className="lbl-long">${long}</span>\\s*<span className="lbl-short" aria-hidden>\\s*${short}\\s*</span>`))
-    }
-  })
   it('la colonne d’outils est un conteneur de largeur ; les mots courts se décident en rem (ils suivent la taille du texte)', () => {
     expect(app).toMatch(/\.map-top\s*\{[^}]*container:\s*maptop\s*\/\s*inline-size/)
     expect(app).toMatch(/\.map-toolbar \.lbl-short\s*\{\s*display:\s*none/)

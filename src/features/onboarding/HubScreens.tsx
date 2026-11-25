@@ -64,6 +64,7 @@ export function LeafHome({ who, alertText, onAlert, onHelp }: { who?: string; al
       )}
       <div className="leaf" role="group" aria-label="Les trois parties de votre jardin">
         <img className="leaf-img" src="/accueil/feuille-chene.webp" alt="" width={466} height={612} decoding="async" />
+        <span className="leaf-tint-all" aria-hidden />
         {ZONES.map((z) => {
           const hub = hubById(z.id)
           return (
@@ -75,7 +76,6 @@ export function LeafHome({ who, alertText, onAlert, onHelp }: { who?: string; al
               aria-label={`${hub.mot} : ${hub.phrase}`}
               onClick={() => homeHub.set(z.id)}
             >
-              <span className="leaf-tint" aria-hidden />
               <span className="leaf-text" aria-hidden>
                 <span className="leaf-word">{hub.mot}</span>
                 <span className="leaf-sub">{hub.phrase}</span>

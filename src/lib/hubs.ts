@@ -38,6 +38,7 @@ export const HUBS: Hub[] = [
       { featureId: 'carte', mot: 'Voir mon jardin', phrase: 'Votre terrain, vu du ciel.', icon: 'map' },
     ],
     more: [
+      { featureId: 'visite-photos', mot: 'Visiter mon jardin en photos', phrase: 'Comme si vous étiez sur la terrasse.', icon: 'camera' },
       { featureId: 'mes-plantes', mot: 'Mes plantes', phrase: 'La liste de tout ce que vous avez planté.', icon: 'list' },
       { featureId: 'catalogue', mot: 'Catalogue de plantes', phrase: 'Chercher une plante et lire sa fiche.', icon: 'book' },
       { featureId: 'apprendre-jardiner', mot: 'Apprendre à jardiner', phrase: 'Des leçons courtes et un petit quiz.', icon: 'book' },

@@ -122,9 +122,7 @@ export const FEATURES: Feature[] = [
   // Mon jardin
   F('carte', 'Voir ma carte', 'jardin', 'Votre terrain vu du ciel, avec vos plantes placées au mètre près.', ['plan', 'terrain', 'photo aérienne', 'carte'], 'carte', go('carte', { path: ['carte'] })),
   F('ajouter-plante', 'Ajouter une plante', 'jardin', 'Choisissez la plante, puis touchez la carte à l’endroit où elle pousse.', ['planter', 'placer', 'ajouter', 'nouvelle plante', 'semer'], 'picker', () => addPicker.set({})),
-  F('vue-plan', 'Vue photo ou vue plan', 'jardin', 'Passez de la photo aérienne au plan dessiné, plus facile à lire.', ['photo', 'plan', 'fond de carte', 'aérienne'], 'fond-carte', go('carte', { path: ['fond-carte'] })),
-  F('options-carte', 'Options de la carte', 'jardin', 'Recentrer, limites du terrain, saison, taille adulte, noms et légende.', ['options', 'réglages carte', 'noms', 'taille adulte', 'limites'], 'map-options', go('carte', { intent: 'carte:options', path: ['map-options'] })),
-  F('recentrer', 'Recentrer sur mon terrain', 'jardin', 'Ramène la carte sur votre terrain si vous vous êtes perdu.', ['recentrer', 'perdu', 'revenir', 'centrer'], 'recentrer', go('carte', { intent: 'carte:options', path: ['recentrer'] })),
+  F('recentrer', 'Recentrer sur mon terrain', 'jardin', 'Ramène la carte sur votre terrain si vous vous êtes perdu.', ['recentrer', 'perdu', 'revenir', 'centrer'], 'recentrer', go('carte', { path: ['recentrer'] })),
   F('legende', 'Légende de la carte', 'jardin', 'Explique les traits jaunes, les disques et les pointillés.', ['légende', 'signification', 'traits', 'couleurs'], 'legende', go('carte', { intent: 'carte:legende', path: ['legende'] })),
   F('viser', 'Viser avec la croix', 'jardin', 'Déplacez la carte sous une croix fixe pour poser une plante au centimètre.', ['viser', 'croix', 'précis', 'viseur'], 'viser', aid(['viser'])),
   F('loupe', 'Loupe', 'jardin', 'Agrandit l’endroit visé pour placer une plante sans que le doigt le cache.', ['loupe', 'agrandir', 'zoom', 'appui long'], 'loupe', aid(['loupe'])),
@@ -160,7 +158,6 @@ export const FEATURES: Feature[] = [
   F('filtres-catalogue', 'Filtrer le catalogue', 'plantes', 'Triez par comestible, mellifère, ombre, facile ou ce mois-ci.', ['filtres', 'comestible', 'ombre', 'facile', 'mellifère', 'exposition', 'trier'], 'catalogue-filtres', go('catalogue', { path: ['catalogue-filtres'] })),
 
   // Regarder mon jardin
-  F('saison', 'Voir mon jardin à une autre saison', 'promener', 'Hiver, printemps, été ou automne : feuilles, fleurs et fruits changent.', ['saison', 'hiver', 'printemps', 'été', 'automne', 'feuilles', 'fleurs'], 'saison', go('carte', { intent: 'carte:options', path: ['map-options', 'saison'] })),
   F('photos-jardin', 'Photos du jardin', 'promener', 'Regardez de vraies photos de votre jardin, prises en tournant.', ['photos', 'street view', '360', 'panorama', 'points de vue'], 'pano-home', () => openPanorama('home')),
   F('visite-photos', 'Faire la visite en photos', 'promener', 'Passez d’un point de vue à l’autre : l’appli tourne sur chacun, puis vous emmène au suivant.', ['visite', 'photos', 'points de vue', 'street view', 'parcours', 'tour', 'automatique', 'promenade'], 'pano-visite', () => {
     // Deux points avec photos ou plus : la visite part tout de suite. Sinon, on ouvre la liste et on montre quoi faire.
