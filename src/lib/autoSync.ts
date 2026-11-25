@@ -192,6 +192,18 @@ export function createAutoSync(deps: AutoSyncDeps) {
     }
   }
 
+  /** Un changement hors de l'état principal (file du scan) : même chemin qu'une modification, envoi 2 s plus tard. */
+  function touch() {
+    if (applyingRemote) return
+    deps.writeDirty(true)
+    if (!deps.hasConsent() || current.status === 'conflit' || current.status === 'inactif') return
+    clearTimeout(timer)
+    timer = setTimeout(() => {
+      timer = undefined
+      void pushNow()
+    }, deps.delayMs)
+  }
+
   const unsubscribe = deps.subscribe(() => {
     const s = deps.getState()
     if (!s.loaded) return
@@ -219,6 +231,7 @@ export function createAutoSync(deps: AutoSyncDeps) {
   return {
     reconcile,
     flush,
+    touch,
     /** L'utilisateur a choisi de garder cet appareil ou la copie en ligne : on repart sur de bonnes bases. */
     resolved() {
       setCurrent({ status: 'ok', lastAt: deps.now() })
@@ -311,6 +324,10 @@ let autoHandle: ReturnType<typeof createAutoSync> | undefined
 /** À appeler quand l'utilisateur a réglé un conflit à la main (Réglages). */
 export function autoSyncResolved() {
   autoHandle?.resolved()
+}
+/** La file du scan a changé : elle part avec la copie en ligne (sans effet si la synchro n'est pas démarrée). */
+export function autoSyncTouch() {
+  autoHandle?.touch()
 }
 /** Relance une comparaison (après connexion, par exemple). */
 export function autoSyncReconcile() {

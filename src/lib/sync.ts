@@ -260,7 +260,9 @@ export async function pushSnapshot(opts: { force?: boolean } = {}) {
     throw new Error(MESSAGE_READ_FAILED)
   }
   const { gardens, plants, tasksDone } = getState()
-  const data = serializeState({ gardens, plants, tasksDone })
+  // Plantes scannées en attente de revue : elles voyagent avec la copie (leurs photos partent à part, avec les autres).
+  const scanQueue = (await import('../features/scan/queueStore').then((m) => m.queueForSync()).catch(() => [])).filter((i) => i.status !== 'ignoree' || !!i.mergedInto)
+  const data = { ...serializeState({ gardens, plants, tasksDone }), scanQueue }
   if (jsonBytes(data) > MAX_JSON_BYTES) throw new Error('Vos données dépassent la taille maximale de synchronisation (5 Mo).')
 
   // `updated_at` n'est jamais envoyé : le trigger SQL le fixe à now() (horloge du serveur).
@@ -292,7 +294,8 @@ export async function pushSnapshot(opts: { force?: boolean } = {}) {
 export async function syncPhotos(): Promise<PhotoSyncResult> {
   const { sb, user } = await requireUser()
   const { gardens, plants } = getState()
-  return runPhotoSync(sb, user.id, { gardens, plants })
+  const queue = await import('../features/scan/queueStore').then((m) => m.queueForSync()).catch(() => [])
+  return runPhotoSync(sb, user.id, { gardens, plants, extraPhotoIds: queue.filter((i) => i.status === 'a-valider' || i.status === 'en-attente').map((i) => i.photoId) })
 }
 
 /**
@@ -358,5 +361,14 @@ export async function pullSnapshot(): Promise<boolean> {
   }
   replaceData(migrated.data, { keepPhotos: true })
   writeLastSynced(user.id, row.updated_at)
+  // Plantes scannées à valider : reprises aussi (jamais d'écrasement : on ajoute ce qui manque).
+  const remoteQueue = (row.data as { scanQueue?: unknown } | null)?.scanQueue
+  if (Array.isArray(remoteQueue)) {
+    try {
+      await import('../features/scan/queueStore').then((m) => m.mergeRemoteQueue(remoteQueue))
+    } catch (e) {
+      console.warn('File du scan non reprise', e)
+    }
+  }
   return true
 }

@@ -162,9 +162,9 @@ async function isAcceptableImage(blob: Blob): Promise<boolean> {
  * Met les photos à jour dans les deux sens : récupère celles qui manquent ici, envoie celles qui manquent en ligne, efface les anciennes
  * orphelines en ligne. Une photo qui échoue n'empêche pas les autres. Ne lève que si la liste en ligne est illisible.
  */
-export async function runPhotoSync(sb: SupabaseClient, userId: string, state: { gardens: Garden[]; plants: Plant[] }): Promise<PhotoSyncResult> {
+export async function runPhotoSync(sb: SupabaseClient, userId: string, state: { gardens: Garden[]; plants: Plant[]; extraPhotoIds?: string[] }): Promise<PhotoSyncResult> {
   const res: PhotoSyncResult = { uploaded: 0, downloaded: 0, skipped: 0, failed: 0, removed: 0 }
-  const wanted = wantedPhotoIds(state.plants, state.gardens)
+  const wanted = [...new Set([...wantedPhotoIds(state.plants, state.gardens), ...(state.extraPhotoIds ?? []).filter(isPhotoId)])]
   const remote = await listRemote(sb, userId)
   const have = new Set(await listPhotoIds())
   const local = new Map<string, number>()

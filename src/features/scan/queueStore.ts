@@ -7,6 +7,7 @@ import { cropCenter } from './crop'
 import { hasConsent } from '../../lib/consent'
 import { SCAN_QUEUE_KEY } from '../../lib/store'
 import { deletePhoto, getPhoto } from '../../lib/photos'
+import { autoSyncTouch } from '../../lib/autoSync'
 import { dedupeQueue } from './dedupe'
 import { applyGroupResults, dueItems, groupPlan, markFailed, markNeedsConsent, sanitizeQueue, type Queue, type Suggestion } from './queue'
 
@@ -29,6 +30,7 @@ function emit() {
 async function persist() {
   try {
     await set(SCAN_QUEUE_KEY, queue)
+    autoSyncTouch()
   } catch (e) {
     console.warn('File d’attente du scan non enregistrée', e)
   }
@@ -50,6 +52,47 @@ export function loadQueue(): Promise<void> {
 }
 
 export const getQueue = () => queue
+
+const RANK: Record<string, number> = { 'en-attente': 0, 'a-valider': 1, ignoree: 2, validee: 3 }
+
+/**
+ * Reprend la file du scan d'une autre copie (copie en ligne) : on ajoute ce qui manque ici ; pour un même élément, l'état le plus avancé
+ * (validé, ignoré) l'emporte, sinon celui d'ici. Renvoie vrai si cet appareil a des éléments que la copie en ligne n'a pas (à renvoyer).
+ */
+export async function mergeRemoteQueue(raw: unknown): Promise<boolean> {
+  await loadQueue()
+  const remote = sanitizeQueue(raw)
+  const byId = new Map(queue.map((i) => [i.id, i]))
+  let changed = false
+  const merged = [...queue]
+  for (const r of remote) {
+    const mine = byId.get(r.id)
+    if (!mine) {
+      merged.push(r)
+      changed = true
+    } else if ((RANK[r.status] ?? 0) > (RANK[mine.status] ?? 0)) {
+      merged[merged.indexOf(mine)] = r
+      changed = true
+    }
+  }
+  if (changed) {
+    queue = merged
+    emit()
+    try {
+      await set(SCAN_QUEUE_KEY, queue)
+    } catch (e) {
+      console.warn('File d’attente du scan non enregistrée', e)
+    }
+  }
+  const remoteIds = new Set(remote.map((i) => i.id))
+  return queue.some((i) => !remoteIds.has(i.id))
+}
+
+/** La file à envoyer avec la copie en ligne (chargée d'abord). */
+export async function queueForSync(): Promise<Queue> {
+  await loadQueue()
+  return queue.slice(-120)
+}
 
 /** Applique un changement à la file, l'enregistre et prévient l'interface. */
 export function updateQueue(f: (q: Queue) => Queue) {
