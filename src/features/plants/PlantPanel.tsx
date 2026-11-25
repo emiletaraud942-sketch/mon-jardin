@@ -291,20 +291,25 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
         <button className="btn plant-move" onClick={() => startMoving(plant.id)}>
           <Icon name="move" size={16} /> Déplacer cette plante
         </button>
-        {!fiche && (
-          <button className="btn" onClick={() => openScan('mesures', { kind: 'plant', plantId: plant.id })}>
-            <Icon name="pin" size={16} /> Placer au mètre
-          </button>
-        )}
-        <button className="btn" onClick={() => startPlacing(plant.speciesId, { customName: plant.customName, series: true })}>
-          <Icon name="plus" size={16} /> Ajouter une autre « {plantName(plant)} »
-        </button>
-        {species && (
-          <button className="btn" onClick={() => openSpecies(species.id)}>
-            <Icon name="book" size={16} /> Tout savoir sur cette espèce
-          </button>
-        )}
       </div>
+
+      <details className="np-details plant-details plant-more" data-feat="plus-plante">
+        <summary>Plus d’actions</summary>
+        <div className="stack panel-actions" style={{ marginBottom: 12 }}>
+          {!fiche && (
+            <button className="btn" onClick={() => openScan('mesures', { kind: 'plant', plantId: plant.id })}>
+              <Icon name="pin" size={16} /> Placer au mètre
+            </button>
+          )}
+          <button className="btn" onClick={() => startPlacing(plant.speciesId, { customName: plant.customName, series: true })}>
+            <Icon name="plus" size={16} /> Ajouter une autre « {plantName(plant)} »
+          </button>
+          {species && (
+            <button className="btn" onClick={() => openSpecies(species.id)}>
+              <Icon name="book" size={16} /> Tout savoir sur cette espèce
+            </button>
+          )}
+        </div>
 
       <details className="np-details plant-details" data-feat="date-notes">
         <summary>Date et notes</summary>
@@ -338,6 +343,7 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
           <Icon name="trash" size={16} /> Supprimer cette plante
         </button>
       </section>
+      </details>
       </div>
     </div>
   )

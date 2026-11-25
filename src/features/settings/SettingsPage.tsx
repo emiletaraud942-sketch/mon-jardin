@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 import type { SyncConflictError } from '../../lib/sync'
 import { ConfirmModal } from '../../components/ConfirmModal'
@@ -892,6 +892,18 @@ function TourCard() {
   )
 }
 
+/** Un groupe de réglages replié : le titre d'abord, le détail à la demande (reveal() ouvre le repli qui contient une fonction cherchée). */
+function SettingsGroup({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <details className="np-details settings-group">
+      <summary>{title}</summary>
+      <div className="stack" style={{ gap: 12, marginTop: 12 }}>
+        {children}
+      </div>
+    </details>
+  )
+}
+
 export function SettingsPage({ garden }: { garden: Garden }) {
   const { newGarden } = useUi()
   const [adding, setAdding] = useState(!!newGarden)
@@ -915,24 +927,21 @@ export function SettingsPage({ garden }: { garden: Garden }) {
         <div className="stack" style={{ gap: 12 }}>
           <GardensCard garden={garden} adding={adding} setAdding={setAdding} addRef={addRef} />
           <Backup />
-          <GardenInfo garden={garden} />
-          <LidarCard garden={garden} />
-          <OfflineZoneCard garden={garden} />
-          <ScanCard garden={garden} />
+          <SettingsGroup title="Mon terrain et la carte">
+            <GardenInfo garden={garden} />
+            <LidarCard garden={garden} />
+            <OfflineZoneCard garden={garden} />
+            <ScanCard garden={garden} />
+          </SettingsGroup>
         </div>
         <div className="stack" style={{ gap: 12 }}>
-          <AdviceCard garden={garden} />
-          <ReadingCard />
-          <TourCard />
-          <InstallCard />
-          <Sync />
-          {syncConfigured && (
-            <Suspense fallback={null}>
-              <SharedGardensCard />
-            </Suspense>
-          )}
-          <PrivacyCard />
-          <Fold title="Sources et licences">
+          <SettingsGroup title="Texte, aide et confidentialité">
+            <ReadingCard />
+            <AdviceCard garden={garden} />
+            <TourCard />
+            <InstallCard />
+            <PrivacyCard />
+            <Fold title="Sources et licences">
               <ul className="list small">
                 <li>Photo aérienne, plan, cadastre, maisons voisines et relief : © IGN – Géoplateforme, Licence Ouverte 2.0. Arbres des environs : © IGN – LiDAR HD, Licence Ouverte 2.0.</li>
                 <li>Météo et historique du climat : Open-Meteo (CC BY 4.0, usage non commercial).</li>
@@ -940,7 +949,16 @@ export function SettingsPage({ garden }: { garden: Garden }) {
                 <li>Fiches des plantes, calendriers et voisinages : base PermaJardin. Ces conseils restent indicatifs.</li>
                 <li>Distances de plantation : article 671 du Code civil. Des règles locales peuvent s’appliquer.</li>
               </ul>
-          </Fold>
+            </Fold>
+          </SettingsGroup>
+          <SettingsGroup title="Copie en ligne et jardin partagé">
+            <Sync />
+            {syncConfigured && (
+              <Suspense fallback={null}>
+                <SharedGardensCard />
+              </Suspense>
+            )}
+          </SettingsGroup>
         </div>
       </div>
       <footer className="legal-footer">
