@@ -319,6 +319,20 @@ export async function readSafetyCopy(): Promise<unknown> {
   return undefined
 }
 
+/** Les deux copies de sécurité brutes (récente, précédente) : l'analyse est dans `safetyRestore.ts` (chargé à la demande). */
+export async function readSafetyCopies(): Promise<{ id: 'recente' | 'precedente'; raw: unknown }[]> {
+  const out: { id: 'recente' | 'precedente'; raw: unknown }[] = []
+  for (const [id, k] of [['recente', BACKUP_KEY], ['precedente', PREVIOUS_BACKUP_KEY]] as const) {
+    try {
+      const raw = await get(k)
+      if (raw !== undefined && raw !== null) out.push({ id, raw })
+    } catch {
+      /* illisible : ignorée */
+    }
+  }
+  return out
+}
+
 /**
  * Copie de sécurité de l'état local, à faire AVANT de le remplacer (récupération depuis la synchro, import d'une sauvegarde).
  * `false` : la copie a échoué, ne rien remplacer. Si la lecture avait échoué, ce sont les données illisibles qui sont copiées.

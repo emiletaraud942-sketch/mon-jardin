@@ -468,6 +468,9 @@ function Backup() {
         <div className="row" data-feat="copie-securite">
           <SafetyCopyButton className="btn" />
         </div>
+        <Suspense fallback={null}>
+          <SafetyRestore />
+        </Suspense>
       </details>
       {pending && (
         <ImportDialog
@@ -489,6 +492,7 @@ type SyncModule = typeof import('../../lib/sync')
 const syncConfigured = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY
 // « Jardin partagé » se charge à la demande : l'écran Réglages et le chunk d'entrée restent légers.
 // Connexion par mot de passe : chargée à la demande (chunk d'entrée).
+const SafetyRestore = lazy(() => import('./SafetyRestore').then((m) => ({ default: m.SafetyRestore })))
 const PasswordLogin = lazy(() => import('./PasswordLogin').then((m) => ({ default: m.PasswordLogin })))
 const SetPassword = lazy(() => import('./PasswordLogin').then((m) => ({ default: m.SetPassword })))
 const SharedGardensCard = lazy(() => import('../shared/SharedGardens').then((m) => ({ default: m.SharedGardensCard })))

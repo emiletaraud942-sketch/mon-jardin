@@ -734,6 +734,31 @@ describe('copies de sécurité (:precedente) et photos protégées', () => {
     expect(db.has('photo:libre')).toBe(false)
   })
 
+  it('restoreFromSafetyCopy : après une reprise qui a remplacé le jardin, remet jardins, plantes et points de vue sans rien effacer', async () => {
+    const pano = { id: 'pv1', x: 1, y: 2, takenAt: '2026-11-01', kind: 'guide' as const, shots: [{ photoId: 'photo:p1', headingDeg: 0, fovDeg: 60 }] }
+    db.set('photo:p1', new Blob(['p']))
+    db.set(KEY, { gardens: [{ ...garden, panoramas: [pano] }], plants: [plant, { ...plant, id: 'p2', photos: [] }], tasksDone: [] })
+    const s = await freshStore()
+    await s.loadState()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(await s.keepLocalSafetyCopy()).toBe(true)
+    // Reprise de la copie en ligne : un AUTRE jardin, sans rien de ce qui était ici.
+    s.replaceData({ gardens: [{ ...garden, id: 'g9', name: 'Mon jardin 2' }], plants: [], tasksDone: [] }, { keepPhotos: true })
+    await vi.advanceTimersByTimeAsync(300)
+    expect(s.getState().gardens.map((g) => g.id)).toEqual(['g9'])
+    const sr = await import('./safetyRestore')
+    const copies = await sr.listSafetyCopies()
+    expect(copies[0].gardens[0]).toMatchObject({ id: 'g1', plants: 2, points: 1, photosHere: 1, photosTotal: 1, here: false })
+    const r = await sr.restoreFromSafetyCopies(copies.map((c) => c.data))
+    expect(r).toEqual({ gardens: 1, plants: 2, points: 1 })
+    const st = s.getState()
+    expect(st.gardens.map((g) => g.id).sort()).toEqual(['g1', 'g9'])
+    expect(st.gardens.find((g) => g.id === 'g1')?.panoramas).toHaveLength(1)
+    expect(st.activeGardenId).toBe('g9')
+    // Rien de plus à remettre la deuxième fois.
+    expect(await sr.restoreFromSafetyCopies(copies.map((c) => c.data))).toEqual({ gardens: 0, plants: 0, points: 0 })
+  })
+
   it('la purge tolère une copie illisible (pas un objet, plantes abîmées)', async () => {
     db.set('photo:z', new Blob(['z']))
     db.set(KEY + ':illisible', 'du texte')

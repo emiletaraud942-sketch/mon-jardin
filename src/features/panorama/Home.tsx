@@ -135,7 +135,7 @@ export function Home({ garden }: { garden: Garden }) {
               <li>Tournez sur vous-même : l’appli prend 8 à 12 photos.</li>
               <li>Retrouvez-les ici et sur la carte. Les noms de vos plantes s’affichent dessus.</li>
             </ol>
-            <p className="small muted">Vous aviez déjà pris des photos et la liste est vide ? Elles ont pu être effacées par une reprise de la copie en ligne : la copie de sécurité (Réglages, Sauvegarde, « Récupérer la copie de sécurité ») les contient.</p>
+            <p className="small muted">Vous aviez déjà pris des photos et la liste est vide ? Une reprise de la copie en ligne a pu les remplacer : dans Réglages, Sauvegarde, touchez « Voir ce que contiennent les copies de sécurité » puis « Remettre ce qui manque ».</p>
           </div>
         ) : (
           <ul className="pano-list" aria-label="Points de vue">
