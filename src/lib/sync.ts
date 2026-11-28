@@ -412,7 +412,29 @@ export async function pullSnapshot(): Promise<boolean> {
   if (!(await keepLocalSafetyCopy())) {
     throw new Error('Impossible de garder une copie de sécurité de vos données avant de les remplacer (stockage plein ou bloqué). Rien n’a été modifié : faites une sauvegarde puis réessayez.')
   }
-  replaceData(migrated.data, { keepPhotos: true })
+  // Première synchro de CE téléphone avec ce compte : on ne remplace JAMAIS ce qu'il contient, on ajoute ce que la copie en ligne a en plus
+  // (sinon un compte ancien ou presque vide ferait disparaître jardins, plantes et photos du téléphone). La fusion repart en ligne ensuite.
+  const local = getState()
+  const firstTime = readLastSynced(user.id) === null && (local.gardens.length > 0 || local.plants.length > 0)
+  if (firstTime) {
+    const gardenIds = new Set(local.gardens.map((g) => g.id))
+    const plantIds = new Set(local.plants.map((p) => p.id))
+    const doneIds = new Set(local.tasksDone.map((t) => t.id))
+    const newGardens = migrated.data.gardens.filter((g) => !gardenIds.has(g.id))
+    const allIds = new Set([...gardenIds, ...newGardens.map((g) => g.id)])
+    replaceData(
+      {
+        gardens: [...local.gardens, ...newGardens],
+        plants: [...local.plants, ...migrated.data.plants.filter((p) => !plantIds.has(p.id) && allIds.has(p.gardenId))],
+        tasksDone: [...local.tasksDone, ...migrated.data.tasksDone.filter((t) => !doneIds.has(t.id) && allIds.has(t.gardenId))],
+      },
+      { keepPhotos: true },
+    )
+    // Ce téléphone a désormais plus que la copie en ligne : on la met à jour (la synchro automatique le fait 2 s plus tard).
+    if (typeof window !== 'undefined') window.setTimeout(() => window.dispatchEvent(new Event('pj:scan-queue')), 1500)
+  } else {
+    replaceData(migrated.data, { keepPhotos: true })
+  }
   writeLastSynced(user.id, row.updated_at)
   // Plantes scannées à valider : reprises aussi (jamais d'écrasement : on ajoute ce qui manque).
   const remoteQueue = (row.data as { scanQueue?: unknown } | null)?.scanQueue

@@ -499,6 +499,18 @@ describe('pullSnapshot', () => {
     expect(local.get('permajardin:last-synced:u1')).toBe(at)
   })
 
+  it('première synchro d’un téléphone qui a déjà des données : on AJOUTE ce que la copie en ligne a en plus, on ne remplace rien', async () => {
+    const s = await load()
+    const mine = { ...garden, id: 'mien', name: 'Mon jardin', panoramas: [{ id: 'pv', x: 0, y: 0, takenAt: '2026-11-01', kind: 'guide', shots: [{ photoId: 'photo:aa', headingDeg: 0, fovDeg: 60 }] }] }
+    const myPlant = { id: 'p-mienne', gardenId: 'mien', speciesId: 'pommier', position: { x: 0, y: 0 }, plantedAt: '2026-03-01', status: 'en-place', photos: [] }
+    store.state = { ...store.state, gardens: [mine], plants: [myPlant], tasksDone: [] } as never
+    fake.rows.set('u1', { user_id: 'u1', data: validData, updated_at: fake.tick() })
+    expect(await s.pullSnapshot()).toBe(true)
+    const arg = store.replaceData.mock.calls[0][0] as { gardens: { id: string }[]; plants: { id: string }[] }
+    expect(arg.gardens.map((g) => g.id)).toEqual(['mien', 'g1'])
+    expect(arg.plants.map((p) => p.id)).toEqual(['p-mienne'])
+  })
+
   it('refuse un snapshot invalide sans toucher aux données locales', async () => {
     const s = await load()
     fake.rows.set('u1', { user_id: 'u1', data: { foo: 'bar' }, updated_at: fake.tick() })

@@ -24,7 +24,7 @@ import { autoSyncMessage, autoSyncReconcile, useAutoSyncState } from '../../lib/
 import { useEffect, useState } from 'react'
 
 const syncConfigured = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY
-const SYNC_NUDGE_SNOOZE_MS = 7 * 24 * 3600 * 1000
+const SYNC_NUDGE_SNOOZE_MS = 2 * 24 * 3600 * 1000
 
 /**
  * Invitation à mettre ses jardins (et ses photos) en sécurité en ligne : la copie se met alors à jour toute seule à chaque modification.
@@ -60,7 +60,7 @@ function SyncNudge({ garden }: { garden: Garden }) {
       </div>
     )
   }
-  if (!syncConfigured || !ready || auto.status !== 'inactif' || plants.length === 0 || isDemoGarden(garden)) return null
+  if (!syncConfigured || !ready || auto.status !== 'inactif' || (plants.length === 0 && !(garden.panoramas?.length)) || isDemoGarden(garden)) return null
   if ((guide.syncNudgeUntil ?? 0) > Date.now()) return null
   return (
     <section className="nextstep syncnudge" aria-label="Copie en ligne" data-feat="synchro-invite">

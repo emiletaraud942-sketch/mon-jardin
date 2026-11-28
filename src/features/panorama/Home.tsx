@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { Icon } from '../../components/Icon'
 import { PlantScene } from '../../components/illustrations'
 import { getPhoto } from '../../lib/photos'
+import { useAutoSyncState } from '../../lib/autoSync'
+import { FEATURES } from '../../lib/features'
 import { setActiveGarden, useStore } from '../../lib/store'
 import type { Garden } from '../../types'
 import { canAddPoint, MAX_BYTES, MAX_POINTS, photoDateLabel, pointName, refusalMessage, sizeLabel } from './geometry'
@@ -49,6 +51,31 @@ function MissingPhotos({ count }: { count: number }) {
         {state.busy ? 'Recherche…' : 'Récupérer mes photos'}
       </button>
       {state.text && <p style={{ margin: '8px 0 0' }}>{state.text}</p>}
+    </div>
+  )
+}
+
+const SYNC_CONFIGURED = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY
+
+/** Prévient, tant que la copie en ligne n'est pas active, que ces photos ne sont que sur ce téléphone (un seul geste pour les protéger). */
+function PhotosOnlyHere() {
+  const auto = useAutoSyncState()
+  if (!SYNC_CONFIGURED || auto.status !== 'inactif') return null
+  return (
+    <div className="alert warn small" role="status" data-feat="photos-seulement-ici">
+      <p style={{ margin: 0 }}>
+        <strong>Ces photos ne sont que sur ce téléphone.</strong> Si vous l’effacez ou le changez, elles seront perdues. Avec la copie en ligne (gratuite, avec votre e-mail), elles sont sauvegardées toutes seules.
+      </p>
+      <button
+        className="btn small primary"
+        style={{ marginTop: 8 }}
+        onClick={() => {
+          closePanorama()
+          FEATURES.find((f) => f.id === 'synchro')?.run()
+        }}
+      >
+        Les sauvegarder en ligne
+      </button>
     </div>
   )
 }
@@ -157,6 +184,7 @@ export function Home({ garden }: { garden: Garden }) {
           </ul>
         )}
 
+        {points.length > 0 && <PhotosOnlyHere />}
         {points.length > 0 && Object.keys(info).length > 0 && points.some((p) => info[p.id] && !info[p.id].url) && (
           <MissingPhotos count={points.filter((p) => info[p.id] && !info[p.id].url).length} />
         )}
