@@ -4,6 +4,7 @@ import { SPECIES_BY_ID } from '../../data/species'
 import { CATEGORY_LABEL, STATUS_LABEL, SUN_LABEL, TASK_ICON, WATER_LABEL } from '../../data/labels'
 import { Icon } from '../../components/Icon'
 import { PlantScene } from '../../components/illustrations'
+import { getPhoto } from '../../lib/photos'
 import { RiskNotes } from '../../components/RiskNotes'
 import { addPlant, removePlant, updatePlant, useGardenPlants } from '../../lib/store'
 import { recordWithToast } from '../../lib/history'
@@ -69,6 +70,28 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
 
   const [name, setName] = useState(plant.customName ?? '')
   useEffect(() => setName(plant.customName ?? ''), [plant.id, plant.customName])
+  // Bannière de la fiche : la photo la plus récente PRISE de cette plante ; à défaut la photo de l'espèce.
+  const lastPhotoId = plant.photos[plant.photos.length - 1]
+  const [ownPhoto, setOwnPhoto] = useState<string>()
+  useEffect(() => {
+    let url: string | undefined
+    let cancelled = false
+    setOwnPhoto(undefined)
+    if (fiche && lastPhotoId) {
+      void getPhoto(lastPhotoId)
+        .then((b) => {
+          if (b && !cancelled) {
+            url = URL.createObjectURL(b)
+            setOwnPhoto(url)
+          }
+        })
+        .catch(() => undefined)
+    }
+    return () => {
+      cancelled = true
+      if (url) URL.revokeObjectURL(url)
+    }
+  }, [fiche, lastPhotoId])
   function remove() {
     const name = plantName(plant)
     removePlant(plant.id, { keepPhotos: true }) // les photos restent : purgées au démarrage suivant seulement si la plante n'est pas revenue
@@ -148,8 +171,10 @@ export function PlantPanel({ garden, plant, onClose, fiche, onShowOnMap }: { gar
   return (
     <div className={fiche ? 'fiche plants-ui' : 'stack plants-ui'} style={fiche ? undefined : { gap: 12 }} data-feat="fiche">
       {fiche && (
-        <div className={'fiche-hero' + (hasSpeciesPhoto(plant.speciesId) ? ' has-photo' : '')}>
-          {hasSpeciesPhoto(plant.speciesId) ? (
+        <div className={'fiche-hero' + (ownPhoto || hasSpeciesPhoto(plant.speciesId) ? ' has-photo' : '')}>
+          {ownPhoto ? (
+            <img className="fh-photo loaded" src={ownPhoto} alt={`Photo de ${plantName(plant)}`} decoding="async" />
+          ) : hasSpeciesPhoto(plant.speciesId) ? (
             <>
               <img className="fh-photo" src={`/plantes/${plant.speciesId}.jpg`} alt="" decoding="async" fetchPriority="high" onLoad={(e) => e.currentTarget.classList.add('loaded')} />
               <SpeciesCredit id={plant.speciesId} className="fh-credit" />

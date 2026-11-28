@@ -4357,7 +4357,6 @@ dialog.modal.full .modal-body {
 }
 .fiche-top {
   gap: 16px;
-  min-height: calc(100dvh - 200px); /* sous le premier écran : champs, photos, actions */
 }
 /* Fiche ouverte depuis la carte : plein écran au-dessus de tout, comme depuis la liste (téléphone). */
 .fiche-overlay {
