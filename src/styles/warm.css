@@ -1053,3 +1053,14 @@ body:has(.app.has-pb) {
     gap: 8px;
   }
 }
+
+/* Cibles tactiles : au moins 44 px (revue du 28 nov., téléphone 360 px). La rangée « Mes graines > à donner » fait 44 px de haut, la case 24 px. */
+label.row:has(> input[type='checkbox']) {
+  min-height: 44px;
+}
+label.row > input[type='checkbox'] {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  accent-color: var(--accent);
+}
