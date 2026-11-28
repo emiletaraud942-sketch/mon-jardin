@@ -34,13 +34,8 @@ import { goHome } from './lib/goHome'
 import { useOnboarding } from './features/onboarding/useOnboarding'
 import { shouldShowRoute } from './lib/onboarding'
 import { isDemoGarden } from './features/settings/demo'
-import { PlantsPage } from './features/plants/PlantsPage'
-import { TasksPage } from './features/tasks/TasksPage'
 import { useTasks } from './features/tasks/useTasks'
 import { TasksProvider } from './features/tasks/TasksProvider'
-import { PlantingPage } from './features/planting/PlantingPage'
-import { CataloguePage } from './features/plants/CataloguePage'
-import { SettingsPage } from './features/settings/SettingsPage'
 import { LegalModal } from './features/legal/LegalModal'
 import { neighborsEnabled } from './lib/neighbors/enabled'
 import { useNeighborsBadge } from './lib/neighbors/useBadge'
@@ -58,6 +53,12 @@ import './styles/panorama.css'
 import './styles/facile.css'
 import './styles/warm.css'
 
+// Écrans chargés à la demande : le fichier principal (celui de l'ouverture) reste léger sur un vieux téléphone.
+const PlantsPage = lazy(() => import('./features/plants/PlantsPage').then((m) => ({ default: m.PlantsPage })))
+const TasksPage = lazy(() => import('./features/tasks/TasksPage').then((m) => ({ default: m.TasksPage })))
+const PlantingPage = lazy(() => import('./features/planting/PlantingPage').then((m) => ({ default: m.PlantingPage })))
+const CataloguePage = lazy(() => import('./features/plants/CataloguePage').then((m) => ({ default: m.CataloguePage })))
+const SettingsPage = lazy(() => import('./features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })))
 const NeighborsPage = lazy(() => import('./features/neighbors/NeighborsPage').then((m) => ({ default: m.NeighborsPage })))
 const ScanHost = lazy(() => import('./features/scan/ScanHost'))
 const PanoHost = lazy(() => import('./features/panorama/PanoHost'))
@@ -376,11 +377,15 @@ function AppShell() {
               <MapView garden={garden} />
             </Suspense>
           )}
-          {tab === 'plantes' && <PlantsPage garden={garden} />}
-          {tab === 'entretien' && <TasksPage garden={garden} />}
-          {tab === 'planter' && <PlantingPage garden={garden} />}
-          {tab === 'catalogue' && <CataloguePage garden={garden} />}
-          {tab === 'reglages' && <SettingsPage garden={garden} />}
+          {(tab === 'plantes' || tab === 'entretien' || tab === 'planter' || tab === 'catalogue' || tab === 'reglages') && (
+            <Suspense fallback={<Loading label="Chargement…" />}>
+              {tab === 'plantes' && <PlantsPage garden={garden} />}
+              {tab === 'entretien' && <TasksPage garden={garden} />}
+              {tab === 'planter' && <PlantingPage garden={garden} />}
+              {tab === 'catalogue' && <CataloguePage garden={garden} />}
+              {tab === 'reglages' && <SettingsPage garden={garden} />}
+            </Suspense>
+          )}
           {tab === 'voisins' && neighborsEnabled && (
             <Suspense fallback={<Loading label="Chargement de l’entraide…" />}>
               <NeighborsPage garden={garden} />

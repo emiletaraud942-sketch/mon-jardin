@@ -111,6 +111,8 @@ export default defineConfig({
       // qui envoie le message SKIP_WAITING ; on ne recharge jamais la page sans prévenir.
       registerType: 'prompt',
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
+      // Les icônes du manifeste (192, 512, maskable : ≈ 20 Ko) ne servent qu'à l'installation : le navigateur les prend lui-même, inutile de les mettre dans le précache.
+      includeManifestIcons: false,
       manifest: {
         id: '/',
         name: 'PermaJardin',
