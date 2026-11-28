@@ -15,7 +15,7 @@ import { ShoppingListDialog } from './ShoppingListDialog'
 import { openScan } from '../scan/scanUi'
 import { PlantScene } from '../../components/illustrations'
 import { useIsMobile } from '../../components/useMedia'
-import { SpeciesThumb } from '../../components/SpeciesThumb'
+import { PlantThumb } from '../../components/PlantThumbLazy'
 
 export function PlantsPage({ garden }: { garden: Garden }) {
   const plants = useGardenPlants(garden.id)
@@ -144,7 +144,7 @@ export function PlantsPage({ garden }: { garden: Garden }) {
                             <PhotoThumb id={p.photos[0]} />
                           </span>
                         ) : (
-                          <SpeciesThumb id={p.speciesId} color={s?.couleurAccent ?? s?.couleur} />
+                          <PlantThumb plant={p} color={s?.couleurAccent ?? s?.couleur} />
                         )}
                         <span style={{ textAlign: 'left', flex: 1 }}>
                           <strong>{plantName(p)}</strong>
