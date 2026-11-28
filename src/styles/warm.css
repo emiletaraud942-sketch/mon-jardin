@@ -553,12 +553,14 @@ html[data-big-taps] .home-tile {
 }
 @media (max-width: 760px) {
   .app.has-pb .pagehead h1,
+  .app.has-pb .afaire-weeklabel,
   .app.has-pb .pagehead-kicker {
     color: #fff !important;
     text-shadow: 0 1px 3px rgb(0 0 0 / 65%), 0 0 16px rgb(0 0 0 / 55%);
   }
   /* « Semaine du… » : petit texte sur photo vive, plus appuyé et plus sombre derrière. */
-  .app.has-pb .pagehead-kicker {
+  .app.has-pb .pagehead-kicker,
+  .app.has-pb .afaire-weeklabel {
     font-weight: var(--fw-key);
   }
   .app.has-pb[data-tab='entretien'] .pb-top {
@@ -986,4 +988,50 @@ body:has(.app.has-pb) {
   .app[data-tab='catalogue'] .lost-fab { display: none; }
   .app[data-tab='voisins'] .pagehead h1,
   .app[data-tab='voisins'] .phead-title { color: var(--title); text-shadow: none; }
+}
+
+/* ---------- À faire : titre sur une ligne, cartes de tâches plus compactes (28 nov.) ---------- */
+.afaire-weeklabel {
+  margin: 2px 0 6px;
+  font-size: calc(14 * var(--px));
+  color: var(--muted);
+}
+.app.has-pb .afaire-weeklabel {
+  color: var(--title);
+}
+@media (max-width: 760px) {
+  .tcard {
+    gap: 8px 12px;
+    padding: 12px;
+    border-radius: 20px;
+  }
+  .tcard-tile {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+  }
+  .tcard-title {
+    font-size: calc(18 * var(--px));
+  }
+  /* « Plus tard » et « Comment faire ? » sur la même rangée, discrets. */
+  .tcard-later {
+    min-height: 36px;
+    padding: 0 12px;
+    font-size: calc(13 * var(--px));
+  }
+  .tcard-more:not([open]) {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .tcard-more:not([open]) > summary {
+    text-align: right;
+    font-size: calc(14 * var(--px));
+    padding: 6px 4px;
+  }
+  .tcard-more[open] {
+    flex-basis: 100%;
+  }
+  .tcards {
+    gap: 10px;
+  }
 }

@@ -461,18 +461,8 @@ export function TasksPage({ garden }: { garden: Garden }) {
   const extraWrap = (kids: ReactNode) => (view === "semaine" ? <Fold title="Plus d’options">{kids}</Fold> : kids);
   return (
     <div className="page afaire">
-      <PageHead
-        big
-        compact
-        home
-        onHelp={openHelp}
-        kicker={
-          view === "semaine" ? `Semaine du ${mondayLabel()}` : "Mois par mois"
-        }
-        title={
-          view === "semaine" ? "À faire cette semaine" : "Calendrier de l’année"
-        }
-      />
+      <PageHead big compact home onHelp={openHelp} title={view === "semaine" ? "À faire" : "Calendrier"} />
+      <p className="afaire-weeklabel">{view === "semaine" ? `Cette semaine · du ${mondayLabel()}` : "Mois par mois, toute l’année"}</p>
       <div className="afaire-top" data-feat="taches">
         {view === "annee" ? (
           <div className="afaire-year" data-feat="calendrier">
