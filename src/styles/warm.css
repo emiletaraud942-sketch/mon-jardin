@@ -1035,3 +1035,21 @@ body:has(.app.has-pb) {
     gap: 10px;
   }
 }
+
+/* ---------- Petits téléphones (≤ 380 px) : l'en-tête garde « Où planter ? » sur une ligne (28 nov.) ---------- */
+@media (max-width: 380px) {
+  .phead-slot .pagehead .pagehead-actions {
+    gap: 3px;
+  }
+  .phead-slot .pagehead .pagehead-btn,
+  .pagehead.compact .pagehead-btn {
+    min-width: 46px;
+    padding-inline: 3px;
+  }
+  .phead-slot .pagehead .pagehead-label {
+    font-size: calc(11 * var(--px));
+  }
+  .phead-slot .pagehead-lead {
+    gap: 8px;
+  }
+}

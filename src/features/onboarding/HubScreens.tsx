@@ -98,7 +98,7 @@ function ItemCard({ item }: { item: HubItem }) {
     <button className="hub-card" data-feat-run={item.featureId} onClick={() => runFeature(item.featureId)}>
       {src ? <img className="hub-card-photo" src={src} alt="" loading="lazy" decoding="async" /> : <span className="hub-card-icon" aria-hidden><Icon name={item.icon} size={26} /></span>}
       <span className="hub-card-text">
-        <strong>{item.mot}</strong>
+        <strong>{item.mot.replace(/ ([?!:;])/g, '\u202F$1')}</strong>
         <span>{item.phrase}</span>
       </span>
       <span className="hub-card-chev" aria-hidden>
